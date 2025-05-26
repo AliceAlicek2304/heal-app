@@ -127,7 +127,7 @@ const Navbar = () => {
                     {/* Navigation Menu */}
                     <div className="navbar-menu">
                         <ul className="nav-links">
-                            <li><a href="#sti-testing" className="nav-link">Xét nghiệm STIs</a></li>
+                            <li><Link to="/sti-testing" className="nav-link">Xét nghiệm STIs</Link></li>
                             <li><Link to="/consultation" className="nav-link">Tư vấn</Link></li>
                             <li><Link to="/menstrual-cycle" className="nav-link">Tính chu kỳ kinh nguyệt</Link></li>
                             <li><Link to="/blog" className="nav-link">Blog</Link></li>

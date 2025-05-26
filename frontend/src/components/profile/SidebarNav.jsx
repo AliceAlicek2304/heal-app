@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaUser, FaLock, FaHeartbeat, FaRegNewspaper, FaQuestionCircle, FaCalendarAlt } from 'react-icons/fa';
+import { FaUser, FaLock, FaHeartbeat, FaRegNewspaper, FaQuestionCircle, FaCalendarAlt, FaVial } from 'react-icons/fa';
 import './SidebarNav.css';
 import { useAuth } from '../../contexts/AuthContext';
 import { authService } from '../../services/authService';
@@ -34,6 +34,11 @@ const SidebarNav = ({ activeTab }) => {
                     <li className={activeTab === 'consultation-history' ? 'active' : ''}>
                         <Link to="/profile/consultation-history">
                             <FaCalendarAlt /> Lịch sử tư vấn
+                        </Link>
+                    </li>
+                    <li className={activeTab === 'sti-history' ? 'active' : ''}>
+                        <Link to="/profile/sti-history">
+                            <FaVial /> Lịch sử xét nghiệm STI
                         </Link>
                     </li>
                     <li className={activeTab === 'menstrual-history' ? 'active' : ''}>

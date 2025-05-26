@@ -11,6 +11,7 @@ import CreateBlog from './pages/Blog/CreateBlog/CreateBlog';
 import Questions from './pages/Questions/Questions';
 import CreateQuestion from './pages/Questions/CreateQuestion/CreateQuestion';
 import Consultation from './pages/Consultation/Consultation';
+import STITesting from './pages/STITesting/STITesting';
 import { AuthProvider } from "./contexts/AuthContext";
 import { ToastProvider } from './contexts/ToastContext';
 
@@ -31,6 +32,7 @@ function App() {
               <Route path="/questions" element={<Questions />} />
               <Route path="/questions/create" element={<CreateQuestion />} />
               <Route path="/consultation" element={<Consultation />} />
+              <Route path="/sti-testing" element={<STITesting />} />
             </Routes>
             <ChatBot />
           </div>

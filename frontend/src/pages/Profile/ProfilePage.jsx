@@ -8,6 +8,7 @@ import MenstrualHistoryComponent from '../../components/profile/MenstrualHistory
 import BlogHistory from '../../components/profile/BlogHistory';
 import MyQuestions from '../../components/profile/MyQuestions';
 import ConsultationHistory from '../../components/profile/ConsultationHistory';
+import STIHistory from '../../components/profile/STIHistory';
 import Navbar from '../../components/layout/Navbar/Navbar';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
 import './ProfilePage.css';
@@ -65,6 +66,11 @@ const ProfilePage = () => {
                         {activeTab === 'consultation-history' && (
                             <div className="content-section">
                                 <ConsultationHistory />
+                            </div>
+                        )}
+                        {activeTab === 'sti-history' && (
+                            <div className="content-section">
+                                <STIHistory />
                             </div>
                         )}
                         {activeTab === 'menstrual-history' && (
