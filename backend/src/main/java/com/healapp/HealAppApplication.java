@@ -2,6 +2,9 @@ package com.healapp;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 
 @SpringBootApplication
 public class HealAppApplication {
@@ -10,9 +13,6 @@ public class HealAppApplication {
 		SpringApplication.run(HealAppApplication.class, args);
 	}
 
-<<<<<<< Updated upstream
-}
-=======
 	@Bean
 	public WebMvcConfigurer corsConfigurer() {
 		return new WebMvcConfigurer() {
@@ -29,4 +29,3 @@ public class HealAppApplication {
 		};
 	}
 }
->>>>>>> Stashed changes
