@@ -1,0 +1,467 @@
+.menstrual-cycle-page {
+    min-height: 100vh;
+    background-color: #f9f5f6;
+}
+
+.menstrual-cycle-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.page-title {
+    color: #e83e8c;
+    text-align: center;
+    margin-bottom: 2rem;
+    font-size: 2rem;
+}
+
+.alert {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.menstrual-cycle-content {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 2rem;
+}
+
+/* Calculator Section */
+.calculator-section {
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+}
+
+.calculator-form-container h2,
+.calculation-result h2,
+.history-section h2 {
+    color: #e83e8c;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #f9f5f6;
+}
+
+.calculator-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #333;
+}
+
+.form-group input,
+.date-input {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+.form-group input:focus,
+.date-input:focus {
+    border-color: #e83e8c;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(232, 62, 140, 0.2);
+}
+
+.form-text {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background-color: #e83e8c;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background-color: #d92f7f;
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+}
+
+.btn-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+    background-color: #218838;
+}
+
+.btn-warning {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.btn-warning:hover:not(:disabled) {
+    background-color: #e0a800;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background-color: #c82333;
+}
+
+/* Calculation Result */
+.calculation-result {
+    margin-top: 2rem;
+    border-top: 1px dashed #ddd;
+    padding-top: 1.5rem;
+}
+
+.result-card {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #eee;
+}
+
+.result-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.result-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.result-value {
+    color: #212529;
+}
+
+.result-value.highlight {
+    color: #e83e8c;
+    font-weight: 700;
+}
+
+.result-note {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background-color: #fff3cd;
+    border-left: 4px solid #ffc107;
+    border-radius: 4px;
+}
+
+.result-note p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #856404;
+}
+
+/* History Section */
+.history-section {
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    height: fit-content;
+    max-height: 700px;
+}
+
+.auth-prompt,
+.empty-history,
+.loading {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.cycle-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.cycle-item {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-left: 4px solid transparent;
+}
+
+.cycle-item:hover {
+    background-color: #f1f3f5;
+    border-left-color: #e83e8c;
+}
+
+.cycle-item.active {
+    background-color: #f1f3f5;
+    border-left-color: #e83e8c;
+}
+
+.cycle-date {
+    font-weight: 600;
+    color: #e83e8c;
+}
+
+.cycle-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.cycle-reminder-status {
+    font-size: 1.25rem;
+}
+
+.reminder-enabled {
+    color: #ffc107;
+}
+
+.reminder-disabled {
+    color: #adb5bd;
+}
+
+/* Cycle Details */
+.cycle-details {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    border-top: 2px solid #e83e8c;
+}
+
+.details-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.details-header h3 {
+    color: #e83e8c;
+    margin: 0;
+}
+
+.close-details-btn {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: #6c757d;
+    cursor: pointer;
+}
+
+.close-details-btn:hover {
+    color: #e83e8c;
+}
+
+.details-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.detail-value {
+    color: #212529;
+}
+
+.detail-value.highlight {
+    color: #e83e8c;
+    font-weight: 700;
+}
+
+.details-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .menstrual-cycle-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .history-section {
+        margin-top: 2rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .menstrual-cycle-container {
+        padding: 1rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .result-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .details-actions {
+        flex-direction: column;
+    }
+}
+
+/* Định dạng cho thông báo lỗi/thành công */
+.alert {
+  position: relative;
+  padding: 12px 40px 12px 20px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  font-size: 16px;
+  line-height: 1.5;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.alert-error {
+  background-color: #ffe8e6;
+  color: #d32f2f;
+  border-left: 4px solid #d32f2f;
+}
+
+.alert-success {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border-left: 4px solid #2e7d32;
+}
+
+.close-alert {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.7;
+  padding: 5px 8px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  line-height: 1;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.close-alert:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.close-alert:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

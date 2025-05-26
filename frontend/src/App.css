@@ -1,0 +1,93 @@
+.App {
+  text-align: left;
+}
+
+/* Reset CSS */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: #333;
+  background-color: #ffffff;
+}
+
+/* Global utility classes */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+/* Button utilities */
+.btn {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 5px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.btn-primary {
+  background-color: #00a3c8;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #0090b3;
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: #00a3c8;
+  border: 2px solid #00a3c8;
+}
+
+.btn-secondary:hover {
+  background-color: #00a3c8;
+  color: white;
+}
+
+/* Responsive utilities */
+.d-none {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .d-md-none {
+    display: none;
+  }
+  
+  .d-md-block {
+    display: block;
+  }
+}
+
+@media (max-width: 480px) {
+  .d-sm-none {
+    display: none;
+  }
+  
+  .d-sm-block {
+    display: block;
+  }
+}

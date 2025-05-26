@@ -1,0 +1,39 @@
+.homepage {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Global styles for the homepage */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: #333;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus styles for accessibility */
+button:focus,
+a:focus,
+input:focus {
+  outline: 2px solid #00a3c8;
+  outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+  .navbar,
+  .hero-actions {
+    display: none;
+  }
+}
