@@ -1,0 +1,25 @@
+package com.healapp.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import java.time.LocalDate;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class UpdateProfileRequest {
+
+    @NotBlank(message = "Full name is required")
+    @Size(min = 2, max = 100, message = "Full name must be between 2 and 100 characters")
+    private String fullName;
+
+    @Pattern(regexp = "^[0-9]{10,11}$", message = "Phone number must be 10-11 digits")
+    private String phone;
+
+    private LocalDate birthDay;
+}
