@@ -10,27 +10,32 @@ import ChatBot from './components/chatbot/ChatBot';
 import CreateBlog from './pages/Blog/CreateBlog/CreateBlog';
 import Questions from './pages/Questions/Questions';
 import CreateQuestion from './pages/Questions/CreateQuestion/CreateQuestion';
+import Consultation from './pages/Consultation/Consultation';
 import { AuthProvider } from "./contexts/AuthContext";
+import { ToastProvider } from './contexts/ToastContext';
 
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <div className="App">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/blog/create" element={<CreateBlog />} />
-            <Route path="/blog/:id" element={<BlogDetail />} />
-            <Route path="/menstrual-cycle" element={<MenstrualCycleCalculator />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/profile/:tab" element={<ProfilePage />} />
-            <Route path="/questions" element={<Questions />} />
-            <Route path="/questions/create" element={<CreateQuestion />} />
-          </Routes>
-          <ChatBot />
-        </div>
-      </Router>
+      <ToastProvider>
+        <Router>
+          <div className="App">
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/create" element={<CreateBlog />} />
+              <Route path="/blog/:id" element={<BlogDetail />} />
+              <Route path="/menstrual-cycle" element={<MenstrualCycleCalculator />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/profile/:tab" element={<ProfilePage />} />
+              <Route path="/questions" element={<Questions />} />
+              <Route path="/questions/create" element={<CreateQuestion />} />
+              <Route path="/consultation" element={<Consultation />} />
+            </Routes>
+            <ChatBot />
+          </div>
+        </Router>
+      </ToastProvider>
     </AuthProvider>
   );
 }

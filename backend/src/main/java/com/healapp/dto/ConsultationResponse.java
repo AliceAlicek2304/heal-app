@@ -24,7 +24,8 @@ public class ConsultationResponse {
 
     private LocalDateTime startTime;
     private LocalDateTime endTime;
-    private ConsultationStatus status;    private String meetUrl;
+    private ConsultationStatus status;
+    private String meetUrl;
 
     // Thông tin thanh toán
     private Float price;

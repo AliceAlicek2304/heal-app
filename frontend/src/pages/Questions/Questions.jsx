@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import Navbar from '../../components/layout/Navbar/Navbar';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
+import LoginForm from '../../components/auth/Login/LoginForm';
+import RegisterForm from '../../components/auth/Register/RegisterForm';
 import { questionService } from '../../services/questionService';
+import { useAuthModal } from '../../hooks/useAuthModal';
 import './Questions.css';
 
 const Questions = () => {
@@ -18,6 +21,16 @@ const Questions = () => {
     // Modal state
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedQuestion, setSelectedQuestion] = useState(null);
+
+    // Auth modals
+    const {
+        showLoginModal,
+        showRegisterModal,
+        openLoginModal,
+        closeModals,
+        switchToLogin,
+        switchToRegister
+    } = useAuthModal();
 
     useEffect(() => {
         fetchAnsweredQuestions();
@@ -47,14 +60,23 @@ const Questions = () => {
 
     const handleCreateQuestion = () => {
         if (!user) {
-            // Mở modal đăng nhập
+            openLoginModal(); // Mở modal đăng nhập nếu chưa đăng nhập
             return;
         }
         navigate('/questions/create');
     };
 
     const handleViewMyQuestions = () => {
+        if (!user) {
+            openLoginModal(); // Mở modal đăng nhập nếu chưa đăng nhập
+            return;
+        }
         navigate('/profile/my-questions');
+    };
+
+    const handleLoginSuccess = () => {
+        closeModals();
+        // Nếu người dùng vừa đăng nhập, có thể refresh dữ liệu nếu cần
     };
 
     const truncateContent = (content, maxLength = 200) => {
@@ -99,7 +121,7 @@ const Questions = () => {
                             onClick={handleCreateQuestion}
                         >
                             <i className="fas fa-plus"></i>
-                            Đặt câu hỏi mới
+                            {user ? 'Đặt câu hỏi mới' : 'Đăng nhập để đặt câu hỏi'}
                         </button>
 
                         {user && (
@@ -182,7 +204,7 @@ const Questions = () => {
                 )}
             </div>
 
-            {/* Modal */}
+            {/* Question Detail Modal */}
             {modalOpen && selectedQuestion && (
                 <div
                     className="modal-backdrop"
@@ -248,6 +270,31 @@ const Questions = () => {
                                 Đóng
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Login Modal */}
+            {showLoginModal && (
+                <div className="modal-backdrop" onClick={closeModals}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <LoginForm
+                            onClose={closeModals}
+                            onSwitchToRegister={switchToRegister}
+                            onLoginSuccess={handleLoginSuccess}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* Register Modal */}
+            {showRegisterModal && (
+                <div className="modal-backdrop" onClick={closeModals}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <RegisterForm
+                            onClose={closeModals}
+                            onSwitchToLogin={switchToLogin}
+                        />
                     </div>
                 </div>
             )}

@@ -102,6 +102,7 @@
     font-size: 14px;
     margin-bottom: 4px;
     color: #343a40;
+    text-align: left !important;
 }
 
 .menstrual-history-profile .cycle-info {
@@ -109,10 +110,11 @@
     justify-content: space-between;
     font-size: 12px;
     color: #6c757d;
+    text-align: left !important;
 }
 
 .menstrual-history-profile .cycle-reminder-status {
-    text-align: right;
+    text-align: right !important;
     margin-top: 3px;
     font-size: 16px;
 }
@@ -128,6 +130,7 @@
 .menstrual-history-profile .cycle-details-container {
     padding-left: 5px;
     max-height: 500px;
+    text-align: left !important;
 }
 
 .menstrual-history-profile .no-cycle-selected {
@@ -139,11 +142,13 @@
     background-color: #f8f9fa;
     border-radius: 8px;
     border: 1px dashed #dee2e6;
+    text-align: center !important;
 }
 
 .menstrual-history-profile .no-cycle-selected p {
     color: #6c757d;
     font-style: italic;
+    text-align: center !important;
 }
 
 .menstrual-history-profile .cycle-details {
@@ -153,6 +158,7 @@
     height: 100%;
     display: flex;
     flex-direction: column;
+    text-align: left !important;
 }
 
 .menstrual-history-profile .details-header {
@@ -161,12 +167,14 @@
     align-items: center;
     padding: 10px 15px;
     border-bottom: 1px solid #e1e4e8;
+    text-align: left !important;
 }
 
 .menstrual-history-profile .details-header h4 {
     margin: 0;
     font-size: 15px;
     color: #343a40;
+    text-align: left !important;
 }
 
 .menstrual-history-profile .close-details-btn {
@@ -186,6 +194,7 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
+    text-align: left !important;
 }
 
 /* Cải thiện chi tiết từng mục */
@@ -193,6 +202,7 @@
     margin-bottom: 10px;
     display: flex;
     flex-direction: column;
+    text-align: left !important;
 }
 
 /* Một số mục quan trọng chiếm toàn bộ chiều rộng */
@@ -202,11 +212,30 @@
     grid-column: span 2;
 }
 
+/* Trường nhắc nhở căn giữa */
+.menstrual-history-profile .detail-item:last-child {
+    grid-column: span 2;
+    text-align: center !important;
+}
+
+.menstrual-history-profile .detail-item:last-child .detail-label {
+    text-align: center !important;
+    margin-bottom: 8px;
+}
+
+.menstrual-history-profile .detail-item:last-child .detail-value {
+    text-align: center !important;
+    margin: 0 auto;
+    max-width: 150px;
+    font-weight: 600;
+}
+
 .menstrual-history-profile .detail-label {
     font-weight: 600;
     color: #495057;
     margin-bottom: 3px;
     font-size: 12px;
+    text-align: left !important;
 }
 
 .menstrual-history-profile .detail-value {
@@ -216,11 +245,13 @@
     border-radius: 4px;
     border: 1px solid #e1e4e8;
     font-size: 13px;
+    text-align: left !important;
 }
 
 .menstrual-history-profile .detail-value.highlight {
     color: #d63384;
     font-weight: 500;
+    text-align: left !important;
 }
 
 .menstrual-history-profile .details-actions {
@@ -229,6 +260,7 @@
     gap: 8px;
     border-top: 1px solid #e1e4e8;
     justify-content: space-between;
+    text-align: left !important;
 }
 
 .menstrual-history-profile .btn {
@@ -239,6 +271,7 @@
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
+    text-align: center !important;
 }
 
 .menstrual-history-profile .btn-primary {
@@ -288,6 +321,7 @@
     margin-bottom: 15px;
     font-size: 13px;
     animation: fadeIn 0.3s ease;
+    text-align: left !important;
 }
 
 .menstrual-history-profile .alert-success {
@@ -300,6 +334,18 @@
     background-color: #f8d7da;
     color: #721c24;
     border: 1px solid #f5c6cb;
+}
+
+/* Animation fadeIn */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Responsive layout cho màn hình nhỏ */
@@ -326,6 +372,10 @@
     .menstrual-history-profile .detail-item:nth-child(5) {
         grid-column: span 1;
     }
+
+    .menstrual-history-profile .detail-item:last-child {
+        grid-column: span 1;
+    }
 }
 
 @media (max-width: 768px) {
@@ -345,5 +395,41 @@
     
     .menstrual-history-profile .details-actions {
         flex-direction: column;
+    }
+    
+    /* Mobile text alignment */
+    .menstrual-history-profile .cycle-date,
+    .menstrual-history-profile .cycle-info,
+    .menstrual-history-profile .cycle-details-container,
+    .menstrual-history-profile .details-header,
+    .menstrual-history-profile .details-header h4,
+    .menstrual-history-profile .details-content,
+    .menstrual-history-profile .detail-item,
+    .menstrual-history-profile .detail-label,
+    .menstrual-history-profile .detail-value,
+    .menstrual-history-profile .detail-value.highlight,
+    .menstrual-history-profile .details-actions,
+    .menstrual-history-profile .alert {
+        text-align: left !important;
+    }
+    
+    .menstrual-history-profile .cycle-reminder-status {
+        text-align: right !important;
+    }
+    
+    .menstrual-history-profile .no-cycle-selected,
+    .menstrual-history-profile .no-cycle-selected p {
+        text-align: center !important;
+    }
+    
+    .menstrual-history-profile .btn {
+        text-align: center !important;
+    }
+
+    /* Giữ căn giữa cho trường nhắc nhở trên mobile */
+    .menstrual-history-profile .detail-item:last-child,
+    .menstrual-history-profile .detail-item:last-child .detail-label,
+    .menstrual-history-profile .detail-item:last-child .detail-value {
+        text-align: center !important;
     }
 }

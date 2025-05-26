@@ -7,13 +7,14 @@ import SecurityForm from '../../components/profile/SecurityForm';
 import MenstrualHistoryComponent from '../../components/profile/MenstrualHistoryComponent';
 import BlogHistory from '../../components/profile/BlogHistory';
 import MyQuestions from '../../components/profile/MyQuestions';
+import ConsultationHistory from '../../components/profile/ConsultationHistory';
 import Navbar from '../../components/layout/Navbar/Navbar';
-import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner'; // hoặc component loading của bạn
+import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
 import './ProfilePage.css';
 
 const ProfilePage = () => {
     const { tab } = useParams();
-    const { user, isLoading } = useAuth();     // Lấy thêm isLoading
+    const { user, isLoading } = useAuth();
     const navigate = useNavigate();
     const activeTab = tab || 'personal-info';
 
@@ -59,6 +60,11 @@ const ProfilePage = () => {
                             <div className="content-section">
                                 <h2>Bảo mật tài khoản</h2>
                                 <SecurityForm />
+                            </div>
+                        )}
+                        {activeTab === 'consultation-history' && (
+                            <div className="content-section">
+                                <ConsultationHistory />
                             </div>
                         )}
                         {activeTab === 'menstrual-history' && (

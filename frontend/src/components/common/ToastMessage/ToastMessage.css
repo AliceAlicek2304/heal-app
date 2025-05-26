@@ -1,0 +1,142 @@
+.toast-message {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 350px;
+    width: auto;
+    background-color: white;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    z-index: 2000;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.toast-message.hidden {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-30px);
+}
+
+.toast-message.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+}
+
+.toast-icon {
+    font-size: 20px;
+    margin-right: 12px;
+    min-width: 24px;
+    display: flex;
+    justify-content: center;
+}
+
+.toast-message.success .toast-icon {
+    color: #28a745;
+}
+
+.toast-message.error .toast-icon {
+    color: #dc3545;
+}
+
+.toast-message.info .toast-icon {
+    color: #17a2b8;
+}
+
+.toast-message.warning .toast-icon {
+    color: #ffc107;
+}
+
+.toast-message-text {
+    flex-grow: 1;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #333;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 16px;
+    cursor: pointer;
+    margin-left: 12px;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+}
+
+.toast-close:hover {
+    color: #333;
+}
+
+.toast-progress-bar {
+    height: 3px;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.toast-progress {
+    height: 100%;
+    width: 100%;
+    background-color: #007bff;
+    transform-origin: left;
+    animation: progress-animation linear forwards;
+}
+
+.toast-message.success .toast-progress {
+    background-color: #28a745;
+}
+
+.toast-message.error .toast-progress {
+    background-color: #dc3545;
+}
+
+.toast-message.info .toast-progress {
+    background-color: #17a2b8;
+}
+
+.toast-message.warning .toast-progress {
+    background-color: #ffc107;
+}
+
+@keyframes progress-animation {
+    0% {
+        transform: scaleX(1);
+    }
+    100% {
+        transform: scaleX(0);
+    }
+}
+
+/* Mobile Responsive */
+@media (max-width: 576px) {
+    .toast-message {
+        width: calc(100% - 40px);
+        max-width: none;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .toast-message.hidden {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-30px);
+    }
+
+    .toast-message.visible {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import { authService } from '../../services/authService';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -8,6 +9,7 @@ import './MenstrualCycleCalculator.css';
 
 const MenstrualCycleCalculator = () => {
     const { user, isAuthenticated } = useAuth();
+    const toast = useToast();
     const [formData, setFormData] = useState({
         startDate: new Date().toISOString().split('T')[0],
         numberOfDays: 5,
@@ -16,8 +18,6 @@ const MenstrualCycleCalculator = () => {
     const [cycles, setCycles] = useState([]);
     const [selectedCycle, setSelectedCycle] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
     const [calculationResult, setCalculationResult] = useState(null);
 
     // Fetch lịch sử chu kỳ khi component mount và khi user thay đổi
@@ -34,7 +34,7 @@ const MenstrualCycleCalculator = () => {
             const userId = user?.userId;
 
             if (!userId) {
-                setError("Không thể xác định người dùng");
+                toast.error("Không thể xác định người dùng");
                 setLoading(false);
                 return;
             }
@@ -52,11 +52,11 @@ const MenstrualCycleCalculator = () => {
                 });
                 setCycles(sortedCycles);
             } else {
-                setError(response.message || "Không thể tải lịch sử chu kỳ kinh nguyệt");
+                toast.error(response.message || "Không thể tải lịch sử chu kỳ kinh nguyệt");
             }
         } catch (err) {
             console.error("Error fetching cycles:", err);
-            setError("Đã xảy ra lỗi khi tải dữ liệu");
+            toast.error("Đã xảy ra lỗi khi tải dữ liệu");
         } finally {
             setLoading(false);
         }
@@ -65,11 +65,6 @@ const MenstrualCycleCalculator = () => {
     // Xử lý thay đổi form input
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-
-        // Reset thông báo lỗi khi người dùng thay đổi dữ liệu
-        if (error) {
-            setError('');
-        }
 
         setFormData({
             ...formData,
@@ -81,19 +76,15 @@ const MenstrualCycleCalculator = () => {
     const handleCalculate = async (e) => {
         e.preventDefault();
 
-        // Reset thông báo
-        setError('');
-        setSuccess('');
-
         try {
             // Đảm bảo các giá trị hợp lệ
             if (parseInt(formData.numberOfDays) <= 0) {
-                setError("Số ngày hành kinh phải lớn hơn 0");
+                toast.error("Số ngày hành kinh phải lớn hơn 0");
                 return;
             }
 
             if (parseInt(formData.cycleLength) <= 0) {
-                setError("Độ dài chu kỳ phải lớn hơn 0");
+                toast.error("Độ dài chu kỳ phải lớn hơn 0");
                 return;
             }
 
@@ -132,18 +123,13 @@ const MenstrualCycleCalculator = () => {
                 }
 
                 // Hiển thị thông báo thành công
-                setSuccess("Đã tính toán chu kỳ kinh nguyệt thành công");
-
-                // Tự động ẩn thông báo thành công sau 3 giây
-                setTimeout(() => {
-                    setSuccess('');
-                }, 3000);
+                toast.success("Đã tính toán chu kỳ kinh nguyệt thành công");
             } else {
-                setError(response.message || "Không thể tính toán chu kỳ kinh nguyệt");
+                toast.error(response.message || "Không thể tính toán chu kỳ kinh nguyệt");
             }
         } catch (err) {
             console.error("Error calculating cycle:", err);
-            setError("Đã xảy ra lỗi khi tính toán chu kỳ");
+            toast.error("Đã xảy ra lỗi khi tính toán chu kỳ");
         } finally {
             setLoading(false);
         }
@@ -177,17 +163,13 @@ const MenstrualCycleCalculator = () => {
                     });
                 }
 
-                setSuccess(`Đã ${!isEnabled ? 'bật' : 'tắt'} nhắc nhở cho chu kỳ`);
-                // Reset thông báo sau 3 giây
-                setTimeout(() => {
-                    setSuccess('');
-                }, 3000);
+                toast.success(`Đã ${!isEnabled ? 'bật' : 'tắt'} nhắc nhở cho chu kỳ`);
             } else {
-                setError(response.message || "Không thể cập nhật trạng thái nhắc nhở");
+                toast.error(response.message || "Không thể cập nhật trạng thái nhắc nhở");
             }
         } catch (err) {
             console.error("Error toggling reminder:", err);
-            setError("Đã xảy ra lỗi khi cập nhật trạng thái nhắc nhở");
+            toast.error("Đã xảy ra lỗi khi cập nhật trạng thái nhắc nhở");
         } finally {
             setLoading(false);
         }
@@ -209,17 +191,13 @@ const MenstrualCycleCalculator = () => {
                         setSelectedCycle(null);
                     }
 
-                    setSuccess("Đã xóa chu kỳ thành công");
-                    // Reset thông báo sau 3 giây
-                    setTimeout(() => {
-                        setSuccess('');
-                    }, 3000);
+                    toast.success("Đã xóa chu kỳ thành công");
                 } else {
-                    setError(response.message || "Không thể xóa chu kỳ");
+                    toast.error(response.message || "Không thể xóa chu kỳ");
                 }
             } catch (err) {
                 console.error("Error deleting cycle:", err);
-                setError("Đã xảy ra lỗi khi xóa chu kỳ");
+                toast.error("Đã xảy ra lỗi khi xóa chu kỳ");
             } finally {
                 setLoading(false);
             }
@@ -238,18 +216,6 @@ const MenstrualCycleCalculator = () => {
             <div className="menstrual-cycle-container">
                 <h1 className="page-title">Tính chu kỳ kinh nguyệt</h1>
 
-                {(error || success) && (
-                    <div className={`alert ${error ? 'alert-error' : 'alert-success'}`}>
-                        {error || success}
-                        <button
-                            className="close-alert"
-                            onClick={() => error ? setError('') : setSuccess('')}
-                        >
-                            ✕
-                        </button>
-                    </div>
-                )}
-
                 <div className="menstrual-cycle-content">
                     <div className="calculator-section">
                         <div className="calculator-form-container">
@@ -265,7 +231,6 @@ const MenstrualCycleCalculator = () => {
                                             ? formData.startDate.toISOString().split('T')[0]
                                             : formData.startDate}
                                         onChange={(e) => {
-                                            if (error) setError('');
                                             setFormData({
                                                 ...formData,
                                                 startDate: e.target.value
