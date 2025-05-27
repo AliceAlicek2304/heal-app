@@ -271,6 +271,7 @@ public class QuestionService {
         // Set customer info
         response.setCustomerId(question.getCustomer().getId());
         response.setCustomerName(question.getCustomer().getFullName());
+        response.setCustomerEmail(question.getCustomer().getEmail());
 
         // Set updater info if available
         if (question.getUpdater() != null) {

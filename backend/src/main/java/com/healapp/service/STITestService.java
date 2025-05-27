@@ -309,7 +309,8 @@ public class STITestService {
 
                 log.info("Request contains results for {} components", requestComponentIds.size());
 
-                // Kiểm tra số lượng component trong request có đúng bằng số component của service không
+                // Kiểm tra số lượng component trong request có đúng bằng số component của
+                // service không
                 if (requestComponentIds.size() < serviceComponentIds.size()) {
                     // Tìm các component thiếu
                     List<Long> missingComponentIds = new ArrayList<>(serviceComponentIds);
@@ -625,6 +626,59 @@ public class STITestService {
             return ApiResponse.error("Failed to cancel STI test: " + e.getMessage());
         }
     }
+    @Transactional
+    public ApiResponse<STITestResponse> updateConsultantNotes(Long testId, String consultantNotes, Long consultantId) {
+        try {
+            log.info("Consultant {} updating notes for STI test {}", consultantId, testId);
+
+            // Kiểm tra STI test có tồn tại không
+            Optional<STITest> testOpt = stiTestRepository.findById(testId);
+            if (testOpt.isEmpty()) {
+                return ApiResponse.error("STI test not found");
+            }
+
+            STITest stiTest = testOpt.get();
+
+            // Kiểm tra consultant có tồn tại và có đúng role không
+            Optional<UserDtls> consultantOpt = userRepository.findById(consultantId);
+            if (consultantOpt.isEmpty()) {
+                return ApiResponse.error("Consultant not found");
+            }
+
+            UserDtls consultant = consultantOpt.get();
+            if (!"CONSULTANT".equals(consultant.getRole())) {
+                return ApiResponse.error("User is not a consultant");
+            }
+
+            // Kiểm tra consultant có được assign cho test này không
+            if (stiTest.getConsultant() == null || !stiTest.getConsultant().getId().equals(consultantId)) {
+                return ApiResponse.error("You can only update notes for tests assigned to you");
+            }
+
+            // Kiểm tra trạng thái test có cho phép cập nhật notes không
+            if (stiTest.getStatus() != TestStatus.SAMPLED &&
+                    stiTest.getStatus() != TestStatus.RESULTED &&
+                    stiTest.getStatus() != TestStatus.COMPLETED) {
+                return ApiResponse.error(
+                        "Consultant notes can only be updated for tests in SAMPLED, RESULTED, or COMPLETED status");
+            }
+
+            // Cập nhật consultant notes
+            stiTest.setConsultantNotes(consultantNotes);
+            stiTest.setUpdatedAt(LocalDateTime.now());
+
+            STITest updatedTest = stiTestRepository.save(stiTest);
+
+            log.info("Consultant notes updated successfully for test ID: {} by consultant: {}", testId, consultantId);
+
+            STITestResponse response = convertToResponse(updatedTest);
+            return ApiResponse.success("Consultant notes updated successfully", response);
+
+        } catch (Exception e) {
+            log.error("Error updating consultant notes for test {}: {}", testId, e.getMessage(), e);
+            return ApiResponse.error("Failed to update consultant notes: " + e.getMessage());
+        }
+    }
 
     /**
      * Convert STITest to Response
@@ -656,6 +710,7 @@ public class STITestService {
         response.setPaymentDate(stiTest.getPaymentDate());
         response.setStripePaymentId(stiTest.getStripePaymentId());
         response.setCustomerNotes(stiTest.getCustomerNotes());
+        response.setConsultantNotes(stiTest.getConsultantNotes());
         response.setCreatedAt(stiTest.getCreatedAt());
         response.setUpdatedAt(stiTest.getUpdatedAt());
 

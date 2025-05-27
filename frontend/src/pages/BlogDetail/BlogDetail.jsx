@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useToast } from '../../contexts/ToastContext';
 import Navbar from '../../components/layout/Navbar/Navbar';
 import { authService } from '../../services/authService';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
-import './BlogDetail.css';
+import styles from './BlogDetail.module.css';
 
 const BlogDetail = () => {
     const { id } = useParams();
+    const toast = useToast();
     const [blogPost, setBlogPost] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
 
     useEffect(() => {
         fetchBlogPost();
@@ -18,17 +19,16 @@ const BlogDetail = () => {
     const fetchBlogPost = async () => {
         try {
             setLoading(true);
-            setError('');
 
             const response = await authService.getBlogPostById(id);
 
             if (response.success && response.data) {
                 setBlogPost(response.data);
             } else {
-                setError(response.message || 'Không thể tải nội dung bài viết');
+                toast.error(response.message || 'Không thể tải nội dung bài viết');
             }
         } catch (error) {
-            setError('Có lỗi xảy ra khi tải dữ liệu');
+            toast.error('Có lỗi xảy ra khi tải dữ liệu');
             console.error('Error fetching blog post:', error);
         } finally {
             setLoading(false);
@@ -47,29 +47,10 @@ const BlogDetail = () => {
 
     if (loading) {
         return (
-            <div className="blog-detail-page">
+            <div className={styles.blogDetailPage}>
                 <Navbar />
-                <div className="container">
+                <div className={styles.loadingContainer}>
                     <LoadingSpinner />
-                </div>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="blog-detail-page">
-                <Navbar />
-                <div className="container">
-                    <div className="error-message">
-                        <p>{error}</p>
-                        <button onClick={fetchBlogPost} className="retry-btn">
-                            Thử lại
-                        </button>
-                        <Link to="/blog" className="back-btn">
-                            Quay lại trang Blog
-                        </Link>
-                    </div>
                 </div>
             </div>
         );
@@ -77,12 +58,22 @@ const BlogDetail = () => {
 
     if (!blogPost) {
         return (
-            <div className="blog-detail-page">
+            <div className={styles.blogDetailPage}>
                 <Navbar />
-                <div className="container">
-                    <div className="not-found">
+                <div className={styles.container}>
+                    <div className={styles.notFound}>
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
                         <h2>Không tìm thấy bài viết</h2>
-                        <Link to="/blog" className="back-btn">
+                        <p>Bài viết này không tồn tại hoặc đã bị xóa.</p>
+                        <Link to="/blog" className={styles.btnOutlinePrimary}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
                             Quay lại trang Blog
                         </Link>
                     </div>
@@ -92,46 +83,55 @@ const BlogDetail = () => {
     }
 
     return (
-        <div className="blog-detail-page">
+        <div className={styles.blogDetailPage}>
             <Navbar />
-            <div className="container">
+            <div className={styles.container}>
                 {/* Breadcrumb */}
-                <div className="breadcrumb">
-                    <Link to="/">Trang chủ</Link> / <Link to="/blog">Blog</Link> / <span>{blogPost.title}</span>
+                <div className={styles.breadcrumb}>
+                    <Link to="/">Trang chủ</Link> 
+                    <span className={styles.separator}>/</span> 
+                    <Link to="/blog">Blog</Link> 
+                    <span className={styles.separator}>/</span> 
+                    <span className={styles.currentPage}>{blogPost.title}</span>
                 </div>
 
                 {/* Blog Header */}
-                <div className="blog-detail-header">
-                    <h1 className="blog-detail-title">{blogPost.title}</h1>
-                    <div className="blog-detail-meta">
-                        <div className="blog-detail-category">
-                            <span className="category-badge">{blogPost.categoryName}</span>
+                <div className={styles.blogDetailHeader}>
+                    <h1 className={styles.blogDetailTitle}>{blogPost.title}</h1>
+                    <div className={styles.blogDetailMeta}>
+                        <div className={styles.blogDetailCategory}>
+                            <span className={styles.categoryBadge}>{blogPost.categoryName}</span>
                         </div>
-                        <div className="blog-detail-date">
-                            <span className="date-icon">📅</span>
+                        <div className={styles.blogDetailDate}>
+                            <svg className={styles.dateIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
                             <span>{formatDate(blogPost.createdAt)}</span>
                             {blogPost.updatedAt && blogPost.updatedAt !== blogPost.createdAt && (
-                                <span className="update-text">
+                                <span className={styles.updateText}>
                                     (Cập nhật: {formatDate(blogPost.updatedAt)})
                                 </span>
                             )}
                         </div>
                     </div>
-                    <div className="blog-detail-author">
+                    <div className={styles.blogDetailAuthor}>
                         <img
                             src={authService.getAvatarUrl(blogPost.authorAvatar)}
                             alt={blogPost.authorName}
-                            className="author-avatar"
+                            className={styles.authorAvatar}
                             onError={(e) => {
                                 e.target.src = authService.getAvatarUrl('/img/avatar/default.jpg');
                             }}
                         />
-                        <span className="author-name">Tác giả: {blogPost.authorName}</span>
+                        <span className={styles.authorName}>Tác giả: {blogPost.authorName}</span>
                     </div>
                 </div>
 
                 {/* Featured Image */}
-                <div className="blog-detail-image">
+                <div className={styles.blogDetailImage}>
                     <img
                         src={authService.getBlogImageUrl(blogPost.thumbnailImage)}
                         alt={blogPost.title}
@@ -142,23 +142,26 @@ const BlogDetail = () => {
                 </div>
 
                 {/* Main Content */}
-                <div className="blog-detail-content">
-                    <div className="blog-main-content" dangerouslySetInnerHTML={{ __html: blogPost.content }} />
+                <div className={styles.blogDetailContent}>
+                    <div 
+                        className={styles.blogMainContent} 
+                        dangerouslySetInnerHTML={{ __html: blogPost.content }} 
+                    />
                 </div>
 
                 {/* Sections */}
                 {blogPost.sections && blogPost.sections.length > 0 && (
-                    <div className="blog-sections">
+                    <div className={styles.blogSections}>
                         {blogPost.sections
                             .sort((a, b) => a.displayOrder - b.displayOrder)
                             .map((section) => (
-                                <div key={section.sectionId} className="blog-section">
+                                <div key={section.sectionId} className={styles.blogSection}>
                                     {section.sectionTitle && (
-                                        <h2 className="section-title">{section.sectionTitle}</h2>
+                                        <h2 className={styles.sectionTitle}>{section.sectionTitle}</h2>
                                     )}
 
                                     {section.sectionImage && (
-                                        <div className="section-image">
+                                        <div className={styles.sectionImage}>
                                             <img
                                                 src={authService.getBlogImageUrl(section.sectionImage)}
                                                 alt={section.sectionTitle || "Section image"}
@@ -170,7 +173,7 @@ const BlogDetail = () => {
                                     )}
 
                                     <div
-                                        className="section-content"
+                                        className={styles.sectionContent}
                                         dangerouslySetInnerHTML={{ __html: section.sectionContent }}
                                     />
                                 </div>
@@ -179,9 +182,13 @@ const BlogDetail = () => {
                 )}
 
                 {/* Navigation */}
-                <div className="blog-detail-navigation">
-                    <Link to="/blog" className="back-to-blog">
-                        ← Quay lại danh sách bài viết
+                <div className={styles.blogDetailNavigation}>
+                    <Link to="/blog" className={styles.backToBlog}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        Quay lại danh sách bài viết
                     </Link>
                 </div>
             </div>

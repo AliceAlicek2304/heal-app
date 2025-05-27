@@ -34,6 +34,7 @@ public class STITestResponse {
     private String stripePaymentId;
 
     private String customerNotes;
+    private String consultantNotes;
     private String status; // PENDING, CONFIRMED, SAMPLE_COLLECTED, PROCESSING, COMPLETED, CANCELED
 
     private LocalDateTime createdAt;

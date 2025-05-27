@@ -36,6 +36,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import org.mockito.ArgumentCaptor;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Kiểm thử dịch vụ quản lý STI Test")
@@ -722,6 +723,81 @@ public class STITestServiceTest {
         // Kiểm tra kết quả
         assertFalse(response.isSuccess());
         assertEquals("Cannot cancel test in current status: SAMPLED", response.getMessage());
+        verify(stiTestRepository, never()).save(any(STITest.class));
+    }
+
+    @Test
+    @DisplayName("Cập nhật consultant notes thành công")
+    void updateConsultantNotes_Success() {
+        // Arrange
+        stiTest.setConsultant(consultant);
+        stiTest.setStatus(TestStatus.RESULTED);
+
+        String consultantNotes = "Kết quả xét nghiệm cho thấy tất cả các chỉ số đều bình thường. " +
+                "Khuyến nghị bệnh nhân duy trì lối sống lành mạnh và tái khám sau 6 tháng.";
+
+        when(stiTestRepository.findById(stiTest.getTestId())).thenReturn(Optional.of(stiTest));
+        when(userRepository.findById(consultant.getId())).thenReturn(Optional.of(consultant));
+        when(stiTestRepository.save(any(STITest.class))).thenReturn(stiTest);
+
+        // Act
+        ApiResponse<STITestResponse> response = stiTestService.updateConsultantNotes(
+                stiTest.getTestId(), consultantNotes, consultant.getId());
+
+        // Assert
+        assertTrue(response.isSuccess());
+        assertEquals("Consultant notes updated successfully", response.getMessage());
+        assertNotNull(response.getData());
+        assertEquals(consultantNotes, response.getData().getConsultantNotes());
+
+        // Verify
+        ArgumentCaptor<STITest> testCaptor = ArgumentCaptor.forClass(STITest.class);
+        verify(stiTestRepository).save(testCaptor.capture());
+        assertEquals(consultantNotes, testCaptor.getValue().getConsultantNotes());
+    }
+
+    @Test
+    @DisplayName("Cập nhật consultant notes thất bại - không phải consultant được assign")
+    void updateConsultantNotes_NotAssignedConsultant() {
+        // Arrange
+        UserDtls otherConsultant = new UserDtls();
+        otherConsultant.setId(99L);
+        otherConsultant.setRole("CONSULTANT");
+
+        stiTest.setConsultant(consultant); // Test được assign cho consultant khác
+        stiTest.setStatus(TestStatus.RESULTED);
+
+        when(stiTestRepository.findById(stiTest.getTestId())).thenReturn(Optional.of(stiTest));
+        when(userRepository.findById(otherConsultant.getId())).thenReturn(Optional.of(otherConsultant));
+
+        // Act
+        ApiResponse<STITestResponse> response = stiTestService.updateConsultantNotes(
+                stiTest.getTestId(), "Some notes", otherConsultant.getId());
+
+        // Assert
+        assertFalse(response.isSuccess());
+        assertEquals("You can only update notes for tests assigned to you", response.getMessage());
+        verify(stiTestRepository, never()).save(any(STITest.class));
+    }
+
+    @Test
+    @DisplayName("Cập nhật consultant notes thất bại - trạng thái test không hợp lệ")
+    void updateConsultantNotes_InvalidStatus() {
+        // Arrange
+        stiTest.setConsultant(consultant);
+        stiTest.setStatus(TestStatus.PENDING); // Trạng thái không hợp lệ
+
+        when(stiTestRepository.findById(stiTest.getTestId())).thenReturn(Optional.of(stiTest));
+        when(userRepository.findById(consultant.getId())).thenReturn(Optional.of(consultant));
+
+        // Act
+        ApiResponse<STITestResponse> response = stiTestService.updateConsultantNotes(
+                stiTest.getTestId(), "Some notes", consultant.getId());
+
+        // Assert
+        assertFalse(response.isSuccess());
+        assertEquals("Consultant notes can only be updated for tests in SAMPLED, RESULTED, or COMPLETED status",
+                response.getMessage());
         verify(stiTestRepository, never()).save(any(STITest.class));
     }
 }

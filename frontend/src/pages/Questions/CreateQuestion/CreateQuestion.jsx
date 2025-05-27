@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useToast } from '../../../contexts/ToastContext';
 import Navbar from '../../../components/layout/Navbar/Navbar';
 import LoadingSpinner from '../../../components/common/LoadingSpinner/LoadingSpinner';
 import { questionService } from '../../../services/questionService';
-import './CreateQuestion.css';
+import styles from './CreateQuestion.module.css';
 
 const CreateQuestion = () => {
     const navigate = useNavigate();
     const { user, isLoading } = useAuth();
+    const toast = useToast();
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState([]);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
-    const alertRef = useRef(null);
+    const formRef = useRef(null);
 
     const [formData, setFormData] = useState({
         content: '',
@@ -29,27 +29,17 @@ const CreateQuestion = () => {
         fetchCategories();
     }, [user, isLoading, navigate]);
 
-    // Auto scroll khi có error hoặc success
-    useEffect(() => {
-        if ((error || success) && alertRef.current) {
-            alertRef.current.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center'
-            });
-        }
-    }, [error, success]);
-
     const fetchCategories = async () => {
         try {
             const response = await questionService.getCategories();
             if (response.success && response.data) {
                 setCategories(response.data);
             } else {
-                setError(response.message || 'Không thể tải danh mục câu hỏi');
+                toast.error(response.message || 'Không thể tải danh mục câu hỏi');
             }
         } catch (error) {
             console.error('Error fetching categories:', error);
-            setError('Có lỗi xảy ra khi tải danh mục');
+            toast.error('Có lỗi xảy ra khi tải danh mục');
         }
     };
 
@@ -59,17 +49,15 @@ const CreateQuestion = () => {
             ...prev,
             [name]: value
         }));
-        setError('');
-        setSuccess('');
     };
 
     const validateForm = () => {
         if (!formData.content.trim()) {
-            setError('Vui lòng nhập nội dung câu hỏi');
+            toast.error('Vui lòng nhập nội dung câu hỏi');
             return false;
         }
         if (!formData.categoryQuestionId) {
-            setError('Vui lòng chọn danh mục câu hỏi');
+            toast.error('Vui lòng chọn danh mục câu hỏi');
             return false;
         }
         return true;
@@ -82,7 +70,6 @@ const CreateQuestion = () => {
 
         try {
             setLoading(true);
-            setError('');
 
             const questionData = {
                 content: formData.content.trim(),
@@ -92,7 +79,7 @@ const CreateQuestion = () => {
             const response = await questionService.createQuestion(questionData);
 
             if (response.success) {
-                setSuccess('Câu hỏi đã được gửi thành công! Chúng tôi sẽ xem xét và trả lời sớm nhất.');
+                toast.success('Câu hỏi đã được gửi thành công! Chúng tôi sẽ xem xét và trả lời sớm nhất.');
 
                 // Reset form
                 setFormData({
@@ -100,11 +87,16 @@ const CreateQuestion = () => {
                     categoryQuestionId: ''
                 });
 
+                // Redirect to questions page after a short delay
+                setTimeout(() => {
+                    navigate('/questions');
+                }, 2000);
+
             } else {
-                setError(response.message || 'Không thể gửi câu hỏi');
+                toast.error(response.message || 'Không thể gửi câu hỏi');
             }
         } catch (error) {
-            setError('Có lỗi xảy ra khi gửi câu hỏi');
+            toast.error('Có lỗi xảy ra khi gửi câu hỏi');
             console.error('Error creating question:', error);
         } finally {
             setLoading(false);
@@ -117,12 +109,9 @@ const CreateQuestion = () => {
 
     if (isLoading) {
         return (
-            <div className="create-question-page">
+            <div className={styles.createQuestionPage}>
                 <Navbar />
-                <div className="container" style={{
-                    minHeight: 400, display: 'flex',
-                    justifyContent: 'center', alignItems: 'center'
-                }}>
+                <div className={styles.loadingContainer}>
                     <LoadingSpinner />
                 </div>
             </div>
@@ -132,27 +121,21 @@ const CreateQuestion = () => {
     if (!user) return null;
 
     return (
-        <div className="create-question-page">
+        <div className={styles.createQuestionPage}>
             <Navbar />
-            <div className="container">
-                <div className="create-question-header">
+            <div className={styles.container}>
+                <div className={styles.createQuestionHeader}>
                     <h1>Đặt câu hỏi</h1>
                     <p>Hãy mô tả chi tiết vấn đề của bạn để nhận được tư vấn tốt nhất</p>
                 </div>
 
-                {/* Alert Messages */}
-                {(error || success) && (
-                    <div
-                        ref={alertRef}
-                        className={`alert ${error ? 'alert-error' : 'alert-success'}`}
-                    >
-                        {error || success}
-                    </div>
-                )}
-
-                <form onSubmit={handleSubmit} className="create-question-form">
-                    <div className="form-section">
-                        <div className="form-group">
+                <form 
+                    ref={formRef}
+                    onSubmit={handleSubmit} 
+                    className={styles.createQuestionForm}
+                >
+                    <div className={styles.formSection}>
+                        <div className={styles.formGroup}>
                             <label htmlFor="categoryQuestionId">Danh mục câu hỏi *</label>
                             <select
                                 id="categoryQuestionId"
@@ -169,13 +152,13 @@ const CreateQuestion = () => {
                                 ))}
                             </select>
                             {categories.length > 0 && (
-                                <small className="form-hint">
+                                <small className={styles.formHint}>
                                     Chọn danh mục phù hợp giúp chúng tôi định hướng câu trả lời tốt hơn
                                 </small>
                             )}
                         </div>
 
-                        <div className="form-group">
+                        <div className={styles.formGroup}>
                             <label htmlFor="content">Nội dung câu hỏi *</label>
                             <textarea
                                 id="content"
@@ -186,17 +169,17 @@ const CreateQuestion = () => {
                                 rows="10"
                                 required
                             />
-                            <small className="form-hint">
+                            <small className={styles.formHint}>
                                 Hãy mô tả chi tiết triệu chứng, thời gian xuất hiện, các yếu tố liên quan...
                             </small>
                         </div>
                     </div>
 
                     {/* Form Actions */}
-                    <div className="form-actions">
+                    <div className={styles.formActions}>
                         <button
                             type="button"
-                            className="btn btn-secondary"
+                            className={styles.btnSecondary}
                             onClick={handleCancel}
                             disabled={loading}
                         >
@@ -204,16 +187,23 @@ const CreateQuestion = () => {
                         </button>
                         <button
                             type="submit"
-                            className="btn btn-primary"
+                            className={styles.btnPrimary}
                             disabled={loading}
                         >
-                            {loading ? 'Đang gửi...' : 'Gửi câu hỏi'}
+                            {loading ? (
+                                <>
+                                    <svg className={styles.spinner} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M21 12a9 9 0 11-6.219-8.56"></path>
+                                    </svg>
+                                    Đang gửi...
+                                </>
+                            ) : 'Gửi câu hỏi'}
                         </button>
                     </div>
                 </form>
 
                 {loading && (
-                    <div className="loading-overlay">
+                    <div className={styles.loadingOverlay}>
                         <LoadingSpinner />
                     </div>
                 )}

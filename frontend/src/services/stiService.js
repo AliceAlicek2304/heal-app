@@ -88,7 +88,7 @@ export const stiService = {
     },
 
     // Lấy danh sách xét nghiệm của tôi
-    getMyTests: async (onAuthRequired) => {
+    getMyTests: async (paginationParams, onAuthRequired) => {
         try {
             const credentials = localStorage.getItem('credentials');
             if (!credentials && onAuthRequired) {
@@ -96,7 +96,18 @@ export const stiService = {
                 return { success: false, message: 'Authentication required' };
             }
 
-            const response = await fetch(`${API_BASE_URL}/sti-services/my-tests`, {
+            // Xây dựng URL với pagination parameters nếu có
+            let url = `${API_BASE_URL}/sti-services/my-tests`;
+            if (paginationParams && typeof paginationParams === 'object') {
+                const params = new URLSearchParams();
+                if (paginationParams.page !== undefined) params.append('page', paginationParams.page);
+                if (paginationParams.size !== undefined) params.append('size', paginationParams.size);
+                if (params.toString()) {
+                    url += `?${params.toString()}`;
+                }
+            }
+
+            const response = await fetch(url, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',

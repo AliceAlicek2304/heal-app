@@ -1,0 +1,355 @@
+.consultantCard {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f1f5f9;
+    padding: 20px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.consultantCard:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    border-color: #e2e8f0;
+}
+
+.consultantAvatar {
+    position: relative;
+    align-self: center;
+    margin-bottom: 16px;
+}
+
+.avatarImage {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #3b82f6;
+    background: #f1f5f9;
+}
+
+.onlineStatus {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 16px;
+    height: 16px;
+    background: #22c55e;
+    border: 3px solid white;
+    border-radius: 50%;
+}
+
+.consultantInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.consultantHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    gap: 8px;
+}
+
+.consultantName {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.verifiedBadge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: #dcfce7;
+    color: #166534;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.verifiedBadge svg {
+    width: 12px;
+    height: 12px;
+}
+
+.consultantDetails {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex: 1;
+}
+
+.detailItem {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.85rem;
+    color: #64748b;
+    line-height: 1.4;
+}
+
+.detailItem svg {
+    color: #3b82f6;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.detailItem span {
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.consultantPrice {
+    background: #f8fafc;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 16px;
+}
+
+.priceHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.priceText {
+    font-size: 0.85rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.priceHeader svg {
+    color: #3b82f6;
+}
+
+.priceAmount {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #3b82f6;
+    display: block;
+}
+
+.consultantActions {
+    margin-top: auto;
+}
+
+.bookBtn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.bookBtn:hover:not(:disabled) {
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+
+.bookBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.cardLoading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    backdrop-filter: blur(2px);
+}
+
+.loadingSpinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #f3f4f6;
+    border-top: 3px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .consultantCard {
+        padding: 16px;
+    }
+    
+    .avatarImage {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .consultantName {
+        font-size: 1rem;
+    }
+    
+    .consultantDetails {
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+    
+    .detailItem {
+        font-size: 0.8rem;
+    }
+    
+    .consultantPrice {
+        padding: 12px;
+    }
+    
+    .priceAmount {
+        font-size: 1rem;
+    }
+    
+    .bookBtn {
+        padding: 10px 14px;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .consultantCard {
+        padding: 12px;
+    }
+    
+    .consultantHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .verifiedBadge {
+        align-self: flex-end;
+    }
+    
+    .avatarImage {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .onlineStatus {
+        width: 14px;
+        height: 14px;
+        bottom: 2px;
+        right: 2px;
+    }
+}
+
+/* Animation cho card xuất hiện */
+@keyframes cardAppear {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.consultantCard {
+    animation: cardAppear 0.3s ease;
+}
+
+/* Skeleton loading state */
+.consultantCard.loading {
+    pointer-events: none;
+}
+
+.consultantCard.loading .consultantName,
+.consultantCard.loading .detailItem span,
+.consultantCard.loading .priceAmount {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    color: transparent;
+    border-radius: 4px;
+    min-height: 1em;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* Hover effect cho avatar */
+.consultantAvatar:hover .avatarImage {
+    transform: scale(1.05);
+    transition: transform 0.2s ease;
+}
+
+/* Focus states cho accessibility */
+.bookBtn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* Gradient overlay cho premium consultants */
+.consultantCard.premium {
+    background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
+    border-color: #fbbf24;
+}
+
+.consultantCard.premium::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 40px 40px 0;
+    border-color: transparent #fbbf24 transparent transparent;
+}
+
+.consultantCard.premium::after {
+    content: '★';
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}

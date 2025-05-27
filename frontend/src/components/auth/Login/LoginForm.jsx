@@ -1,21 +1,20 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
-import './LoginForm.css';
+import { useToast } from '../../../contexts/ToastContext';
+import styles from './LoginForm.module.css';
 
 const LoginForm = ({ onClose, onSwitchToRegister, onLoginSuccess, onSwitchToForgotPassword }) => {
     const [formData, setFormData] = useState({
-        username: '', // Có thể là username hoặc email
+        username: '',
         password: '',
     });
 
     const [isLoading, setIsLoading] = useState(false);
     const [errors, setErrors] = useState({});
-    const [message, setMessage] = useState('');
 
-    // Sử dụng AuthContext
     const { login } = useAuth();
+    const toast = useToast();
 
-    // Xử lý thay đổi input
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({
@@ -23,7 +22,6 @@ const LoginForm = ({ onClose, onSwitchToRegister, onLoginSuccess, onSwitchToForg
             [name]: value
         }));
 
-        // Xóa lỗi khi người dùng nhập lại
         if (errors[name]) {
             setErrors(prev => ({
                 ...prev,
@@ -32,7 +30,6 @@ const LoginForm = ({ onClose, onSwitchToRegister, onLoginSuccess, onSwitchToForg
         }
     };
 
-    // Validate form
     const validateForm = () => {
         const newErrors = {};
 
@@ -48,16 +45,15 @@ const LoginForm = ({ onClose, onSwitchToRegister, onLoginSuccess, onSwitchToForg
         return Object.keys(newErrors).length === 0;
     };
 
-    // Xử lý đăng nhập
     const handleLogin = async (e) => {
         e.preventDefault();
 
         if (!validateForm()) {
+            toast.error('Vui lòng kiểm tra và điền đầy đủ thông tin');
             return;
         }
 
         setIsLoading(true);
-        setMessage('');
 
         try {
             const response = await login({
@@ -66,99 +62,131 @@ const LoginForm = ({ onClose, onSwitchToRegister, onLoginSuccess, onSwitchToForg
             });
 
             if (response.success) {
-                // Thêm log để kiểm tra
                 console.log("Đăng nhập thành công!");
                 console.log("Token:", localStorage.getItem('authToken')?.substring(0, 10) + "...");
 
-                setMessage('Đăng nhập thành công!');
+                toast.success('Đăng nhập thành công! Đang chuyển hướng...', 3000);
 
-                // Gọi callback để đóng modal
                 if (onLoginSuccess) {
                     onLoginSuccess();
                 }
 
-                // Đóng modal sau 1 giây
                 setTimeout(() => {
                     onClose();
-                }, 1000);
+                }, 1500);
             } else {
-                setMessage(response.message || 'Đăng nhập thất bại');
+                toast.error(response.message || 'Đăng nhập thất bại');
             }
         } catch (error) {
-            setMessage('Có lỗi xảy ra trong quá trình đăng nhập');
+            toast.error('Có lỗi xảy ra trong quá trình đăng nhập');
             console.error('Error logging in:', error);
         } finally {
             setIsLoading(false);
         }
     };
 
+    const handleClose = () => {
+        toast.hideAllToasts();
+        onClose();
+    };
+
     return (
-        <div className="login-form">
-            <div className="login-header">
-                <h2>Đăng nhập</h2>
-                <button className="close-btn" onClick={onClose}>×</button>
+        <div className={styles.container}>
+            <div className={styles.header}>
+                <h2 className={styles.title}>Đăng nhập</h2>
+                <button className={styles.closeBtn} onClick={handleClose}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
             </div>
 
-            <form onSubmit={handleLogin} className="login-form-content">
-                <div className="form-group">
-                    <label htmlFor="username">Tên đăng nhập hoặc Email *</label>
+            <form onSubmit={handleLogin} className={styles.form}>
+                <div className={styles.welcomeText}>
+                    <h3>Chào mừng bạn trở lại!</h3>
+                    <p>Đăng nhập để tiếp tục sử dụng dịch vụ</p>
+                </div>
+
+                <div className={styles.formGroup}>
+                    <label htmlFor="username" className={styles.label}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        Tên đăng nhập hoặc Email
+                    </label>
                     <input
                         type="text"
                         id="username"
                         name="username"
                         value={formData.username}
                         onChange={handleInputChange}
-                        className={errors.username ? 'error' : ''}
+                        className={`${styles.input} ${errors.username ? styles.inputError : ''}`}
                         placeholder="Nhập tên đăng nhập hoặc email"
                     />
-                    {errors.username && <span className="error-message">{errors.username}</span>}
+                    {errors.username && <span className={styles.errorMessage}>{errors.username}</span>}
                 </div>
 
-                <div className="form-group">
-                    <label htmlFor="password">Mật khẩu *</label>
+                <div className={styles.formGroup}>
+                    <label htmlFor="password" className={styles.label}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="11" width="18" height="10" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        Mật khẩu
+                    </label>
                     <input
                         type="password"
                         id="password"
                         name="password"
                         value={formData.password}
                         onChange={handleInputChange}
-                        className={errors.password ? 'error' : ''}
+                        className={`${styles.input} ${errors.password ? styles.inputError : ''}`}
                         placeholder="Nhập mật khẩu"
                     />
-                    {errors.password && <span className="error-message">{errors.password}</span>}
+                    {errors.password && <span className={styles.errorMessage}>{errors.password}</span>}
                 </div>
 
-                <div className="form-actions">
-                    <div className="forgot-password">
-                        <button
-                            type="button"
-                            className="forgot-password-link"
-                            onClick={onSwitchToForgotPassword}
-                            disabled={isLoading}
-                        >
-                            Quên mật khẩu?
-                        </button>
-                    </div>
+                <div className={styles.formActions}>
+                    <button
+                        type="button"
+                        className={styles.forgotPasswordBtn}
+                        onClick={onSwitchToForgotPassword}
+                        disabled={isLoading}
+                    >
+                        Quên mật khẩu?
+                    </button>
                 </div>
-
-                {message && (
-                    <div className={`message ${message.includes('thành công') ? 'success' : 'error'}`}>
-                        {message}
-                    </div>
-                )}
 
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="btn-login"
+                    className={styles.btnLogin}
                 >
-                    {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+                    {isLoading ? (
+                        <>
+                            <div className={styles.spinner}></div>
+                            Đang đăng nhập...
+                        </>
+                    ) : (
+                        <>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M15 3h6v18h-6M10 17l5-5-5-5M1 12h18"></path>
+                            </svg>
+                            Đăng nhập
+                        </>
+                    )}
                 </button>
 
-                <div className="form-footer">
+                <div className={styles.divider}>
+                    <span>hoặc</span>
+                </div>
+
+                <div className={styles.footer}>
                     <p>
-                        Chưa có tài khoản?{' '}
-                        <button type="button" onClick={onSwitchToRegister} className="link-btn">
+                        Chưa có tài khoản?
+                        <button type="button" onClick={onSwitchToRegister} className={styles.linkBtn}>
                             Đăng ký ngay
                         </button>
                     </p>

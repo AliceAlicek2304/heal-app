@@ -10,7 +10,7 @@ import LoginForm from '../../components/auth/Login/LoginForm';
 import RegisterForm from '../../components/auth/Register/RegisterForm';
 import { consultationService } from '../../services/consultationService';
 import { useAuthModal } from '../../hooks/useAuthModal';
-import './Consultation.css';
+import styles from './Consultation.module.css';
 
 const Consultation = () => {
     const navigate = useNavigate();
@@ -147,39 +147,53 @@ const Consultation = () => {
         fetchData();
     };
 
-    if (loading) return <LoadingSpinner />;
+    if (loading) {
+        return (
+            <div className={styles.consultationPage}>
+                <Navbar />
+                <div className={styles.loadingContainer}>
+                    <LoadingSpinner />
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="consultation-page">
+        <div className={styles.consultationPage}>
             <Navbar />
-            <div className="container">
-                <div className="consultation-header">
+            <div className={styles.container}>
+                <div className={styles.consultationHeader}>
                     <h1>Tư vấn trực tuyến</h1>
                     <p>Đặt lịch tư vấn với các chuyên gia y tế có kinh nghiệm</p>
 
-                    <div className="consultation-info">
-                        <div className="price-info">
-                            <span className="price-label">Giá tư vấn:</span>
-                            <span className="price-value">
+                    <div className={styles.consultationInfo}>
+                        <div className={styles.priceInfo}>
+                            <span className={styles.priceLabel}>Giá tư vấn:</span>
+                            <span className={styles.priceValue}>
                                 {consultationPrice.toLocaleString('vi-VN')} VNĐ/giờ
                             </span>
                         </div>
 
                         <button
-                            className="btn btn-outline-primary"
+                            className={styles.btnOutlinePrimary}
                             onClick={handleViewMyConsultations}
                         >
-                            <i className="fas fa-calendar-alt"></i>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
                             {user ? 'Lịch tư vấn của tôi' : 'Đăng nhập để xem lịch tư vấn'}
                         </button>
                     </div>
                 </div>
 
-                <div className="consultants-section">
+                <div className={styles.consultantsSection}>
                     <h2>Chọn chuyên gia tư vấn</h2>
 
                     {consultants.length > 0 ? (
-                        <div className="consultants-grid">
+                        <div className={styles.consultantsGrid}>
                             {consultants.map(consultant => (
                                 <ConsultantCard
                                     key={consultant.id}
@@ -191,11 +205,22 @@ const Consultation = () => {
                             ))}
                         </div>
                     ) : (
-                        <div className="empty-state">
+                        <div className={styles.emptyState}>
+                            <div className={styles.emptyIcon}>
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                </svg>
+                            </div>
                             <h3>Chưa có chuyên gia nào</h3>
                             <p>Hiện tại chưa có chuyên gia tư vấn. Vui lòng quay lại sau!</p>
-                            <button onClick={handleRetry} className="btn btn-primary">
-                                <i className="fas fa-refresh"></i>
+                            <button onClick={handleRetry} className={styles.btnPrimary}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M23 4v6h-6"></path>
+                                    <path d="M1 20v-6h6"></path>
+                                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                                </svg>
                                 Thử lại
                             </button>
                         </div>
@@ -217,8 +242,8 @@ const Consultation = () => {
 
             {/* Login Modal */}
             {showLoginModal && (
-                <div className="modal-overlay" onClick={closeModals}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className={styles.modalOverlay} onClick={closeModals}>
+                    <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
                         <LoginForm
                             onClose={closeModals}
                             onSwitchToRegister={switchToRegister}
@@ -230,8 +255,8 @@ const Consultation = () => {
 
             {/* Register Modal */}
             {showRegisterModal && (
-                <div className="modal-overlay" onClick={closeModals}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className={styles.modalOverlay} onClick={closeModals}>
+                    <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
                         <RegisterForm
                             onClose={closeModals}
                             onSwitchToLogin={switchToLogin}

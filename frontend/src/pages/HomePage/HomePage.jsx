@@ -2,7 +2,7 @@ import React from "react";
 import Navbar from "../../components/layout/Navbar/Navbar";
 import Hero from "../../components/layout/Hero/Hero";
 import Services from "../../components/layout/Service/Service";
-import "./HomePage.css";
+import "./HomePage.module.css";
 
 const HomePage = () => {
   return (

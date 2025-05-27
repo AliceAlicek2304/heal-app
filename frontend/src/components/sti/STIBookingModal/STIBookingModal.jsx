@@ -3,7 +3,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useToast } from '../../../contexts/ToastContext';
 import { stiService } from '../../../services/stiService';
 import LoadingSpinner from '../../common/LoadingSpinner/LoadingSpinner';
-import './STIBookingModal.css';
+import styles from './STIBookingModal.module.css';
 
 const PAYMENT_METHODS = [
     { value: 'COD', label: 'Thanh toán khi nhận dịch vụ (COD)' },
@@ -168,8 +168,6 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
                 testData.cardHolderName = formData.cardHolderName;
             }
 
-            console.log('Sending test data:', testData); // Debug log
-
             const response = await stiService.bookTest(testData, onAuthRequired);
 
             if (response.success) {
@@ -196,34 +194,37 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
     };
 
     return (
-        <div className="modal-backdrop" onClick={onClose}>
-            <div className="sti-booking-modal" onClick={(e) => e.stopPropagation()}>
-                <div className="modal-header">
+        <div className={styles.modalBackdrop} onClick={onClose}>
+            <div className={styles.stiBookingModal} onClick={(e) => e.stopPropagation()}>
+                <div className={styles.modalHeader}>
                     <h3>Đặt lịch xét nghiệm STI</h3>
-                    <button className="modal-close-btn" onClick={onClose}>
-                        <i className="fas fa-times"></i>
+                    <button className={styles.modalCloseBtn} onClick={onClose}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
                     </button>
                 </div>
 
-                <div className="modal-body">
+                <div className={styles.modalBody}>
                     {/* Service Summary */}
-                    <div className="service-summary">
+                    <div className={styles.serviceSummary}>
                         <h4>{service.name || service.serviceName}</h4>
                         <p>{service.description || 'Dịch vụ xét nghiệm STI chuyên nghiệp'}</p>
 
                         {/* Component Count */}
                         {(service.componentCount || service.testComponents?.length) && (
-                            <div className="component-info">
-                                <span className="component-label">Số lượng xét nghiệm:</span>
-                                <span className="component-value">
+                            <div className={styles.componentInfo}>
+                                <span className={styles.componentLabel}>Số lượng xét nghiệm:</span>
+                                <span className={styles.componentValue}>
                                     {service.componentCount || service.testComponents?.length || 0} xét nghiệm
                                 </span>
                             </div>
                         )}
 
-                        <div className="price-summary">
-                            <span className="price-label">Giá dịch vụ:</span>
-                            <span className="price-value">
+                        <div className={styles.priceSummary}>
+                            <span className={styles.priceLabel}>Giá dịch vụ:</span>
+                            <span className={styles.priceValue}>
                                 {service.price ?
                                     `${service.price.toLocaleString('vi-VN')} VNĐ` :
                                     'Liên hệ'
@@ -233,10 +234,10 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
                     </div>
 
                     {/* Booking Form */}
-                    <form onSubmit={handleSubmit} className="booking-form">
+                    <form onSubmit={handleSubmit} className={styles.bookingForm}>
                         {/* Date and Time Selection */}
-                        <div className="form-row">
-                            <div className="form-group">
+                        <div className={styles.formRow}>
+                            <div className={styles.formGroup}>
                                 <label htmlFor="appointmentDate">Ngày hẹn *</label>
                                 <input
                                     type="date"
@@ -250,7 +251,7 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
                                 />
                             </div>
 
-                            <div className="form-group">
+                            <div className={styles.formGroup}>
                                 <label htmlFor="appointmentTime">Giờ hẹn *</label>
                                 <select
                                     id="appointmentTime"
@@ -271,10 +272,10 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
                         </div>
 
                         {/* Patient Information */}
-                        <div className="form-section">
+                        <div className={styles.formSection}>
                             <h4>Thông tin bệnh nhân</h4>
 
-                            <div className="form-group">
+                            <div className={styles.formGroup}>
                                 <label htmlFor="patientName">Họ và tên *</label>
                                 <input
                                     type="text"
@@ -285,12 +286,12 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
                                     placeholder="Tên từ tài khoản"
                                     readOnly
                                     disabled={true}
-                                    className="readonly-field"
+                                    className={styles.readonlyField}
                                 />
                             </div>
 
-                            <div className="form-row">
-                                <div className="form-group">
+                            <div className={styles.formRow}>
+                                <div className={styles.formGroup}>
                                     <label htmlFor="patientPhone">Số điện thoại</label>
                                     <input
                                         type="tel"
@@ -301,11 +302,11 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
                                         placeholder="Số điện thoại từ tài khoản"
                                         readOnly
                                         disabled={true}
-                                        className="readonly-field"
+                                        className={styles.readonlyField}
                                     />
                                 </div>
 
-                                <div className="form-group">
+                                <div className={styles.formGroup}>
                                     <label htmlFor="patientEmail">Email *</label>
                                     <input
                                         type="email"
@@ -316,12 +317,12 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
                                         placeholder="Email từ tài khoản"
                                         readOnly
                                         disabled={true}
-                                        className="readonly-field"
+                                        className={styles.readonlyField}
                                     />
                                 </div>
                             </div>
 
-                            <div className="form-group">
+                            <div className={styles.formGroup}>
                                 <label htmlFor="notes">Ghi chú</label>
                                 <textarea
                                     id="notes"
@@ -336,11 +337,11 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
                         </div>
 
                         {/* Payment Method */}
-                        <div className="form-section">
+                        <div className={styles.formSection}>
                             <h4>Phương thức thanh toán</h4>
-                            <div className="payment-methods">
+                            <div className={styles.paymentMethods}>
                                 {PAYMENT_METHODS.map(method => (
-                                    <label key={method.value} className="payment-method-option">
+                                    <label key={method.value} className={styles.paymentMethodOption}>
                                         <input
                                             type="radio"
                                             name="paymentMethod"
@@ -349,7 +350,7 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
                                             onChange={handleInputChange}
                                             disabled={loading}
                                         />
-                                        <span className="payment-method-label">{method.label}</span>
+                                        <span className={styles.paymentMethodLabel}>{method.label}</span>
                                     </label>
                                 ))}
                             </div>
@@ -357,10 +358,10 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
 
                         {/* VISA Card Fields */}
                         {formData.paymentMethod === 'VISA' && (
-                            <div className="form-section visa-fields">
+                            <div className={`${styles.formSection} ${styles.visaFields}`}>
                                 <h4>Thông tin thẻ VISA</h4>
 
-                                <div className="form-group">
+                                <div className={styles.formGroup}>
                                     <label htmlFor="cardNumber">Số thẻ *</label>
                                     <input
                                         type="text"
@@ -375,8 +376,8 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
                                     />
                                 </div>
 
-                                <div className="form-row">
-                                    <div className="form-group">
+                                <div className={styles.formRow}>
+                                    <div className={styles.formGroup}>
                                         <label htmlFor="expiryMonth">Tháng hết hạn *</label>
                                         <select
                                             id="expiryMonth"
@@ -395,7 +396,7 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
                                         </select>
                                     </div>
 
-                                    <div className="form-group">
+                                    <div className={styles.formGroup}>
                                         <label htmlFor="expiryYear">Năm hết hạn *</label>
                                         <select
                                             id="expiryYear"
@@ -417,7 +418,7 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
                                         </select>
                                     </div>
 
-                                    <div className="form-group">
+                                    <div className={styles.formGroup}>
                                         <label htmlFor="cvc">CVC *</label>
                                         <input
                                             type="text"
@@ -433,7 +434,7 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
                                     </div>
                                 </div>
 
-                                <div className="form-group">
+                                <div className={styles.formGroup}>
                                     <label htmlFor="cardHolderName">Tên chủ thẻ *</label>
                                     <input
                                         type="text"
@@ -451,10 +452,10 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
                     </form>
                 </div>
 
-                <div className="modal-footer">
+                <div className={styles.modalFooter}>
                     <button
                         type="button"
-                        className="btn btn-secondary"
+                        className={`${styles.btn} ${styles.btnSecondary}`}
                         onClick={onClose}
                         disabled={loading}
                     >
@@ -462,18 +463,22 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
                     </button>
                     <button
                         type="submit"
-                        className="btn btn-primary"
+                        className={`${styles.btn} ${styles.btnPrimary}`}
                         onClick={handleSubmit}
                         disabled={loading}
                     >
                         {loading ? (
                             <>
-                                <i className="fas fa-spinner fa-spin"></i>
+                                <svg className={styles.spinner} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M21 12a9 9 0 11-6.219-8.56"></path>
+                                </svg>
                                 Đang xử lý...
                             </>
                         ) : (
                             <>
-                                <i className="fas fa-calendar-check"></i>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
                                 Đặt lịch xét nghiệm
                             </>
                         )}
@@ -481,7 +486,7 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
                 </div>
 
                 {loading && (
-                    <div className="modal-loading-overlay">
+                    <div className={styles.modalLoadingOverlay}>
                         <LoadingSpinner />
                     </div>
                 )}

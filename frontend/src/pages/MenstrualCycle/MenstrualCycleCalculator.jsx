@@ -5,7 +5,8 @@ import { authService } from '../../services/authService';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import Navbar from '../../components/layout/Navbar/Navbar';
-import './MenstrualCycleCalculator.css';
+import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
+import styles from './MenstrualCycleCalculator.module.css';
 
 const MenstrualCycleCalculator = () => {
     const { user, isAuthenticated } = useAuth();
@@ -211,17 +212,17 @@ const MenstrualCycleCalculator = () => {
     };
 
     return (
-        <div className="menstrual-cycle-page">
+        <div className={styles.menstrualCyclePage}>
             <Navbar />
-            <div className="menstrual-cycle-container">
-                <h1 className="page-title">Tính chu kỳ kinh nguyệt</h1>
+            <div className={styles.menstrualCycleContainer}>
+                <h1 className={styles.pageTitle}>Tính chu kỳ kinh nguyệt</h1>
 
-                <div className="menstrual-cycle-content">
-                    <div className="calculator-section">
-                        <div className="calculator-form-container">
+                <div className={styles.menstrualCycleContent}>
+                    <div className={styles.calculatorSection}>
+                        <div className={styles.calculatorFormContainer}>
                             <h2>Nhập thông tin chu kỳ</h2>
-                            <form onSubmit={handleCalculate} className="calculator-form">
-                                <div className="form-group">
+                            <form onSubmit={handleCalculate} className={styles.calculatorForm}>
+                                <div className={styles.formGroup}>
                                     <label htmlFor="startDate">Ngày bắt đầu chu kỳ gần nhất</label>
                                     <input
                                         type="date"
@@ -237,11 +238,11 @@ const MenstrualCycleCalculator = () => {
                                             });
                                         }}
                                         max={new Date().toISOString().split('T')[0]}
-                                        className="date-input"
+                                        className={styles.dateInput}
                                     />
                                 </div>
 
-                                <div className="form-group">
+                                <div className={styles.formGroup}>
                                     <label htmlFor="numberOfDays">Số ngày hành kinh</label>
                                     <input
                                         type="number"
@@ -255,7 +256,7 @@ const MenstrualCycleCalculator = () => {
                                     />
                                 </div>
 
-                                <div className="form-group">
+                                <div className={styles.formGroup}>
                                     <label htmlFor="cycleLength">Độ dài chu kỳ (ngày)</label>
                                     <input
                                         type="number"
@@ -267,66 +268,73 @@ const MenstrualCycleCalculator = () => {
                                         max="45"
                                         required
                                     />
-                                    <small className="form-text">
+                                    <small className={styles.formText}>
                                         Thông thường từ 21-35 ngày (trung bình 28 ngày)
                                     </small>
                                 </div>
 
-                                <div className="form-actions">
+                                <div className={styles.formActions}>
                                     <button
                                         type="submit"
-                                        className="btn btn-primary"
+                                        className={styles.btnPrimary}
                                         disabled={loading}
                                     >
-                                        {loading ? 'Đang tính...' : 'Tính toán'}
+                                        {loading ? (
+                                            <>
+                                                <svg className={styles.spinner} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <path d="M21 12a9 9 0 11-6.219-8.56"></path>
+                                                </svg>
+                                                Đang tính...
+                                            </>
+                                        ) : 'Tính toán'}
                                     </button>
                                 </div>
                             </form>
                         </div>
 
                         {calculationResult && (
-                            <div className="calculation-result">
+                            <div className={styles.calculationResult}>
                                 <h2>Kết quả tính toán</h2>
-                                <div className="result-card">
-                                    <div className="result-item">
-                                        <span className="result-label">Ngày hành kinh:</span>
-                                        <span className="result-value">
+                                <div className={styles.resultCard}>
+                                    <div className={styles.resultItem}>
+                                        <span className={styles.resultLabel}>Ngày hành kinh:</span>
+                                        <span className={styles.resultValue}>
                                             {formatDate(calculationResult.startDate)} - {formatDate(calculationResult.endDate)}
                                         </span>
                                     </div>
 
-                                    <div className="result-item">
-                                        <span className="result-label">Ngày rụng trứng dự kiến:</span>
-                                        <span className="result-value highlight">
+                                    <div className={styles.resultItem}>
+                                        <span className={styles.resultLabel}>Ngày rụng trứng dự kiến:</span>
+                                        <span className={`${styles.resultValue} ${styles.highlight}`}>
                                             {formatDate(calculationResult.ovulationDate)}
                                         </span>
                                     </div>
 
-                                    <div className="result-item">
-                                        <span className="result-label">Khoảng thời gian dễ thụ thai:</span>
-                                        <span className="result-value">
+                                    <div className={styles.resultItem}>
+                                        <span className={styles.resultLabel}>Khoảng thời gian dễ thụ thai:</span>
+                                        <span className={styles.resultValue}>
                                             {formatDate(calculationResult.fertileStart)} - {formatDate(calculationResult.fertileEnd)}
                                         </span>
                                     </div>
 
-                                    <div className="result-item">
-                                        <span className="result-label">Chu kỳ tiếp theo dự kiến bắt đầu:</span>
-                                        <span className="result-value">
+                                    <div className={styles.resultItem}>
+                                        <span className={styles.resultLabel}>Chu kỳ tiếp theo dự kiến bắt đầu:</span>
+                                        <span className={styles.resultValue}>
                                             {formatDate(calculationResult.nextCycleDate)}
                                         </span>
                                     </div>
 
                                     {calculationResult.pregnancyProbability !== undefined && (
-                                        <div className="result-item">
-                                            <span className="result-label">Xác suất mang thai hiện tại:</span>
-                                            <span className="result-value highlight">
+                                        <div className={styles.resultItem}>
+                                            <span className={styles.resultLabel}>Xác suất mang thai hiện tại:</span>
+                                            <span className={`${styles.resultValue} ${styles.highlight}`}>
                                                 {calculationResult.pregnancyProbability}%
                                             </span>
                                         </div>
                                     )}
                                 </div>
 
-                                <div className="result-note">
+                                <div className={styles.resultNote}>
                                     <p>
                                         <strong>Lưu ý:</strong> Các kết quả tính toán chỉ mang tính tham khảo.
                                         Chu kỳ kinh nguyệt của mỗi người có thể thay đổi do nhiều yếu tố như stress,
@@ -337,39 +345,54 @@ const MenstrualCycleCalculator = () => {
                         )}
                     </div>
 
-                    <div className="history-section">
+                    <div className={styles.historySection}>
                         <h2>Lịch sử chu kỳ</h2>
 
                         {!isAuthenticated ? (
-                            <div className="auth-prompt">
+                            <div className={styles.authPrompt}>
                                 <p>Vui lòng đăng nhập để xem lịch sử chu kỳ</p>
                             </div>
                         ) : loading ? (
-                            <div className="loading">Đang tải...</div>
+                            <div className={styles.loading}>
+                                <LoadingSpinner />
+                            </div>
                         ) : cycles.length === 0 ? (
-                            <div className="empty-history">
+                            <div className={styles.emptyHistory}>
                                 <p>Chưa có chu kỳ nào được lưu</p>
                             </div>
                         ) : (
-                            <div className="cycle-history-list">
+                            <div className={styles.cycleHistoryList}>
                                 {cycles.map(cycle => (
                                     <div
                                         key={cycle.id}
-                                        className={`cycle-item ${selectedCycle && selectedCycle.id === cycle.id ? 'active' : ''}`}
+                                        className={`${styles.cycleItem} ${selectedCycle && selectedCycle.id === cycle.id ? styles.active : ''}`}
                                         onClick={() => handleViewCycleDetails(cycle)}
                                     >
-                                        <div className="cycle-date">
+                                        <div className={styles.cycleDate}>
                                             {formatDate(cycle.startDate)}
                                         </div>
-                                        <div className="cycle-info">
+                                        <div className={styles.cycleInfo}>
                                             <span>{cycle.numberOfDays} ngày</span>
                                             <span>Chu kỳ {cycle.cycleLength} ngày</span>
                                         </div>
-                                        <div className="cycle-reminder-status">
+                                        <div className={styles.cycleReminderStatus}>
                                             {cycle.reminderEnabled ? (
-                                                <span className="reminder-enabled">⏰</span>
+                                                <span className={styles.reminderEnabled}>
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                                    </svg>
+                                                </span>
                                             ) : (
-                                                <span className="reminder-disabled">🔕</span>
+                                                <span className={styles.reminderDisabled}>
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                                        <path d="M18.63 13A17.89 17.89 0 0 1 18 8"></path>
+                                                        <path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"></path>
+                                                        <path d="M18 8a6 6 0 0 0-9.33-5"></path>
+                                                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                                                    </svg>
+                                                </span>
                                             )}
                                         </div>
                                     </div>
@@ -378,58 +401,61 @@ const MenstrualCycleCalculator = () => {
                         )}
 
                         {selectedCycle && (
-                            <div className="cycle-details">
-                                <div className="details-header">
+                            <div className={styles.cycleDetails}>
+                                <div className={styles.detailsHeader}>
                                     <h3>Chi tiết chu kỳ</h3>
                                     <button
-                                        className="close-details-btn"
+                                        className={styles.closeDetailsBtn}
                                         onClick={handleCloseDetails}
                                     >
-                                        ✕
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
                                     </button>
                                 </div>
 
-                                <div className="details-content">
-                                    <div className="detail-item">
-                                        <span className="detail-label">Ngày bắt đầu:</span>
-                                        <span className="detail-value">{formatDate(selectedCycle.startDate)}</span>
+                                <div className={styles.detailsContent}>
+                                    <div className={styles.detailItem}>
+                                        <span className={styles.detailLabel}>Ngày bắt đầu:</span>
+                                        <span className={styles.detailValue}>{formatDate(selectedCycle.startDate)}</span>
                                     </div>
 
-                                    <div className="detail-item">
-                                        <span className="detail-label">Số ngày hành kinh:</span>
-                                        <span className="detail-value">{selectedCycle.numberOfDays} ngày</span>
+                                    <div className={styles.detailItem}>
+                                        <span className={styles.detailLabel}>Số ngày hành kinh:</span>
+                                        <span className={styles.detailValue}>{selectedCycle.numberOfDays} ngày</span>
                                     </div>
 
-                                    <div className="detail-item">
-                                        <span className="detail-label">Độ dài chu kỳ:</span>
-                                        <span className="detail-value">{selectedCycle.cycleLength} ngày</span>
+                                    <div className={styles.detailItem}>
+                                        <span className={styles.detailLabel}>Độ dài chu kỳ:</span>
+                                        <span className={styles.detailValue}>{selectedCycle.cycleLength} ngày</span>
                                     </div>
 
-                                    <div className="detail-item">
-                                        <span className="detail-label">Ngày rụng trứng:</span>
-                                        <span className="detail-value highlight">
+                                    <div className={styles.detailItem}>
+                                        <span className={styles.detailLabel}>Ngày rụng trứng:</span>
+                                        <span className={`${styles.detailValue} ${styles.highlight}`}>
                                             {formatDate(selectedCycle.ovulationDate)}
                                         </span>
                                     </div>
 
-                                    <div className="detail-item">
-                                        <span className="detail-label">Xác suất mang thai:</span>
-                                        <span className="detail-value">
+                                    <div className={styles.detailItem}>
+                                        <span className={styles.detailLabel}>Xác suất mang thai:</span>
+                                        <span className={styles.detailValue}>
                                             {selectedCycle.pregnancyProbability}%
                                         </span>
                                     </div>
 
-                                    <div className="detail-item">
-                                        <span className="detail-label">Nhắc nhở:</span>
-                                        <span className="detail-value">
+                                    <div className={styles.detailItem}>
+                                        <span className={styles.detailLabel}>Nhắc nhở:</span>
+                                        <span className={styles.detailValue}>
                                             {selectedCycle.reminderEnabled ? 'Đã bật' : 'Đã tắt'}
                                         </span>
                                     </div>
                                 </div>
 
-                                <div className="details-actions">
+                                <div className={styles.detailsActions}>
                                     <button
-                                        className={`btn ${selectedCycle.reminderEnabled ? 'btn-warning' : 'btn-success'}`}
+                                        className={`${styles.btn} ${selectedCycle.reminderEnabled ? styles.btnWarning : styles.btnSuccess}`}
                                         onClick={() => handleToggleReminder(selectedCycle.id, selectedCycle.reminderEnabled)}
                                         disabled={loading}
                                     >
@@ -437,7 +463,7 @@ const MenstrualCycleCalculator = () => {
                                     </button>
 
                                     <button
-                                        className="btn btn-danger"
+                                        className={`${styles.btn} ${styles.btnDanger}`}
                                         onClick={() => handleDeleteCycle(selectedCycle.id)}
                                         disabled={loading}
                                     >

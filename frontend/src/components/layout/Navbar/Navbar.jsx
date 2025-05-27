@@ -5,7 +5,7 @@ import LoginForm from "../../auth/Login/LoginForm";
 import { useAuth } from "../../../contexts/AuthContext";
 import { authService } from "../../../services/authService";
 import ForgotPassword from "../../auth/ForgotPassword/ForgotPassword";
-import "./Navbar.css";
+import styles from "./Navbar.module.css";
 
 const Navbar = () => {
     const [searchQuery, setSearchQuery] = useState("");
@@ -13,12 +13,11 @@ const Navbar = () => {
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [showUserDropdown, setShowUserDropdown] = useState(false);
     const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+    const [showMobileMenu, setShowMobileMenu] = useState(false);
     const dropdownRef = useRef(null);
 
-    // Sử dụng AuthContext
     const { user, logout, isAuthenticated } = useAuth();
 
-    // Đóng dropdown khi click ra ngoài
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -40,11 +39,13 @@ const Navbar = () => {
     const handleLogin = () => {
         setShowLoginModal(true);
         setShowRegisterModal(false);
+        setShowMobileMenu(false);
     };
 
     const handleRegister = () => {
         setShowRegisterModal(true);
         setShowLoginModal(false);
+        setShowMobileMenu(false);
     };
 
     const handleCloseModals = () => {
@@ -63,12 +64,11 @@ const Navbar = () => {
     };
 
     const handleLoginSuccess = () => {
-        // Modal sẽ tự động đóng và navbar sẽ update qua AuthContext
         setShowLoginModal(false);
     };
 
     const handleOpenForgotPassword = () => {
-        setShowLoginModal(false); // Đóng modal login
+        setShowLoginModal(false);
         setShowRegisterModal(false);
         setShowForgotPasswordModal(true);
     };
@@ -91,108 +91,187 @@ const Navbar = () => {
         setShowUserDropdown(!showUserDropdown);
     };
 
-    // Get display name - ưu tiên fullName, fallback về username
+    const toggleMobileMenu = () => {
+        setShowMobileMenu(!showMobileMenu);
+    };
+
     const getDisplayName = (user) => {
         return user?.fullName || user?.username || 'User';
     };
 
     return (
         <>
-            <nav className="navbar">
-                <div className="navbar-container">
+            <nav className={styles.navbar}>
+                <div className={styles.navbarContainer}>
                     {/* Logo */}
-                    <div className="navbar-logo">
-                        <Link to="/" className="navbar-logo">
-                            <img src="/logo.png" alt="HealApp" className="logo-img" />
-                            <span className="logo-text">HealApp</span>
+                    <div className={styles.navbarLogo}>
+                        <Link to="/" className={styles.logoLink}>
+                            <img src="/logo.png" alt="HealApp" className={styles.logoImg} />
+                            <span className={styles.logoText}>HealApp</span>
                         </Link>
                     </div>
 
                     {/* Search Bar */}
-                    <div className="navbar-search">
-                        <form onSubmit={handleSearch} className="search-form">
+                    <div className={styles.navbarSearch}>
+                        <form onSubmit={handleSearch} className={styles.searchForm}>
                             <input
                                 type="text"
                                 placeholder="Tìm kiếm dịch vụ, bài viết..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="search-input"
+                                className={styles.searchInput}
                             />
-                            <button type="submit" className="search-button">
-                                <i className="search-icon">🔍</i>
+                            <button type="submit" className={styles.searchButton}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <path d="M21 21l-4.35-4.35"></path>
+                                </svg>
                             </button>
                         </form>
                     </div>
 
                     {/* Navigation Menu */}
-                    <div className="navbar-menu">
-                        <ul className="nav-links">
-                            <li><Link to="/sti-testing" className="nav-link">Xét nghiệm STIs</Link></li>
-                            <li><Link to="/consultation" className="nav-link">Tư vấn</Link></li>
-                            <li><Link to="/menstrual-cycle" className="nav-link">Tính chu kỳ kinh nguyệt</Link></li>
-                            <li><Link to="/blog" className="nav-link">Blog</Link></li>
-                            <li><Link to="/questions" className="nav-link">Đặt câu hỏi</Link></li>
+                    <div className={`${styles.navbarMenu} ${showMobileMenu ? styles.open : ''}`}>
+                        <ul className={styles.navLinks}>
+                            <li>
+                                <Link to="/sti-testing" className={styles.navLink} onClick={() => setShowMobileMenu(false)}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    Xét nghiệm STIs
+                                </Link>
+                            </li>
+                            <li>
+                                <Link to="/consultation" className={styles.navLink} onClick={() => setShowMobileMenu(false)}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                    Tư vấn
+                                </Link>
+                            </li>
+                            <li>
+                                <Link to="/menstrual-cycle" className={styles.navLink} onClick={() => setShowMobileMenu(false)}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                    Chu kỳ kinh nguyệt
+                                </Link>
+                            </li>
+                            <li>
+                                <Link to="/blog" className={styles.navLink} onClick={() => setShowMobileMenu(false)}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14,2 14,8 20,8"></polyline>
+                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                        <polyline points="10,9 9,9 8,9"></polyline>
+                                    </svg>
+                                    Blog
+                                </Link>
+                            </li>
+                            <li>
+                                <Link to="/questions" className={styles.navLink} onClick={() => setShowMobileMenu(false)}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <path d="M9,9a3,3 0 1,1 6,0c0,2 -3,3 -3,3"></path>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                    </svg>
+                                    Đặt câu hỏi
+                                </Link>
+                            </li>
                         </ul>
+
+                        {/* Mobile Auth Buttons */}
+                        {!isAuthenticated && (
+                            <div className={styles.mobileAuth}>
+                                <button className={styles.btnLogin} onClick={handleLogin}>
+                                    Đăng nhập
+                                </button>
+                                <button className={styles.btnRegister} onClick={handleRegister}>
+                                    Đăng ký
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Auth Section */}
-                    <div className="navbar-auth">
+                    <div className={styles.navbarAuth}>
                         {isAuthenticated && user ? (
-                            // User đã đăng nhập - hiển thị avatar và dropdown
-                            <div className="user-menu" ref={dropdownRef}>
+                            <div className={styles.userMenu} ref={dropdownRef}>
                                 <button
-                                    className="user-avatar-btn"
+                                    className={styles.userAvatarBtn}
                                     onClick={toggleUserDropdown}
                                 >
                                     <img
                                         src={authService.getAvatarUrl(user.avatar)}
                                         alt={getDisplayName(user)}
-                                        className="user-avatar"
+                                        className={styles.userAvatar}
                                         onError={(e) => {
                                             e.target.src = authService.getAvatarUrl('/img/avatar/default.jpg');
                                         }}
                                     />
-                                    <span className="user-name">{getDisplayName(user)}</span>
-                                    <span className="dropdown-arrow">▼</span>
+                                    <span className={styles.userName}>{getDisplayName(user)}</span>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={styles.dropdownArrow}>
+                                        <polyline points="6,9 12,15 18,9"></polyline>
+                                    </svg>
                                 </button>
 
                                 {showUserDropdown && (
-                                    <div className="user-dropdown">
-                                        <div className="dropdown-header">
+                                    <div className={styles.userDropdown}>
+                                        <div className={styles.dropdownHeader}>
                                             <img
                                                 src={authService.getAvatarUrl(user.avatar)}
                                                 alt={getDisplayName(user)}
-                                                className="dropdown-avatar"
+                                                className={styles.dropdownAvatar}
                                                 onError={(e) => {
                                                     e.target.src = authService.getAvatarUrl('/img/avatar/default.jpg');
                                                 }}
                                             />
-                                            <div className="dropdown-user-info">
+                                            <div className={styles.dropdownUserInfo}>
                                                 <h4>{getDisplayName(user)}</h4>
                                                 <p>{user.email}</p>
-                                                {user.role && <span className="user-role">{user.role}</span>}
+                                                {user.role && <span className={styles.userRole}>{user.role}</span>}
                                             </div>
                                         </div>
 
-                                        <div className="dropdown-menu">
-                                            <Link to="/profile" className="dropdown-item" onClick={() => setShowUserDropdown(false)}>
-                                                <span className="dropdown-icon">👤</span>
+                                        <div className={styles.dropdownMenu}>
+                                            <Link to="/profile" className={styles.dropdownItem} onClick={() => setShowUserDropdown(false)}>
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                                    <circle cx="12" cy="7" r="4"></circle>
+                                                </svg>
                                                 Thông tin cá nhân
                                             </Link>
-                                            <Link to="/profile/security" className="dropdown-item" onClick={() => setShowUserDropdown(false)}>
-                                                <span className="dropdown-icon">⚙️</span>
+                                            <Link to="/profile/security" className={styles.dropdownItem} onClick={() => setShowUserDropdown(false)}>
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <circle cx="12" cy="12" r="3"></circle>
+                                                    <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
+                                                </svg>
                                                 Bảo mật
                                             </Link>
-                                            <Link to="/profile/menstrual-history" className="dropdown-item" onClick={() => setShowUserDropdown(false)}>
-                                                <span className="dropdown-icon">📋</span>
+                                            <Link to="/profile/menstrual-history" className={styles.dropdownItem} onClick={() => setShowUserDropdown(false)}>
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                                </svg>
                                                 Lịch sử chu kỳ
                                             </Link>
-                                            <hr className="dropdown-divider" />
+                                            <hr className={styles.dropdownDivider} />
                                             <button
                                                 onClick={handleLogout}
-                                                className="dropdown-item logout-btn"
+                                                className={`${styles.dropdownItem} ${styles.logoutBtn}`}
                                             >
-                                                <span className="dropdown-icon">🚪</span>
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                                    <polyline points="16,17 21,12 16,7"></polyline>
+                                                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                                                </svg>
                                                 Đăng xuất
                                             </button>
                                         </div>
@@ -200,24 +279,32 @@ const Navbar = () => {
                                 )}
                             </div>
                         ) : (
-                            // User chưa đăng nhập - hiển thị nút đăng nhập/đăng ký
-                            <>
-                                <button className="btn-login" onClick={handleLogin}>
+                            <div className={styles.authButtons}>
+                                <button className={styles.btnLogin} onClick={handleLogin}>
                                     Đăng nhập
                                 </button>
-                                <button className="btn-register" onClick={handleRegister}>
+                                <button className={styles.btnRegister} onClick={handleRegister}>
                                     Đăng ký
                                 </button>
-                            </>
+                            </div>
                         )}
                     </div>
+
+                    {/* Mobile Menu Toggle */}
+                    <button className={styles.mobileToggle} onClick={toggleMobileMenu}>
+                        <span className={`${styles.hamburger} ${showMobileMenu ? styles.open : ''}`}>
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </span>
+                    </button>
                 </div>
             </nav>
 
-            {/* Register Modal */}
+            {/* Modals */}
             {showRegisterModal && (
-                <div className="modal-overlay" onClick={handleCloseModals}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className={styles.modalOverlay} onClick={handleCloseModals}>
+                    <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
                         <RegisterForm
                             onClose={handleCloseModals}
                             onSwitchToLogin={handleSwitchToLogin}
@@ -226,10 +313,9 @@ const Navbar = () => {
                 </div>
             )}
 
-            {/* Login Modal */}
             {showLoginModal && (
-                <div className="modal-overlay" onClick={handleCloseModals}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className={styles.modalOverlay} onClick={handleCloseModals}>
+                    <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
                         <LoginForm
                             onClose={handleCloseModals}
                             onSwitchToRegister={handleRegister}
@@ -240,10 +326,9 @@ const Navbar = () => {
                 </div>
             )}
 
-            {/* Forgot Password Modal */}
             {showForgotPasswordModal && (
-                <div className="modal-overlay" onClick={handleCloseForgotPassword}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className={styles.modalOverlay} onClick={handleCloseForgotPassword}>
+                    <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
                         <ForgotPassword
                             onClose={handleCloseForgotPassword}
                             onSwitchToLogin={handleSwitchToLoginFromForgot}

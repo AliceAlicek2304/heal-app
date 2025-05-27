@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { chatService } from '../../services/chatService';
-import './ChatBot.css';
-import { FaRobot, FaTimes, FaPaperPlane, FaTrash } from 'react-icons/fa';
+import styles from './ChatBot.module.css';
 import ReactMarkdown from 'react-markdown';
 
 const ChatBot = () => {
@@ -14,19 +13,16 @@ const ChatBot = () => {
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
 
-    // Lấy lịch sử chat khi component mount và người dùng đã đăng nhập
     useEffect(() => {
         if (isAuthenticated && isOpen) {
             fetchChatHistory();
         }
     }, [isAuthenticated, isOpen]);
 
-    // Tự động cuộn xuống cuối khi có tin nhắn mới
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
 
-    // Focus vào input khi mở chatbot
     useEffect(() => {
         if (isOpen && inputRef.current) {
             inputRef.current.focus();
@@ -47,7 +43,6 @@ const ChatBot = () => {
 
             if (response.success && response.data && response.data.length > 0) {
                 const history = response.data[0].history || [];
-                // Chuyển đổi lịch sử thành định dạng tin nhắn
                 const formattedHistory = history.map(item => [
                     { text: item.question, isUser: true },
                     { text: item.answer, isUser: false }
@@ -87,22 +82,16 @@ const ChatBot = () => {
         const userMessage = input.trim();
         setInput('');
 
-        // Thêm tin nhắn người dùng vào danh sách
         setMessages(prev => [...prev, { text: userMessage, isUser: true }]);
-
-        // Hiển thị trạng thái đang gửi
         setIsLoading(true);
 
         try {
-            // Gọi API
             const response = await chatService.sendMessage(userMessage);
             setIsLoading(false);
 
             if (response.success && response.data) {
-                // Thêm tin nhắn từ bot vào danh sách
                 setMessages(prev => [...prev, { text: response.data.answer, isUser: false }]);
             } else {
-                // Hiển thị thông báo lỗi
                 setMessages(prev => [...prev, {
                     text: "Xin lỗi, tôi không thể trả lời ngay lúc này. Vui lòng thử lại sau.",
                     isUser: false
@@ -119,68 +108,147 @@ const ChatBot = () => {
     };
 
     return (
-        <div className="chatbot-container">
-            {/* Nút toggle chatbot */}
+        <div className={styles.chatbotContainer}>
             <button
-                className={`chatbot-toggle ${isOpen ? 'open' : ''}`}
+                className={`${styles.chatbotToggle} ${isOpen ? styles.open : ''}`}
                 onClick={toggleChat}
                 aria-label="Toggle Chatbot"
             >
-                {isOpen ? <FaTimes /> : <FaRobot />}
+                <div className={styles.toggleIcon}>
+                    {isOpen ? (
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    ) : (
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            <circle cx="9" cy="10" r="1"></circle>
+                            <circle cx="15" cy="10" r="1"></circle>
+                            <path d="M9 14s1 1 3 1 3-1 3-1"></path>
+                        </svg>
+                    )}
+                </div>
+                <div className={styles.notification}>
+                    <span>AI</span>
+                </div>
             </button>
 
-            {/* Cửa sổ chat */}
-            <div className={`chatbot-window ${isOpen ? 'open' : ''}`}>
-                <div className="chatbot-header">
-                    <div className="chatbot-title">
-                        <FaRobot />
-                        <span>HealApp Assistant</span>
+            <div className={`${styles.chatbotWindow} ${isOpen ? styles.open : ''}`}>
+                <div className={styles.chatbotHeader}>
+                    <div className={styles.headerContent}>
+                        <div className={styles.botAvatar}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="8" r="7"></circle>
+                                <polyline points="8.21,13.89 7,23 12,20 17,23 15.79,13.88"></polyline>
+                            </svg>
+                        </div>
+                        <div className={styles.chatbotTitle}>
+                            <h3>HealApp Assistant</h3>
+                            <p>Trợ lý AI chăm sóc sức khỏe</p>
+                        </div>
                     </div>
-                    {isAuthenticated && messages.length > 0 && (
+                    <div className={styles.headerActions}>
+                        {isAuthenticated && messages.length > 0 && (
+                            <button
+                                className={styles.clearHistoryBtn}
+                                onClick={handleClearHistory}
+                                disabled={isLoading}
+                                aria-label="Clear Chat History"
+                                title="Xóa lịch sử chat"
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <polyline points="3,6 5,6 21,6"></polyline>
+                                    <path d="M19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1,2-2h4a2,2 0 0,1,2,2v2"></path>
+                                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                                </svg>
+                            </button>
+                        )}
                         <button
-                            className="clear-history-btn"
-                            onClick={handleClearHistory}
-                            disabled={isLoading}
-                            aria-label="Clear Chat History"
+                            className={styles.closeBtn}
+                            onClick={toggleChat}
+                            aria-label="Close Chatbot"
                         >
-                            <FaTrash />
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
                         </button>
-                    )}
-                    <button
-                        className="close-btn"
-                        onClick={toggleChat}
-                        aria-label="Close Chatbot"
-                    >
-                        <FaTimes />
-                    </button>
+                    </div>
                 </div>
 
-                <div className="chatbot-messages">
+                <div className={styles.chatbotMessages}>
                     {messages.length === 0 ? (
-                        <div className="welcome-message">
+                        <div className={styles.welcomeMessage}>
+                            <div className={styles.welcomeIcon}>
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                    <circle cx="9" cy="10" r="1"></circle>
+                                    <circle cx="15" cy="10" r="1"></circle>
+                                    <path d="M9 14s1 1 3 1 3-1 3-1"></path>
+                                </svg>
+                            </div>
                             <h3>Chào mừng đến với HealApp Assistant!</h3>
                             <p>Tôi có thể giúp gì cho bạn về sức khỏe hoặc cách sử dụng HealApp?</p>
+                            <div className={styles.quickActions}>
+                                <button onClick={() => setInput('Cách sử dụng HealApp?')} className={styles.quickBtn}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                        <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
+                                    </svg>
+                                    Cách sử dụng HealApp?
+                                </button>
+                                <button onClick={() => setInput('Lời khuyên sức khỏe hàng ngày')} className={styles.quickBtn}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                                    </svg>
+                                    Lời khuyên sức khỏe
+                                </button>
+                            </div>
                         </div>
                     ) : (
                         messages.map((msg, index) => (
                             <div
                                 key={index}
-                                className={`message ${msg.isUser ? 'user-message' : 'bot-message'}`}
+                                className={`${styles.message} ${msg.isUser ? styles.userMessage : styles.botMessage}`}
                             >
-                                {msg.isUser ? (
-                                    <div className="message-content">{msg.text}</div>
-                                ) : (
-                                    <div className="message-content">
-                                        <ReactMarkdown>{msg.text}</ReactMarkdown>
+                                {!msg.isUser && (
+                                    <div className={styles.messageAvatar}>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <circle cx="12" cy="8" r="7"></circle>
+                                            <polyline points="8.21,13.89 7,23 12,20 17,23 15.79,13.88"></polyline>
+                                        </svg>
                                     </div>
                                 )}
+                                <div className={styles.messageContent}>
+                                    {msg.isUser ? (
+                                        <div className={styles.messageText}>{msg.text}</div>
+                                    ) : (
+                                        <div className={styles.messageText}>
+                                            <ReactMarkdown>{msg.text}</ReactMarkdown>
+                                        </div>
+                                    )}
+                                    <div className={styles.messageTime}>
+                                        {new Date().toLocaleTimeString('vi-VN', {
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        })}
+                                    </div>
+                                </div>
                             </div>
                         ))
                     )}
                     {isLoading && (
-                        <div className="message bot-message">
-                            <div className="message-content loading">
-                                <div className="typing-indicator">
+                        <div className={`${styles.message} ${styles.botMessage}`}>
+                            <div className={styles.messageAvatar}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="8" r="7"></circle>
+                                    <polyline points="8.21,13.89 7,23 12,20 17,23 15.79,13.88"></polyline>
+                                </svg>
+                            </div>
+                            <div className={`${styles.messageContent} ${styles.loading}`}>
+                                <div className={styles.typingIndicator}>
                                     <span></span>
                                     <span></span>
                                     <span></span>
@@ -191,22 +259,29 @@ const ChatBot = () => {
                     <div ref={messagesEndRef} />
                 </div>
 
-                <form className="chatbot-input" onSubmit={handleSubmit}>
-                    <input
-                        type="text"
-                        value={input}
-                        onChange={handleInputChange}
-                        placeholder="Nhập câu hỏi của bạn..."
-                        disabled={isLoading}
-                        ref={inputRef}
-                    />
-                    <button
-                        type="submit"
-                        disabled={isLoading || !input.trim()}
-                        aria-label="Send Message"
-                    >
-                        <FaPaperPlane />
-                    </button>
+                <form className={styles.chatbotInput} onSubmit={handleSubmit}>
+                    <div className={styles.inputWrapper}>
+                        <input
+                            type="text"
+                            value={input}
+                            onChange={handleInputChange}
+                            placeholder="Nhập câu hỏi của bạn..."
+                            disabled={isLoading}
+                            ref={inputRef}
+                            className={styles.messageInput}
+                        />
+                        <button
+                            type="submit"
+                            disabled={isLoading || !input.trim()}
+                            className={styles.sendBtn}
+                            aria-label="Send Message"
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22,2 15,22 11,13 2,9"></polygon>
+                            </svg>
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>

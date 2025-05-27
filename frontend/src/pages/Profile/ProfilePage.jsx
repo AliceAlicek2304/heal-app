@@ -9,9 +9,10 @@ import BlogHistory from '../../components/profile/BlogHistory';
 import MyQuestions from '../../components/profile/MyQuestions';
 import ConsultationHistory from '../../components/profile/ConsultationHistory';
 import STIHistory from '../../components/profile/STIHistory';
+import ManagerQuestion from '../../components/profile/ManagerQuestion';
 import Navbar from '../../components/layout/Navbar/Navbar';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
-import './ProfilePage.css';
+import styles from './ProfilePage.module.css';
 
 const ProfilePage = () => {
     const { tab } = useParams();
@@ -29,9 +30,9 @@ const ProfilePage = () => {
     // Trong khi đang kiểm tra auth, hiển thị loading
     if (isLoading) {
         return (
-            <div className="profile-page-loading">
+            <div className={styles.profilePageLoading}>
                 <Navbar />
-                <div className="profile-loading-inner">
+                <div className={styles.profileLoadingInner}>
                     <LoadingSpinner />
                     <p>Đang tải thông tin tài khoản…</p>
                 </div>
@@ -39,56 +40,79 @@ const ProfilePage = () => {
         );
     }
 
+    const renderContent = () => {
+        switch (activeTab) {
+            case 'personal-info':
+                return (
+                    <div className={styles.contentSection}>
+                        <PersonalInfoForm />
+                    </div>
+                );
+            case 'security':
+                return (
+                    <div className={styles.contentSection}>
+                        <SecurityForm />
+                    </div>
+                );
+            case 'consultation-history':
+                return (
+                    <div className={styles.contentSection}>
+                        <ConsultationHistory />
+                    </div>
+                );
+            case 'sti-history':
+                return (
+                    <div className={styles.contentSection}>
+                        <STIHistory />
+                    </div>
+                );
+            case 'menstrual-history':
+                return (
+                    <div className={styles.contentSection}>
+                        <MenstrualHistoryComponent />
+                    </div>
+                );
+            case 'blog-history':
+                return (
+                    <div className={styles.contentSection}>
+                        <BlogHistory />
+                    </div>
+                );
+            case 'my-questions':
+                return (
+                    <div className={styles.contentSection}>
+                        <MyQuestions />
+                    </div>
+                );
+            case 'manage-questions':
+                return (
+                    <div className={styles.contentSection}>
+                        <ManagerQuestion />
+                    </div>
+                );
+            default:
+                return (
+                    <div className={styles.contentSection}>
+                        <div className={styles.notFound}>
+                            <h3>Trang không tồn tại</h3>
+                            <p>Trang bạn đang tìm kiếm không tồn tại.</p>
+                        </div>
+                    </div>
+                );
+        }
+    };
+
     return (
-        <div className="profile-page">
+        <div className={styles.profilePage}>
             <Navbar />
-            <div className="profile-container">
-                <div className="profile-header">
-                    <h1>Thông tin tài khoản</h1>
-                </div>
+            <div className={styles.profileContainer}>
+                <div className={styles.profileContent}>
+                    <div className={styles.sidebar}>
+                        <SidebarNav activeTab={activeTab} />
+                    </div>
 
-                <div className="profile-content">
-                    <SidebarNav activeTab={activeTab} />
-
-                    <div className="content-area">
-                        {activeTab === 'personal-info' && (
-                            <div className="content-section">
-                                <h2>Thông tin cá nhân</h2>
-                                <PersonalInfoForm />
-                            </div>
-                        )}
-                        {activeTab === 'security' && (
-                            <div className="content-section">
-                                <h2>Bảo mật tài khoản</h2>
-                                <SecurityForm />
-                            </div>
-                        )}
-                        {activeTab === 'consultation-history' && (
-                            <div className="content-section">
-                                <ConsultationHistory />
-                            </div>
-                        )}
-                        {activeTab === 'sti-history' && (
-                            <div className="content-section">
-                                <STIHistory />
-                            </div>
-                        )}
-                        {activeTab === 'menstrual-history' && (
-                            <div className="content-section">
-                                <h2>Lịch sử chu kỳ kinh nguyệt</h2>
-                                <MenstrualHistoryComponent />
-                            </div>
-                        )}
-                        {activeTab === 'blog-history' && (
-                            <div className="content-section">
-                                <BlogHistory />
-                            </div>
-                        )}
-                        {activeTab === 'my-questions' && (
-                            <div className="content-section">
-                                <MyQuestions />
-                            </div>
-                        )}
+                    <div className={styles.contentArea}>
+                        {renderContent()}
                     </div>
                 </div>
             </div>

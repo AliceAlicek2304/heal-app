@@ -1,20 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import Navbar from '../../components/layout/Navbar/Navbar';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
 import LoginForm from '../../components/auth/Login/LoginForm';
 import RegisterForm from '../../components/auth/Register/RegisterForm';
 import { questionService } from '../../services/questionService';
 import { useAuthModal } from '../../hooks/useAuthModal';
-import './Questions.css';
+import styles from './Questions.module.css';
 
 const Questions = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
+    const toast = useToast();
     const [answeredQuestions, setAnsweredQuestions] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
     const [currentPage, setCurrentPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
 
@@ -48,11 +49,11 @@ const Questions = () => {
                 setAnsweredQuestions(response.data.content || []);
                 setTotalPages(response.data.totalPages || 0);
             } else {
-                setError(response.message || 'Không thể tải câu hỏi');
+                toast.error(response.message || 'Không thể tải câu hỏi');
             }
         } catch (error) {
             console.error('Error fetching questions:', error);
-            setError('Có lỗi xảy ra khi tải dữ liệu');
+            toast.error('Có lỗi xảy ra khi tải dữ liệu');
         } finally {
             setLoading(false);
         }
@@ -77,6 +78,8 @@ const Questions = () => {
     const handleLoginSuccess = () => {
         closeModals();
         // Nếu người dùng vừa đăng nhập, có thể refresh dữ liệu nếu cần
+        fetchAnsweredQuestions();
+        toast.success('Đăng nhập thành công!');
     };
 
     const truncateContent = (content, maxLength = 200) => {
@@ -102,34 +105,44 @@ const Questions = () => {
 
     // Handle click outside modal
     const handleModalBackdropClick = (e) => {
-        if (e.target.classList.contains('modal-backdrop')) {
+        if (e.target.classList.contains(styles.modalBackdrop)) {
             handleCloseModal();
         }
     };
 
     return (
-        <div className="questions-page">
+        <div className={styles.questionsPage}>
             <Navbar />
-            <div className="container">
-                <div className="questions-header">
+            <div className={styles.container}>
+                <div className={styles.questionsHeader}>
                     <h1>Câu hỏi y tế</h1>
                     <p>Đặt câu hỏi và nhận tư vấn từ các chuyên gia y tế</p>
 
-                    <div className="header-actions">
+                    <div className={styles.headerActions}>
                         <button
-                            className="btn btn-primary"
+                            className={styles.btnPrimary}
                             onClick={handleCreateQuestion}
                         >
-                            <i className="fas fa-plus"></i>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
                             {user ? 'Đặt câu hỏi mới' : 'Đăng nhập để đặt câu hỏi'}
                         </button>
 
                         {user && (
                             <button
-                                className="btn btn-secondary"
+                                className={styles.btnSecondary}
                                 onClick={handleViewMyQuestions}
                             >
-                                <i className="fas fa-list"></i>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                                </svg>
                                 Câu hỏi của tôi
                             </button>
                         )}
@@ -137,42 +150,37 @@ const Questions = () => {
                 </div>
 
                 {loading ? (
-                    <LoadingSpinner />
-                ) : error ? (
-                    <div className="error-message">
-                        <p>{error}</p>
-                        <button onClick={fetchAnsweredQuestions} className="retry-btn">
-                            Thử lại
-                        </button>
+                    <div className={styles.loadingContainer}>
+                        <LoadingSpinner />
                     </div>
                 ) : (
                     <>
-                        <div className="questions-section">
+                        <div className={styles.questionsSection}>
                             <h2>Câu hỏi đã được trả lời</h2>
 
                             {answeredQuestions.length > 0 ? (
-                                <div className="questions-list">
+                                <div className={styles.questionsList}>
                                     {answeredQuestions.map(question => (
                                         <div
                                             key={question.id}
-                                            className="question-card clickable"
+                                            className={styles.questionCard}
                                             onClick={() => handleOpenModal(question)}
                                         >
-                                            <div className="question-content">
+                                            <div className={styles.questionContent}>
                                                 <h3>{truncateContent(question.content, 100)}</h3>
-                                                <p className="question-answer">
+                                                <p className={styles.questionAnswer}>
                                                     {truncateContent(question.answer, 150)}
                                                     {question.answer && question.answer.length > 150 && (
-                                                        <span className="read-more"> ...xem thêm</span>
+                                                        <span className={styles.readMore}> ...xem thêm</span>
                                                     )}
                                                 </p>
                                             </div>
 
-                                            <div className="question-meta">
-                                                <span className="question-category">
+                                            <div className={styles.questionMeta}>
+                                                <span className={styles.questionCategory}>
                                                     {question.categoryName || 'Chưa phân loại'}
                                                 </span>
-                                                <span className="question-date">
+                                                <span className={styles.questionDate}>
                                                     {formatDate(question.createdAt)}
                                                 </span>
                                             </div>
@@ -180,19 +188,33 @@ const Questions = () => {
                                     ))}
                                 </div>
                             ) : (
-                                <div className="empty-state">
+                                <div className={styles.emptyState}>
+                                    <div className={styles.emptyIcon}>
+                                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="8" y1="12" x2="16" y2="12"></line>
+                                            <line x1="12" y1="16" x2="12" y2="16"></line>
+                                            <line x1="12" y1="8" x2="12" y2="8"></line>
+                                        </svg>
+                                    </div>
                                     <h3>Chưa có câu hỏi nào được trả lời</h3>
                                     <p>Hãy đặt câu hỏi đầu tiên để nhận tư vấn từ chuyên gia!</p>
+                                    <button 
+                                        className={styles.btnPrimary}
+                                        onClick={handleCreateQuestion}
+                                    >
+                                        Đặt câu hỏi ngay
+                                    </button>
                                 </div>
                             )}
                         </div>
 
                         {totalPages > 1 && (
-                            <div className="pagination">
+                            <div className={styles.pagination}>
                                 {Array.from({ length: totalPages }).map((_, i) => (
                                     <button
                                         key={i}
-                                        className={i === currentPage ? 'active' : ''}
+                                        className={i === currentPage ? styles.active : ''}
                                         onClick={() => setCurrentPage(i)}
                                     >
                                         {i + 1}
@@ -207,53 +229,59 @@ const Questions = () => {
             {/* Question Detail Modal */}
             {modalOpen && selectedQuestion && (
                 <div
-                    className="modal-backdrop"
+                    className={styles.modalBackdrop}
                     onClick={handleModalBackdropClick}
                 >
-                    <div className="question-modal">
-                        <div className="modal-header">
+                    <div className={styles.questionModal} onClick={(e) => e.stopPropagation()}>
+                        <div className={styles.modalHeader}>
                             <h3>Chi tiết câu hỏi</h3>
                             <button
-                                className="modal-close-btn"
+                                className={styles.modalCloseBtn}
                                 onClick={handleCloseModal}
                                 aria-label="Đóng"
                             >
-                                <i className="fas fa-times"></i>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
                             </button>
                         </div>
 
-                        <div className="modal-body">
-                            <div className="question-detail-section">
-                                <div className="detail-row">
+                        <div className={styles.modalBody}>
+                            <div className={styles.questionDetailSection}>
+                                <div className={styles.detailRow}>
                                     <strong>Danh mục:</strong>
-                                    <span className="question-category-tag">
+                                    <span className={styles.questionCategoryTag}>
                                         {selectedQuestion.categoryName || 'Chưa phân loại'}
                                     </span>
                                 </div>
 
-                                <div className="detail-row">
+                                <div className={styles.detailRow}>
                                     <strong>Ngày tạo:</strong>
                                     <span>{formatDate(selectedQuestion.createdAt)}</span>
                                 </div>
                             </div>
 
-                            <div className="question-content-section">
+                            <div className={styles.questionContentSection}>
                                 <h4>Nội dung câu hỏi:</h4>
-                                <div className="full-content">
+                                <div className={styles.fullContent}>
                                     {selectedQuestion.content}
                                 </div>
                             </div>
 
                             {selectedQuestion.answer && (
-                                <div className="answer-section">
+                                <div className={styles.answerSection}>
                                     <h4>Câu trả lời:</h4>
-                                    <div className="full-answer">
+                                    <div className={styles.fullAnswer}>
                                         {selectedQuestion.answer}
                                     </div>
                                     {selectedQuestion.replierName && (
-                                        <div className="answer-author">
+                                        <div className={styles.answerAuthor}>
                                             <small>
-                                                <i className="fas fa-user-md"></i>
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                                    <circle cx="12" cy="7" r="4"></circle>
+                                                </svg>
                                                 Trả lời bởi: <strong>{selectedQuestion.replierName}</strong>
                                             </small>
                                         </div>
@@ -262,9 +290,9 @@ const Questions = () => {
                             )}
                         </div>
 
-                        <div className="modal-footer">
+                        <div className={styles.modalFooter}>
                             <button
-                                className="btn btn-secondary"
+                                className={styles.btnSecondary}
                                 onClick={handleCloseModal}
                             >
                                 Đóng
@@ -276,8 +304,8 @@ const Questions = () => {
 
             {/* Login Modal */}
             {showLoginModal && (
-                <div className="modal-backdrop" onClick={closeModals}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className={styles.modalBackdrop} onClick={closeModals}>
+                    <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
                         <LoginForm
                             onClose={closeModals}
                             onSwitchToRegister={switchToRegister}
@@ -289,8 +317,8 @@ const Questions = () => {
 
             {/* Register Modal */}
             {showRegisterModal && (
-                <div className="modal-backdrop" onClick={closeModals}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className={styles.modalBackdrop} onClick={closeModals}>
+                    <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
                         <RegisterForm
                             onClose={closeModals}
                             onSwitchToLogin={switchToLogin}

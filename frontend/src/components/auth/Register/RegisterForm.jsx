@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { authService } from '../../../services/authService';
-import './RegisterForm.css';
+import { useToast } from '../../../contexts/ToastContext';
+import styles from './RegisterForm.module.css';
 
 const RegisterForm = ({ onClose, onSwitchToLogin }) => {
+    const toast = useToast();
     const [formData, setFormData] = useState({
         fullName: '',
         username: '',
@@ -17,7 +19,6 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSendingCode, setIsSendingCode] = useState(false);
     const [errors, setErrors] = useState({});
-    const [message, setMessage] = useState('');
     const [isCodeSent, setIsCodeSent] = useState(false);
     const [countdown, setCountdown] = useState(0);
     const [passwordStrength, setPasswordStrength] = useState({
@@ -28,7 +29,6 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
         hasSpecialChar: false
     });
 
-    // Xử lý thay đổi input
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({
@@ -36,12 +36,10 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
             [name]: value
         }));
 
-        // Kiểm tra độ mạnh mật khẩu khi nhập password
         if (name === 'password') {
             checkPasswordStrength(value);
         }
 
-        // Xóa lỗi khi người dùng nhập lại
         if (errors[name]) {
             setErrors(prev => ({
                 ...prev,
@@ -50,7 +48,6 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
         }
     };
 
-    // Kiểm tra độ mạnh mật khẩu
     const checkPasswordStrength = (password) => {
         setPasswordStrength({
             hasMinLength: password.length >= 8,
@@ -61,7 +58,6 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
         });
     };
 
-    // Validate email
     const validateEmail = () => {
         if (!formData.email.trim()) {
             setErrors({ email: 'Email không được để trống' });
@@ -73,7 +69,6 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
         return true;
     };
 
-    // Validate mật khẩu với yêu cầu mới
     const validatePassword = (password) => {
         const errors = [];
 
@@ -104,7 +99,6 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
         return errors;
     };
 
-    // Validate toàn bộ form
     const validateForm = () => {
         const newErrors = {};
 
@@ -134,10 +128,9 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
             newErrors.birthDay = 'Ngày sinh không được để trống';
         }
 
-        // Validate mật khẩu với yêu cầu mới
         const passwordErrors = validatePassword(formData.password);
         if (passwordErrors.length > 0) {
-            newErrors.password = passwordErrors[0]; // Hiển thị lỗi đầu tiên
+            newErrors.password = passwordErrors[0];
         }
 
         if (formData.password !== formData.confirmPassword) {
@@ -152,34 +145,31 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
         return Object.keys(newErrors).length === 0;
     };
 
-    // Gửi mã xác thực
     const handleSendCode = async () => {
         if (!validateEmail()) {
             return;
         }
 
         setIsSendingCode(true);
-        setMessage('');
 
         try {
             const response = await authService.sendVerificationCode(formData.email);
 
             if (response.success) {
-                setMessage('Mã xác thực đã được gửi đến email của bạn');
+                toast.success('Mã xác thực đã được gửi đến email của bạn', 6000);
                 setIsCodeSent(true);
                 startCountdown();
             } else {
-                setMessage(response.message || 'Có lỗi xảy ra khi gửi mã xác thực');
+                toast.error(response.message || 'Có lỗi xảy ra khi gửi mã xác thực');
             }
         } catch (error) {
-            setMessage('Không thể gửi mã xác thực. Vui lòng thử lại');
+            toast.error('Không thể gửi mã xác thực. Vui lòng thử lại');
             console.error('Error sending verification code:', error);
         } finally {
             setIsSendingCode(false);
         }
     };
 
-    // Đếm ngược thời gian gửi lại mã
     const startCountdown = () => {
         setCountdown(60);
         const timer = setInterval(() => {
@@ -193,44 +183,41 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
         }, 1000);
     };
 
-    // Gửi lại mã xác thực
     const handleResendCode = async () => {
         if (countdown > 0) return;
 
         setIsSendingCode(true);
-        setMessage('');
 
         try {
             const response = await authService.sendVerificationCode(formData.email);
             if (response.success) {
-                setMessage('Mã xác thực mới đã được gửi');
+                toast.success('Mã xác thực mới đã được gửi', 6000);
                 startCountdown();
             } else {
-                setMessage(response.message || 'Không thể gửi lại mã xác thực');
+                toast.error(response.message || 'Không thể gửi lại mã xác thực');
             }
         } catch (error) {
-            setMessage('Không thể gửi lại mã xác thực');
+            toast.error('Không thể gửi lại mã xác thực');
             console.error('Error resending verification code:', error);
         } finally {
             setIsSendingCode(false);
         }
     };
 
-    // Xử lý đăng ký
     const handleRegister = async (e) => {
         e.preventDefault();
 
         if (!validateForm()) {
+            toast.error('Vui lòng kiểm tra và điền đầy đủ thông tin');
             return;
         }
 
         if (!isCodeSent) {
-            setMessage('Vui lòng gửi mã xác thực trước');
+            toast.error('Vui lòng gửi mã xác thực trước');
             return;
         }
 
         setIsLoading(true);
-        setMessage('');
 
         try {
             const registerData = {
@@ -246,106 +233,166 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
             const response = await authService.registerUser(registerData);
 
             if (response.success) {
-                setMessage('Đăng ký thành công! Chuyển sang đăng nhập...');
+                toast.success('Đăng ký thành công! Chuyển sang đăng nhập...', 8000);
                 setTimeout(() => {
                     onSwitchToLogin();
                 }, 2000);
             } else {
-                setMessage(response.message || 'Đăng ký thất bại');
+                toast.error(response.message || 'Đăng ký thất bại');
             }
         } catch (error) {
-            setMessage('Có lỗi xảy ra trong quá trình đăng ký');
+            toast.error('Có lỗi xảy ra trong quá trình đăng ký');
             console.error('Error registering user:', error);
         } finally {
             setIsLoading(false);
         }
     };
 
+    const handleClose = () => {
+        toast.hideAllToasts();
+        onClose();
+    };
+
     return (
-        <div className="register-form">
-            <div className="register-header">
-                <h2>Đăng ký tài khoản</h2>
-                <button className="close-btn" onClick={onClose}>×</button>
+        <div className={styles.container}>
+            <div className={styles.header}>
+                <h2 className={styles.title}>Đăng ký tài khoản</h2>
+                <button className={styles.closeBtn} onClick={handleClose}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
             </div>
 
-            <form onSubmit={handleRegister} className="register-form-content">
-                <div className="form-group">
-                    <label htmlFor="fullName">Họ và tên *</label>
+            <form onSubmit={handleRegister} className={styles.form}>
+                <div className={styles.welcomeText}>
+                    <h3>Tham gia cộng đồng của chúng tôi!</h3>
+                    <p>Tạo tài khoản để bắt đầu hành trình chăm sóc sức khỏe</p>
+                </div>
+
+                <div className={styles.formGroup}>
+                    <label htmlFor="fullName" className={styles.label}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        Họ và tên
+                    </label>
                     <input
                         type="text"
                         id="fullName"
                         name="fullName"
                         value={formData.fullName}
                         onChange={handleInputChange}
-                        className={errors.fullName ? 'error' : ''}
-                        placeholder="Nhập họ và tên"
+                        className={`${styles.input} ${errors.fullName ? styles.inputError : ''}`}
+                        placeholder="Nhập họ và tên đầy đủ"
                     />
-                    {errors.fullName && <span className="error-message">{errors.fullName}</span>}
+                    {errors.fullName && <span className={styles.errorMessage}>{errors.fullName}</span>}
                 </div>
 
-                <div className="form-group">
-                    <label htmlFor="username">Tên đăng nhập *</label>
+                <div className={styles.formGroup}>
+                    <label htmlFor="username" className={styles.label}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M9 12l2 2 4-4"></path>
+                            <circle cx="12" cy="12" r="9"></circle>
+                        </svg>
+                        Tên đăng nhập
+                    </label>
                     <input
                         type="text"
                         id="username"
                         name="username"
                         value={formData.username}
                         onChange={handleInputChange}
-                        className={errors.username ? 'error' : ''}
-                        placeholder="Nhập tên đăng nhập"
+                        className={`${styles.input} ${errors.username ? styles.inputError : ''}`}
+                        placeholder="Nhập tên đăng nhập (ít nhất 3 ký tự)"
                     />
-                    {errors.username && <span className="error-message">{errors.username}</span>}
+                    {errors.username && <span className={styles.errorMessage}>{errors.username}</span>}
                 </div>
 
-                <div className="form-group">
-                    <label htmlFor="email">Email *</label>
-                    <div className="email-input-group">
+                <div className={styles.formGroup}>
+                    <label htmlFor="email" className={styles.label}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        Email
+                    </label>
+                    <div className={styles.emailInputGroup}>
                         <input
                             type="email"
                             id="email"
                             name="email"
                             value={formData.email}
                             onChange={handleInputChange}
-                            className={errors.email ? 'error' : ''}
-                            placeholder="Nhập địa chỉ email"
+                            className={`${styles.input} ${errors.email ? styles.inputError : ''}`}
+                            placeholder="example@email.com"
                         />
                         <button
                             type="button"
                             onClick={handleSendCode}
                             disabled={isSendingCode || !formData.email.trim() || countdown > 0}
-                            className="send-code-btn"
+                            className={`${styles.sendCodeBtn} ${isSendingCode ? styles.loading : ''}`}
                         >
-                            {isSendingCode ? 'Đang gửi...' :
-                                countdown > 0 ? `${countdown}s` :
-                                    isCodeSent ? 'Gửi lại' : 'Send Code'}
+                            {isSendingCode ? (
+                                <>
+                                    <div className={styles.spinner}></div>
+                                    Đang gửi...
+                                </>
+                            ) : countdown > 0 ? (
+                                `${countdown}s`
+                            ) : isCodeSent ? (
+                                'Gửi lại'
+                            ) : (
+                                <>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M22 2L11 13"></path>
+                                        <polygon points="22,2 15,22 11,13 2,9"></polygon>
+                                    </svg>
+                                    Gửi mã
+                                </>
+                            )}
                         </button>
                     </div>
-                    {errors.email && <span className="error-message">{errors.email}</span>}
+                    {errors.email && <span className={styles.errorMessage}>{errors.email}</span>}
                 </div>
 
-                {/* Ô nhập verification code - chỉ hiện khi đã gửi code */}
                 {isCodeSent && (
-                    <div className="form-group verification-group">
-                        <label htmlFor="verificationCode">Mã xác thực *</label>
+                    <div className={`${styles.formGroup} ${styles.verificationGroup}`}>
+                        <label htmlFor="verificationCode" className={styles.label}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <rect x="3" y="11" width="18" height="10" rx="2" ry="2"></rect>
+                                <circle cx="12" cy="16" r="1"></circle>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                            Mã xác thực
+                        </label>
                         <input
                             type="text"
                             id="verificationCode"
                             name="verificationCode"
                             value={formData.verificationCode}
                             onChange={handleInputChange}
-                            className={errors.verificationCode ? 'error' : ''}
-                            placeholder="Nhập mã xác thực 6 số"
+                            className={`${styles.input} ${errors.verificationCode ? styles.inputError : ''}`}
+                            placeholder="Nhập mã 6 chữ số"
                             maxLength="6"
                         />
-                        {errors.verificationCode && <span className="error-message">{errors.verificationCode}</span>}
-                        <div className="verification-hint">
-                            <p>Mã xác thực đã được gửi đến: <strong>{formData.email}</strong></p>
+                        {errors.verificationCode && <span className={styles.errorMessage}>{errors.verificationCode}</span>}
+                        <div className={styles.verificationHint}>
+                            <div className={styles.infoCard}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M12 6v6l4 2"></path>
+                                </svg>
+                                <p>Mã xác thực đã được gửi đến: <strong>{formData.email}</strong></p>
+                            </div>
                             {countdown === 0 && (
                                 <button
                                     type="button"
                                     onClick={handleResendCode}
                                     disabled={isSendingCode}
-                                    className="resend-link"
+                                    className={styles.resendLink}
                                 >
                                     Gửi lại mã xác thực
                                 </button>
@@ -354,69 +401,97 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
                     </div>
                 )}
 
-                <div className="form-group">
-                    <label htmlFor="phone">Số điện thoại *</label>
+                <div className={styles.formGroup}>
+                    <label htmlFor="phone" className={styles.label}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                        </svg>
+                        Số điện thoại
+                    </label>
                     <input
                         type="tel"
                         id="phone"
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
-                        className={errors.phone ? 'error' : ''}
-                        placeholder="Nhập số điện thoại"
+                        className={`${styles.input} ${errors.phone ? styles.inputError : ''}`}
+                        placeholder="0xxx xxx xxx"
                     />
-                    {errors.phone && <span className="error-message">{errors.phone}</span>}
+                    {errors.phone && <span className={styles.errorMessage}>{errors.phone}</span>}
                 </div>
 
-                <div className="form-group">
-                    <label htmlFor="birthDay">Ngày sinh *</label>
+                <div className={styles.formGroup}>
+                    <label htmlFor="birthDay" className={styles.label}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        Ngày sinh
+                    </label>
                     <input
                         type="date"
                         id="birthDay"
                         name="birthDay"
                         value={formData.birthDay}
                         onChange={handleInputChange}
-                        className={errors.birthDay ? 'error' : ''}
+                        className={`${styles.input} ${errors.birthDay ? styles.inputError : ''}`}
                     />
-                    {errors.birthDay && <span className="error-message">{errors.birthDay}</span>}
+                    {errors.birthDay && <span className={styles.errorMessage}>{errors.birthDay}</span>}
                 </div>
 
-                <div className="form-group">
-                    <label htmlFor="password">Mật khẩu *</label>
+                <div className={styles.formGroup}>
+                    <label htmlFor="password" className={styles.label}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="11" width="18" height="10" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        Mật khẩu
+                    </label>
                     <input
                         type="password"
                         id="password"
                         name="password"
                         value={formData.password}
                         onChange={handleInputChange}
-                        className={errors.password ? 'error' : ''}
-                        placeholder="Nhập mật khẩu"
+                        className={`${styles.input} ${errors.password ? styles.inputError : ''}`}
+                        placeholder="Nhập mật khẩu mạnh"
                     />
-                    {errors.password && <span className="error-message">{errors.password}</span>}
+                    {errors.password && <span className={styles.errorMessage}>{errors.password}</span>}
 
-                    {/* Password strength indicator */}
                     {formData.password && (
-                        <div className="password-strength">
-                            <p className="strength-title">Yêu cầu mật khẩu:</p>
-                            <ul className="strength-list">
-                                <li className={passwordStrength.hasMinLength ? 'valid' : 'invalid'}>
-                                    <span className="strength-icon">{passwordStrength.hasMinLength ? '✓' : '✗'}</span>
+                        <div className={styles.passwordStrength}>
+                            <p className={styles.strengthTitle}>Yêu cầu mật khẩu:</p>
+                            <ul className={styles.strengthList}>
+                                <li className={passwordStrength.hasMinLength ? styles.valid : styles.invalid}>
+                                    <span className={styles.strengthIcon}>
+                                        {passwordStrength.hasMinLength ? '✓' : '○'}
+                                    </span>
                                     Ít nhất 8 ký tự
                                 </li>
-                                <li className={passwordStrength.hasUpperCase ? 'valid' : 'invalid'}>
-                                    <span className="strength-icon">{passwordStrength.hasUpperCase ? '✓' : '✗'}</span>
+                                <li className={passwordStrength.hasUpperCase ? styles.valid : styles.invalid}>
+                                    <span className={styles.strengthIcon}>
+                                        {passwordStrength.hasUpperCase ? '✓' : '○'}
+                                    </span>
                                     Có chữ cái viết hoa (A-Z)
                                 </li>
-                                <li className={passwordStrength.hasLowerCase ? 'valid' : 'invalid'}>
-                                    <span className="strength-icon">{passwordStrength.hasLowerCase ? '✓' : '✗'}</span>
+                                <li className={passwordStrength.hasLowerCase ? styles.valid : styles.invalid}>
+                                    <span className={styles.strengthIcon}>
+                                        {passwordStrength.hasLowerCase ? '✓' : '○'}
+                                    </span>
                                     Có chữ cái viết thường (a-z)
                                 </li>
-                                <li className={passwordStrength.hasNumber ? 'valid' : 'invalid'}>
-                                    <span className="strength-icon">{passwordStrength.hasNumber ? '✓' : '✗'}</span>
+                                <li className={passwordStrength.hasNumber ? styles.valid : styles.invalid}>
+                                    <span className={styles.strengthIcon}>
+                                        {passwordStrength.hasNumber ? '✓' : '○'}
+                                    </span>
                                     Có chữ số (0-9)
                                 </li>
-                                <li className={passwordStrength.hasSpecialChar ? 'valid' : 'invalid'}>
-                                    <span className="strength-icon">{passwordStrength.hasSpecialChar ? '✓' : '✗'}</span>
+                                <li className={passwordStrength.hasSpecialChar ? styles.valid : styles.invalid}>
+                                    <span className={styles.strengthIcon}>
+                                        {passwordStrength.hasSpecialChar ? '✓' : '○'}
+                                    </span>
                                     Có ký tự đặc biệt (!@#$%^&*...)
                                 </li>
                             </ul>
@@ -424,38 +499,53 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
                     )}
                 </div>
 
-                <div className="form-group">
-                    <label htmlFor="confirmPassword">Xác nhận mật khẩu *</label>
+                <div className={styles.formGroup}>
+                    <label htmlFor="confirmPassword" className={styles.label}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="11" width="18" height="10" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        Xác nhận mật khẩu
+                    </label>
                     <input
                         type="password"
                         id="confirmPassword"
                         name="confirmPassword"
                         value={formData.confirmPassword}
                         onChange={handleInputChange}
-                        className={errors.confirmPassword ? 'error' : ''}
+                        className={`${styles.input} ${errors.confirmPassword ? styles.inputError : ''}`}
                         placeholder="Nhập lại mật khẩu"
                     />
-                    {errors.confirmPassword && <span className="error-message">{errors.confirmPassword}</span>}
+                    {errors.confirmPassword && <span className={styles.errorMessage}>{errors.confirmPassword}</span>}
                 </div>
-
-                {message && (
-                    <div className={`message ${message.includes('thành công') || message.includes('gửi') ? 'success' : 'error'}`}>
-                        {message}
-                    </div>
-                )}
 
                 <button
                     type="submit"
                     disabled={isLoading || !isCodeSent}
-                    className="btn-register"
+                    className={styles.btnRegister}
                 >
-                    {isLoading ? 'Đang đăng ký...' : 'Đăng ký'}
+                    {isLoading ? (
+                        <>
+                            <div className={styles.spinner}></div>
+                            Đang đăng ký...
+                        </>
+                    ) : (
+                        <>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="8.5" cy="7" r="4"></circle>
+                                <line x1="20" y1="8" x2="20" y2="14"></line>
+                                <line x1="23" y1="11" x2="17" y2="11"></line>
+                            </svg>
+                            Tạo tài khoản
+                        </>
+                    )}
                 </button>
 
-                <div className="form-footer">
+                <div className={styles.footer}>
                     <p>
-                        Đã có tài khoản?{' '}
-                        <button type="button" onClick={onSwitchToLogin} className="link-btn">
+                        Đã có tài khoản?
+                        <button type="button" onClick={onSwitchToLogin} className={styles.linkBtn}>
                             Đăng nhập ngay
                         </button>
                     </p>

@@ -1,0 +1,477 @@
+.menstrualCyclePage {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.menstrualCycleContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.pageTitle {
+  text-align: center;
+  color: #333;
+  font-size: 2rem;
+  margin-bottom: 2rem;
+}
+
+.menstrualCycleContent {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+/* Calculator Section */
+.calculatorSection {
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+}
+
+.calculatorFormContainer {
+  margin-bottom: 2rem;
+}
+
+.calculatorFormContainer h2 {
+  font-size: 1.5rem;
+  color: #333;
+  margin-bottom: 1.5rem;
+}
+
+.calculatorForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.formGroup label {
+  font-weight: 500;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.formGroup input {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+}
+
+.formGroup input:focus {
+  border-color: #4285f4;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+}
+
+.dateInput {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.formText {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 0.5rem;
+}
+
+.formActions {
+  margin-top: 1rem;
+}
+
+.btnPrimary {
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background-color: #3367d6;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.btnPrimary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Calculation Result */
+.calculationResult {
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+  border: 1px solid #eee;
+}
+
+.calculationResult h2 {
+  font-size: 1.5rem;
+  color: #333;
+  margin-bottom: 1.25rem;
+}
+
+.resultCard {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.resultItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.resultLabel {
+  font-weight: 500;
+  color: #333;
+}
+
+.resultValue {
+  color: #4285f4;
+  font-weight: 500;
+}
+
+.highlight {
+  color: #ea4335;
+  font-weight: 700;
+}
+
+.resultNote {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: rgba(255, 229, 100, 0.2);
+  border-left: 4px solid #ffe564;
+  border-radius: 4px;
+}
+
+.resultNote p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* History Section */
+.historySection {
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.historySection h2 {
+  font-size: 1.5rem;
+  color: #333;
+  margin-bottom: 1.5rem;
+}
+
+.authPrompt {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  text-align: center;
+  height: 100%;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  height: 100%;
+}
+
+.emptyHistory {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  text-align: center;
+  color: #666;
+  height: 100%;
+}
+
+.cycleHistoryList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  overflow-y: auto;
+  max-height: 300px;
+}
+
+.cycleItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.cycleItem:hover {
+  background-color: #f1f3f4;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.cycleItem.active {
+  border-color: #4285f4;
+  background-color: rgba(66, 133, 244, 0.05);
+}
+
+.cycleDate {
+  font-weight: 600;
+  color: #333;
+}
+
+.cycleInfo {
+  display: flex;
+  gap: 1rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.cycleReminderStatus {
+  display: flex;
+  align-items: center;
+}
+
+.reminderEnabled {
+  color: #4285f4;
+}
+
+.reminderDisabled {
+  color: #999;
+}
+
+/* Cycle Details */
+.cycleDetails {
+  margin-top: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 10px;
+  padding: 1.5rem;
+  border: 1px solid #eee;
+}
+
+.detailsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.detailsHeader h3 {
+  font-size: 1.25rem;
+  color: #333;
+  margin: 0;
+}
+
+.closeDetailsBtn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.closeDetailsBtn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #333;
+}
+
+.detailsContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.detailItem {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.detailLabel {
+  font-weight: 500;
+  color: #333;
+}
+
+.detailValue {
+  color: #4285f4;
+}
+
+.detailsActions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* Button Styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnSuccess {
+  background-color: #34a853;
+  color: white;
+}
+
+.btnSuccess:hover:not(:disabled) {
+  background-color: #2d9249;
+}
+
+.btnWarning {
+  background-color: #fbbc05;
+  color: #333;
+}
+
+.btnWarning:hover:not(:disabled) {
+  background-color: #f5b301;
+}
+
+.btnDanger {
+  background-color: #ea4335;
+  color: white;
+}
+
+.btnDanger:hover:not(:disabled) {
+  background-color: #d33426;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive Styles */
+@media (max-width: 992px) {
+  .menstrualCycleContent {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .historySection {
+    order: 2;
+  }
+  
+  .calculatorSection {
+    order: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .menstrualCycleContainer {
+    padding: 1.5rem 1rem;
+  }
+  
+  .pageTitle {
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .resultItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .detailItem {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .detailsActions {
+    flex-direction: column;
+  }
+  
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 576px) {
+  .pageTitle {
+    font-size: 1.5rem;
+  }
+  
+  .cycleItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .cycleInfo {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .cycleReminderStatus {
+    align-self: flex-end;
+    margin-top: -2rem;
+  }
+}

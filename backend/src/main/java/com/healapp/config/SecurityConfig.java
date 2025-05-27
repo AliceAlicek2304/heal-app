@@ -66,11 +66,15 @@ public class SecurityConfig {
                         // API Consultants (Public GET endpoints)
                         .requestMatchers(HttpMethod.GET, "/consultants").permitAll()
                         .requestMatchers(HttpMethod.GET, "/consultants/{userId}").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/consultations/consultant/{consultantId}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/consultations/consultant/{consultantId}/profile").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/consultations/consultants").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/consultations/available-slots").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/consultations/consultation-price").permitAll()
 
                         // API App Config (Public endpoints)
                         .requestMatchers(HttpMethod.GET, "/config").permitAll()
                         .requestMatchers(HttpMethod.GET, "/config/consultation-price").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/config/{key}").permitAll()
 
                         // API STI Services (Public GET endpoints)
                         .requestMatchers(HttpMethod.GET, "/sti-services").permitAll()
@@ -88,38 +92,40 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/users/profile/password").authenticated()
                         .requestMatchers(HttpMethod.POST, "/users/profile/avatar").authenticated()
 
-                        // API Blog cho người dùng đã xác thực
+                        // API Blog (Authenticated user endpoints)
                         .requestMatchers(HttpMethod.POST, "/blog").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/blog/{postId}").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/blog/{postId}").authenticated()
                         .requestMatchers(HttpMethod.GET, "/blog/my-posts").authenticated()
 
-                        // API Questions cho người dùng đã xác thực
+                        // API Questions (Authenticated user endpoints)
                         .requestMatchers(HttpMethod.POST, "/questions").authenticated()
                         .requestMatchers(HttpMethod.GET, "/questions/my-questions").authenticated()
                         .requestMatchers(HttpMethod.GET, "/questions/{questionId}").authenticated()
 
-                        // API Consultations cho người dùng đã xác thực
+                        // API Consultations (Authenticated user endpoints)
                         .requestMatchers(HttpMethod.POST, "/consultations").authenticated()
                         .requestMatchers(HttpMethod.GET, "/consultations/my-consultations").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/consultations/{consultationId}/status").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/consultations/status/{status}").authenticated()
 
-                        // API STI Services cho người dùng đã xác thực
+                        // API STI Services (Authenticated user endpoints)
                         .requestMatchers(HttpMethod.POST, "/sti-services/book-test").authenticated()
                         .requestMatchers(HttpMethod.GET, "/sti-services/my-tests").authenticated()
                         .requestMatchers(HttpMethod.GET, "/sti-services/tests/{testId}").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/sti-services/tests/{testId}/cancel").authenticated()
                         .requestMatchers(HttpMethod.GET, "/sti-services/tests/{testId}/results").authenticated()
 
-                        // API Menstrual Cycle cho người dùng đã xác thực
+                        // API Menstrual Cycle (Authenticated user endpoints)
                         .requestMatchers(HttpMethod.POST, "/menstrual-cycle/addCycle").authenticated()
                         .requestMatchers(HttpMethod.GET, "/menstrual-cycle/{userId}").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/menstrual-cycle/{id}").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/menstrual-cycle/{id}/reminder").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/menstrual-cycle/{id}").authenticated()
 
-                        // API Chatbot History cho người dùng đã xác thực
+                        // API Chatbot History (Authenticated user endpoints)
                         .requestMatchers(HttpMethod.GET, "/chatbot/history").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/chatbot/history").authenticated()
 
                         // ========= CONSULTANT ENDPOINTS =========
                         // API Consultant Profile Management
@@ -130,48 +136,55 @@ public class SecurityConfig {
                         .hasAnyRole("STAFF", "CONSULTANT")
                         .requestMatchers(HttpMethod.GET, "/questions/category/{categoryId}")
                         .hasAnyRole("STAFF", "CONSULTANT")
-                        .requestMatchers(HttpMethod.GET, "/questions/confirmed").hasAnyRole("STAFF", "CONSULTANT")
 
                         // API Consultations (Consultant actions)
                         .requestMatchers(HttpMethod.GET, "/consultations/assigned").hasRole("CONSULTANT")
 
+                        // API STI Services (Consultant actions)
+                        .requestMatchers(HttpMethod.GET, "/sti-services/consultant/confirmed-tests")
+                        .hasRole("CONSULTANT")
+                        .requestMatchers(HttpMethod.PUT, "/sti-services/consultant/tests/{testId}/sample")
+                        .hasRole("CONSULTANT")
+                        .requestMatchers(HttpMethod.GET, "/sti-services/consultant/my-tests").hasRole("CONSULTANT")
+                        .requestMatchers(HttpMethod.PUT, "/sti-services/consultant/tests/{testId}/result")
+                        .hasRole("CONSULTANT")
+                        .requestMatchers(HttpMethod.PUT, "/sti-services/consultant/tests/{testId}/complete")
+                        .hasRole("CONSULTANT")
+                        .requestMatchers(HttpMethod.PUT, "/sti-services/consultant/tests/{testId}/notes")
+                        .hasRole("CONSULTANT")
+
                         // ========= STAFF ENDPOINTS =========
-                        // API Blog Management
+                        // API Blog Management (Staff)
                         .requestMatchers(HttpMethod.PUT, "/blog/{postId}/status").hasAnyRole("STAFF", "ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/blog/processing").hasAnyRole("STAFF", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/blog/status/{status}").hasAnyRole("STAFF", "ADMIN")
 
-                        // API Question Categories Management
+                        // API Question Categories Management (Staff - Admin only)
                         .requestMatchers(HttpMethod.POST, "/question-categories").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/question-categories/{categoryId}").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/question-categories/{categoryId}").hasRole("ADMIN")
 
                         // API Questions (Staff actions)
                         .requestMatchers(HttpMethod.PUT, "/questions/{questionId}/status").hasRole("STAFF")
-                        .requestMatchers(HttpMethod.GET, "/questions/status/{status}").hasRole("STAFF")
-                        .requestMatchers(HttpMethod.GET, "/questions/processing").hasRole("STAFF")
+                        .requestMatchers(HttpMethod.GET, "/questions/status/{status}").hasAnyRole("STAFF", "CONSULTANT")
                         .requestMatchers(HttpMethod.DELETE, "/questions/{questionId}").hasRole("STAFF")
 
-                        // API STI Services Management (Staff/Admin)
-                        .requestMatchers(HttpMethod.POST, "/sti-services").hasAnyRole("STAFF", "ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/sti-services/{serviceId}").hasAnyRole("STAFF", "ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/sti-services/{serviceId}").hasAnyRole("STAFF", "ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/sti-services/admin/all").hasAnyRole("STAFF", "ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/sti-services/tests/{testId}/status")
+                        // API STI Services (Staff actions)
+                        .requestMatchers(HttpMethod.GET, "/sti-services/staff/pending-tests")
                         .hasAnyRole("STAFF", "ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/sti-services/admin/tests").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/sti-services/staff/tests/{testId}/confirm")
+                        .hasAnyRole("STAFF", "ADMIN")
 
                         // ========= ADMIN ENDPOINTS =========
-                        // API Category Management
+                        // API Category Management (Admin only)
                         .requestMatchers(HttpMethod.POST, "/categories").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/categories/{categoryId}").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/categories/{categoryId}").hasRole("ADMIN")
 
-                        // API Consultant Management
+                        // API Consultant Management (Admin only)
                         .requestMatchers(HttpMethod.POST, "/consultants/{userId}").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/consultants/{userId}").hasRole("ADMIN")
 
-                        // API User & Admin Management
+                        // API User & Admin Management (Admin only)
                         .requestMatchers(HttpMethod.GET, "/admin/consultants").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/admin/consultants/{userId}").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/admin/consultants/{userId}").hasRole("ADMIN")
@@ -186,9 +199,16 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/admin/config").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/admin/config").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/admin/config/{key}").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/admin/config/{key}/toggle").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/admin/config/{key}").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/admin/config/{key}/inactive").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/admin/config/{key}/active").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/admin/config/{key}/upload").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/admin/config/consultation-price").hasRole("ADMIN")
+
+                        // API STI Services Management (Admin only)
+                        .requestMatchers(HttpMethod.POST, "/admin/sti-services").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/admin/sti-services/{serviceId}").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/admin/sti-services/{serviceId}").hasRole("ADMIN")
 
                         // All other admin endpoints
                         .requestMatchers("/admin/**").hasRole("ADMIN")

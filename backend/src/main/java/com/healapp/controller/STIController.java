@@ -5,6 +5,7 @@ import com.healapp.dto.STIServiceResponse;
 import com.healapp.dto.STITestRequest;
 import com.healapp.dto.STITestResponse;
 import com.healapp.dto.STITestStatusUpdateRequest;
+import com.healapp.dto.ConsultantNotesUpdateRequest;
 import com.healapp.dto.TestResultResponse;
 import com.healapp.service.STIServiceService;
 import com.healapp.service.STITestService;
@@ -163,6 +164,20 @@ public class STIController {
     public ResponseEntity<ApiResponse<List<TestResultResponse>>> getTestResults(@PathVariable Long testId) {
         Long userId = getCurrentUserId();
         ApiResponse<List<TestResultResponse>> response = stiTestService.getTestResults(testId, userId);
+        return getResponseEntity(response);
+    }
+
+    @PutMapping("/consultant/tests/{testId}/notes")
+    @PreAuthorize("hasRole('ROLE_CONSULTANT')")
+    public ResponseEntity<ApiResponse<STITestResponse>> updateConsultantNotes(
+            @PathVariable Long testId,
+            @Valid @RequestBody ConsultantNotesUpdateRequest request) {
+
+        Long consultantId = getCurrentUserId();
+
+        ApiResponse<STITestResponse> response = stiTestService.updateConsultantNotes(
+                testId, request.getConsultantNotes(), consultantId);
+
         return getResponseEntity(response);
     }
 
