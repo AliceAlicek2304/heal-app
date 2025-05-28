@@ -344,36 +344,36 @@ public class STITestServiceTest {
     }
 
     @Test
-    @DisplayName("Lấy danh sách xét nghiệm của bác sĩ tư vấn - Thành công")
-    void getConsultantTests_Success() {
+    @DisplayName("Lấy danh sách xét nghiệm của staff - Thành công")
+    void getStaffTests_Success() {
         // Chuẩn bị dữ liệu
-        stiTest.setConsultant(consultant);
-        List<STITest> consultantTests = Arrays.asList(stiTest);
-        when(userRepository.findById(consultant.getId())).thenReturn(Optional.of(consultant));
-        when(stiTestRepository.findByConsultantId(consultant.getId())).thenReturn(consultantTests);
+        stiTest.setStaff(staff);
+        List<STITest> staffTests = Arrays.asList(stiTest);
+        when(userRepository.findById(staff.getId())).thenReturn(Optional.of(staff));
+        when(stiTestRepository.findByStaffId(staff.getId())).thenReturn(staffTests);
 
         // Thực hiện hành động
-        ApiResponse<List<STITestResponse>> response = stiTestService.getConsultantTests(consultant.getId());
+        ApiResponse<List<STITestResponse>> response = stiTestService.getStaffTests(staff.getId());
 
         // Kiểm tra kết quả
         assertTrue(response.isSuccess());
-        assertEquals("Retrieved 1 tests for consultant", response.getMessage());
+        assertEquals("Retrieved 1 tests for staff", response.getMessage());
         assertNotNull(response.getData());
         assertEquals(1, response.getData().size());
     }
 
     @Test
-    @DisplayName("Lấy danh sách xét nghiệm của bác sĩ - Thất bại do không tìm thấy bác sĩ")
-    void getConsultantTests_ConsultantNotFound() {
+    @DisplayName("Lấy danh sách xét nghiệm của staff - Thất bại do không tìm thấy staff")
+    void getStaffTests_StaffNotFound() {
         // Chuẩn bị dữ liệu
         when(userRepository.findById(anyLong())).thenReturn(Optional.empty());
 
         // Thực hiện hành động
-        ApiResponse<List<STITestResponse>> response = stiTestService.getConsultantTests(999L);
+        ApiResponse<List<STITestResponse>> response = stiTestService.getStaffTests(999L);
 
         // Kiểm tra kết quả
         assertFalse(response.isSuccess());
-        assertEquals("Consultant not found", response.getMessage());
+        assertEquals("Staff not found", response.getMessage());
     }
 
     @Test
@@ -791,7 +791,7 @@ public class STITestServiceTest {
         UserDtls otherConsultant = new UserDtls();
         otherConsultant.setId(99L);
         otherConsultant.setRole("CONSULTANT");
-        
+
         stiTest.setConsultant(otherConsultant); // Test đã được gán cho consultant khác
         stiTest.setStatus(TestStatus.RESULTED);
 
@@ -808,7 +808,7 @@ public class STITestServiceTest {
         // Assert
         assertTrue(response.isSuccess());
         assertEquals("Consultant notes updated successfully", response.getMessage());
-        
+
         // Verify consultant được giữ nguyên (không thay đổi)
         ArgumentCaptor<STITest> testCaptor = ArgumentCaptor.forClass(STITest.class);
         verify(stiTestRepository).save(testCaptor.capture());
