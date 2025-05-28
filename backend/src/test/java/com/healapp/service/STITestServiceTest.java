@@ -404,12 +404,14 @@ public class STITestServiceTest {
         statusUpdateRequest.setStatus(TestStatus.SAMPLED);
 
         when(stiTestRepository.findById(stiTest.getTestId())).thenReturn(Optional.of(stiTest));
-        when(userRepository.findById(consultant.getId())).thenReturn(Optional.of(consultant));
+        when(userRepository.findById(staff.getId())).thenReturn(Optional.of(staff)); // Thay đổi từ consultant sang
+                                                                                     // staff
         when(stiTestRepository.save(any(STITest.class))).thenReturn(stiTest);
 
         // Thực hiện hành động
         ApiResponse<STITestResponse> response = stiTestService.updateTestStatus(
-                stiTest.getTestId(), statusUpdateRequest, consultant.getId());
+                stiTest.getTestId(), statusUpdateRequest, staff.getId()); // Thay đổi từ consultant.getId() sang
+                                                                          // staff.getId()
 
         // Kiểm tra kết quả
         assertTrue(response.isSuccess());
@@ -447,7 +449,8 @@ public class STITestServiceTest {
         statusUpdateRequest.setResults(resultRequests);
 
         when(stiTestRepository.findById(stiTest.getTestId())).thenReturn(Optional.of(stiTest));
-        when(userRepository.findById(consultant.getId())).thenReturn(Optional.of(consultant));
+        when(userRepository.findById(staff.getId())).thenReturn(Optional.of(staff)); // Thay đổi từ consultant sang
+                                                                                     // staff
         when(stiTestRepository.save(any(STITest.class))).thenReturn(stiTest);
 
         // Mock để tìm thấy cả hai component
@@ -459,7 +462,8 @@ public class STITestServiceTest {
 
         // Thực hiện hành động
         ApiResponse<STITestResponse> response = stiTestService.updateTestStatus(
-                stiTest.getTestId(), statusUpdateRequest, consultant.getId());
+                stiTest.getTestId(), statusUpdateRequest, staff.getId()); // Thay đổi từ consultant.getId() sang
+                                                                          // staff.getId()
 
         // Kiểm tra kết quả
         assertTrue(response.isSuccess());
@@ -522,11 +526,13 @@ public class STITestServiceTest {
         statusUpdateRequest.setResults(resultRequests);
 
         when(stiTestRepository.findById(stiTest.getTestId())).thenReturn(Optional.of(stiTest));
-        when(userRepository.findById(consultant.getId())).thenReturn(Optional.of(consultant));
+        when(userRepository.findById(staff.getId())).thenReturn(Optional.of(staff)); // Thay đổi từ consultant sang
+                                                                                     // staff
 
         // Thực hiện hành động
         ApiResponse<STITestResponse> response = stiTestService.updateTestStatus(
-                stiTest.getTestId(), statusUpdateRequest, consultant.getId());
+                stiTest.getTestId(), statusUpdateRequest, staff.getId()); // Thay đổi từ consultant.getId() sang
+                                                                          // staff.getId()
 
         // Kiểm tra kết quả
         assertFalse(response.isSuccess());
@@ -564,11 +570,13 @@ public class STITestServiceTest {
         statusUpdateRequest.setResults(resultRequests);
 
         when(stiTestRepository.findById(stiTest.getTestId())).thenReturn(Optional.of(stiTest));
-        when(userRepository.findById(consultant.getId())).thenReturn(Optional.of(consultant));
+        when(userRepository.findById(staff.getId())).thenReturn(Optional.of(staff)); // Thay đổi từ consultant sang
+                                                                                     // staff
 
         // Thực hiện hành động
         ApiResponse<STITestResponse> response = stiTestService.updateTestStatus(
-                stiTest.getTestId(), statusUpdateRequest, consultant.getId());
+                stiTest.getTestId(), statusUpdateRequest, staff.getId()); // Thay đổi từ consultant.getId() sang
+                                                                          // staff.getId()
 
         // Kiểm tra kết quả
         assertFalse(response.isSuccess());
@@ -814,30 +822,6 @@ public class STITestServiceTest {
         verify(stiTestRepository).save(testCaptor.capture());
         assertEquals(otherConsultant, testCaptor.getValue().getConsultant());
         assertEquals(consultantNotes, testCaptor.getValue().getConsultantNotes());
-    }
-
-    @Test
-    @DisplayName("Cập nhật consultant notes thất bại - không phải consultant được assign")
-    void updateConsultantNotes_NotAssignedConsultant() {
-        // Arrange
-        UserDtls otherConsultant = new UserDtls();
-        otherConsultant.setId(99L);
-        otherConsultant.setRole("CONSULTANT");
-
-        stiTest.setConsultant(consultant); // Test được assign cho consultant khác
-        stiTest.setStatus(TestStatus.RESULTED);
-
-        when(stiTestRepository.findById(stiTest.getTestId())).thenReturn(Optional.of(stiTest));
-        when(userRepository.findById(otherConsultant.getId())).thenReturn(Optional.of(otherConsultant));
-
-        // Act
-        ApiResponse<STITestResponse> response = stiTestService.updateConsultantNotes(
-                stiTest.getTestId(), "Some notes", otherConsultant.getId());
-
-        // Assert
-        assertFalse(response.isSuccess());
-        assertEquals("You can only update notes for tests assigned to you", response.getMessage());
-        verify(stiTestRepository, never()).save(any(STITest.class));
     }
 
     @Test
