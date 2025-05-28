@@ -141,15 +141,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/consultations/assigned").hasRole("CONSULTANT")
 
                         // API STI Services (Consultant actions)
-                        .requestMatchers(HttpMethod.GET, "/sti-services/consultant/confirmed-tests")
-                        .hasRole("CONSULTANT")
-                        .requestMatchers(HttpMethod.PUT, "/sti-services/consultant/tests/{testId}/sample")
-                        .hasRole("CONSULTANT")
-                        .requestMatchers(HttpMethod.GET, "/sti-services/consultant/my-tests").hasRole("CONSULTANT")
-                        .requestMatchers(HttpMethod.PUT, "/sti-services/consultant/tests/{testId}/result")
-                        .hasRole("CONSULTANT")
-                        .requestMatchers(HttpMethod.PUT, "/sti-services/consultant/tests/{testId}/complete")
-                        .hasRole("CONSULTANT")
                         .requestMatchers(HttpMethod.PUT, "/sti-services/consultant/tests/{testId}/notes")
                         .hasRole("CONSULTANT")
 
@@ -173,6 +164,16 @@ public class SecurityConfig {
                         .hasAnyRole("STAFF", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/sti-services/staff/tests/{testId}/confirm")
                         .hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/sti-services/staff/confirmed-tests")
+                        .hasRole("STAFF")
+                        .requestMatchers(HttpMethod.PUT, "/sti-services/staff/tests/{testId}/sample")
+                        .hasRole("STAFF")
+                        .requestMatchers(HttpMethod.GET, "/sti-services/staff/my-tests")
+                        .hasRole("STAFF")
+                        .requestMatchers(HttpMethod.PUT, "/sti-services/staff/tests/{testId}/result")
+                        .hasRole("STAFF")
+                        .requestMatchers(HttpMethod.PUT, "/sti-services/staff/tests/{testId}/complete")
+                        .hasRole("STAFF")
 
                         // ========= ADMIN ENDPOINTS =========
                         // API Category Management (Admin only)

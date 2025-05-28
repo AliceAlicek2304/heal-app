@@ -757,6 +757,66 @@ public class STITestServiceTest {
     }
 
     @Test
+    @DisplayName("Cập nhật consultant notes thành công - Tự động gán consultant")
+    void updateConsultantNotes_AutoAssignConsultant() {
+        // Arrange
+        stiTest.setConsultant(null); // Test chưa có consultant
+        stiTest.setStatus(TestStatus.RESULTED);
+
+        String consultantNotes = "Kết quả xét nghiệm bình thường.";
+
+        when(stiTestRepository.findById(stiTest.getTestId())).thenReturn(Optional.of(stiTest));
+        when(userRepository.findById(consultant.getId())).thenReturn(Optional.of(consultant));
+        when(stiTestRepository.save(any(STITest.class))).thenReturn(stiTest);
+
+        // Act
+        ApiResponse<STITestResponse> response = stiTestService.updateConsultantNotes(
+                stiTest.getTestId(), consultantNotes, consultant.getId());
+
+        // Assert
+        assertTrue(response.isSuccess());
+        assertEquals("Consultant notes updated successfully", response.getMessage());
+
+        // Verify consultant được gán tự động
+        ArgumentCaptor<STITest> testCaptor = ArgumentCaptor.forClass(STITest.class);
+        verify(stiTestRepository).save(testCaptor.capture());
+        assertEquals(consultant, testCaptor.getValue().getConsultant());
+        assertEquals(consultantNotes, testCaptor.getValue().getConsultantNotes());
+    }
+
+    @Test
+    @DisplayName("Cập nhật consultant notes thành công - Test đã có consultant khác")
+    void updateConsultantNotes_WithDifferentConsultant() {
+        // Arrange
+        UserDtls otherConsultant = new UserDtls();
+        otherConsultant.setId(99L);
+        otherConsultant.setRole("CONSULTANT");
+        
+        stiTest.setConsultant(otherConsultant); // Test đã được gán cho consultant khác
+        stiTest.setStatus(TestStatus.RESULTED);
+
+        String consultantNotes = "Ghi chú từ consultant khác.";
+
+        when(stiTestRepository.findById(stiTest.getTestId())).thenReturn(Optional.of(stiTest));
+        when(userRepository.findById(consultant.getId())).thenReturn(Optional.of(consultant));
+        when(stiTestRepository.save(any(STITest.class))).thenReturn(stiTest);
+
+        // Act
+        ApiResponse<STITestResponse> response = stiTestService.updateConsultantNotes(
+                stiTest.getTestId(), consultantNotes, consultant.getId());
+
+        // Assert
+        assertTrue(response.isSuccess());
+        assertEquals("Consultant notes updated successfully", response.getMessage());
+        
+        // Verify consultant được giữ nguyên (không thay đổi)
+        ArgumentCaptor<STITest> testCaptor = ArgumentCaptor.forClass(STITest.class);
+        verify(stiTestRepository).save(testCaptor.capture());
+        assertEquals(otherConsultant, testCaptor.getValue().getConsultant());
+        assertEquals(consultantNotes, testCaptor.getValue().getConsultantNotes());
+    }
+
+    @Test
     @DisplayName("Cập nhật consultant notes thất bại - không phải consultant được assign")
     void updateConsultantNotes_NotAssignedConsultant() {
         // Arrange

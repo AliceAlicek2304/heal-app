@@ -228,32 +228,34 @@ public class STITestService {
         }
     }
 
-    public ApiResponse<List<STITestResponse>> getConsultantTests(Long consultantId) {
+    public ApiResponse<List<STITestResponse>> getStaffTests(Long staffId) {
         try {
-            Optional<UserDtls> consultantOpt = userRepository.findById(consultantId);
-            if (consultantOpt.isEmpty()) {
-                return ApiResponse.error("Consultant not found");
+            Optional<UserDtls> staffOpt = userRepository.findById(staffId);
+            if (staffOpt.isEmpty()) {
+                return ApiResponse.error("Staff not found");
             }
 
-            UserDtls consultant = consultantOpt.get();
-            if (!"CONSULTANT".equals(consultant.getRole())) {
-                return ApiResponse.error("User is not a consultant");
+            UserDtls staff = staffOpt.get();
+            if (!"STAFF".equals(staff.getRole())) {
+                return ApiResponse.error("User is not a staff");
             }
 
-            List<STITest> consultantTests = stiTestRepository.findByConsultantId(consultantId);
-            List<STITestResponse> responseList = consultantTests.stream()
+            List<STITest> staffTests = stiTestRepository.findByStaffId(staffId);
+            List<STITestResponse> responseList = staffTests.stream()
                     .map(this::convertToResponse)
                     .collect(Collectors.toList());
 
-            return ApiResponse.success("Retrieved " + responseList.size() + " tests for consultant", responseList);
+            return ApiResponse.success("Retrieved " + responseList.size() + " tests for staff", responseList);
         } catch (Exception e) {
-            return ApiResponse.error("Error retrieving consultant tests: " + e.getMessage());
+            return ApiResponse.error("Error retrieving staff tests: " + e.getMessage());
         }
     }
 
     @Transactional
     public ApiResponse<STITestResponse> updateTestStatus(Long testId, STITestStatusUpdateRequest request, Long userId) {
         try {
+            log.info("Updating test {} to status {} by user {}", testId, request.getStatus(), userId);
+
             Optional<STITest> testOpt = stiTestRepository.findById(testId);
             if (testOpt.isEmpty()) {
                 return ApiResponse.error("STI test not found");
@@ -267,6 +269,8 @@ public class STITestService {
             UserDtls user = userOpt.get();
             STITest test = testOpt.get();
 
+            log.info("Current test status: {}, User role: {}", test.getStatus(), user.getRole());
+
             if (!validateStatusTransition(test, request.getStatus(), user.getRole())) {
                 return ApiResponse.error("Invalid status transition for your role");
             }
@@ -279,13 +283,18 @@ public class STITestService {
             }
 
             // SAMPLED status
-            else if (request.getStatus() == TestStatus.SAMPLED && user.getRole().equals("CONSULTANT")) {
+            else if (request.getStatus() == TestStatus.SAMPLED &&
+                    (user.getRole().equals("STAFF") || user.getRole().equals("ADMIN"))) {
                 test.setStatus(TestStatus.SAMPLED);
-                test.setConsultant(user);
+                // Nếu test chưa có consultant, gán STAFF làm consultant
+                if (test.getConsultant() == null) {
+                    test.setConsultant(user);
+                }
             }
 
             // RESULTED status
-            else if (request.getStatus() == TestStatus.RESULTED && user.getRole().equals("CONSULTANT")) {
+            else if (request.getStatus() == TestStatus.RESULTED &&
+                    (user.getRole().equals("STAFF") || user.getRole().equals("ADMIN"))) {
                 if (request.getResults() == null || request.getResults().isEmpty()) {
                     log.warn("No test results provided for test ID: {}", testId);
                     return ApiResponse.error("Test results are required for RESULTED status");
@@ -368,13 +377,19 @@ public class STITestService {
                 test.setResultDate(LocalDateTime.now());
             }
 
-            // OMPLETED status
-            else if (request.getStatus() == TestStatus.COMPLETED && user.getRole().equals("CONSULTANT")) {
+            // COMPLETED status
+            else if (request.getStatus() == TestStatus.COMPLETED &&
+                    (user.getRole().equals("STAFF") || user.getRole().equals("ADMIN"))) {
                 test.setStatus(TestStatus.COMPLETED);
             }
 
+            log.info("Saving updated test with status: {}", test.getStatus());
             STITest updatedTest = stiTestRepository.save(test);
+            stiTestRepository.flush(); // Đảm bảo lưu ngay lập tức vào DB
+
+            log.info("Test saved with status: {}", updatedTest.getStatus());
             STITestResponse response = convertToResponse(updatedTest);
+            log.info("Response created with status: {}", response.getStatus());
 
             return ApiResponse.success("STI test status updated to " + request.getStatus(), response);
         } catch (Exception e) {
@@ -446,17 +461,27 @@ public class STITestService {
     private boolean validateStatusTransition(STITest test, TestStatus newStatus, String userRole) {
         TestStatus currentStatus = test.getStatus();
 
-        if (userRole.equals("STAFF") || userRole.equals("ADMIN")) {
-            return currentStatus == TestStatus.PENDING && newStatus == TestStatus.CONFIRMED;
-        } else if (userRole.equals("CONSULTANT")) {
+        // Kiểm tra role và luồng chuyển đổi trạng thái
+        if (userRole.equals("STAFF")) {
+            // STAFF có thể thực hiện các chuyển đổi trạng thái sau:
+            if (currentStatus == TestStatus.PENDING && newStatus == TestStatus.CONFIRMED)
+                return true;
             if (currentStatus == TestStatus.CONFIRMED && newStatus == TestStatus.SAMPLED)
                 return true;
             if (currentStatus == TestStatus.SAMPLED && newStatus == TestStatus.RESULTED)
                 return true;
             if (currentStatus == TestStatus.RESULTED && newStatus == TestStatus.COMPLETED)
                 return true;
+        } else if (userRole.equals("ADMIN")) {
+            // ADMIN có thể thực hiện mọi chuyển đổi trạng thái
+            return true;
+        } else if (userRole.equals("USER") || userRole.equals("CONSULTANT")) {
+            // USER và CONSULTANT chỉ có thể hủy lịch hẹn
+            if (currentStatus == TestStatus.PENDING && newStatus == TestStatus.CANCELED)
+                return true;
         }
 
+        // Mặc định trả về false nếu không thỏa mãn các điều kiện trên
         return false;
     }
 
@@ -626,6 +651,7 @@ public class STITestService {
             return ApiResponse.error("Failed to cancel STI test: " + e.getMessage());
         }
     }
+
     @Transactional
     public ApiResponse<STITestResponse> updateConsultantNotes(Long testId, String consultantNotes, Long consultantId) {
         try {
@@ -650,17 +676,17 @@ public class STITestService {
                 return ApiResponse.error("User is not a consultant");
             }
 
-            // Kiểm tra consultant có được assign cho test này không
-            if (stiTest.getConsultant() == null || !stiTest.getConsultant().getId().equals(consultantId)) {
-                return ApiResponse.error("You can only update notes for tests assigned to you");
-            }
-
             // Kiểm tra trạng thái test có cho phép cập nhật notes không
             if (stiTest.getStatus() != TestStatus.SAMPLED &&
                     stiTest.getStatus() != TestStatus.RESULTED &&
                     stiTest.getStatus() != TestStatus.COMPLETED) {
                 return ApiResponse.error(
                         "Consultant notes can only be updated for tests in SAMPLED, RESULTED, or COMPLETED status");
+            }
+
+            if (stiTest.getConsultant() == null) {
+                log.info("Assigning consultant {} to test {}", consultantId, testId);
+                stiTest.setConsultant(consultant);
             }
 
             // Cập nhật consultant notes

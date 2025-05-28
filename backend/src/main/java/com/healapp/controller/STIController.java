@@ -103,59 +103,59 @@ public class STIController {
         return getResponseEntity(response);
     }
 
-    @GetMapping("/consultant/confirmed-tests")
-    @PreAuthorize("hasRole('ROLE_CONSULTANT')")
+    @GetMapping("/staff/confirmed-tests")
+    @PreAuthorize("hasRole('ROLE_STAFF')")
     public ResponseEntity<ApiResponse<List<STITestResponse>>> getConfirmedTests() {
         ApiResponse<List<STITestResponse>> response = stiTestService.getConfirmedTests();
         return getResponseEntity(response);
     }
 
-    @PutMapping("/consultant/tests/{testId}/sample")
-    @PreAuthorize("hasRole('ROLE_CONSULTANT')")
+    @PutMapping("/staff/tests/{testId}/sample")
+    @PreAuthorize("hasRole('ROLE_STAFF')")
     public ResponseEntity<ApiResponse<STITestResponse>> sampleTest(@PathVariable Long testId) {
-        Long consultantId = getCurrentUserId();
+        Long staffId = getCurrentUserId();
 
         STITestStatusUpdateRequest request = new STITestStatusUpdateRequest();
         request.setStatus(com.healapp.model.TestStatus.SAMPLED);
 
-        ApiResponse<STITestResponse> response = stiTestService.updateTestStatus(testId, request, consultantId);
+        ApiResponse<STITestResponse> response = stiTestService.updateTestStatus(testId, request, staffId);
         return getResponseEntity(response);
     }
 
-    @GetMapping("/consultant/my-tests")
-    @PreAuthorize("hasRole('ROLE_CONSULTANT')")
-    public ResponseEntity<ApiResponse<List<STITestResponse>>> getConsultantTests() {
-        Long consultantId = getCurrentUserId();
-        ApiResponse<List<STITestResponse>> response = stiTestService.getConsultantTests(consultantId);
+    @GetMapping("/staff/my-tests")
+    @PreAuthorize("hasRole('ROLE_STAFF')")
+    public ResponseEntity<ApiResponse<List<STITestResponse>>> getStaffTests() {
+        Long staffId = getCurrentUserId();
+        ApiResponse<List<STITestResponse>> response = stiTestService.getStaffTests(staffId);
         return getResponseEntity(response);
     }
 
-    @PutMapping("/consultant/tests/{testId}/result")
-    @PreAuthorize("hasRole('ROLE_CONSULTANT')")
+    @PutMapping("/staff/tests/{testId}/result")
+    @PreAuthorize("hasRole('ROLE_STAFF')")
     public ResponseEntity<ApiResponse<STITestResponse>> addTestResults(
             @PathVariable Long testId,
             @Valid @RequestBody STITestStatusUpdateRequest request) {
 
-        Long consultantId = getCurrentUserId();
+        Long staffId = getCurrentUserId();
 
         // Đảm bảo status là RESULTED
         request.setStatus(com.healapp.model.TestStatus.RESULTED);
 
-        ApiResponse<STITestResponse> response = stiTestService.updateTestStatus(testId, request, consultantId);
+        ApiResponse<STITestResponse> response = stiTestService.updateTestStatus(testId, request, staffId);
         return getResponseEntity(response);
     }
 
-    @PutMapping("/consultant/tests/{testId}/complete")
-    @PreAuthorize("hasRole('ROLE_CONSULTANT')")
+    @PutMapping("/staff/tests/{testId}/complete")
+    @PreAuthorize("hasRole('ROLE_STAFF')")
     public ResponseEntity<ApiResponse<STITestResponse>> completeTest(
             @PathVariable Long testId) {
 
-        Long consultantId = getCurrentUserId();
+        Long staffId = getCurrentUserId();
 
         STITestStatusUpdateRequest request = new STITestStatusUpdateRequest();
         request.setStatus(com.healapp.model.TestStatus.COMPLETED);
 
-        ApiResponse<STITestResponse> response = stiTestService.updateTestStatus(testId, request, consultantId);
+        ApiResponse<STITestResponse> response = stiTestService.updateTestStatus(testId, request, staffId);
         return getResponseEntity(response);
     }
 
