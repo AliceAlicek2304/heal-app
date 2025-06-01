@@ -6,8 +6,10 @@ import com.healapp.dto.LoginRequest;
 import com.healapp.dto.LoginResponse;
 import com.healapp.dto.RegisterRequest;
 import com.healapp.model.ConsultantProfile;
+import com.healapp.model.Role;
 import com.healapp.model.UserDtls;
 import com.healapp.repository.ConsultantProfileRepository;
+import com.healapp.repository.RoleRepository;
 import com.healapp.repository.UserRepository;
 import com.healapp.dto.ForgotPasswordRequest;
 import com.healapp.dto.ResetPasswordRequest;
@@ -60,6 +62,12 @@ public class UserService {
     @Autowired
     private ConsultantProfileRepository consultantProfileRepository;
 
+    @Autowired
+    private RoleRepository roleRepository;
+
+    @Autowired
+    private RoleService roleService;
+
     @Value("${app.avatar.url.pattern}default.jpg")
     private String defaultAvatarPath;
 
@@ -91,18 +99,19 @@ public class UserService {
 
     public ApiResponse<UserDtls> registerUser(RegisterRequest request, MultipartFile avatarFile) {
         try {
-
+            // Kiểm tra mã xác thực email
             boolean isVerified = emailVerificationService.verifyCode(request.getEmail(), request.getVerificationCode());
             if (!isVerified) {
-                return ApiResponse.error("The verification code is incorrect or has expired.");
+                return ApiResponse.error("Mã xác thực không đúng hoặc đã hết hạn");
             }
 
-            if (isUsernameExists(request.getUsername())) {
-                return ApiResponse.error("Username already exists");
+            // Kiểm tra username và email đã tồn tại
+            if (userRepository.existsByUsername(request.getUsername())) {
+                return ApiResponse.error("Username đã tồn tại");
             }
 
-            if (isEmailExists(request.getEmail())) {
-                return ApiResponse.error("Email already exists");
+            if (userRepository.existsByEmail(request.getEmail())) {
+                return ApiResponse.error("Email đã tồn tại");
             }
 
             // Tạo user mới
@@ -113,18 +122,18 @@ public class UserService {
             user.setEmail(request.getEmail());
             user.setUsername(request.getUsername());
             user.setPassword(passwordEncoder.encode(request.getPassword()));
-
             user.setAvatar(defaultAvatarPath);
-
             user.setIsActive(true);
-            user.setRole("USER");
-            user.setCreatedDate(LocalDateTime.now());
+
+            // Set role mặc định là USER
+            Role userRole = roleService.getDefaultUserRole();
+            user.setRole(userRole);
 
             UserDtls savedUser = userRepository.save(user);
+            return ApiResponse.success("Đăng ký thành công", savedUser);
 
-            return ApiResponse.success("Registered successfully", savedUser);
         } catch (Exception e) {
-            return ApiResponse.error("Registration failed: " + e.getMessage());
+            return ApiResponse.error("Lỗi đăng ký: " + e.getMessage());
         }
     }
 
@@ -158,7 +167,7 @@ public class UserService {
             loginResponse.setFullName(user.getFullName());
             loginResponse.setEmail(user.getEmail());
             loginResponse.setAvatar(user.getAvatar());
-            loginResponse.setRole(user.getRole());
+            loginResponse.setRole(user.getRoleName());
             loginResponse.setBirthDay(user.getBirthDay());
             loginResponse.setPhone(user.getPhone());
 
@@ -257,38 +266,37 @@ public class UserService {
             }
 
             UserDtls user = userOpt.get();
-            String oldRole = user.getRole();
-            String newRole = request.getRole();
+            String oldRoleName = user.getRoleName();
+            String newRoleName = request.getRole();
 
-            // Chỉ chấp nhận các role hợp lệ
-            if (!isValidRole(newRole)) {
+            // Kiểm tra role hợp lệ
+            if (!roleService.isValidRole(newRoleName)) {
                 return ApiResponse.error("Invalid role. Role must be USER, CONSULTANT, STAFF or ADMIN");
             }
+
+            // Lấy role entity từ database
+            Role newRole = roleRepository.findByRoleName(newRoleName)
+                    .orElseThrow(() -> new RuntimeException("Role not found: " + newRoleName));
 
             user.setRole(newRole);
             user.setIsActive(request.getIsActive());
 
-            // từ CONSULTANT sang role khác, xóa profile consultant
-            if (oldRole.equals("CONSULTANT") && !newRole.equals("CONSULTANT")) {
+            // Xử lý chuyển đổi role consultant
+            if ("CONSULTANT".equals(oldRoleName) && !"CONSULTANT".equals(newRoleName)) {
                 Optional<ConsultantProfile> profileOpt = consultantProfileRepository.findByUser(user);
                 profileOpt.ifPresent(consultantProfileRepository::delete);
             }
 
-            // từ role khác sang CONSULTANT, tạo profile consultant mặc định
-            if (!oldRole.equals("CONSULTANT") && newRole.equals("CONSULTANT")) {
+            if (!"CONSULTANT".equals(oldRoleName) && "CONSULTANT".equals(newRoleName)) {
                 ConsultantProfile newProfile = new ConsultantProfile();
                 newProfile.setUser(user);
-
                 newProfile.setQualifications("Not updated yet");
                 newProfile.setExperience("0 years experience");
                 newProfile.setBio("No details updated yet");
-
                 consultantProfileRepository.save(newProfile);
             }
 
             UserDtls updatedUser = userRepository.save(user);
-
-            // Convert to response
             UserResponse response = mapUserToResponse(updatedUser);
 
             return ApiResponse.success("User update successful", response);
@@ -324,19 +332,19 @@ public class UserService {
         }
     }
 
-    public ApiResponse<List<UserResponse>> getUsersByRole(String role) {
+    public ApiResponse<List<UserResponse>> getUsersByRole(String roleName) {
         try {
             // Validate role
-            if (!isValidRole(role)) {
+            if (!roleService.isValidRole(roleName)) {
                 return ApiResponse.error("Invalid role. Valid roles are: USER, CONSULTANT, STAFF, ADMIN");
             }
 
-            List<UserDtls> users = userRepository.findByRole(role);
+            List<UserDtls> users = userRepository.findByRoleName(roleName);
             List<UserResponse> userResponses = users.stream()
                     .map(this::mapUserToResponse)
                     .collect(Collectors.toList());
 
-            String message = String.format("Found %d user(s) with role %s", userResponses.size(), role);
+            String message = String.format("Found %d user(s) with role %s", userResponses.size(), roleName);
             return ApiResponse.success(message, userResponses);
 
         } catch (Exception e) {
@@ -346,8 +354,12 @@ public class UserService {
 
     public ApiResponse<List<String>> getAvailableRoles() {
         try {
-            List<String> roles = Arrays.asList("USER", "CONSULTANT", "STAFF", "ADMIN");
-            return ApiResponse.success("Available roles retrieved successfully", roles);
+            List<Role> roles = roleRepository.findAll();
+            List<String> roleNames = roles.stream()
+                    .map(Role::getRoleName)
+                    .collect(Collectors.toList());
+
+            return ApiResponse.success("Available roles retrieved successfully", roleNames);
         } catch (Exception e) {
             return ApiResponse.error("Failed to retrieve available roles: " + e.getMessage());
         }
@@ -357,10 +369,12 @@ public class UserService {
         try {
             Map<String, Long> roleCount = new HashMap<>();
 
-            roleCount.put("USER", userRepository.countByRole("USER"));
-            roleCount.put("CONSULTANT", userRepository.countByRole("CONSULTANT"));
-            roleCount.put("STAFF", userRepository.countByRole("STAFF"));
-            roleCount.put("ADMIN", userRepository.countByRole("ADMIN"));
+            List<Role> roles = roleRepository.findAll();
+            for (Role role : roles) {
+                long count = userRepository.countByRole(role);
+                roleCount.put(role.getRoleName(), count);
+            }
+
             roleCount.put("TOTAL", userRepository.count());
 
             return ApiResponse.success("User count by role retrieved successfully", roleCount);
@@ -519,50 +533,41 @@ public class UserService {
 
     public ApiResponse<String> updateUserAvatar(Long userId, MultipartFile file) {
         try {
-            Optional<UserDtls> userOpt = userRepository.findById(userId);
-            if (userOpt.isEmpty()) {
+            // Kiểm tra user tồn tại
+            Optional<UserDtls> userOptional = userRepository.findById(userId);
+            if (userOptional.isEmpty()) {
                 return ApiResponse.error("User not found");
             }
 
-            UserDtls user = userOpt.get();
-
-            // Validate file
-            if (file.isEmpty()) {
+            // Kiểm tra file null hoặc empty TRƯỚC khi gọi isEmpty()
+            if (file == null || file.isEmpty()) {
                 return ApiResponse.error("Please select a file");
             }
 
-            // Kiểm tra loại file
+            // Kiểm tra file type
             String contentType = file.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
                 return ApiResponse.error("Only image files are allowed");
             }
 
-            // Kiểm tra kích thước file (max 5MB)
+            // Kiểm tra file size (5MB = 5 * 1024 * 1024 bytes)
             if (file.getSize() > 5 * 1024 * 1024) {
                 return ApiResponse.error("File size must be less than 5MB");
             }
 
+            UserDtls user = userOptional.get();
+
             // Lưu file avatar
             String avatarPath = fileStorageService.saveAvatarFile(file, userId);
 
-            // Xóa avatar cũ (nếu không phải default)
-            if (!user.getAvatar().contains("default.jpg")) {
-                try {
-                    fileStorageService.deleteFile(user.getAvatar());
-                } catch (Exception e) {
-                }
-            }
-
-            // Cập nhật đường dẫn avatar
+            // Cập nhật avatar path trong database
             user.setAvatar(avatarPath);
             userRepository.save(user);
 
             return ApiResponse.success("Avatar updated successfully", avatarPath);
 
-        } catch (IOException e) {
-            return ApiResponse.error("Failed to save avatar file: " + e.getMessage());
         } catch (Exception e) {
-            return ApiResponse.error("Failed to update avatar: " + e.getMessage());
+            return ApiResponse.error("Failed to save avatar file: " + e.getMessage());
         }
     }
 
@@ -576,15 +581,14 @@ public class UserService {
         response.setUsername(user.getUsername());
         response.setAvatar(user.getAvatar());
         response.setIsActive(user.getIsActive());
-        response.setRole(user.getRole());
+        response.setRole(user.getRoleName());
         response.setCreatedDate(user.getCreatedDate());
         return response;
     }
 
     // kiểm tra role
-    private boolean isValidRole(String role) {
-        return role.equals("USER") || role.equals("CONSULTANT") ||
-                role.equals("STAFF") || role.equals("ADMIN");
+    private boolean isValidRole(String roleName) {
+        return roleService.isValidRole(roleName);
     }
 
 }

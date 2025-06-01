@@ -4,8 +4,10 @@ import com.healapp.dto.ApiResponse;
 import com.healapp.dto.ConsultantProfileRequest;
 import com.healapp.dto.ConsultantProfileResponse;
 import com.healapp.model.ConsultantProfile;
+import com.healapp.model.Role;
 import com.healapp.model.UserDtls;
 import com.healapp.repository.ConsultantProfileRepository;
+import com.healapp.repository.RoleRepository;
 import com.healapp.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,9 +26,13 @@ public class ConsultantService {
     @Autowired
     private ConsultantProfileRepository consultantProfileRepository;
 
+    @Autowired
+    private RoleRepository roleRepository;
+
     public ApiResponse<List<ConsultantProfileResponse>> getAllConsultantProfiles() {
         try {
-            List<UserDtls> consultantUsers = userRepository.findByRole("CONSULTANT");
+            // Cập nhật: Sử dụng findByRoleName thay vì findByRole
+            List<UserDtls> consultantUsers = userRepository.findByRoleName("CONSULTANT");
             List<ConsultantProfileResponse> responses = consultantUsers.stream()
                     .map(user -> {
                         Optional<ConsultantProfile> profileOpt = consultantProfileRepository.findByUser(user);
@@ -58,7 +64,8 @@ public class ConsultantService {
             }
 
             UserDtls user = userOpt.get();
-            if (!user.getRole().equals("CONSULTANT")) {
+            // Cập nhật: Sử dụng getRoleName() thay vì getRole()
+            if (!"CONSULTANT".equals(user.getRoleName())) {
                 return ApiResponse.error("User is not a consultant");
             }
 
@@ -91,12 +98,12 @@ public class ConsultantService {
 
             UserDtls user = userOpt.get();
 
-            // Kiểm tra user phải có role là CONSULTANT
-            if (!user.getRole().equals("CONSULTANT")) {
+            // Cập nhật: Sử dụng getRoleName() thay vì getRole()
+            if (!"CONSULTANT".equals(user.getRoleName())) {
                 return ApiResponse.error("User must have CONSULTANT role to update profile. Please update role first.");
             }
 
-            // tìm profile của user, tạo mới nếu chưa có
+            // Tìm profile của user, tạo mới nếu chưa có
             ConsultantProfile consultantProfile = consultantProfileRepository.findByUser(user)
                     .orElse(new ConsultantProfile());
 
@@ -122,7 +129,8 @@ public class ConsultantService {
             }
 
             UserDtls user = userOpt.get();
-            if (!user.getRole().equals("CONSULTANT")) {
+            // Cập nhật: Sử dụng getRoleName() thay vì getRole()
+            if (!"CONSULTANT".equals(user.getRoleName())) {
                 return ApiResponse.error("User is not a consultant");
             }
 
@@ -130,7 +138,11 @@ public class ConsultantService {
             Optional<ConsultantProfile> profileOpt = consultantProfileRepository.findByUser(user);
             profileOpt.ifPresent(consultantProfileRepository::delete);
 
-            user.setRole("USER");
+            // Cập nhật: Lấy role USER từ database và set cho user
+            Role userRole = roleRepository.findByRoleName("USER")
+                    .orElseThrow(() -> new RuntimeException("USER role not found in database"));
+
+            user.setRole(userRole);
             userRepository.save(user);
 
             return ApiResponse.success("Consultant role removed successfully", null);

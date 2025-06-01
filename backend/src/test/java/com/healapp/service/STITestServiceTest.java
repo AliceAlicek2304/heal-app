@@ -6,6 +6,7 @@ import com.healapp.dto.STITestResponse;
 import com.healapp.dto.STITestStatusUpdateRequest;
 import com.healapp.dto.TestResultRequest;
 import com.healapp.dto.TestResultResponse;
+import com.healapp.model.Role;
 import com.healapp.model.STIService;
 import com.healapp.model.STITest;
 import com.healapp.model.ServiceTestComponent;
@@ -75,37 +76,64 @@ public class STITestServiceTest {
     private TestResult testResult;
     private STITestStatusUpdateRequest statusUpdateRequest;
 
+    // Cập nhật: Thêm Role entities
+    private Role userRole;
+    private Role staffRole;
+    private Role consultantRole;
+    private Role adminRole;
+
     @BeforeEach
     void setUp() {
-        // Khởi tạo customer
+        // Cập nhật: Khởi tạo Role entities
+        userRole = new Role();
+        userRole.setRoleId(1L);
+        userRole.setRoleName("USER");
+        userRole.setDescription("Regular user role");
+
+        staffRole = new Role();
+        staffRole.setRoleId(2L);
+        staffRole.setRoleName("STAFF");
+        staffRole.setDescription("Staff role");
+
+        consultantRole = new Role();
+        consultantRole.setRoleId(3L);
+        consultantRole.setRoleName("CONSULTANT");
+        consultantRole.setDescription("Healthcare consultant role");
+
+        adminRole = new Role();
+        adminRole.setRoleId(4L);
+        adminRole.setRoleName("ADMIN");
+        adminRole.setDescription("Administrator role");
+
+        // Cập nhật: Khởi tạo customer với Role entity
         customer = new UserDtls();
         customer.setId(1L);
         customer.setUsername("customer");
         customer.setFullName("Khách hàng");
         customer.setEmail("customer@example.com");
         customer.setPhone("0912345678");
-        customer.setRole("USER");
+        customer.setRole(userRole); // Sử dụng Role entity thay vì String
 
-        // Khởi tạo staff
+        // Cập nhật: Khởi tạo staff với Role entity
         staff = new UserDtls();
         staff.setId(2L);
         staff.setUsername("staff");
         staff.setFullName("Nhân viên");
-        staff.setRole("STAFF");
+        staff.setRole(staffRole); // Sử dụng Role entity thay vì String
 
-        // Khởi tạo consultant
+        // Cập nhật: Khởi tạo consultant với Role entity
         consultant = new UserDtls();
         consultant.setId(3L);
         consultant.setUsername("consultant");
         consultant.setFullName("Bác sĩ tư vấn");
-        consultant.setRole("CONSULTANT");
+        consultant.setRole(consultantRole); // Sử dụng Role entity thay vì String
 
-        // Khởi tạo admin
+        // Cập nhật: Khởi tạo admin với Role entity
         admin = new UserDtls();
         admin.setId(4L);
         admin.setUsername("admin");
         admin.setFullName("Quản trị viên");
-        admin.setRole("ADMIN");
+        admin.setRole(adminRole); // Sử dụng Role entity thay vì String
 
         // Khởi tạo các thành phần xét nghiệm
         testComponent1 = new ServiceTestComponent();
@@ -404,14 +432,12 @@ public class STITestServiceTest {
         statusUpdateRequest.setStatus(TestStatus.SAMPLED);
 
         when(stiTestRepository.findById(stiTest.getTestId())).thenReturn(Optional.of(stiTest));
-        when(userRepository.findById(staff.getId())).thenReturn(Optional.of(staff)); // Thay đổi từ consultant sang
-                                                                                     // staff
+        when(userRepository.findById(staff.getId())).thenReturn(Optional.of(staff));
         when(stiTestRepository.save(any(STITest.class))).thenReturn(stiTest);
 
         // Thực hiện hành động
         ApiResponse<STITestResponse> response = stiTestService.updateTestStatus(
-                stiTest.getTestId(), statusUpdateRequest, staff.getId()); // Thay đổi từ consultant.getId() sang
-                                                                          // staff.getId()
+                stiTest.getTestId(), statusUpdateRequest, staff.getId());
 
         // Kiểm tra kết quả
         assertTrue(response.isSuccess());
@@ -449,8 +475,7 @@ public class STITestServiceTest {
         statusUpdateRequest.setResults(resultRequests);
 
         when(stiTestRepository.findById(stiTest.getTestId())).thenReturn(Optional.of(stiTest));
-        when(userRepository.findById(staff.getId())).thenReturn(Optional.of(staff)); // Thay đổi từ consultant sang
-                                                                                     // staff
+        when(userRepository.findById(staff.getId())).thenReturn(Optional.of(staff));
         when(stiTestRepository.save(any(STITest.class))).thenReturn(stiTest);
 
         // Mock để tìm thấy cả hai component
@@ -462,8 +487,7 @@ public class STITestServiceTest {
 
         // Thực hiện hành động
         ApiResponse<STITestResponse> response = stiTestService.updateTestStatus(
-                stiTest.getTestId(), statusUpdateRequest, staff.getId()); // Thay đổi từ consultant.getId() sang
-                                                                          // staff.getId()
+                stiTest.getTestId(), statusUpdateRequest, staff.getId());
 
         // Kiểm tra kết quả
         assertTrue(response.isSuccess());
@@ -526,13 +550,11 @@ public class STITestServiceTest {
         statusUpdateRequest.setResults(resultRequests);
 
         when(stiTestRepository.findById(stiTest.getTestId())).thenReturn(Optional.of(stiTest));
-        when(userRepository.findById(staff.getId())).thenReturn(Optional.of(staff)); // Thay đổi từ consultant sang
-                                                                                     // staff
+        when(userRepository.findById(staff.getId())).thenReturn(Optional.of(staff));
 
         // Thực hiện hành động
         ApiResponse<STITestResponse> response = stiTestService.updateTestStatus(
-                stiTest.getTestId(), statusUpdateRequest, staff.getId()); // Thay đổi từ consultant.getId() sang
-                                                                          // staff.getId()
+                stiTest.getTestId(), statusUpdateRequest, staff.getId());
 
         // Kiểm tra kết quả
         assertFalse(response.isSuccess());
@@ -570,13 +592,11 @@ public class STITestServiceTest {
         statusUpdateRequest.setResults(resultRequests);
 
         when(stiTestRepository.findById(stiTest.getTestId())).thenReturn(Optional.of(stiTest));
-        when(userRepository.findById(staff.getId())).thenReturn(Optional.of(staff)); // Thay đổi từ consultant sang
-                                                                                     // staff
+        when(userRepository.findById(staff.getId())).thenReturn(Optional.of(staff));
 
         // Thực hiện hành động
         ApiResponse<STITestResponse> response = stiTestService.updateTestStatus(
-                stiTest.getTestId(), statusUpdateRequest, staff.getId()); // Thay đổi từ consultant.getId() sang
-                                                                          // staff.getId()
+                stiTest.getTestId(), statusUpdateRequest, staff.getId());
 
         // Kiểm tra kết quả
         assertFalse(response.isSuccess());
@@ -798,7 +818,7 @@ public class STITestServiceTest {
         // Arrange
         UserDtls otherConsultant = new UserDtls();
         otherConsultant.setId(99L);
-        otherConsultant.setRole("CONSULTANT");
+        otherConsultant.setRole(consultantRole); // Cập nhật: Sử dụng Role entity
 
         stiTest.setConsultant(otherConsultant); // Test đã được gán cho consultant khác
         stiTest.setStatus(TestStatus.RESULTED);

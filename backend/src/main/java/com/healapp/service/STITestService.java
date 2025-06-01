@@ -236,7 +236,9 @@ public class STITestService {
             }
 
             UserDtls staff = staffOpt.get();
-            if (!"STAFF".equals(staff.getRole())) {
+            // Cập nhật: Kiểm tra role thông qua Role entity
+            String roleName = staff.getRole() != null ? staff.getRole().getRoleName() : null;
+            if (!"STAFF".equals(roleName)) {
                 return ApiResponse.error("User is not a staff");
             }
 
@@ -269,22 +271,24 @@ public class STITestService {
             UserDtls user = userOpt.get();
             STITest test = testOpt.get();
 
-            log.info("Current test status: {}, User role: {}", test.getStatus(), user.getRole());
+            // Cập nhật: Lấy role name từ Role entity
+            String userRole = user.getRole() != null ? user.getRole().getRoleName() : null;
+            log.info("Current test status: {}, User role: {}", test.getStatus(), userRole);
 
-            if (!validateStatusTransition(test, request.getStatus(), user.getRole())) {
+            if (!validateStatusTransition(test, request.getStatus(), userRole)) {
                 return ApiResponse.error("Invalid status transition for your role");
             }
 
             // CONFIRMED status
             if (request.getStatus() == TestStatus.CONFIRMED &&
-                    (user.getRole().equals("STAFF") || user.getRole().equals("ADMIN"))) {
+                    ("STAFF".equals(userRole) || "ADMIN".equals(userRole))) {
                 test.setStatus(TestStatus.CONFIRMED);
                 test.setStaff(user);
             }
 
             // SAMPLED status
             else if (request.getStatus() == TestStatus.SAMPLED &&
-                    (user.getRole().equals("STAFF") || user.getRole().equals("ADMIN"))) {
+                    ("STAFF".equals(userRole) || "ADMIN".equals(userRole))) {
                 test.setStatus(TestStatus.SAMPLED);
                 // Nếu test chưa có consultant, gán STAFF làm consultant
                 if (test.getConsultant() == null) {
@@ -294,7 +298,7 @@ public class STITestService {
 
             // RESULTED status
             else if (request.getStatus() == TestStatus.RESULTED &&
-                    (user.getRole().equals("STAFF") || user.getRole().equals("ADMIN"))) {
+                    ("STAFF".equals(userRole) || "ADMIN".equals(userRole))) {
                 if (request.getResults() == null || request.getResults().isEmpty()) {
                     log.warn("No test results provided for test ID: {}", testId);
                     return ApiResponse.error("Test results are required for RESULTED status");
@@ -379,7 +383,7 @@ public class STITestService {
 
             // COMPLETED status
             else if (request.getStatus() == TestStatus.COMPLETED &&
-                    (user.getRole().equals("STAFF") || user.getRole().equals("ADMIN"))) {
+                    ("STAFF".equals(userRole) || "ADMIN".equals(userRole))) {
                 test.setStatus(TestStatus.COMPLETED);
             }
 
@@ -462,7 +466,7 @@ public class STITestService {
         TestStatus currentStatus = test.getStatus();
 
         // Kiểm tra role và luồng chuyển đổi trạng thái
-        if (userRole.equals("STAFF")) {
+        if ("STAFF".equals(userRole)) {
             // STAFF có thể thực hiện các chuyển đổi trạng thái sau:
             if (currentStatus == TestStatus.PENDING && newStatus == TestStatus.CONFIRMED)
                 return true;
@@ -472,10 +476,10 @@ public class STITestService {
                 return true;
             if (currentStatus == TestStatus.RESULTED && newStatus == TestStatus.COMPLETED)
                 return true;
-        } else if (userRole.equals("ADMIN")) {
+        } else if ("ADMIN".equals(userRole)) {
             // ADMIN có thể thực hiện mọi chuyển đổi trạng thái
             return true;
-        } else if (userRole.equals("USER") || userRole.equals("CONSULTANT")) {
+        } else if ("USER".equals(userRole) || "CONSULTANT".equals(userRole)) {
             // USER và CONSULTANT chỉ có thể hủy lịch hẹn
             if (currentStatus == TestStatus.PENDING && newStatus == TestStatus.CANCELED)
                 return true;
@@ -560,9 +564,12 @@ public class STITestService {
             // Staff hoặc admin
             else {
                 Optional<UserDtls> userOpt = userRepository.findById(userId);
-                if (userOpt.isPresent() &&
-                        (userOpt.get().getRole().equals("STAFF") || userOpt.get().getRole().equals("ADMIN"))) {
-                    hasAccess = true;
+                if (userOpt.isPresent()) {
+                    // Cập nhật: Kiểm tra role thông qua Role entity
+                    String userRole = userOpt.get().getRole() != null ? userOpt.get().getRole().getRoleName() : null;
+                    if ("STAFF".equals(userRole) || "ADMIN".equals(userRole)) {
+                        hasAccess = true;
+                    }
                 }
             }
 
@@ -672,7 +679,9 @@ public class STITestService {
             }
 
             UserDtls consultant = consultantOpt.get();
-            if (!"CONSULTANT".equals(consultant.getRole())) {
+            // Cập nhật: Kiểm tra role thông qua Role entity
+            String roleName = consultant.getRole() != null ? consultant.getRole().getRoleName() : null;
+            if (!"CONSULTANT".equals(roleName)) {
                 return ApiResponse.error("User is not a consultant");
             }
 

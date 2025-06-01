@@ -23,6 +23,7 @@ import com.healapp.dto.ApiResponse;
 import com.healapp.dto.CategoryQuestionRequest;
 import com.healapp.dto.CategoryQuestionResponse;
 import com.healapp.model.CategoryQuestion;
+import com.healapp.model.Role;
 import com.healapp.model.UserDtls;
 import com.healapp.model.Question;
 import com.healapp.model.Question.QuestionStatus;
@@ -52,24 +53,39 @@ public class CategoryQuestionServiceTest {
     private UserDtls regularUser;
     private CategoryQuestion category;
     private CategoryQuestionRequest categoryRequest;
+    
+    // Cập nhật: Thêm Role entities
+    private Role adminRole;
+    private Role userRole;
 
     @BeforeEach
     void setUp() {
-        // Initialize admin user
+        // Cập nhật: Khởi tạo Role entities
+        adminRole = new Role();
+        adminRole.setRoleId(1L);
+        adminRole.setRoleName("ADMIN");
+        adminRole.setDescription("Administrator role");
+
+        userRole = new Role();
+        userRole.setRoleId(2L);
+        userRole.setRoleName("USER");
+        userRole.setDescription("Regular user role");
+
+        // Cập nhật: Initialize admin user với Role entity
         adminUser = new UserDtls();
         adminUser.setId(1L);
         adminUser.setUsername("admin");
         adminUser.setFullName("Admin User");
         adminUser.setEmail("admin@example.com");
-        adminUser.setRole("ADMIN");
+        adminUser.setRole(adminRole); // Sử dụng Role entity thay vì String
 
-        // Initialize regular user
+        // Cập nhật: Initialize regular user với Role entity
         regularUser = new UserDtls();
         regularUser.setId(2L);
         regularUser.setUsername("user");
         regularUser.setFullName("Regular User");
         regularUser.setEmail("user@example.com");
-        regularUser.setRole("USER");
+        regularUser.setRole(userRole); // Sử dụng Role entity thay vì String
 
         // Initialize category
         category = new CategoryQuestion();

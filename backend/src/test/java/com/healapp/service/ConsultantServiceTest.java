@@ -4,8 +4,10 @@ import com.healapp.dto.ApiResponse;
 import com.healapp.dto.ConsultantProfileRequest;
 import com.healapp.dto.ConsultantProfileResponse;
 import com.healapp.model.ConsultantProfile;
+import com.healapp.model.Role;
 import com.healapp.model.UserDtls;
 import com.healapp.repository.ConsultantProfileRepository;
+import com.healapp.repository.RoleRepository;
 import com.healapp.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,6 +36,10 @@ public class ConsultantServiceTest {
     @Mock
     private ConsultantProfileRepository consultantProfileRepository;
 
+    // Cập nhật: Thêm RoleRepository mock
+    @Mock
+    private RoleRepository roleRepository;
+
     @InjectMocks
     private ConsultantService consultantService;
 
@@ -42,16 +48,31 @@ public class ConsultantServiceTest {
     private ConsultantProfile consultantProfile;
     private ConsultantProfileRequest validRequest;
 
+    // Cập nhật: Thêm Role entities
+    private Role consultantRole;
+    private Role userRole;
+
     @BeforeEach
     void setUp() {
-        // Tạo mẫu dữ liệu test
+        // Cập nhật: Khởi tạo Role entities
+        consultantRole = new Role();
+        consultantRole.setRoleId(1L);
+        consultantRole.setRoleName("CONSULTANT");
+        consultantRole.setDescription("Healthcare consultant role");
+
+        userRole = new Role();
+        userRole.setRoleId(2L);
+        userRole.setRoleName("USER");
+        userRole.setDescription("Regular user role");
+
+        // Cập nhật: Tạo mẫu dữ liệu test với Role entity
         consultantUser = new UserDtls();
         consultantUser.setId(1L);
         consultantUser.setUsername("consultant");
         consultantUser.setEmail("consultant@example.com");
         consultantUser.setFullName("Consultant User");
         consultantUser.setPhone("0123456789");
-        consultantUser.setRole("CONSULTANT");
+        consultantUser.setRole(consultantRole); // Sử dụng Role entity thay vì String
 
         normalUser = new UserDtls();
         normalUser.setId(2L);
@@ -59,7 +80,7 @@ public class ConsultantServiceTest {
         normalUser.setEmail("user@example.com");
         normalUser.setFullName("Normal User");
         normalUser.setPhone("0987654321");
-        normalUser.setRole("USER");
+        normalUser.setRole(userRole); // Sử dụng Role entity thay vì String
 
         consultantProfile = new ConsultantProfile();
         consultantProfile.setProfileId(1L);
@@ -79,7 +100,8 @@ public class ConsultantServiceTest {
     void getAllConsultantProfiles_ShouldReturnAllConsultantProfiles() {
         // Arrange
         List<UserDtls> consultantUsers = Arrays.asList(consultantUser);
-        when(userRepository.findByRole("CONSULTANT")).thenReturn(consultantUsers);
+        // Cập nhật: Sử dụng findByRoleName thay vì findByRole
+        when(userRepository.findByRoleName("CONSULTANT")).thenReturn(consultantUsers);
         when(consultantProfileRepository.findByUser(consultantUser)).thenReturn(Optional.of(consultantProfile));
 
         // Act
@@ -91,7 +113,9 @@ public class ConsultantServiceTest {
         assertEquals(1, response.getData().size());
         assertEquals(consultantUser.getId(), response.getData().get(0).getUserId());
         assertEquals(consultantProfile.getQualifications(), response.getData().get(0).getQualifications());
-        verify(userRepository).findByRole("CONSULTANT");
+
+        // Cập nhật: Verify sử dụng findByRoleName
+        verify(userRepository).findByRoleName("CONSULTANT");
         verify(consultantProfileRepository).findByUser(consultantUser);
     }
 
@@ -100,7 +124,8 @@ public class ConsultantServiceTest {
     void getAllConsultantProfiles_WhenNoProfileExists_ShouldReturnBasicInfo() {
         // Arrange
         List<UserDtls> consultantUsers = Arrays.asList(consultantUser);
-        when(userRepository.findByRole("CONSULTANT")).thenReturn(consultantUsers);
+        // Cập nhật: Sử dụng findByRoleName thay vì findByRole
+        when(userRepository.findByRoleName("CONSULTANT")).thenReturn(consultantUsers);
         when(consultantProfileRepository.findByUser(consultantUser)).thenReturn(Optional.empty());
 
         // Act
@@ -112,7 +137,9 @@ public class ConsultantServiceTest {
         assertEquals(1, response.getData().size());
         assertEquals(consultantUser.getId(), response.getData().get(0).getUserId());
         assertNull(response.getData().get(0).getQualifications());
-        verify(userRepository).findByRole("CONSULTANT");
+
+        // Cập nhật: Verify sử dụng findByRoleName
+        verify(userRepository).findByRoleName("CONSULTANT");
         verify(consultantProfileRepository).findByUser(consultantUser);
     }
 
@@ -193,13 +220,14 @@ public class ConsultantServiceTest {
     @Test
     @DisplayName("Tạo profile consultant mới thành công")
     void createOrUpdateConsultantProfile_WhenCreateNew_ShouldSucceed() {
+        // Cập nhật: Tạo newConsultant với Role entity
         UserDtls newConsultant = new UserDtls();
         newConsultant.setId(3L);
         newConsultant.setUsername("newconsultant");
         newConsultant.setEmail("newconsultant@example.com");
         newConsultant.setFullName("New Consultant");
         newConsultant.setPhone("0123456780");
-        newConsultant.setRole("CONSULTANT"); // Đã có role CONSULTANT
+        newConsultant.setRole(consultantRole); // Sử dụng Role entity
 
         when(userRepository.findById(3L)).thenReturn(Optional.of(newConsultant));
         when(consultantProfileRepository.findByUser(newConsultant)).thenReturn(Optional.empty());
@@ -320,6 +348,8 @@ public class ConsultantServiceTest {
         // Arrange
         when(userRepository.findById(1L)).thenReturn(Optional.of(consultantUser));
         when(consultantProfileRepository.findByUser(consultantUser)).thenReturn(Optional.of(consultantProfile));
+        // Cập nhật: Mock RoleRepository để trả về USER role
+        when(roleRepository.findByRoleName("USER")).thenReturn(Optional.of(userRole));
 
         // Act
         ApiResponse<String> response = consultantService.removeConsultantRole(1L);
@@ -332,7 +362,9 @@ public class ConsultantServiceTest {
         verify(consultantProfileRepository).findByUser(consultantUser);
         verify(consultantProfileRepository).delete(consultantProfile);
         verify(userRepository).save(consultantUser);
-        assertEquals("USER", consultantUser.getRole());
+        // Cập nhật: Verify Role entity được set
+        verify(roleRepository).findByRoleName("USER");
+        assertEquals(userRole, consultantUser.getRole());
     }
 
     @Test
@@ -350,6 +382,8 @@ public class ConsultantServiceTest {
         assertNull(response.getData());
         verify(userRepository).findById(2L);
         verifyNoInteractions(consultantProfileRepository);
+        // Cập nhật: Verify RoleRepository không được gọi
+        verifyNoInteractions(roleRepository);
     }
 
     @Test
@@ -367,5 +401,32 @@ public class ConsultantServiceTest {
         assertNull(response.getData());
         verify(userRepository).findById(99L);
         verifyNoInteractions(consultantProfileRepository);
+        // Cập nhật: Verify RoleRepository không được gọi
+        verifyNoInteractions(roleRepository);
+    }
+
+    @Test
+    @DisplayName("Xóa role consultant thất bại khi không tìm thấy USER role")
+    void removeConsultantRole_WhenUserRoleNotFound_ShouldReturnError() {
+        // Arrange
+        when(userRepository.findById(1L)).thenReturn(Optional.of(consultantUser));
+        when(consultantProfileRepository.findByUser(consultantUser)).thenReturn(Optional.of(consultantProfile));
+        // Cập nhật: Mock RoleRepository trả về empty để test error case
+        when(roleRepository.findByRoleName("USER")).thenReturn(Optional.empty());
+
+        // Act
+        ApiResponse<String> response = consultantService.removeConsultantRole(1L);
+
+        // Assert
+        assertFalse(response.isSuccess());
+        assertTrue(response.getMessage().contains("Failed to remove consultant role"));
+        assertTrue(response.getMessage().contains("USER role not found in database"));
+        assertNull(response.getData());
+        verify(userRepository).findById(1L);
+        verify(consultantProfileRepository).findByUser(consultantUser);
+        verify(consultantProfileRepository).delete(consultantProfile);
+        verify(roleRepository).findByRoleName("USER");
+        // User không được save khi có lỗi
+        verify(userRepository, never()).save(any(UserDtls.class));
     }
 }

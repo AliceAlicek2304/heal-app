@@ -49,10 +49,12 @@ public class STIServiceService {
             }
 
             UserDtls admin = adminOpt.get();
-            log.info("Admin found: {} with role: {}", admin.getUsername(), admin.getRole());
+            // Cập nhật: Kiểm tra role thông qua Role entity
+            String roleName = admin.getRole() != null ? admin.getRole().getRoleName() : null;
+            log.info("Admin found: {} with role: {}", admin.getUsername(), roleName);
 
-            if (!admin.getRole().equals("ADMIN")) {
-                log.error("User {} is not ADMIN, role: {}", admin.getUsername(), admin.getRole());
+            if (!"ADMIN".equals(roleName)) {
+                log.error("User {} is not ADMIN, role: {}", admin.getUsername(), roleName);
                 return ApiResponse.error("Only ADMIN can create STI services");
             }
 
@@ -126,7 +128,9 @@ public class STIServiceService {
             }
 
             UserDtls admin = adminOpt.get();
-            if (!admin.getRole().equals("ADMIN")) {
+            // Cập nhật: Kiểm tra role thông qua Role entity
+            String roleName = admin.getRole() != null ? admin.getRole().getRoleName() : null;
+            if (!"ADMIN".equals(roleName)) {
                 return ApiResponse.error("Only ADMIN can update STI services");
             }
 
@@ -270,5 +274,4 @@ public class STIServiceService {
 
         return response;
     }
-
 }

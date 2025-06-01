@@ -50,10 +50,11 @@ public class BlogPostService {
 
             // Kiểm tra vai trò tác giả
             UserDtls authorUser = author.get();
-            if (!authorUser.getRole().equals("USER") &&
-                    !authorUser.getRole().equals("CONSULTANT") &&
-                    !authorUser.getRole().equals("STAFF") &&
-                    !authorUser.getRole().equals("ADMIN")) {
+            String authorRole = authorUser.getRoleName();
+            if (!"USER".equals(authorRole) &&
+                    !"CONSULTANT".equals(authorRole) &&
+                    !"STAFF".equals(authorRole) &&
+                    !"ADMIN".equals(authorRole)) {
                 return ApiResponse.error("You do not have permission to create blog posts");
             }
 
@@ -61,6 +62,7 @@ public class BlogPostService {
             if (category.isEmpty()) {
                 return ApiResponse.error("Category not found");
             }
+
             BlogPost blogPost = new BlogPost();
             blogPost.setTitle(request.getTitle());
             blogPost.setContent(request.getContent());
@@ -69,7 +71,7 @@ public class BlogPostService {
             blogPost.setAuthor(authorUser);
             blogPost.setCreatedAt(LocalDateTime.now());
 
-            if (authorUser.getRole().equals("STAFF") || authorUser.getRole().equals("ADMIN")) {
+            if ("STAFF".equals(authorRole) || "ADMIN".equals(authorRole)) {
                 blogPost.setStatus(BlogPostStatus.CONFIRMED);
                 blogPost.setReviewer(authorUser);
                 blogPost.setReviewedAt(LocalDateTime.now());
@@ -77,6 +79,7 @@ public class BlogPostService {
                 // Nếu là USER hoặc CONSULTANT, trạng thái mặc định là PROCESSING
                 blogPost.setStatus(BlogPostStatus.PROCESSING);
             }
+
             BlogPost savedPost = blogPostRepository.save(blogPost);
 
             // Process sections if any
@@ -180,8 +183,10 @@ public class BlogPostService {
                 return ApiResponse.error("Staff not found");
             }
 
-            // Chỉ STAFF hoặc ADMIN mới có thể cập nhật trạng thái
-            if (!staff.getRole().equals("STAFF") && !staff.getRole().equals("ADMIN")) {
+            // Cập nhật: Chỉ STAFF hoặc ADMIN mới có thể cập nhật trạng thái - Sử dụng
+            // getRoleName()
+            String staffRole = staff.getRoleName();
+            if (!"STAFF".equals(staffRole) && !"ADMIN".equals(staffRole)) {
                 return ApiResponse.error("Only STAFF or ADMIN can update blog post status");
             }
 
@@ -229,7 +234,7 @@ public class BlogPostService {
                 return ApiResponse.error("User not found");
             }
 
-            if (!currentUser.getRole().equals("ADMIN") && !blogPost.getAuthor().getId().equals(userId)) {
+            if (!"ADMIN".equals(currentUser.getRoleName()) && !blogPost.getAuthor().getId().equals(userId)) {
                 return ApiResponse.error("You don't have permission to delete this post");
             }
 

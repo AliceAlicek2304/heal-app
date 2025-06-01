@@ -43,10 +43,15 @@ public class UserDtls {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
-    @Column(nullable = false)
-    private String role = "USER";
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "role_id", nullable = false)
+    private Role role;
 
     @Column(name = "created_date", nullable = false)
     private LocalDateTime createdDate = LocalDateTime.now();
 
+    public String getRoleName() {
+        return role != null ? role.getRoleName() : null;
+    }
 }

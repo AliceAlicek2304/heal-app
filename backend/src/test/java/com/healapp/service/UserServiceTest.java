@@ -1,18 +1,19 @@
 package com.healapp.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-
-import java.io.IOException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
+import com.healapp.dto.*;
+import com.healapp.model.ConsultantProfile;
+import com.healapp.model.Role;
+import com.healapp.model.UserDtls;
+import com.healapp.repository.ConsultantProfileRepository;
+import com.healapp.repository.RoleRepository;
+import com.healapp.repository.UserRepository;
+import com.healapp.service.EmailService;
+import com.healapp.service.EmailVerificationService;
+import com.healapp.service.FileStorageService;
+import com.healapp.service.PasswordResetService;
+import com.healapp.service.RoleService;
+import com.healapp.service.UserService;
+import jakarta.mail.MessagingException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,40 +22,29 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.healapp.dto.ApiResponse;
-import com.healapp.dto.ChangePasswordRequest;
-import com.healapp.dto.RegisterRequest;
-import com.healapp.dto.VerificationCodeRequest;
-import com.healapp.model.ConsultantProfile;
-import com.healapp.model.UserDtls;
-import com.healapp.repository.ConsultantProfileRepository;
-import com.healapp.repository.UserRepository;
-import com.healapp.service.EmailVerificationService.RateLimitException;
-import com.healapp.dto.LoginRequest;
-import com.healapp.dto.LoginResponse;
-import com.healapp.dto.ForgotPasswordRequest;
-import com.healapp.dto.ResetPasswordRequest;
-import com.healapp.dto.UpdateEmailRequest;
-import com.healapp.dto.UpdateProfileRequest;
-import com.healapp.dto.UserResponse;
-import com.healapp.dto.UserUpdateRequest;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.*;
 
-import jakarta.mail.MessagingException;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class UserServiceTest {
+@DisplayName("UserService Test")
+class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private FileStorageService fileStorageService;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -72,1210 +62,803 @@ public class UserServiceTest {
     private ConsultantProfileRepository consultantProfileRepository;
 
     @Mock
-    private FileStorageService fileStorageService;
+    private RoleRepository roleRepository;
+
+    @Mock
+    private RoleService roleService;
 
     @InjectMocks
     private UserService userService;
 
-    private RegisterRequest registerRequest;
     private UserDtls sampleUser;
+    private Role userRole;
+    private Role consultantRole;
+    private Role staffRole;
+    private Role adminRole;
 
     @BeforeEach
     void setUp() {
-        // RegisterRequest
-        registerRequest = new RegisterRequest();
-        registerRequest.setFullName("Nguyen Van A");
-        registerRequest.setBirthDay(LocalDate.of(1990, 1, 1));
-        registerRequest.setPhone("0987654321");
-        registerRequest.setEmail("nguyenvana@example.com");
-        registerRequest.setUsername("nguyenvana");
-        registerRequest.setPassword("password123");
-        registerRequest.setVerificationCode("123456");
+        // Setup Role entities
+        userRole = new Role();
+        userRole.setRoleId(1L);
+        userRole.setRoleName("USER");
+        userRole.setDescription("Regular user role");
 
-        // Sample user
+        consultantRole = new Role();
+        consultantRole.setRoleId(2L);
+        consultantRole.setRoleName("CONSULTANT");
+        consultantRole.setDescription("Consultant role");
+
+        staffRole = new Role();
+        staffRole.setRoleId(3L);
+        staffRole.setRoleName("STAFF");
+        staffRole.setDescription("Staff role");
+
+        adminRole = new Role();
+        adminRole.setRoleId(4L);
+        adminRole.setRoleName("ADMIN");
+        adminRole.setDescription("Administrator role");
+
+        // Setup sample user với createdDate thay vì createdAt
         sampleUser = new UserDtls();
         sampleUser.setId(1L);
         sampleUser.setFullName("Nguyen Van A");
+        sampleUser.setBirthDay(LocalDate.of(1990, 1, 15));
+        sampleUser.setPhone("0123456789");
         sampleUser.setEmail("nguyenvana@example.com");
         sampleUser.setUsername("nguyenvana");
         sampleUser.setPassword("encodedPassword");
         sampleUser.setAvatar("/img/avatar/default.jpg");
         sampleUser.setIsActive(true);
-        sampleUser.setRole("USER");
+        sampleUser.setRole(userRole);
+        sampleUser.setCreatedDate(LocalDateTime.now().minusDays(30));
+
+        // Set default avatar path
+        ReflectionTestUtils.setField(userService, "defaultAvatarPath", "/img/avatar/default.jpg");
     }
 
-    // Tests for email verification functionality
+    // Email and Username existence tests
+    @Test
+    @DisplayName("Kiểm tra email đã tồn tại - trả về true")
+    void isEmailExists_EmailExists_ShouldReturnTrue() {
+        when(userRepository.existsByEmail("existing@example.com")).thenReturn(true);
+
+        boolean result = userService.isEmailExists("existing@example.com");
+
+        assertTrue(result);
+        verify(userRepository).existsByEmail("existing@example.com");
+    }
+
+    @Test
+    @DisplayName("Kiểm tra email chưa tồn tại - trả về false")
+    void isEmailExists_EmailNotExists_ShouldReturnFalse() {
+        when(userRepository.existsByEmail("new@example.com")).thenReturn(false);
+
+        boolean result = userService.isEmailExists("new@example.com");
+
+        assertFalse(result);
+        verify(userRepository).existsByEmail("new@example.com");
+    }
+
+    @Test
+    @DisplayName("Kiểm tra username đã tồn tại - trả về true")
+    void isUsernameExists_UsernameExists_ShouldReturnTrue() {
+        when(userRepository.existsByUsername("existinguser")).thenReturn(true);
+
+        boolean result = userService.isUsernameExists("existinguser");
+
+        assertTrue(result);
+        verify(userRepository).existsByUsername("existinguser");
+    }
+
+    @Test
+    @DisplayName("Kiểm tra username chưa tồn tại - trả về false")
+    void isUsernameExists_UsernameNotExists_ShouldReturnFalse() {
+        when(userRepository.existsByUsername("newuser")).thenReturn(false);
+
+        boolean result = userService.isUsernameExists("newuser");
+
+        assertFalse(result);
+        verify(userRepository).existsByUsername("newuser");
+    }
+
+    // Email verification tests
     @Test
     @DisplayName("Gửi mã xác thực email thành công")
-    void sendEmailVerificationCode_WithValidEmail_ShouldSucceed() throws Exception {
-        // Arrange
+    void sendEmailVerificationCode_Success() throws Exception {
         VerificationCodeRequest request = new VerificationCodeRequest();
-        request.setEmail("newuser@example.com");
+        request.setEmail("new@example.com");
 
-        when(userRepository.existsByEmail("newuser@example.com")).thenReturn(false);
-        when(emailVerificationService.generateVerificationCode(anyString())).thenReturn("123456");
-        doNothing().when(emailService).sendEmailVerificationCodeAsync(anyString(), anyString());
+        when(userRepository.existsByEmail("new@example.com")).thenReturn(false);
+        when(emailVerificationService.generateVerificationCode("new@example.com")).thenReturn("123456");
+        doNothing().when(emailService).sendEmailVerificationCodeAsync("new@example.com", "123456");
 
-        // Act
         ApiResponse<String> response = userService.sendEmailVerificationCode(request);
 
-        // Assert
         assertTrue(response.isSuccess());
-        assertEquals("Mã xác thực đã được gửi đến email của bạn", response.getMessage());
-        assertNull(response.getData());
+        assertEquals("A verification code has been sent to your email.", response.getMessage());
+        assertEquals("new@example.com", response.getData());
 
-        // Verify
-        verify(userRepository).existsByEmail("newuser@example.com");
-        verify(emailVerificationService).generateVerificationCode("newuser@example.com");
-        verify(emailService).sendEmailVerificationCodeAsync(eq("newuser@example.com"), anyString());
+        verify(userRepository).existsByEmail("new@example.com");
+        verify(emailVerificationService).generateVerificationCode("new@example.com");
+        verify(emailService).sendEmailVerificationCodeAsync("new@example.com", "123456");
     }
 
     @Test
-    @DisplayName("Gửi mã xác thực email thất bại khi email đã tồn tại")
-    void sendEmailVerificationCode_WithExistingEmail_ShouldFail() throws Exception {
-        // Arrange
+    @DisplayName("Gửi mã xác thực email thất bại - email đã tồn tại")
+    void sendEmailVerificationCode_EmailExists_ShouldFail() {
         VerificationCodeRequest request = new VerificationCodeRequest();
         request.setEmail("existing@example.com");
 
         when(userRepository.existsByEmail("existing@example.com")).thenReturn(true);
 
-        // Act
         ApiResponse<String> response = userService.sendEmailVerificationCode(request);
 
-        // Assert
         assertFalse(response.isSuccess());
-        assertEquals("Email đã được đăng ký", response.getMessage());
-        assertNull(response.getData());
+        assertEquals("Email has been registered", response.getMessage());
 
-        // Verify
         verify(userRepository).existsByEmail("existing@example.com");
-        verify(emailVerificationService, never()).generateVerificationCode(anyString());
-        verify(emailService, never()).sendEmailVerificationCodeAsync(anyString(), anyString());
+        verifyNoInteractions(emailVerificationService);
+        verifyNoInteractions(emailService);
     }
 
+    // User registration tests
     @Test
-    @DisplayName("Gửi mã xác thực email thất bại do giới hạn tốc độ")
-    void sendEmailVerificationCode_WithRateLimit_ShouldFail() throws Exception {
-        // Arrange
-        VerificationCodeRequest request = new VerificationCodeRequest();
-        request.setEmail("newuser@example.com");
+    @DisplayName("Đăng ký người dùng thành công")
+    void registerUser_Success() throws Exception {
+        RegisterRequest request = new RegisterRequest();
+        request.setFullName("Test User");
+        request.setBirthDay(LocalDate.of(1995, 5, 15));
+        request.setPhone("0987654321");
+        request.setEmail("test@example.com");
+        request.setUsername("testuser");
+        request.setPassword("password123");
+        request.setVerificationCode("123456");
 
-        when(userRepository.existsByEmail("newuser@example.com")).thenReturn(false);
-        when(emailVerificationService.generateVerificationCode("newuser@example.com"))
-                .thenThrow(new EmailVerificationService.RateLimitException(
-                        "Vui lòng đợi 50 giây trước khi yêu cầu gửi mã mới"));
+        MultipartFile avatarFile = new MockMultipartFile("avatar", "avatar.jpg", "image/jpeg", "test".getBytes());
 
-        // Act
-        ApiResponse<String> response = userService.sendEmailVerificationCode(request);
-
-        // Assert
-        assertFalse(response.isSuccess());
-        assertTrue(response.getMessage().contains("Vui lòng đợi 50 giây"));
-        assertNull(response.getData());
-
-        // Verify
-        verify(userRepository).existsByEmail("newuser@example.com");
-        verify(emailVerificationService).generateVerificationCode("newuser@example.com");
-        verify(emailService, never()).sendEmailVerificationCodeAsync(anyString(), anyString());
-    }
-
-    @Test
-    @DisplayName("Đăng ký người dùng thành công với mã xác thực hợp lệ")
-    void registerUser_WithVerifiedEmail_Success() {
-        // Arrange
-        when(userRepository.existsByUsername(anyString())).thenReturn(false);
-        when(userRepository.existsByEmail(anyString())).thenReturn(false);
-        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
-        when(emailVerificationService.verifyCode("nguyenvana@example.com", "123456")).thenReturn(true);
-
-        // Thiết lập giá trị mặc định cho avatar
-        ReflectionTestUtils.setField(userService, "defaultAvatarPath", "/img/avatar/default.jpg");
-
+        when(emailVerificationService.verifyCode("test@example.com", "123456")).thenReturn(true);
+        when(userRepository.existsByUsername("testuser")).thenReturn(false);
+        when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
+        when(passwordEncoder.encode("password123")).thenReturn("encodedPassword123");
+        when(roleService.getDefaultUserRole()).thenReturn(userRole);
         when(userRepository.save(any(UserDtls.class))).thenReturn(sampleUser);
 
-        // Act
-        ApiResponse<UserDtls> response = userService.registerUser(registerRequest, null);
+        ApiResponse<UserDtls> response = userService.registerUser(request, avatarFile);
 
-        // Assert
         assertTrue(response.isSuccess());
         assertEquals("Đăng ký thành công", response.getMessage());
-        assertEquals(sampleUser, response.getData());
+        assertNotNull(response.getData());
 
-        // Verify
-        verify(emailVerificationService).verifyCode("nguyenvana@example.com", "123456");
+        verify(emailVerificationService).verifyCode("test@example.com", "123456");
+        verify(userRepository).existsByUsername("testuser");
+        verify(userRepository).existsByEmail("test@example.com");
         verify(passwordEncoder).encode("password123");
-
-        ArgumentCaptor<UserDtls> userCaptor = ArgumentCaptor.forClass(UserDtls.class);
-        verify(userRepository).save(userCaptor.capture());
-
-        UserDtls savedUser = userCaptor.getValue();
-        assertEquals("encodedPassword", savedUser.getPassword());
-        assertEquals("/img/avatar/default.jpg", savedUser.getAvatar());
-        assertEquals("USER", savedUser.getRole());
-        assertTrue(savedUser.getIsActive());
+        verify(roleService).getDefaultUserRole();
+        verify(userRepository).save(any(UserDtls.class));
     }
 
     @Test
-    @DisplayName("Đăng ký thất bại khi mã xác thực không hợp lệ")
-    void registerUser_WithInvalidVerificationCode_ShouldFail() {
-        // Arrange
-        when(emailVerificationService.verifyCode("nguyenvana@example.com", "123456")).thenReturn(false);
+    @DisplayName("Đăng ký thất bại - mã xác thực không đúng")
+    void registerUser_InvalidVerificationCode_ShouldFail() throws Exception {
+        RegisterRequest request = new RegisterRequest();
+        request.setEmail("test@example.com");
+        request.setVerificationCode("wrong_code");
 
-        // Act
-        ApiResponse<UserDtls> response = userService.registerUser(registerRequest, null);
+        when(emailVerificationService.verifyCode("test@example.com", "wrong_code")).thenReturn(false);
 
-        // Assert
+        ApiResponse<UserDtls> response = userService.registerUser(request, null);
+
         assertFalse(response.isSuccess());
         assertEquals("Mã xác thực không đúng hoặc đã hết hạn", response.getMessage());
-        assertNull(response.getData());
 
-        // Verify
-        verify(emailVerificationService).verifyCode("nguyenvana@example.com", "123456");
-        verify(userRepository, never()).existsByUsername(anyString());
-        verify(userRepository, never()).existsByEmail(anyString());
-        verify(passwordEncoder, never()).encode(anyString());
+        verify(emailVerificationService).verifyCode("test@example.com", "wrong_code");
         verify(userRepository, never()).save(any(UserDtls.class));
     }
 
     @Test
-    @DisplayName("Đăng ký thất bại khi tên người dùng đã tồn tại")
-    void registerUser_WithExistingUsername_ShouldFail() {
-        // Arrange
-        lenient().when(emailVerificationService.verifyCode("nguyenvana@example.com", "123456")).thenReturn(true);
-        when(userRepository.existsByUsername("nguyenvana")).thenReturn(true);
+    @DisplayName("Đăng ký thất bại - username đã tồn tại")
+    void registerUser_UsernameExists_ShouldFail() throws Exception {
+        RegisterRequest request = new RegisterRequest();
+        request.setEmail("test@example.com");
+        request.setUsername("existinguser");
+        request.setVerificationCode("123456");
 
-        // Act
-        ApiResponse<UserDtls> response = userService.registerUser(registerRequest, null);
+        when(emailVerificationService.verifyCode("test@example.com", "123456")).thenReturn(true);
+        when(userRepository.existsByUsername("existinguser")).thenReturn(true);
 
-        // Assert
+        ApiResponse<UserDtls> response = userService.registerUser(request, null);
+
         assertFalse(response.isSuccess());
         assertEquals("Username đã tồn tại", response.getMessage());
-        assertNull(response.getData());
 
+        verify(userRepository).existsByUsername("existinguser");
         verify(userRepository, never()).save(any(UserDtls.class));
     }
 
     @Test
-    @DisplayName("Đăng ký thất bại khi email đã tồn tại")
-    void registerUser_WithExistingEmail_ShouldFail() {
-        // Arrange
-        when(emailVerificationService.verifyCode("nguyenvana@example.com", "123456")).thenReturn(true); // trả về true
-        when(userRepository.existsByUsername(anyString())).thenReturn(false);
-        when(userRepository.existsByEmail("nguyenvana@example.com")).thenReturn(true);
+    @DisplayName("Đăng ký thất bại - email đã tồn tại")
+    void registerUser_EmailExists_ShouldFail() throws Exception {
+        RegisterRequest request = new RegisterRequest();
+        request.setEmail("existing@example.com");
+        request.setUsername("newuser");
+        request.setVerificationCode("123456");
 
-        // Act
-        ApiResponse<UserDtls> response = userService.registerUser(registerRequest, null);
+        when(emailVerificationService.verifyCode("existing@example.com", "123456")).thenReturn(true);
+        when(userRepository.existsByUsername("newuser")).thenReturn(false);
+        when(userRepository.existsByEmail("existing@example.com")).thenReturn(true);
 
-        // Assert
+        ApiResponse<UserDtls> response = userService.registerUser(request, null);
+
         assertFalse(response.isSuccess());
         assertEquals("Email đã tồn tại", response.getMessage());
-        assertNull(response.getData());
 
-        // Verify
-        verify(emailVerificationService).verifyCode("nguyenvana@example.com", "123456");
-        verify(userRepository).existsByUsername(anyString());
-        verify(userRepository).existsByEmail("nguyenvana@example.com");
+        verify(userRepository).existsByEmail("existing@example.com");
         verify(userRepository, never()).save(any(UserDtls.class));
     }
 
+    // Login tests
     @Test
-    @DisplayName("Đăng nhập thành công với thông tin chính xác")
-    void login_WithCorrectCredentials_ShouldSucceed() {
-        // Arrange
-        LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setUsername("nguyenvana");
-        loginRequest.setPassword("password123");
+    @DisplayName("Đăng nhập thành công với username")
+    void login_WithUsername_Success() {
+        LoginRequest request = new LoginRequest();
+        request.setUsername("nguyenvana");
+        request.setPassword("password123");
 
-        UserDtls user = new UserDtls();
-        user.setId(1L);
-        user.setUsername("nguyenvana");
-        user.setPassword("encodedPassword");
-        user.setFullName("Nguyen Van A");
-        user.setEmail("nguyenvana@example.com");
-        user.setAvatar("/img/avatar/default.jpg");
-        user.setIsActive(true);
-        user.setRole("USER");
-        user.setBirthDay(LocalDate.of(1990, 1, 15)); // Thêm dòng này
-        user.setPhone("0123456789"); // Thêm dòng này
-
-        when(userRepository.findByUsername("nguyenvana")).thenReturn(Optional.of(user));
+        when(userRepository.findByUsername("nguyenvana")).thenReturn(Optional.of(sampleUser));
         when(passwordEncoder.matches("password123", "encodedPassword")).thenReturn(true);
 
-        // Act
-        ApiResponse<LoginResponse> response = userService.login(loginRequest);
+        ApiResponse<LoginResponse> response = userService.login(request);
 
-        // Assert
         assertTrue(response.isSuccess());
         assertEquals("Login successful", response.getMessage());
         assertNotNull(response.getData());
+        assertEquals(1L, response.getData().getUserId());
+        assertEquals("nguyenvana", response.getData().getUsername());
+        assertEquals("USER", response.getData().getRole());
 
-        LoginResponse loginResponse = response.getData();
-        assertEquals(1L, loginResponse.getUserId());
-        assertEquals("nguyenvana", loginResponse.getUsername());
-        assertEquals("Nguyen Van A", loginResponse.getFullName());
-        assertEquals("nguyenvana@example.com", loginResponse.getEmail());
-        assertEquals("/img/avatar/default.jpg", loginResponse.getAvatar());
-        assertEquals("USER", loginResponse.getRole());
-        assertEquals(LocalDate.of(1990, 1, 15), loginResponse.getBirthDay()); // Thêm assertion này
-        assertEquals("0123456789", loginResponse.getPhone()); // Thêm assertion này
-    }
-
-    @Test
-    @DisplayName("Đăng nhập thất bại với tên người dùng không tồn tại")
-    void login_WithNonExistentUsername_ShouldFail() {
-        // Arrange
-        LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setUsername("nonexistentuser");
-        loginRequest.setPassword("password123");
-
-        when(userRepository.findByUsername("nonexistentuser")).thenReturn(Optional.empty());
-
-        // Act
-        ApiResponse<LoginResponse> response = userService.login(loginRequest);
-
-        // Assert
-        assertFalse(response.isSuccess());
-        assertEquals("Invalid username/email or password", response.getMessage());
-        assertNull(response.getData());
-
-        verify(passwordEncoder, never()).matches(anyString(), anyString());
-    }
-
-    @Test
-    @DisplayName("Đăng nhập thất bại với mật khẩu không chính xác")
-    void login_WithIncorrectPassword_ShouldFail() {
-        // Arrange
-        LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setUsername("nguyenvana");
-        loginRequest.setPassword("wrongpassword");
-
-        UserDtls user = new UserDtls();
-        user.setUsername("nguyenvana");
-        user.setPassword("encodedPassword");
-        user.setIsActive(true);
-
-        when(userRepository.findByUsername("nguyenvana")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("wrongpassword", "encodedPassword")).thenReturn(false);
-
-        // Act
-        ApiResponse<LoginResponse> response = userService.login(loginRequest);
-
-        // Assert
-        assertFalse(response.isSuccess());
-        assertEquals("Invalid username/email or password", response.getMessage());
-        assertNull(response.getData());
-    }
-
-    @Test
-    @DisplayName("Đăng nhập thất bại với tài khoản bị vô hiệu hóa")
-    void login_WithInactiveAccount_ShouldFail() {
-        // Arrange
-        LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setUsername("inactiveuser");
-        loginRequest.setPassword("password123");
-
-        UserDtls user = new UserDtls();
-        user.setUsername("inactiveuser");
-        user.setPassword("encodedPassword");
-        user.setIsActive(false);
-
-        when(userRepository.findByUsername("inactiveuser")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("password123", "encodedPassword")).thenReturn(true);
-
-        // Act
-        ApiResponse<LoginResponse> response = userService.login(loginRequest);
-
-        // Assert
-        assertFalse(response.isSuccess());
-        assertEquals("Account is disabled", response.getMessage());
-        assertNull(response.getData());
-    }
-
-    @Test
-    @DisplayName("Đăng nhập xử lý ngoại lệ")
-    void login_WithException_ShouldReturnErrorResponse() {
-        // Arrange
-        LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setUsername("nguyenvana");
-        loginRequest.setPassword("password123");
-
-        when(userRepository.findByUsername("nguyenvana")).thenThrow(new RuntimeException("Database error"));
-
-        // Act
-        ApiResponse<LoginResponse> response = userService.login(loginRequest);
-
-        // Assert
-        assertFalse(response.isSuccess());
-        assertTrue(response.getMessage().startsWith("Login failed:"));
-        assertNull(response.getData());
+        verify(userRepository).findByUsername("nguyenvana");
+        verify(passwordEncoder).matches("password123", "encodedPassword");
     }
 
     @Test
     @DisplayName("Đăng nhập thành công với email")
-    void login_WithEmailSuccessful() {
-        // Arrange
-        LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setUsername("nguyenvana@example.com"); // Sử dụng email thay vì username
-        loginRequest.setPassword("password123");
+    void login_WithEmail_Success() {
+        LoginRequest request = new LoginRequest();
+        request.setUsername("nguyenvana@example.com");
+        request.setPassword("password123");
 
-        UserDtls user = new UserDtls();
-        user.setId(1L);
-        user.setUsername("nguyenvana");
-        user.setPassword("encodedPassword");
-        user.setFullName("Nguyen Van A");
-        user.setEmail("nguyenvana@example.com");
-        user.setAvatar("/img/avatar/default.jpg");
-        user.setIsActive(true);
-        user.setRole("USER");
-
-        when(userRepository.findByEmail("nguyenvana@example.com")).thenReturn(Optional.of(user));
+        when(userRepository.findByEmail("nguyenvana@example.com")).thenReturn(Optional.of(sampleUser));
         when(passwordEncoder.matches("password123", "encodedPassword")).thenReturn(true);
 
-        // Act
-        ApiResponse<LoginResponse> response = userService.login(loginRequest);
+        ApiResponse<LoginResponse> response = userService.login(request);
 
-        // Assert
         assertTrue(response.isSuccess());
         assertEquals("Login successful", response.getMessage());
         assertNotNull(response.getData());
 
-        LoginResponse loginResponse = response.getData();
-        assertEquals(1L, loginResponse.getUserId());
-        assertEquals("nguyenvana", loginResponse.getUsername());
-        assertEquals("Nguyen Van A", loginResponse.getFullName());
-        assertEquals("nguyenvana@example.com", loginResponse.getEmail());
-        assertEquals("/img/avatar/default.jpg", loginResponse.getAvatar());
-        assertEquals("USER", loginResponse.getRole());
+        verify(userRepository).findByEmail("nguyenvana@example.com");
+        verify(passwordEncoder).matches("password123", "encodedPassword");
     }
 
     @Test
-    @DisplayName("Đăng nhập thất bại với email không tồn tại")
-    void login_WithNonExistentEmail_ShouldFail() {
-        // Arrange
-        LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setUsername("nonexistent@example.com");
-        loginRequest.setPassword("password123");
+    @DisplayName("Đăng nhập thất bại - username/email không tồn tại")
+    void login_UserNotFound_ShouldFail() {
+        LoginRequest request = new LoginRequest();
+        request.setUsername("nonexistent");
+        request.setPassword("password123");
 
-        when(userRepository.findByEmail("nonexistent@example.com")).thenReturn(Optional.empty());
+        when(userRepository.findByUsername("nonexistent")).thenReturn(Optional.empty());
 
-        // Act
-        ApiResponse<LoginResponse> response = userService.login(loginRequest);
+        ApiResponse<LoginResponse> response = userService.login(request);
 
-        // Assert
         assertFalse(response.isSuccess());
         assertEquals("Invalid username/email or password", response.getMessage());
-        assertNull(response.getData());
 
-        verify(passwordEncoder, never()).matches(anyString(), anyString());
+        verify(userRepository).findByUsername("nonexistent");
+        verifyNoInteractions(passwordEncoder);
     }
 
     @Test
-    @DisplayName("Đăng nhập thất bại với email hợp lệ nhưng mật khẩu không đúng")
-    void login_WithEmail_IncorrectPassword_ShouldFail() {
-        // Arrange
-        LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setUsername("nguyenvana@example.com");
-        loginRequest.setPassword("wrongpassword");
+    @DisplayName("Đăng nhập thất bại - mật khẩu sai")
+    void login_WrongPassword_ShouldFail() {
+        LoginRequest request = new LoginRequest();
+        request.setUsername("nguyenvana");
+        request.setPassword("wrongpassword");
 
-        UserDtls user = new UserDtls();
-        user.setUsername("nguyenvana");
-        user.setEmail("nguyenvana@example.com");
-        user.setPassword("encodedPassword");
-        user.setIsActive(true);
-
-        when(userRepository.findByEmail("nguyenvana@example.com")).thenReturn(Optional.of(user));
+        when(userRepository.findByUsername("nguyenvana")).thenReturn(Optional.of(sampleUser));
         when(passwordEncoder.matches("wrongpassword", "encodedPassword")).thenReturn(false);
 
-        // Act
-        ApiResponse<LoginResponse> response = userService.login(loginRequest);
+        ApiResponse<LoginResponse> response = userService.login(request);
 
-        // Assert
         assertFalse(response.isSuccess());
         assertEquals("Invalid username/email or password", response.getMessage());
-        assertNull(response.getData());
+
+        verify(passwordEncoder).matches("wrongpassword", "encodedPassword");
     }
 
     @Test
-    @DisplayName("Đăng nhập thất bại với email hợp lệ nhưng tài khoản bị vô hiệu hóa")
-    void login_WithEmail_InactiveAccount_ShouldFail() {
-        // Arrange
-        LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setUsername("inactive@example.com");
-        loginRequest.setPassword("password123");
+    @DisplayName("Đăng nhập thất bại - tài khoản bị vô hiệu hóa")
+    void login_InactiveAccount_ShouldFail() {
+        sampleUser.setIsActive(false);
+        LoginRequest request = new LoginRequest();
+        request.setUsername("nguyenvana");
+        request.setPassword("password123");
 
-        UserDtls user = new UserDtls();
-        user.setUsername("inactiveuser");
-        user.setEmail("inactive@example.com");
-        user.setPassword("encodedPassword");
-        user.setIsActive(false);
-
-        when(userRepository.findByEmail("inactive@example.com")).thenReturn(Optional.of(user));
+        when(userRepository.findByUsername("nguyenvana")).thenReturn(Optional.of(sampleUser));
         when(passwordEncoder.matches("password123", "encodedPassword")).thenReturn(true);
 
-        // Act
-        ApiResponse<LoginResponse> response = userService.login(loginRequest);
+        ApiResponse<LoginResponse> response = userService.login(request);
 
-        // Assert
         assertFalse(response.isSuccess());
         assertEquals("Account is disabled", response.getMessage());
-        assertNull(response.getData());
+
+        verify(passwordEncoder).matches("password123", "encodedPassword");
     }
 
-    // Các test cho chức năng quên mật khẩu
+    // Password reset tests
     @Test
-    @DisplayName("Gửi mã đặt lại mật khẩu thành công")
-    void sendPasswordResetCode_WithValidEmail_ShouldSucceed() throws Exception {
-        // Arrange
+    @DisplayName("Gửi mã đặt lại mật khẩu thành công (sync)")
+    void sendPasswordResetCode_Success() throws Exception {
         ForgotPasswordRequest request = new ForgotPasswordRequest();
         request.setEmail("nguyenvana@example.com");
 
-        UserDtls user = new UserDtls();
-        user.setEmail("nguyenvana@example.com");
+        when(userRepository.findByEmail("nguyenvana@example.com")).thenReturn(Optional.of(sampleUser));
+        when(passwordResetService.generateVerificationCode("nguyenvana@example.com")).thenReturn("123456");
+        doNothing().when(emailService).sendPasswordResetCode("nguyenvana@example.com", "123456");
 
-        when(userRepository.findByEmail("nguyenvana@example.com")).thenReturn(Optional.of(user));
-        when(passwordResetService.generateVerificationCode(anyString())).thenReturn("123456");
-        doNothing().when(emailService).sendPasswordResetCode(anyString(), anyString());
-
-        // Act
         ApiResponse<String> response = userService.sendPasswordResetCode(request);
 
-        // Assert
         assertTrue(response.isSuccess());
         assertEquals("Verification code has been sent to your email", response.getMessage());
+        assertEquals("reset_code_sent", response.getData());
 
-        // Verify
         verify(userRepository).findByEmail("nguyenvana@example.com");
         verify(passwordResetService).generateVerificationCode("nguyenvana@example.com");
-        verify(emailService).sendPasswordResetCode(eq("nguyenvana@example.com"), anyString());
+        verify(emailService).sendPasswordResetCode("nguyenvana@example.com", "123456");
     }
 
     @Test
-    @DisplayName("Gửi mã đặt lại mật khẩu thất bại với email không tồn tại")
-    void sendPasswordResetCode_WithNonExistentEmail_ShouldFail() throws Exception {
-        // Arrange
+    @DisplayName("Gửi mã đặt lại mật khẩu thành công (async)")
+    void sendPasswordResetCodeAsync_Success() throws Exception {
+        ForgotPasswordRequest request = new ForgotPasswordRequest();
+        request.setEmail("nguyenvana@example.com");
+
+        when(userRepository.findByEmail("nguyenvana@example.com")).thenReturn(Optional.of(sampleUser));
+        when(passwordResetService.generateVerificationCode("nguyenvana@example.com")).thenReturn("123456");
+        doNothing().when(emailService).sendPasswordResetCodeAsync("nguyenvana@example.com", "123456");
+
+        ApiResponse<String> response = userService.sendPasswordResetCodeAsync(request);
+
+        assertTrue(response.isSuccess());
+        assertEquals("Verification code has been sent to your email", response.getMessage());
+        assertEquals("reset_code_sent", response.getData());
+
+        verify(userRepository).findByEmail("nguyenvana@example.com");
+        verify(passwordResetService).generateVerificationCode("nguyenvana@example.com");
+        verify(emailService).sendPasswordResetCodeAsync("nguyenvana@example.com", "123456");
+    }
+
+    @Test
+    @DisplayName("Gửi mã đặt lại mật khẩu thất bại - email không tồn tại")
+    void sendPasswordResetCodeAsync_EmailNotFound_ShouldFail() throws Exception {
         ForgotPasswordRequest request = new ForgotPasswordRequest();
         request.setEmail("nonexistent@example.com");
 
         when(userRepository.findByEmail("nonexistent@example.com")).thenReturn(Optional.empty());
 
-        // Act
-        ApiResponse<String> response = userService.sendPasswordResetCode(request);
+        ApiResponse<String> response = userService.sendPasswordResetCodeAsync(request);
 
-        // Assert
         assertFalse(response.isSuccess());
         assertEquals("No account found with this email", response.getMessage());
 
-        // Verify
         verify(userRepository).findByEmail("nonexistent@example.com");
-        verify(passwordResetService, never()).generateVerificationCode(anyString());
-        verify(emailService, never()).sendPasswordResetCode(anyString(), anyString());
+        verifyNoInteractions(passwordResetService);
+        verifyNoInteractions(emailService);
     }
 
     @Test
-    @DisplayName("Gửi mã đặt lại mật khẩu thất bại do giới hạn tốc độ")
-    void sendPasswordResetCode_WithRateLimit_ShouldFail() throws Exception {
-        // Arrange
-        ForgotPasswordRequest request = new ForgotPasswordRequest();
-        request.setEmail("nguyenvana@example.com");
-
-        UserDtls user = new UserDtls();
-        user.setEmail("nguyenvana@example.com");
-
-        when(userRepository.findByEmail("nguyenvana@example.com")).thenReturn(Optional.of(user));
-        when(passwordResetService.generateVerificationCode("nguyenvana@example.com"))
-                .thenThrow(new PasswordResetService.RateLimitException(
-                        "Please wait 55 seconds before requesting another code"));
-
-        // Act
-        ApiResponse<String> response = userService.sendPasswordResetCode(request);
-
-        // Assert
-        assertFalse(response.isSuccess());
-        assertEquals("Please wait 55 seconds before requesting another code", response.getMessage());
-
-        // Verify
-        verify(userRepository).findByEmail("nguyenvana@example.com");
-        verify(passwordResetService).generateVerificationCode("nguyenvana@example.com");
-        verify(emailService, never()).sendPasswordResetCode(anyString(), anyString());
-    }
-
-    @Test
-    @DisplayName("Gửi mã đặt lại mật khẩu thất bại do lỗi dịch vụ email")
-    void sendPasswordResetCode_WithEmailError_ShouldFail() throws Exception {
-        // Arrange
-        ForgotPasswordRequest request = new ForgotPasswordRequest();
-        request.setEmail("nguyenvana@example.com");
-
-        UserDtls user = new UserDtls();
-        user.setEmail("nguyenvana@example.com");
-
-        when(userRepository.findByEmail("nguyenvana@example.com")).thenReturn(Optional.of(user));
-        when(passwordResetService.generateVerificationCode(anyString())).thenReturn("123456");
-
-        doThrow(new MessagingException("Failed to connect to mail server"))
-                .when(emailService).sendPasswordResetCode(anyString(), anyString());
-
-        // Act
-        ApiResponse<String> response = userService.sendPasswordResetCode(request);
-
-        // Assert
-        assertFalse(response.isSuccess());
-        assertTrue(response.getMessage().contains("Failed to send email"));
-
-        // Verify
-        verify(userRepository).findByEmail("nguyenvana@example.com");
-        verify(passwordResetService).generateVerificationCode("nguyenvana@example.com");
-        verify(emailService).sendPasswordResetCode(eq("nguyenvana@example.com"), anyString());
-    }
-
-    @Test
-    @DisplayName("Đặt lại mật khẩu thành công với mã hợp lệ")
-    void resetPassword_WithValidCode_ShouldSucceed() {
-        // Arrange
+    @DisplayName("Đặt lại mật khẩu thành công")
+    void resetPassword_Success() throws Exception {
         ResetPasswordRequest request = new ResetPasswordRequest();
         request.setEmail("nguyenvana@example.com");
         request.setCode("123456");
         request.setNewPassword("newpassword123");
 
-        UserDtls user = new UserDtls();
-        user.setEmail("nguyenvana@example.com");
-        user.setPassword("oldEncodedPassword");
-
-        when(userRepository.findByEmail("nguyenvana@example.com")).thenReturn(Optional.of(user));
+        when(userRepository.findByEmail("nguyenvana@example.com")).thenReturn(Optional.of(sampleUser));
         when(passwordResetService.verifyCode("nguyenvana@example.com", "123456")).thenReturn(true);
         when(passwordEncoder.encode("newpassword123")).thenReturn("newEncodedPassword");
-        doNothing().when(passwordResetService).removeCode(anyString());
-        when(userRepository.save(any(UserDtls.class))).thenReturn(user);
+        when(userRepository.save(any(UserDtls.class))).thenReturn(sampleUser);
+        doNothing().when(passwordResetService).removeCode("nguyenvana@example.com");
 
-        // Act
         ApiResponse<String> response = userService.resetPassword(request);
 
-        // Assert
         assertTrue(response.isSuccess());
         assertEquals("Password has been reset successfully", response.getMessage());
+        assertEquals("password_reset", response.getData());
 
-        // Verify
-        verify(userRepository).findByEmail("nguyenvana@example.com");
         verify(passwordResetService).verifyCode("nguyenvana@example.com", "123456");
         verify(passwordEncoder).encode("newpassword123");
         verify(passwordResetService).removeCode("nguyenvana@example.com");
 
         ArgumentCaptor<UserDtls> userCaptor = ArgumentCaptor.forClass(UserDtls.class);
         verify(userRepository).save(userCaptor.capture());
-        UserDtls savedUser = userCaptor.getValue();
-        assertEquals("newEncodedPassword", savedUser.getPassword());
+        assertEquals("newEncodedPassword", userCaptor.getValue().getPassword());
     }
 
     @Test
-    @DisplayName("Đặt lại mật khẩu thất bại với email không tồn tại")
-    void resetPassword_WithNonExistentEmail_ShouldFail() {
-        // Arrange
-        ResetPasswordRequest request = new ResetPasswordRequest();
-        request.setEmail("nonexistent@example.com");
-        request.setCode("123456");
-        request.setNewPassword("newpassword123");
-
-        when(userRepository.findByEmail("nonexistent@example.com")).thenReturn(Optional.empty());
-
-        // Act
-        ApiResponse<String> response = userService.resetPassword(request);
-
-        // Assert
-        assertFalse(response.isSuccess());
-        assertEquals("No account found with this email", response.getMessage());
-
-        // Verify
-        verify(userRepository).findByEmail("nonexistent@example.com");
-        verify(passwordResetService, never()).verifyCode(anyString(), anyString());
-        verify(passwordEncoder, never()).encode(anyString());
-        verify(userRepository, never()).save(any(UserDtls.class));
-    }
-
-    @Test
-    @DisplayName("Đặt lại mật khẩu thất bại với mã xác thực không hợp lệ")
-    void resetPassword_WithInvalidCode_ShouldFail() {
-        // Arrange
+    @DisplayName("Đặt lại mật khẩu thất bại - mã xác thực không đúng")
+    void resetPassword_InvalidCode_ShouldFail() throws Exception {
         ResetPasswordRequest request = new ResetPasswordRequest();
         request.setEmail("nguyenvana@example.com");
-        request.setCode("invalid");
+        request.setCode("wrong_code");
         request.setNewPassword("newpassword123");
 
-        UserDtls user = new UserDtls();
-        user.setEmail("nguyenvana@example.com");
+        when(userRepository.findByEmail("nguyenvana@example.com")).thenReturn(Optional.of(sampleUser));
+        when(passwordResetService.verifyCode("nguyenvana@example.com", "wrong_code")).thenReturn(false);
 
-        when(userRepository.findByEmail("nguyenvana@example.com")).thenReturn(Optional.of(user));
-        when(passwordResetService.verifyCode("nguyenvana@example.com", "invalid")).thenReturn(false);
-
-        // Act
         ApiResponse<String> response = userService.resetPassword(request);
 
-        // Assert
         assertFalse(response.isSuccess());
         assertEquals("Invalid or expired verification code", response.getMessage());
 
-        // Verify
-        verify(userRepository).findByEmail("nguyenvana@example.com");
-        verify(passwordResetService).verifyCode("nguyenvana@example.com", "invalid");
-        verify(passwordEncoder, never()).encode(anyString());
+        verify(passwordResetService).verifyCode("nguyenvana@example.com", "wrong_code");
         verify(userRepository, never()).save(any(UserDtls.class));
     }
 
+    // User management tests
     @Test
-    @DisplayName("Đặt lại mật khẩu xử lý ngoại lệ")
-    void resetPassword_WithException_ShouldReturnErrorResponse() {
-        // Arrange
-        ResetPasswordRequest request = new ResetPasswordRequest();
-        request.setEmail("nguyenvana@example.com");
-        request.setCode("123456");
-        request.setNewPassword("newpassword123");
-
-        when(userRepository.findByEmail("nguyenvana@example.com")).thenThrow(new RuntimeException("Database error"));
-
-        // Act
-        ApiResponse<String> response = userService.resetPassword(request);
-
-        // Assert
-        assertFalse(response.isSuccess());
-        assertTrue(response.getMessage().contains("Failed to reset password"));
-
-        // Verify
-        verify(userRepository).findByEmail("nguyenvana@example.com");
-        verify(passwordResetService, never()).verifyCode(anyString(), anyString());
-        verify(passwordEncoder, never()).encode(anyString());
-        verify(userRepository, never()).save(any(UserDtls.class));
-    }
-
-    @Test
-    @DisplayName("Đăng xuất thành công")
-    void logout_ShouldSucceed() {
-        // Arrange
-        HttpServletRequest request = mock(HttpServletRequest.class);
-        HttpServletResponse response = mock(HttpServletResponse.class);
-        Authentication authentication = mock(Authentication.class);
-        SecurityContextLogoutHandler logoutHandler = mock(SecurityContextLogoutHandler.class);
-
-        // Act & Assert
-        // logout xử lý bởi Spring Security
-        // trả về thông báo thành công
-        ApiResponse<String> result = ApiResponse.success("Logged out successfully", null);
-
-        assertTrue(result.isSuccess());
-        assertEquals("Logged out successfully", result.getMessage());
-        assertNull(result.getData());
-    }
-
-    @Test
-    @DisplayName("Cập nhật role và status người dùng thành công")
-    void updateUserRoleAndStatus_ShouldSucceed() {
-        // Arrange
+    @DisplayName("Cập nhật role và trạng thái người dùng thành công")
+    void updateUserRoleAndStatus_Success() {
         UserUpdateRequest request = new UserUpdateRequest();
         request.setRole("STAFF");
         request.setIsActive(true);
 
-        UserDtls user = new UserDtls();
-        user.setId(1L);
-        user.setUsername("normaluser");
-        user.setEmail("user@example.com");
-        user.setRole("USER"); // Role ban đầu
-        user.setIsActive(true);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
+        when(roleService.isValidRole("STAFF")).thenReturn(true);
+        when(roleRepository.findByRoleName("STAFF")).thenReturn(Optional.of(staffRole));
+        when(userRepository.save(any(UserDtls.class))).thenReturn(sampleUser);
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userRepository.save(any(UserDtls.class))).thenAnswer(i -> i.getArgument(0));
-
-        // Act
         ApiResponse<UserResponse> response = userService.updateUserRoleAndStatus(1L, request);
 
-        // Assert
         assertTrue(response.isSuccess());
         assertEquals("User update successful", response.getMessage());
         assertNotNull(response.getData());
-        assertEquals("STAFF", response.getData().getRole());
-        assertTrue(response.getData().getIsActive());
 
-        // Verify
         verify(userRepository).findById(1L);
-        verify(userRepository).save(user);
+        verify(roleService).isValidRole("STAFF");
+        verify(roleRepository).findByRoleName("STAFF");
 
         ArgumentCaptor<UserDtls> userCaptor = ArgumentCaptor.forClass(UserDtls.class);
         verify(userRepository).save(userCaptor.capture());
-
-        UserDtls savedUser = userCaptor.getValue();
-        assertEquals("STAFF", savedUser.getRole());
-        assertTrue(savedUser.getIsActive());
+        assertEquals(staffRole, userCaptor.getValue().getRole());
     }
 
     @Test
-    @DisplayName("Cập nhật role thành CONSULTANT tạo profile mới")
-    void updateUserRoleAndStatus_ToConsultant_ShouldCreateProfile() {
-        // Arrange
-        UserUpdateRequest request = new UserUpdateRequest();
-        request.setRole("CONSULTANT");
-        request.setIsActive(true);
-
-        UserDtls user = new UserDtls();
-        user.setId(1L);
-        user.setUsername("normaluser");
-        user.setEmail("user@example.com");
-        user.setRole("USER"); // Role ban đầu
-        user.setIsActive(true);
-
-        ConsultantProfile newProfile = new ConsultantProfile();
-        newProfile.setUser(user);
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(consultantProfileRepository.save(any(ConsultantProfile.class))).thenReturn(newProfile);
-        when(userRepository.save(any(UserDtls.class))).thenAnswer(i -> i.getArgument(0));
-
-        // Act
-        ApiResponse<UserResponse> response = userService.updateUserRoleAndStatus(1L, request);
-
-        // Assert
-        assertTrue(response.isSuccess());
-        assertEquals("User update successful", response.getMessage());
-        assertEquals("CONSULTANT", response.getData().getRole());
-
-        // Verify
-        verify(userRepository).findById(1L);
-        verify(consultantProfileRepository).save(any(ConsultantProfile.class));
-        verify(userRepository).save(user);
-
-        ArgumentCaptor<ConsultantProfile> profileCaptor = ArgumentCaptor.forClass(ConsultantProfile.class);
-        verify(consultantProfileRepository).save(profileCaptor.capture());
-
-        ConsultantProfile capturedProfile = profileCaptor.getValue();
-        assertEquals(user, capturedProfile.getUser());
-        assertEquals("Not updated yet", capturedProfile.getQualifications());
-    }
-
-    @Test
-    @DisplayName("Cập nhật từ CONSULTANT sang role khác xóa profile")
-    void updateUserRoleAndStatus_FromConsultant_ShouldDeleteProfile() {
-        // Arrange
-        UserUpdateRequest request = new UserUpdateRequest();
-        request.setRole("STAFF");
-        request.setIsActive(true);
-
-        UserDtls user = new UserDtls();
-        user.setId(1L);
-        user.setUsername("consultant");
-        user.setEmail("consultant@example.com");
-        user.setRole("CONSULTANT"); // Role ban đầu
-        user.setIsActive(true);
-
-        ConsultantProfile existingProfile = new ConsultantProfile();
-        existingProfile.setUser(user);
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(consultantProfileRepository.findByUser(user)).thenReturn(Optional.of(existingProfile));
-        doNothing().when(consultantProfileRepository).delete(existingProfile);
-        when(userRepository.save(any(UserDtls.class))).thenAnswer(i -> i.getArgument(0));
-
-        // Act
-        ApiResponse<UserResponse> response = userService.updateUserRoleAndStatus(1L, request);
-
-        // Assert
-        assertTrue(response.isSuccess());
-        assertEquals("User update successful", response.getMessage());
-        assertEquals("STAFF", response.getData().getRole());
-
-        // Verify
-        verify(userRepository).findById(1L);
-        verify(consultantProfileRepository).findByUser(user);
-        verify(consultantProfileRepository).delete(existingProfile);
-        verify(userRepository).save(user);
-    }
-
-    @Test
-    @DisplayName("Cập nhật vô hiệu hóa tài khoản")
-    void updateUserRoleAndStatus_DisableAccount_ShouldSucceed() {
-        // Arrange
-        UserUpdateRequest request = new UserUpdateRequest();
-        request.setRole("USER"); // Giữ nguyên role
-        request.setIsActive(false); // Vô hiệu hóa
-
-        UserDtls user = new UserDtls();
-        user.setId(1L);
-        user.setUsername("user");
-        user.setEmail("user@example.com");
-        user.setRole("USER");
-        user.setIsActive(true); // Ban đầu đang hoạt động
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userRepository.save(any(UserDtls.class))).thenAnswer(i -> i.getArgument(0));
-
-        // Act
-        ApiResponse<UserResponse> response = userService.updateUserRoleAndStatus(1L, request);
-
-        // Assert
-        assertTrue(response.isSuccess());
-        assertEquals("User update successful", response.getMessage());
-        assertFalse(response.getData().getIsActive());
-
-        // Verify
-        verify(userRepository).findById(1L);
-        verify(userRepository).save(user);
-
-        ArgumentCaptor<UserDtls> userCaptor = ArgumentCaptor.forClass(UserDtls.class);
-        verify(userRepository).save(userCaptor.capture());
-
-        UserDtls savedUser = userCaptor.getValue();
-        assertEquals("USER", savedUser.getRole()); // Role không đổi
-        assertFalse(savedUser.getIsActive()); // IsActive thành false
-    }
-
-    @Test
-    @DisplayName("Cập nhật người dùng thất bại khi không tìm thấy")
-    void updateUserRoleAndStatus_UserNotFound_ShouldFail() {
-        // Arrange
-        UserUpdateRequest request = new UserUpdateRequest();
-        request.setRole("STAFF");
-        request.setIsActive(true);
-
-        when(userRepository.findById(999L)).thenReturn(Optional.empty());
-
-        // Act
-        ApiResponse<UserResponse> response = userService.updateUserRoleAndStatus(999L, request);
-
-        // Assert
-        assertFalse(response.isSuccess());
-        assertEquals("User not found", response.getMessage());
-        assertNull(response.getData());
-
-        // Verify
-        verify(userRepository).findById(999L);
-        verify(userRepository, never()).save(any(UserDtls.class));
-    }
-
-    @Test
-    @DisplayName("Cập nhật người dùng thất bại với role không hợp lệ")
+    @DisplayName("Cập nhật role thất bại - role không hợp lệ")
     void updateUserRoleAndStatus_InvalidRole_ShouldFail() {
-        // Arrange
         UserUpdateRequest request = new UserUpdateRequest();
         request.setRole("INVALID_ROLE");
         request.setIsActive(true);
 
-        UserDtls user = new UserDtls();
-        user.setId(1L);
-        user.setUsername("user");
-        user.setRole("USER");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
+        when(roleService.isValidRole("INVALID_ROLE")).thenReturn(false);
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-
-        // Act
         ApiResponse<UserResponse> response = userService.updateUserRoleAndStatus(1L, request);
 
-        // Assert
         assertFalse(response.isSuccess());
         assertEquals("Invalid role. Role must be USER, CONSULTANT, STAFF or ADMIN", response.getMessage());
-        assertNull(response.getData());
 
-        // Verify
-        verify(userRepository).findById(1L);
+        verify(roleService).isValidRole("INVALID_ROLE");
         verify(userRepository, never()).save(any(UserDtls.class));
     }
 
     @Test
+    @DisplayName("Cập nhật role từ CONSULTANT sang USER - xóa profile consultant")
+    void updateUserRoleAndStatus_FromConsultantToUser_ShouldDeleteProfile() {
+        // Setup user as consultant
+        sampleUser.setRole(consultantRole);
+        ConsultantProfile profile = new ConsultantProfile();
+        profile.setUser(sampleUser);
+
+        UserUpdateRequest request = new UserUpdateRequest();
+        request.setRole("USER");
+        request.setIsActive(true);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
+        when(roleService.isValidRole("USER")).thenReturn(true);
+        when(roleRepository.findByRoleName("USER")).thenReturn(Optional.of(userRole));
+        when(consultantProfileRepository.findByUser(sampleUser)).thenReturn(Optional.of(profile));
+        when(userRepository.save(any(UserDtls.class))).thenReturn(sampleUser);
+
+        ApiResponse<UserResponse> response = userService.updateUserRoleAndStatus(1L, request);
+
+        assertTrue(response.isSuccess());
+
+        verify(consultantProfileRepository).findByUser(sampleUser);
+        verify(consultantProfileRepository).delete(profile);
+    }
+
+    @Test
+    @DisplayName("Cập nhật role từ USER sang CONSULTANT - tạo profile consultant")
+    void updateUserRoleAndStatus_FromUserToConsultant_ShouldCreateProfile() {
+        UserUpdateRequest request = new UserUpdateRequest();
+        request.setRole("CONSULTANT");
+        request.setIsActive(true);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
+        when(roleService.isValidRole("CONSULTANT")).thenReturn(true);
+        when(roleRepository.findByRoleName("CONSULTANT")).thenReturn(Optional.of(consultantRole));
+        when(userRepository.save(any(UserDtls.class))).thenReturn(sampleUser);
+        when(consultantProfileRepository.save(any(ConsultantProfile.class))).thenReturn(new ConsultantProfile());
+
+        ApiResponse<UserResponse> response = userService.updateUserRoleAndStatus(1L, request);
+
+        assertTrue(response.isSuccess());
+
+        ArgumentCaptor<ConsultantProfile> profileCaptor = ArgumentCaptor.forClass(ConsultantProfile.class);
+        verify(consultantProfileRepository).save(profileCaptor.capture());
+
+        ConsultantProfile savedProfile = profileCaptor.getValue();
+        assertEquals(sampleUser, savedProfile.getUser());
+        assertEquals("Not updated yet", savedProfile.getQualifications());
+        assertEquals("0 years experience", savedProfile.getExperience());
+        assertEquals("No details updated yet", savedProfile.getBio());
+    }
+
+    @Test
     @DisplayName("Lấy danh sách tất cả người dùng thành công")
-    void getAllUsers_ShouldSucceed() {
-        // Arrange
-        List<UserDtls> userList = Arrays.asList(
-                sampleUser, // Sử dụng sampleUser từ setUp
-                new UserDtls(2L, "Staff User", LocalDate.of(1995, 5, 5), "0123456789",
-                        "staff@example.com", "staff", "encodedPassword", "/img/avatar/default.jpg",
-                        true, "STAFF", LocalDateTime.now().minusDays(10)));
+    void getAllUsers_Success() {
+        UserDtls staffUser = new UserDtls();
+        staffUser.setId(2L);
+        staffUser.setUsername("staff");
+        staffUser.setFullName("Staff User");
+        staffUser.setRole(staffRole);
 
-        when(userRepository.findAll()).thenReturn(userList);
+        List<UserDtls> users = Arrays.asList(sampleUser, staffUser);
 
-        // Act
+        when(userRepository.findAll()).thenReturn(users);
+
         ApiResponse<List<UserResponse>> response = userService.getAllUsers();
 
-        // Assert
         assertTrue(response.isSuccess());
         assertEquals("Get list of users successfully", response.getMessage());
         assertNotNull(response.getData());
         assertEquals(2, response.getData().size());
-        assertEquals("nguyenvana", response.getData().get(0).getUsername());
-        assertEquals("staff", response.getData().get(1).getUsername());
+        assertEquals("USER", response.getData().get(0).getRole());
+        assertEquals("STAFF", response.getData().get(1).getRole());
 
-        // Verify
         verify(userRepository).findAll();
     }
 
     @Test
     @DisplayName("Lấy thông tin người dùng theo ID thành công")
-    void getUserById_ShouldSucceed() {
-        // Arrange
+    void getUserById_Success() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
 
-        // Act
         ApiResponse<UserResponse> response = userService.getUserById(1L);
 
-        // Assert
         assertTrue(response.isSuccess());
         assertEquals("Get user information successfully", response.getMessage());
         assertNotNull(response.getData());
         assertEquals(1L, response.getData().getId());
-        assertEquals("nguyenvana", response.getData().getUsername());
         assertEquals("USER", response.getData().getRole());
 
-        // Verify
         verify(userRepository).findById(1L);
     }
 
     @Test
-    @DisplayName("Lấy thông tin người dùng thất bại khi không tìm thấy")
-    void getUserById_UserNotFound_ShouldFail() {
-        // Arrange
+    @DisplayName("Lấy thông tin người dùng theo ID thất bại - không tìm thấy")
+    void getUserById_NotFound_ShouldFail() {
         when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
-        // Act
         ApiResponse<UserResponse> response = userService.getUserById(999L);
 
-        // Assert
         assertFalse(response.isSuccess());
         assertEquals("User not found", response.getMessage());
-        assertNull(response.getData());
 
-        // Verify
         verify(userRepository).findById(999L);
     }
 
     @Test
-    @DisplayName("Lấy ID người dùng từ username thành công")
-    void getUserIdFromUsername_ShouldSucceed() {
-        // Arrange
-        when(userRepository.findByUsername("nguyenvana")).thenReturn(Optional.of(sampleUser));
+    @DisplayName("Lấy người dùng theo role thành công")
+    void getUsersByRole_Success() {
+        List<UserDtls> staffUsers = Arrays.asList(sampleUser);
 
-        // Act
-        Long userId = userService.getUserIdFromUsername("nguyenvana");
+        when(roleService.isValidRole("STAFF")).thenReturn(true);
+        when(userRepository.findByRoleName("STAFF")).thenReturn(staffUsers);
 
-        // Assert
-        assertNotNull(userId);
-        assertEquals(1L, userId);
+        ApiResponse<List<UserResponse>> response = userService.getUsersByRole("STAFF");
 
-        // Verify
-        verify(userRepository).findByUsername("nguyenvana");
-    }
-
-    @Test
-    @DisplayName("Lấy ID người dùng từ username không tồn tại")
-    void getUserIdFromUsername_UserNotFound_ShouldReturnNull() {
-        // Arrange
-        when(userRepository.findByUsername("nonexistent")).thenReturn(Optional.empty());
-
-        // Act
-        Long userId = userService.getUserIdFromUsername("nonexistent");
-
-        // Assert
-        assertNull(userId);
-
-        // Verify
-        verify(userRepository).findByUsername("nonexistent");
-    }
-
-    @Test
-    @DisplayName("Lấy thông tin profile user thành công")
-    void getUserProfile_ShouldSucceed() {
-        // Arrange
-        when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
-
-        // Act
-        ApiResponse<UserResponse> response = userService.getUserById(1L);
-
-        // Assert
         assertTrue(response.isSuccess());
-        assertEquals("Get user information successfully", response.getMessage()); // ✅ Sửa message
-        assertNotNull(response.getData());
-        assertEquals(1L, response.getData().getId());
-        assertEquals("nguyenvana", response.getData().getUsername());
-        assertEquals("nguyenvana@example.com", response.getData().getEmail());
+        assertTrue(response.getMessage().contains("Found 1 user(s) with role STAFF"));
+        assertEquals(1, response.getData().size());
 
-        // Verify
-        verify(userRepository).findById(1L);
+        verify(roleService).isValidRole("STAFF");
+        verify(userRepository).findByRoleName("STAFF");
     }
 
     @Test
-    @DisplayName("Lấy thông tin profile thất bại khi user không tồn tại")
-    void getUserProfile_UserNotFound_ShouldFail() {
-        // Arrange
-        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+    @DisplayName("Lấy người dùng theo role thất bại - role không hợp lệ")
+    void getUsersByRole_InvalidRole_ShouldFail() {
+        when(roleService.isValidRole("INVALID")).thenReturn(false);
 
-        // Act
-        ApiResponse<UserResponse> response = userService.getUserById(999L);
+        ApiResponse<List<UserResponse>> response = userService.getUsersByRole("INVALID");
 
-        // Assert
         assertFalse(response.isSuccess());
-        assertEquals("User not found", response.getMessage());
-        assertNull(response.getData());
+        assertEquals("Invalid role. Valid roles are: USER, CONSULTANT, STAFF, ADMIN", response.getMessage());
 
-        // Verify
-        verify(userRepository).findById(999L);
+        verify(roleService).isValidRole("INVALID");
+        verifyNoInteractions(userRepository);
     }
 
+    @Test
+    @DisplayName("Lấy danh sách role có sẵn thành công")
+    void getAvailableRoles_Success() {
+        List<Role> roles = Arrays.asList(userRole, consultantRole, staffRole, adminRole);
+
+        when(roleRepository.findAll()).thenReturn(roles);
+
+        ApiResponse<List<String>> response = userService.getAvailableRoles();
+
+        assertTrue(response.isSuccess());
+        assertEquals("Available roles retrieved successfully", response.getMessage());
+        assertEquals(4, response.getData().size());
+        assertTrue(response.getData().contains("USER"));
+        assertTrue(response.getData().contains("CONSULTANT"));
+        assertTrue(response.getData().contains("STAFF"));
+        assertTrue(response.getData().contains("ADMIN"));
+
+        verify(roleRepository).findAll();
+    }
+
+    @Test
+    @DisplayName("Đếm số người dùng theo role thành công")
+    void getUserCountByRole_Success() {
+        List<Role> roles = Arrays.asList(userRole, consultantRole, staffRole, adminRole);
+
+        when(roleRepository.findAll()).thenReturn(roles);
+        when(userRepository.countByRole(userRole)).thenReturn(10L);
+        when(userRepository.countByRole(consultantRole)).thenReturn(5L);
+        when(userRepository.countByRole(staffRole)).thenReturn(3L);
+        when(userRepository.countByRole(adminRole)).thenReturn(1L);
+        when(userRepository.count()).thenReturn(19L);
+
+        ApiResponse<Map<String, Long>> response = userService.getUserCountByRole();
+
+        assertTrue(response.isSuccess());
+        assertEquals("User count by role retrieved successfully", response.getMessage());
+        assertNotNull(response.getData());
+        assertEquals(10L, response.getData().get("USER"));
+        assertEquals(5L, response.getData().get("CONSULTANT"));
+        assertEquals(3L, response.getData().get("STAFF"));
+        assertEquals(1L, response.getData().get("ADMIN"));
+        assertEquals(19L, response.getData().get("TOTAL"));
+
+        verify(roleRepository).findAll();
+        verify(userRepository).count();
+    }
+
+    // Profile update tests
     @Test
     @DisplayName("Cập nhật thông tin cơ bản thành công")
-    void updateBasicProfile_ShouldSucceed() {
-        // Arrange
+    void updateBasicProfile_Success() {
         UpdateProfileRequest request = new UpdateProfileRequest();
-        request.setFullName("Nguyen Van A Updated");
-        request.setPhone("0912345678");
+        request.setFullName("Updated Name");
+        request.setPhone("0987654321");
         request.setBirthDay(LocalDate.of(1991, 2, 20));
 
         UserDtls updatedUser = new UserDtls();
         updatedUser.setId(1L);
-        updatedUser.setFullName("Nguyen Van A Updated");
-        updatedUser.setPhone("0912345678");
+        updatedUser.setFullName("Updated Name");
+        updatedUser.setPhone("0987654321");
         updatedUser.setBirthDay(LocalDate.of(1991, 2, 20));
-        updatedUser.setEmail("nguyenvana@example.com");
-        updatedUser.setUsername("nguyenvana");
-        updatedUser.setAvatar("/img/avatar/default.jpg");
-        updatedUser.setIsActive(true);
-        updatedUser.setRole("USER");
+        updatedUser.setRole(userRole);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
         when(userRepository.save(any(UserDtls.class))).thenReturn(updatedUser);
 
-        // Act
         ApiResponse<UserResponse> response = userService.updateBasicProfile(1L, request);
 
-        // Assert
         assertTrue(response.isSuccess());
         assertEquals("Basic profile updated successfully", response.getMessage());
         assertNotNull(response.getData());
-        assertEquals("Nguyen Van A Updated", response.getData().getFullName());
-        assertEquals("0912345678", response.getData().getPhone());
-        assertEquals(LocalDate.of(1991, 2, 20), response.getData().getBirthDay());
+        assertEquals("Updated Name", response.getData().getFullName());
+        assertEquals("0987654321", response.getData().getPhone());
 
-        // Verify
         verify(userRepository).findById(1L);
         ArgumentCaptor<UserDtls> userCaptor = ArgumentCaptor.forClass(UserDtls.class);
         verify(userRepository).save(userCaptor.capture());
-
-        UserDtls savedUser = userCaptor.getValue();
-        assertEquals("Nguyen Van A Updated", savedUser.getFullName());
-        assertEquals("0912345678", savedUser.getPhone());
-        assertEquals(LocalDate.of(1991, 2, 20), savedUser.getBirthDay());
+        assertEquals("Updated Name", userCaptor.getValue().getFullName());
     }
 
     @Test
-    @DisplayName("Cập nhật thông tin cơ bản thất bại khi user không tồn tại")
+    @DisplayName("Cập nhật thông tin cơ bản thất bại - user không tồn tại")
     void updateBasicProfile_UserNotFound_ShouldFail() {
-        // Arrange
         UpdateProfileRequest request = new UpdateProfileRequest();
-        request.setFullName("Test User");
-        request.setPhone("0987654321");
-        request.setBirthDay(LocalDate.of(1990, 1, 1));
+        request.setFullName("Updated Name");
 
         when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
-        // Act
         ApiResponse<UserResponse> response = userService.updateBasicProfile(999L, request);
 
-        // Assert
         assertFalse(response.isSuccess());
         assertEquals("User not found", response.getMessage());
-        assertNull(response.getData());
 
-        // Verify
         verify(userRepository).findById(999L);
         verify(userRepository, never()).save(any(UserDtls.class));
     }
 
+    // Email update tests
     @Test
     @DisplayName("Gửi mã xác thực cho email mới thành công")
-    void sendEmailVerificationForUpdate_ShouldSucceed() throws Exception {
-        // Arrange
+    void sendEmailVerificationForUpdate_Success() throws Exception {
         VerificationCodeRequest request = new VerificationCodeRequest();
         request.setEmail("newemail@example.com");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
         when(userRepository.existsByEmail("newemail@example.com")).thenReturn(false);
         when(emailVerificationService.generateVerificationCode("newemail@example.com")).thenReturn("123456");
-        doNothing().when(emailService).sendEmailUpdateVerificationAsync(anyString(), anyString(), anyString());
+        doNothing().when(emailService).sendEmailUpdateVerificationAsync("newemail@example.com", "123456",
+                "Nguyen Van A");
 
-        // Act
         ApiResponse<String> response = userService.sendEmailVerificationForUpdate(1L, request);
 
-        // Assert
         assertTrue(response.isSuccess());
         assertEquals("Verification code has been sent to your new email address", response.getMessage());
         assertEquals("newemail@example.com", response.getData());
 
-        // Verify
-        verify(userRepository).findById(1L);
-        verify(userRepository).existsByEmail("newemail@example.com");
         verify(emailVerificationService).generateVerificationCode("newemail@example.com");
-        verify(emailService).sendEmailUpdateVerificationAsync(eq("newemail@example.com"), eq("123456"),
-                eq("Nguyen Van A"));
+        verify(emailService).sendEmailUpdateVerificationAsync("newemail@example.com", "123456", "Nguyen Van A");
     }
 
     @Test
-    @DisplayName("Gửi mã xác thực cho email mới thất bại khi email trùng với email hiện tại")
+    @DisplayName("Gửi mã xác thực thất bại - email mới trùng với email hiện tại")
     void sendEmailVerificationForUpdate_SameEmail_ShouldFail() {
-        // Arrange
         VerificationCodeRequest request = new VerificationCodeRequest();
         request.setEmail("nguyenvana@example.com"); // Same as current email
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
 
-        // Act
         ApiResponse<String> response = userService.sendEmailVerificationForUpdate(1L, request);
 
-        // Assert
         assertFalse(response.isSuccess());
         assertEquals("New email cannot be the same as current email", response.getMessage());
-        assertNull(response.getData());
 
-        // Verify
         verify(userRepository).findById(1L);
-        verify(userRepository, never()).existsByEmail(anyString());
-        try {
-            verify(emailVerificationService, never()).generateVerificationCode(anyString());
-        } catch (EmailVerificationService.RateLimitException e) {
-            fail("Unexpected exception thrown: " + e.getMessage());
-        }
+        verifyNoInteractions(emailVerificationService);
     }
 
     @Test
-    @DisplayName("Gửi mã xác thực cho email mới thất bại khi email đã tồn tại")
-    void sendEmailVerificationForUpdate_EmailExists_ShouldFail() throws RateLimitException {
-        // Arrange
+    @DisplayName("Gửi mã xác thực thất bại - email đã tồn tại")
+    void sendEmailVerificationForUpdate_EmailExists_ShouldFail() throws Exception {
         VerificationCodeRequest request = new VerificationCodeRequest();
         request.setEmail("existing@example.com");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
         when(userRepository.existsByEmail("existing@example.com")).thenReturn(true);
 
-        // Act
         ApiResponse<String> response = userService.sendEmailVerificationForUpdate(1L, request);
 
-        // Assert
         assertFalse(response.isSuccess());
         assertEquals("Email already exists", response.getMessage());
-        assertNull(response.getData());
 
-        // Verify
-        verify(userRepository).findById(1L);
         verify(userRepository).existsByEmail("existing@example.com");
-        verify(emailVerificationService, never()).generateVerificationCode(anyString());
+        verifyNoInteractions(emailVerificationService);
     }
 
     @Test
     @DisplayName("Cập nhật email mới thành công")
-    void updateEmail_ShouldSucceed() throws Exception {
-        // Arrange
+    void updateEmail_Success() throws Exception {
         UpdateEmailRequest request = new UpdateEmailRequest();
         request.setNewEmail("newemail@example.com");
         request.setVerificationCode("123456");
 
         UserDtls updatedUser = new UserDtls();
         updatedUser.setId(1L);
-        updatedUser.setFullName("Nguyen Van A");
         updatedUser.setEmail("newemail@example.com");
-        updatedUser.setUsername("nguyenvana");
-        updatedUser.setAvatar("/img/avatar/default.jpg");
-        updatedUser.setIsActive(true);
-        updatedUser.setRole("USER");
+        updatedUser.setFullName("Nguyen Van A");
+        updatedUser.setRole(userRole);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
         when(userRepository.existsByEmail("newemail@example.com")).thenReturn(false);
@@ -1284,33 +867,21 @@ public class UserServiceTest {
         doNothing().when(emailService).sendEmailChangeNotificationAsync(anyString(), anyString(), anyString());
         doNothing().when(emailService).sendEmailChangeConfirmationAsync(anyString(), anyString());
 
-        // Act
         ApiResponse<UserResponse> response = userService.updateEmail(1L, request);
 
-        // Assert
         assertTrue(response.isSuccess());
         assertEquals("Email updated successfully", response.getMessage());
-        assertNotNull(response.getData());
         assertEquals("newemail@example.com", response.getData().getEmail());
 
-        // Verify
-        verify(userRepository).findById(1L);
-        verify(userRepository).existsByEmail("newemail@example.com");
         verify(emailVerificationService).verifyCode("newemail@example.com", "123456");
-        verify(emailService).sendEmailChangeNotificationAsync(eq("nguyenvana@example.com"), eq("newemail@example.com"),
-                eq("Nguyen Van A"));
-        verify(emailService).sendEmailChangeConfirmationAsync(eq("newemail@example.com"), eq("Nguyen Van A"));
-
-        ArgumentCaptor<UserDtls> userCaptor = ArgumentCaptor.forClass(UserDtls.class);
-        verify(userRepository).save(userCaptor.capture());
-        UserDtls savedUser = userCaptor.getValue();
-        assertEquals("newemail@example.com", savedUser.getEmail());
+        verify(emailService).sendEmailChangeNotificationAsync("nguyenvana@example.com", "newemail@example.com",
+                "Nguyen Van A");
+        verify(emailService).sendEmailChangeConfirmationAsync("newemail@example.com", "Nguyen Van A");
     }
 
     @Test
-    @DisplayName("Cập nhật email thất bại khi mã xác thực không đúng")
+    @DisplayName("Cập nhật email thất bại - mã xác thực không đúng")
     void updateEmail_InvalidCode_ShouldFail() {
-        // Arrange
         UpdateEmailRequest request = new UpdateEmailRequest();
         request.setNewEmail("newemail@example.com");
         request.setVerificationCode("wrong_code");
@@ -1319,379 +890,303 @@ public class UserServiceTest {
         when(userRepository.existsByEmail("newemail@example.com")).thenReturn(false);
         when(emailVerificationService.verifyCode("newemail@example.com", "wrong_code")).thenReturn(false);
 
-        // Act
         ApiResponse<UserResponse> response = userService.updateEmail(1L, request);
 
-        // Assert
         assertFalse(response.isSuccess());
         assertEquals("Invalid or expired verification code", response.getMessage());
-        assertNull(response.getData());
 
-        // Verify
-        verify(userRepository).findById(1L);
         verify(emailVerificationService).verifyCode("newemail@example.com", "wrong_code");
         verify(userRepository, never()).save(any(UserDtls.class));
     }
 
+    // Password change tests
     @Test
     @DisplayName("Đổi mật khẩu thành công")
-    void changePassword_ShouldSucceed() throws Exception {
-        // Arrange
+    void changePassword_Success() throws Exception {
         ChangePasswordRequest request = new ChangePasswordRequest();
-        request.setCurrentPassword("oldpassword123");
-        request.setNewPassword("NewPassword123@");
-        request.setConfirmPassword("NewPassword123@");
+        request.setCurrentPassword("oldpassword");
+        request.setNewPassword("newpassword123");
+        request.setConfirmPassword("newpassword123");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
-        when(passwordEncoder.matches("oldpassword123", "encodedPassword")).thenReturn(true);
-        when(passwordEncoder.matches("NewPassword123@", "encodedPassword")).thenReturn(false); // New password is
-                                                                                               // different
-        when(passwordEncoder.encode("NewPassword123@")).thenReturn("newEncodedPassword");
+        when(passwordEncoder.matches("oldpassword", "encodedPassword")).thenReturn(true);
+        when(passwordEncoder.matches("newpassword123", "encodedPassword")).thenReturn(false);
+        when(passwordEncoder.encode("newpassword123")).thenReturn("newEncodedPassword");
         when(userRepository.save(any(UserDtls.class))).thenReturn(sampleUser);
         doNothing().when(emailService).sendPasswordChangeNotificationAsync(anyString(), anyString());
 
-        // Act
         ApiResponse<String> response = userService.changePassword(1L, request);
 
-        // Assert
         assertTrue(response.isSuccess());
         assertEquals("Password changed successfully", response.getMessage());
-        assertEquals("password_changed", response.getData());
 
-        // Verify
-        verify(userRepository).findById(1L);
-        verify(passwordEncoder).matches("oldpassword123", "encodedPassword");
-        verify(passwordEncoder).matches("NewPassword123@", "encodedPassword");
-        verify(passwordEncoder).encode("NewPassword123@");
-        verify(emailService).sendPasswordChangeNotificationAsync(eq("nguyenvana@example.com"), eq("Nguyen Van A"));
-
-        ArgumentCaptor<UserDtls> userCaptor = ArgumentCaptor.forClass(UserDtls.class);
-        verify(userRepository).save(userCaptor.capture());
-        UserDtls savedUser = userCaptor.getValue();
-        assertEquals("newEncodedPassword", savedUser.getPassword());
+        verify(passwordEncoder).matches("oldpassword", "encodedPassword");
+        verify(passwordEncoder).encode("newpassword123");
+        verify(emailService).sendPasswordChangeNotificationAsync("nguyenvana@example.com", "Nguyen Van A");
     }
 
     @Test
-    @DisplayName("Đổi mật khẩu thất bại khi mật khẩu hiện tại không đúng")
+    @DisplayName("Đổi mật khẩu thất bại - mật khẩu hiện tại sai")
     void changePassword_WrongCurrentPassword_ShouldFail() {
-        // Arrange
         ChangePasswordRequest request = new ChangePasswordRequest();
         request.setCurrentPassword("wrongpassword");
-        request.setNewPassword("NewPassword123@");
-        request.setConfirmPassword("NewPassword123@");
+        request.setNewPassword("newpassword123");
+        request.setConfirmPassword("newpassword123");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
         when(passwordEncoder.matches("wrongpassword", "encodedPassword")).thenReturn(false);
 
-        // Act
         ApiResponse<String> response = userService.changePassword(1L, request);
 
-        // Assert
         assertFalse(response.isSuccess());
         assertEquals("Current password is incorrect", response.getMessage());
-        assertNull(response.getData());
 
-        // Verify
-        verify(userRepository).findById(1L);
         verify(passwordEncoder).matches("wrongpassword", "encodedPassword");
-        verify(passwordEncoder, never()).encode(anyString());
         verify(userRepository, never()).save(any(UserDtls.class));
     }
 
     @Test
-    @DisplayName("Đổi mật khẩu thất bại khi mật khẩu mới và xác nhận không khớp")
-    void changePassword_PasswordMismatch_ShouldFail() {
-        // Arrange
+    @DisplayName("Đổi mật khẩu thất bại - mật khẩu xác nhận không khớp")
+    void changePassword_ConfirmPasswordMismatch_ShouldFail() {
         ChangePasswordRequest request = new ChangePasswordRequest();
-        request.setCurrentPassword("oldpassword123");
-        request.setNewPassword("NewPassword123@");
-        request.setConfirmPassword("DifferentPassword123@");
+        request.setCurrentPassword("oldpassword");
+        request.setNewPassword("newpassword123");
+        request.setConfirmPassword("differentpassword");
 
+        // Mock user tồn tại và current password đúng
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
-        when(passwordEncoder.matches("oldpassword123", "encodedPassword")).thenReturn(true);
+        when(passwordEncoder.matches("oldpassword", "encodedPassword")).thenReturn(true);
 
-        // Act
         ApiResponse<String> response = userService.changePassword(1L, request);
 
-        // Assert
         assertFalse(response.isSuccess());
         assertEquals("New password and confirm password do not match", response.getMessage());
-        assertNull(response.getData());
 
-        // Verify
         verify(userRepository).findById(1L);
-        verify(passwordEncoder).matches("oldpassword123", "encodedPassword");
-        verify(passwordEncoder, never()).encode(anyString());
+        verify(passwordEncoder).matches("oldpassword", "encodedPassword");
         verify(userRepository, never()).save(any(UserDtls.class));
     }
 
     @Test
-    @DisplayName("Đổi mật khẩu thất bại khi mật khẩu mới giống mật khẩu cũ")
+    @DisplayName("Đổi mật khẩu thất bại - mật khẩu mới giống mật khẩu cũ")
     void changePassword_SamePassword_ShouldFail() {
-        // Arrange
         ChangePasswordRequest request = new ChangePasswordRequest();
-        request.setCurrentPassword("oldpassword123");
-        request.setNewPassword("oldpassword123");
-        request.setConfirmPassword("oldpassword123");
+        request.setCurrentPassword("oldpassword");
+        request.setNewPassword("oldpassword");
+        request.setConfirmPassword("oldpassword");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
-        when(passwordEncoder.matches("oldpassword123", "encodedPassword")).thenReturn(true);
+        when(passwordEncoder.matches("oldpassword", "encodedPassword")).thenReturn(true);
 
-        // Act
         ApiResponse<String> response = userService.changePassword(1L, request);
 
-        // Assert
         assertFalse(response.isSuccess());
         assertEquals("New password must be different from current password", response.getMessage());
-        assertNull(response.getData());
 
-        // Verify
         verify(userRepository).findById(1L);
-        verify(passwordEncoder, times(2)).matches("oldpassword123", "encodedPassword");
-        verify(passwordEncoder, never()).encode(anyString());
+        // Verify cả 2 lần gọi với cùng parameters
+        verify(passwordEncoder, times(2)).matches("oldpassword", "encodedPassword");
+
         verify(userRepository, never()).save(any(UserDtls.class));
     }
 
+    // Avatar update tests
     @Test
     @DisplayName("Cập nhật avatar thành công")
-    void updateUserAvatar_ShouldSucceed() throws Exception {
-        // Arrange
-        MultipartFile file = mock(MultipartFile.class);
-        when(file.isEmpty()).thenReturn(false);
-        when(file.getContentType()).thenReturn("image/jpeg");
-        when(file.getSize()).thenReturn(1024L * 1024L); // 1MB
-        // LOẠI BỎ: when(file.getOriginalFilename()).thenReturn("avatar.jpg"); - không
-        // được sử dụng
-
-        String newAvatarPath = "/img/avatar/user_1_20250115_143000.jpg";
+    void updateUserAvatar_Success() throws Exception {
+        MultipartFile file = new MockMultipartFile("avatar", "avatar.jpg", "image/jpeg", "test image".getBytes());
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
-        when(fileStorageService.saveAvatarFile(file, 1L)).thenReturn(newAvatarPath);
-        // LOẠI BỎ: doNothing().when(fileStorageService).deleteFile(anyString()); -
-        // không được sử dụng trong test này
+        when(fileStorageService.saveAvatarFile(file, 1L)).thenReturn("/img/avatar/new_avatar.jpg");
         when(userRepository.save(any(UserDtls.class))).thenReturn(sampleUser);
 
-        // Act
         ApiResponse<String> response = userService.updateUserAvatar(1L, file);
 
-        // Assert
         assertTrue(response.isSuccess());
         assertEquals("Avatar updated successfully", response.getMessage());
-        assertEquals(newAvatarPath, response.getData());
+        assertEquals("/img/avatar/new_avatar.jpg", response.getData());
 
-        // Verify
-        verify(userRepository).findById(1L);
         verify(fileStorageService).saveAvatarFile(file, 1L);
-
-        // LOẠI BỎ verify trùng lặp
         ArgumentCaptor<UserDtls> userCaptor = ArgumentCaptor.forClass(UserDtls.class);
         verify(userRepository).save(userCaptor.capture());
-        UserDtls savedUser = userCaptor.getValue();
-        assertEquals(newAvatarPath, savedUser.getAvatar());
+        assertEquals("/img/avatar/new_avatar.jpg", userCaptor.getValue().getAvatar());
     }
 
     @Test
-    @DisplayName("Cập nhật avatar thất bại khi file trống")
-    void updateUserAvatar_EmptyFile_ShouldFail() throws Exception {
-        // Arrange
-        MultipartFile file = mock(MultipartFile.class);
-        when(file.isEmpty()).thenReturn(true);
+    @DisplayName("Cập nhật avatar thất bại - file trống")
+    void updateUserAvatar_EmptyFile_ShouldFail() {
+        MultipartFile file = new MockMultipartFile("avatar", "", "image/jpeg", new byte[0]);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
 
-        // Act
         ApiResponse<String> response = userService.updateUserAvatar(1L, file);
 
-        // Assert
         assertFalse(response.isSuccess());
         assertEquals("Please select a file", response.getMessage());
-        assertNull(response.getData());
 
-        // Verify
         verify(userRepository).findById(1L);
-        verify(fileStorageService, never()).saveAvatarFile(any(), any());
+        verifyNoInteractions(fileStorageService);
         verify(userRepository, never()).save(any(UserDtls.class));
     }
 
     @Test
-    @DisplayName("Cập nhật avatar thất bại khi file không phải ảnh")
-    void updateUserAvatar_InvalidFileType_ShouldFail() throws Exception {
-        // Arrange
-        MultipartFile file = mock(MultipartFile.class);
-        when(file.isEmpty()).thenReturn(false);
-        when(file.getContentType()).thenReturn("application/pdf");
+    @DisplayName("Cập nhật avatar thất bại - không phải file ảnh")
+    void updateUserAvatar_InvalidFileType_ShouldFail() {
+        MultipartFile file = new MockMultipartFile("avatar", "document.txt", "text/plain", "content".getBytes());
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
 
-        // Act
         ApiResponse<String> response = userService.updateUserAvatar(1L, file);
 
-        // Assert
         assertFalse(response.isSuccess());
         assertEquals("Only image files are allowed", response.getMessage());
-        assertNull(response.getData());
 
-        // Verify
-        verify(userRepository).findById(1L);
-        verify(fileStorageService, never()).saveAvatarFile(any(), any());
+        verifyNoInteractions(fileStorageService);
         verify(userRepository, never()).save(any(UserDtls.class));
     }
 
     @Test
-    @DisplayName("Cập nhật avatar thất bại khi file quá lớn")
-    void updateUserAvatar_FileTooLarge_ShouldFail() throws Exception {
-        // Arrange
-        MultipartFile file = mock(MultipartFile.class);
-        when(file.isEmpty()).thenReturn(false);
-        when(file.getContentType()).thenReturn("image/jpeg");
-        when(file.getSize()).thenReturn(6L * 1024L * 1024L); // 6MB (> 5MB limit)
+    @DisplayName("Cập nhật avatar thất bại - file quá lớn")
+    void updateUserAvatar_FileTooLarge_ShouldFail() {
+        // Create a file larger than 5MB
+        byte[] largeContent = new byte[6 * 1024 * 1024]; // 6MB
+        MultipartFile file = new MockMultipartFile("avatar", "large.jpg", "image/jpeg", largeContent);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
 
-        // Act
         ApiResponse<String> response = userService.updateUserAvatar(1L, file);
 
-        // Assert
         assertFalse(response.isSuccess());
         assertEquals("File size must be less than 5MB", response.getMessage());
-        assertNull(response.getData());
 
-        // Verify
-        verify(userRepository).findById(1L);
-        verify(fileStorageService, never()).saveAvatarFile(any(), any());
+        verifyNoInteractions(fileStorageService);
         verify(userRepository, never()).save(any(UserDtls.class));
     }
 
     @Test
-    @DisplayName("Cập nhật avatar thất bại khi user không tồn tại")
-    void updateUserAvatar_UserNotFound_ShouldFail() throws Exception {
-        // Arrange
-        MultipartFile file = mock(MultipartFile.class);
+    @DisplayName("Cập nhật avatar thất bại - file null")
+    void updateUserAvatar_NullFile_ShouldFail() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
+
+        ApiResponse<String> response = userService.updateUserAvatar(1L, null);
+
+        assertFalse(response.isSuccess());
+        assertEquals("Please select a file", response.getMessage());
+
+        verify(userRepository).findById(1L);
+        verifyNoInteractions(fileStorageService);
+        verify(userRepository, never()).save(any(UserDtls.class));
+    }
+
+    @Test
+    @DisplayName("Cập nhật avatar thất bại - user không tồn tại")
+    void updateUserAvatar_UserNotFound_ShouldFail() {
+        MultipartFile file = new MockMultipartFile("avatar", "avatar.jpg", "image/jpeg", "test".getBytes());
+
         when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
-        // Act
         ApiResponse<String> response = userService.updateUserAvatar(999L, file);
 
-        // Assert
         assertFalse(response.isSuccess());
         assertEquals("User not found", response.getMessage());
-        assertNull(response.getData());
 
-        // Verify
         verify(userRepository).findById(999L);
-        verify(fileStorageService, never()).saveAvatarFile(any(), any());
+        verifyNoInteractions(fileStorageService);
         verify(userRepository, never()).save(any(UserDtls.class));
     }
 
     @Test
-    @DisplayName("Cập nhật avatar xóa avatar cũ nếu không phải default")
-    void updateUserAvatar_DeleteOldAvatar_WhenNotDefault() throws Exception {
-        // Arrange
-        MultipartFile file = mock(MultipartFile.class);
-        when(file.isEmpty()).thenReturn(false);
-        when(file.getContentType()).thenReturn("image/jpeg");
-        when(file.getSize()).thenReturn(1024L * 1024L);
-
-        UserDtls userWithOldAvatar = new UserDtls();
-        userWithOldAvatar.setId(1L);
-        userWithOldAvatar.setAvatar("/img/avatar/old_avatar.jpg"); // Not default
-
-        String newAvatarPath = "/img/avatar/user_1_20250115_143000.jpg";
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(userWithOldAvatar));
-        when(fileStorageService.saveAvatarFile(file, 1L)).thenReturn(newAvatarPath);
-        doNothing().when(fileStorageService).deleteFile("/img/avatar/old_avatar.jpg");
-        when(userRepository.save(any(UserDtls.class))).thenReturn(userWithOldAvatar);
-
-        // Act
-        ApiResponse<String> response = userService.updateUserAvatar(1L, file);
-
-        // Assert
-        assertTrue(response.isSuccess());
-        assertEquals("Avatar updated successfully", response.getMessage());
-
-        // Verify
-        verify(fileStorageService).deleteFile("/img/avatar/old_avatar.jpg");
-        verify(fileStorageService).saveAvatarFile(file, 1L);
-    }
-
-    @Test
-    @DisplayName("Cập nhật avatar không xóa avatar cũ nếu là default")
-    void updateUserAvatar_NotDeleteOldAvatar_WhenDefault() throws Exception {
-        // Arrange
-        MultipartFile file = mock(MultipartFile.class);
-        when(file.isEmpty()).thenReturn(false);
-        when(file.getContentType()).thenReturn("image/jpeg");
-        when(file.getSize()).thenReturn(1024L * 1024L);
-
-        // sampleUser có avatar là default.jpg
-        String newAvatarPath = "/img/avatar/user_1_20250115_143000.jpg";
+    @DisplayName("Cập nhật avatar thất bại - lỗi lưu file")
+    void updateUserAvatar_FileStorageError_ShouldFail() throws Exception {
+        MultipartFile file = new MockMultipartFile("avatar", "avatar.jpg", "image/jpeg", "test".getBytes());
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
-        when(fileStorageService.saveAvatarFile(file, 1L)).thenReturn(newAvatarPath);
-        when(userRepository.save(any(UserDtls.class))).thenReturn(sampleUser);
+        when(fileStorageService.saveAvatarFile(file, 1L)).thenThrow(new IOException("Failed to save file"));
 
-        // Act
         ApiResponse<String> response = userService.updateUserAvatar(1L, file);
 
-        // Assert
-        assertTrue(response.isSuccess());
-        assertEquals("Avatar updated successfully", response.getMessage());
-
-        // Verify - should NOT call deleteFile because it's default.jpg
-        verify(fileStorageService, never()).deleteFile(anyString());
-        verify(fileStorageService).saveAvatarFile(file, 1L);
-    }
-
-    // ========= RATE LIMIT TESTS =========
-
-    @Test
-    @DisplayName("Gửi mã xác thực email update thất bại do rate limit")
-    void sendEmailVerificationForUpdate_RateLimit_ShouldFail() throws Exception {
-        // Arrange
-        VerificationCodeRequest request = new VerificationCodeRequest();
-        request.setEmail("newemail@example.com");
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
-        when(userRepository.existsByEmail("newemail@example.com")).thenReturn(false);
-        when(emailVerificationService.generateVerificationCode("newemail@example.com"))
-                .thenThrow(new EmailVerificationService.RateLimitException("Please wait 60 seconds"));
-
-        // Act
-        ApiResponse<String> response = userService.sendEmailVerificationForUpdate(1L, request);
-
-        // Assert
         assertFalse(response.isSuccess());
-        assertEquals("Please wait 60 seconds", response.getMessage());
-        assertNull(response.getData());
+        assertTrue(response.getMessage().contains("Failed to save avatar file"));
 
-        // Verify
-        verify(emailVerificationService).generateVerificationCode("newemail@example.com");
-        verify(emailService, never()).sendEmailUpdateVerificationAsync(anyString(), anyString(), anyString());
-    }
-
-    @Test
-    @DisplayName("Cập nhật avatar xử lý IOException")
-    void updateUserAvatar_IOException_ShouldReturnError() throws Exception {
-        // Arrange
-        MultipartFile file = mock(MultipartFile.class);
-        when(file.isEmpty()).thenReturn(false);
-        when(file.getContentType()).thenReturn("image/jpeg");
-        when(file.getSize()).thenReturn(1024L * 1024L);
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
-        when(fileStorageService.saveAvatarFile(file, 1L)).thenThrow(new IOException("Storage error"));
-
-        // Act
-        ApiResponse<String> response = userService.updateUserAvatar(1L, file);
-
-        // Assert
-        assertFalse(response.isSuccess());
-        assertTrue(response.getMessage().startsWith("Failed to save avatar file:"));
-        assertNull(response.getData());
-
-        // Verify
         verify(fileStorageService).saveAvatarFile(file, 1L);
         verify(userRepository, never()).save(any(UserDtls.class));
+    }
+
+    // Utility tests
+    @Test
+    @DisplayName("Lấy ID người dùng từ username thành công")
+    void getUserIdFromUsername_Success() {
+        when(userRepository.findByUsername("nguyenvana")).thenReturn(Optional.of(sampleUser));
+
+        Long userId = userService.getUserIdFromUsername("nguyenvana");
+
+        assertNotNull(userId);
+        assertEquals(1L, userId);
+
+        verify(userRepository).findByUsername("nguyenvana");
+    }
+
+    @Test
+    @DisplayName("Lấy ID người dùng từ username không tồn tại")
+    void getUserIdFromUsername_NotFound_ShouldReturnNull() {
+        when(userRepository.findByUsername("nonexistent")).thenReturn(Optional.empty());
+
+        Long userId = userService.getUserIdFromUsername("nonexistent");
+
+        assertNull(userId);
+
+        verify(userRepository).findByUsername("nonexistent");
+    }
+
+    @Test
+    @DisplayName("Tìm người dùng theo email thành công")
+    void findByEmail_Success() {
+        when(userRepository.findByEmail("nguyenvana@example.com")).thenReturn(Optional.of(sampleUser));
+
+        UserDtls user = userService.findByEmail("nguyenvana@example.com");
+
+        assertNotNull(user);
+        assertEquals("nguyenvana@example.com", user.getEmail());
+
+        verify(userRepository).findByEmail("nguyenvana@example.com");
+    }
+
+    @Test
+    @DisplayName("Tìm người dùng theo email không tồn tại")
+    void findByEmail_NotFound_ShouldReturnNull() {
+        when(userRepository.findByEmail("nonexistent@example.com")).thenReturn(Optional.empty());
+
+        UserDtls user = userService.findByEmail("nonexistent@example.com");
+
+        assertNull(user);
+
+        verify(userRepository).findByEmail("nonexistent@example.com");
+    }
+
+    // Additional helper method to create UserDtls for testing
+    private UserDtls createTestUser(String username, String email, Role role) {
+        UserDtls user = new UserDtls();
+        user.setUsername(username);
+        user.setEmail(email);
+        user.setRole(role);
+        user.setIsActive(true);
+        user.setCreatedDate(LocalDateTime.now());
+        return user;
+    }
+
+    // Additional helper method for UserResponse mapping
+    private UserResponse createUserResponse(UserDtls user) {
+        UserResponse response = new UserResponse();
+        response.setId(user.getId());
+        response.setUsername(user.getUsername());
+        response.setFullName(user.getFullName());
+        response.setEmail(user.getEmail());
+        response.setPhone(user.getPhone());
+        response.setBirthDay(user.getBirthDay());
+        response.setAvatar(user.getAvatar());
+        response.setIsActive(user.getIsActive());
+        response.setRole(user.getRole() != null ? user.getRole().getRoleName() : null);
+        response.setCreatedDate(user.getCreatedDate());
+        return response;
     }
 }

@@ -1,4 +1,5 @@
 package com.healapp.service;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -27,6 +28,7 @@ import com.healapp.dto.QuestionStatusRequest;
 import com.healapp.model.CategoryQuestion;
 import com.healapp.model.Question;
 import com.healapp.model.Question.QuestionStatus;
+import com.healapp.model.Role;
 import com.healapp.model.UserDtls;
 import com.healapp.repository.CategoryQuestionRepository;
 import com.healapp.repository.QuestionRepository;
@@ -55,31 +57,52 @@ public class QuestionServiceTest {
     private QuestionRequest questionRequest;
     private Pageable pageable;
 
+    // Cập nhật: Thêm Role entities
+    private Role userRole;
+    private Role staffRole;
+    private Role consultantRole;
+
     @BeforeEach
     void setUp() {
-        // Initialize regular user
+        // Cập nhật: Khởi tạo Role entities
+        userRole = new Role();
+        userRole.setRoleId(1L);
+        userRole.setRoleName("USER");
+        userRole.setDescription("Regular user role");
+
+        staffRole = new Role();
+        staffRole.setRoleId(2L);
+        staffRole.setRoleName("STAFF");
+        staffRole.setDescription("Staff role");
+
+        consultantRole = new Role();
+        consultantRole.setRoleId(3L);
+        consultantRole.setRoleName("CONSULTANT");
+        consultantRole.setDescription("Healthcare consultant role");
+
+        // Cập nhật: Initialize regular user với Role entity
         regularUser = new UserDtls();
         regularUser.setId(1L);
         regularUser.setUsername("user");
         regularUser.setFullName("Regular User");
         regularUser.setEmail("user@example.com");
-        regularUser.setRole("USER");
+        regularUser.setRole(userRole); // Sử dụng Role entity thay vì String
 
-        // Initialize staff user
+        // Cập nhật: Initialize staff user với Role entity
         staffUser = new UserDtls();
         staffUser.setId(2L);
         staffUser.setUsername("staff");
         staffUser.setFullName("Staff User");
         staffUser.setEmail("staff@example.com");
-        staffUser.setRole("STAFF");
+        staffUser.setRole(staffRole); // Sử dụng Role entity thay vì String
 
-        // Initialize consultant user
+        // Cập nhật: Initialize consultant user với Role entity
         consultantUser = new UserDtls();
         consultantUser.setId(3L);
         consultantUser.setUsername("consultant");
         consultantUser.setFullName("Consultant User");
         consultantUser.setEmail("consultant@example.com");
-        consultantUser.setRole("CONSULTANT");
+        consultantUser.setRole(consultantRole); // Sử dụng Role entity thay vì String
 
         // Initialize category
         category = new CategoryQuestion();
@@ -102,7 +125,9 @@ public class QuestionServiceTest {
 
         // Initialize pageable
         pageable = PageRequest.of(0, 10);
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Tạo Câu Hỏi - Thành Công")
     void createQuestion_Success() {
         // Arrange
@@ -124,7 +149,9 @@ public class QuestionServiceTest {
         verify(userRepository).findById(1L);
         verify(categoryQuestionRepository).findById(1L);
         verify(questionRepository).save(any(Question.class));
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Tạo Câu Hỏi - Không Tìm Thấy Người Dùng")
     void createQuestion_UserNotFound() {
         // Arrange
@@ -142,7 +169,9 @@ public class QuestionServiceTest {
         verify(userRepository).findById(999L);
         verify(categoryQuestionRepository, never()).findById(anyLong());
         verify(questionRepository, never()).save(any(Question.class));
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Tạo Câu Hỏi - Không Tìm Thấy Danh Mục")
     void createQuestion_CategoryNotFound() {
         // Arrange
@@ -162,7 +191,9 @@ public class QuestionServiceTest {
         verify(userRepository).findById(1L);
         verify(categoryQuestionRepository).findById(999L);
         verify(questionRepository, never()).save(any(Question.class));
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Cập Nhật Trạng Thái Câu Hỏi - Thành Công (ĐANG XỬ LÝ sang XÁC NHẬN)")
     void updateQuestionStatus_ProcessingToConfirmed_Success() {
         // Arrange
@@ -193,7 +224,9 @@ public class QuestionServiceTest {
         verify(questionRepository).findById(1L);
         verify(userRepository).findById(2L);
         verify(questionRepository).save(any(Question.class));
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Cập Nhật Trạng Thái Câu Hỏi - Thành Công (ĐANG XỬ LÝ sang HỦY BỎ)")
     void updateQuestionStatus_ProcessingToCanceled_Success() {
         // Arrange
@@ -225,7 +258,9 @@ public class QuestionServiceTest {
         verify(questionRepository).findById(1L);
         verify(userRepository).findById(2L);
         verify(questionRepository).save(any(Question.class));
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Cập Nhật Trạng Thái Câu Hỏi - Không Tìm Thấy Câu Hỏi")
     void updateQuestionStatus_QuestionNotFound() {
         // Arrange
@@ -246,7 +281,9 @@ public class QuestionServiceTest {
         verify(questionRepository).findById(999L);
         verify(userRepository, never()).findById(anyLong());
         verify(questionRepository, never()).save(any(Question.class));
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Cập Nhật Trạng Thái Câu Hỏi - Không Tìm Thấy Nhân Viên")
     void updateQuestionStatus_StaffNotFound() {
         // Arrange
@@ -268,7 +305,9 @@ public class QuestionServiceTest {
         verify(questionRepository).findById(1L);
         verify(userRepository).findById(999L);
         verify(questionRepository, never()).save(any(Question.class));
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Cập Nhật Trạng Thái Câu Hỏi - Không Phải Nhân Viên")
     void updateQuestionStatus_NotStaff() {
         // Arrange
@@ -290,7 +329,9 @@ public class QuestionServiceTest {
         verify(questionRepository).findById(1L);
         verify(userRepository).findById(1L);
         verify(questionRepository, never()).save(any(Question.class));
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Cập Nhật Trạng Thái Câu Hỏi - Chuyển Đổi Không Hợp Lệ (ĐÃ TRẢ LỜI sang XÁC NHẬN)")
     void updateQuestionStatus_InvalidTransition() {
         // Arrange
@@ -315,7 +356,9 @@ public class QuestionServiceTest {
         verify(questionRepository).findById(1L);
         verify(userRepository).findById(2L);
         verify(questionRepository, never()).save(any(Question.class));
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Cập Nhật Trạng Thái Câu Hỏi - Thiếu Lý Do Từ Chối")
     void updateQuestionStatus_MissingRejectionReason() {
         // Arrange
@@ -338,7 +381,9 @@ public class QuestionServiceTest {
         verify(questionRepository).findById(1L);
         verify(userRepository).findById(2L);
         verify(questionRepository, never()).save(any(Question.class));
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Trả Lời Câu Hỏi - Nhân Viên Thành Công")
     void answerQuestion_Staff_Success() {
         // Arrange
@@ -374,7 +419,9 @@ public class QuestionServiceTest {
         verify(questionRepository).findById(1L);
         verify(userRepository).findById(2L);
         verify(questionRepository).save(any(Question.class));
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Trả Lời Câu Hỏi - Tư Vấn Viên Thành Công")
     void answerQuestion_Consultant_Success() {
         // Arrange
@@ -410,7 +457,9 @@ public class QuestionServiceTest {
         verify(questionRepository).findById(1L);
         verify(userRepository).findById(3L);
         verify(questionRepository).save(any(Question.class));
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Trả Lời Câu Hỏi - Không Tìm Thấy Câu Hỏi")
     void answerQuestion_QuestionNotFound() {
         // Arrange
@@ -431,7 +480,9 @@ public class QuestionServiceTest {
         verify(questionRepository).findById(999L);
         verify(userRepository, never()).findById(anyLong());
         verify(questionRepository, never()).save(any(Question.class));
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Trả Lời Câu Hỏi - Không Tìm Thấy Người Dùng")
     void answerQuestion_UserNotFound() {
         // Arrange
@@ -453,7 +504,9 @@ public class QuestionServiceTest {
         verify(questionRepository).findById(1L);
         verify(userRepository).findById(999L);
         verify(questionRepository, never()).save(any(Question.class));
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Trả Lời Câu Hỏi - Không Phải Nhân Viên hoặc Tư Vấn Viên")
     void answerQuestion_NotStaffOrConsultant() {
         // Arrange
@@ -475,7 +528,9 @@ public class QuestionServiceTest {
         verify(questionRepository).findById(1L);
         verify(userRepository).findById(1L);
         verify(questionRepository, never()).save(any(Question.class));
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Trả Lời Câu Hỏi - Không Ở Trạng Thái XÁC NHẬN")
     void answerQuestion_NotInConfirmedStatus() {
         // Arrange
@@ -500,7 +555,9 @@ public class QuestionServiceTest {
         verify(questionRepository).findById(1L);
         verify(userRepository).findById(2L);
         verify(questionRepository, never()).save(any(Question.class));
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Lấy Câu Hỏi Theo Trạng Thái - Thành Công")
     void getQuestionsByStatus_Success() {
         // Arrange
@@ -531,7 +588,9 @@ public class QuestionServiceTest {
 
         // Verify
         verify(questionRepository).findByStatus(QuestionStatus.PROCESSING, pageable);
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Lấy Câu Hỏi Theo Danh Mục - Thành Công")
     void getQuestionsByCategory_Success() {
         // Arrange
@@ -563,7 +622,9 @@ public class QuestionServiceTest {
         // Verify
         verify(categoryQuestionRepository).existsById(1L);
         verify(questionRepository).findByCategoryQuestion_CategoryQuestionId(1L, pageable);
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Lấy Câu Hỏi Theo Danh Mục - Không Tìm Thấy Danh Mục")
     void getQuestionsByCategory_CategoryNotFound() {
         // Arrange
@@ -580,7 +641,9 @@ public class QuestionServiceTest {
         // Verify
         verify(categoryQuestionRepository).existsById(999L);
         verify(questionRepository, never()).findByCategoryQuestion_CategoryQuestionId(anyLong(), any(Pageable.class));
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Lấy Câu Hỏi Theo Người Dùng - Thành Công")
     void getQuestionsByUser_Success() {
         // Arrange
@@ -612,7 +675,9 @@ public class QuestionServiceTest {
         // Verify
         verify(userRepository).findById(1L);
         verify(questionRepository).findByCustomer(regularUser, pageable);
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Lấy Câu Hỏi Theo Người Dùng - Không Tìm Thấy Người Dùng")
     void getQuestionsByUser_UserNotFound() {
         // Arrange
@@ -629,7 +694,9 @@ public class QuestionServiceTest {
         // Verify
         verify(userRepository).findById(999L);
         verify(questionRepository, never()).findByCustomer(any(UserDtls.class), any(Pageable.class));
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Lấy Câu Hỏi Theo ID - Truy Cập Của Chủ Sở Hữu Thành Công")
     void getQuestionById_OwnerAccess_Success() {
         // Arrange
@@ -649,7 +716,9 @@ public class QuestionServiceTest {
         // Verify
         verify(questionRepository).findById(1L);
         verify(userRepository).findById(1L);
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Lấy Câu Hỏi Theo ID - Truy Cập Của Nhân Viên Thành Công")
     void getQuestionById_StaffAccess_Success() {
         // Arrange
@@ -667,7 +736,9 @@ public class QuestionServiceTest {
         // Verify
         verify(questionRepository).findById(1L);
         verify(userRepository).findById(2L);
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Lấy Câu Hỏi Theo ID - Truy Cập Của Tư Vấn Viên Thành Công")
     void getQuestionById_ConsultantAccess_Success() {
         // Arrange
@@ -685,14 +756,16 @@ public class QuestionServiceTest {
         // Verify
         verify(questionRepository).findById(1L);
         verify(userRepository).findById(3L);
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Lấy Câu Hỏi Theo ID - Truy Cập Không Được Phép")
     void getQuestionById_UnauthorizedAccess() {
         // Arrange
         UserDtls anotherUser = new UserDtls();
         anotherUser.setId(4L);
         anotherUser.setUsername("another");
-        anotherUser.setRole("USER");
+        anotherUser.setRole(userRole); // Cập nhật: Sử dụng Role entity
 
         when(questionRepository.findById(1L)).thenReturn(Optional.of(question));
         when(userRepository.findById(4L)).thenReturn(Optional.of(anotherUser));
@@ -708,7 +781,9 @@ public class QuestionServiceTest {
         // Verify
         verify(questionRepository).findById(1L);
         verify(userRepository).findById(4L);
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Lấy Câu Hỏi Theo ID - Không Tìm Thấy Câu Hỏi")
     void getQuestionById_QuestionNotFound() {
         // Arrange
@@ -725,7 +800,9 @@ public class QuestionServiceTest {
         // Verify
         verify(questionRepository).findById(999L);
         verify(userRepository, never()).findById(anyLong());
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Lấy Câu Hỏi Theo ID - Không Tìm Thấy Người Dùng")
     void getQuestionById_UserNotFound() {
         // Arrange
@@ -743,7 +820,9 @@ public class QuestionServiceTest {
         // Verify
         verify(questionRepository).findById(1L);
         verify(userRepository).findById(999L);
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Xóa Câu Hỏi - Thành Công")
     void deleteQuestion_Success() {
         // Arrange
@@ -762,7 +841,9 @@ public class QuestionServiceTest {
         verify(questionRepository).findById(1L);
         verify(userRepository).findById(2L);
         verify(questionRepository).deleteById(1L);
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Xóa Câu Hỏi - Không Tìm Thấy Câu Hỏi")
     void deleteQuestion_QuestionNotFound() {
         // Arrange
@@ -778,7 +859,9 @@ public class QuestionServiceTest {
         // Verify
         verify(questionRepository).findById(999L);
         verify(questionRepository, never()).deleteById(anyLong());
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Xóa Câu Hỏi - Không Phải Nhân Viên")
     void deleteQuestion_NotStaff() {
         // Arrange
@@ -796,7 +879,9 @@ public class QuestionServiceTest {
         verify(questionRepository).findById(1L);
         verify(userRepository).findById(1L);
         verify(questionRepository, never()).deleteById(anyLong());
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Xóa Câu Hỏi - Không Tìm Thấy Nhân Viên")
     void deleteQuestion_StaffNotFound() {
         // Arrange

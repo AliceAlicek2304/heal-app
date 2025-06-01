@@ -35,9 +35,10 @@ public class CategoryQuestionService {
     private QuestionService questionService;
 
     public ApiResponse<CategoryQuestionResponse> createCategory(CategoryQuestionRequest request, Long staffId) {
-        try { // Check if user exists and has ADMIN role
+        try {
+            // Check if user exists and has ADMIN role
             Optional<UserDtls> adminOpt = userRepository.findById(staffId);
-            if (adminOpt.isEmpty() || !adminOpt.get().getRole().equals("ADMIN")) {
+            if (adminOpt.isEmpty() || !"ADMIN".equals(adminOpt.get().getRoleName())) {
                 return ApiResponse.error("Only ADMIN can create categories");
             }
 
@@ -65,7 +66,7 @@ public class CategoryQuestionService {
         try {
             // Check if admin exists and has ADMIN role
             Optional<UserDtls> staffOpt = userRepository.findById(staffId);
-            if (staffOpt.isEmpty() || !staffOpt.get().getRole().equals("ADMIN")) {
+            if (staffOpt.isEmpty() || !"ADMIN".equals(staffOpt.get().getRoleName())) {
                 return ApiResponse.error("Only ADMIN can update categories");
             }
 
@@ -99,7 +100,7 @@ public class CategoryQuestionService {
         try {
             // Check if admin exists and has ADMIN role
             Optional<UserDtls> staffOpt = userRepository.findById(staffId);
-            if (staffOpt.isEmpty() || !staffOpt.get().getRole().equals("ADMIN")) {
+            if (staffOpt.isEmpty() || !"ADMIN".equals(staffOpt.get().getRoleName())) {
                 return ApiResponse.error("Only ADMIN can delete categories");
             }
 

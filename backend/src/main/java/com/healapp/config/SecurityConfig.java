@@ -254,15 +254,16 @@ public class SecurityConfig {
             }
 
             Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
-            authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole()));
+            String roleName = user.getRoleName();
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + roleName));
 
             return new org.springframework.security.core.userdetails.User(
                     user.getUsername(),
                     user.getPassword(),
-                    user.getIsActive(), // enabled
-                    true, // accountNonExpired
-                    true, // credentialsNonExpired
-                    true, // accountNonLocked
+                    user.getIsActive(),
+                    true,
+                    true,
+                    true,
                     authorities);
         };
     }

@@ -79,7 +79,8 @@ public class ConsultationService {
             }
 
             UserDtls user = userOpt.get();
-            if (!user.getRole().equals("CONSULTANT")) {
+            // Cập nhật: Sử dụng getRoleName() thay vì getRole()
+            if (!"CONSULTANT".equals(user.getRoleName())) {
                 return ApiResponse.error("Selected user is not a consultant");
             }
 
@@ -137,7 +138,8 @@ public class ConsultationService {
             UserDtls customer = customerOpt.get();
             UserDtls consultant = consultantOpt.get();
 
-            if (!consultant.getRole().equals("CONSULTANT")) {
+            // Cập nhật: Sử dụng getRoleName() thay vì getRole()
+            if (!"CONSULTANT".equals(consultant.getRoleName())) {
                 return ApiResponse.error("Selected user is not a consultant");
             }
 
@@ -170,7 +172,9 @@ public class ConsultationService {
                         consultation.getEndTime().isAfter(consultationStartTime)) {
                     return ApiResponse.error("The selected time slot is not available");
                 }
-            } // Tính phí tư vấn dựa trên thời lượng
+            }
+
+            // Tính phí tư vấn dựa trên thời lượng
             int durationHours = Integer.parseInt(hours[1]) - Integer.parseInt(hours[0]);
             Float price = getHourlyRate() * durationHours;
 
@@ -303,10 +307,12 @@ public class ConsultationService {
             UserDtls user = userOpt.get();
             List<Consultation> consultations;
 
-            if (user.getRole().equals("STAFF") || user.getRole().equals("ADMIN")) {
+            // Cập nhật: Sử dụng getRoleName() thay vì getRole()
+            String userRole = user.getRoleName();
+            if ("STAFF".equals(userRole) || "ADMIN".equals(userRole)) {
                 // Admin và staff xem tất cả
                 consultations = consultationRepository.findByStatus(status);
-            } else if (user.getRole().equals("CONSULTANT")) {
+            } else if ("CONSULTANT".equals(userRole)) {
                 // Consultant chỉ xem lịch tư vấn của mình
                 consultations = consultationRepository.findByConsultantAndStatus(user, status);
             } else {
@@ -355,7 +361,8 @@ public class ConsultationService {
 
     public ApiResponse<List<UserDtls>> getAllConsultantMembers() {
         try {
-            List<UserDtls> consultantMembers = userRepository.findByRole("CONSULTANT");
+            // Cập nhật: Sử dụng findByRoleName thay vì findByRole
+            List<UserDtls> consultantMembers = userRepository.findByRoleName("CONSULTANT");
             return ApiResponse.success("Consultant members retrieved successfully", consultantMembers);
         } catch (Exception e) {
             return ApiResponse.error("Failed to retrieve consultant members: " + e.getMessage());
@@ -371,7 +378,8 @@ public class ConsultationService {
             }
 
             UserDtls consultant = consultantOpt.get();
-            if (!consultant.getRole().equals("CONSULTANT")) {
+            // Cập nhật: Sử dụng getRoleName() thay vì getRole()
+            if (!"CONSULTANT".equals(consultant.getRoleName())) {
                 return ApiResponse.error("User is not a consultant");
             }
 

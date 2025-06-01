@@ -76,8 +76,8 @@ public class QuestionService {
             }
             UserDtls staff = staffOpt.get();
 
-            // Check if user has STAFF role
-            if (!staff.getRole().equals("STAFF")) {
+            // Cập nhật: Sử dụng getRoleName() thay vì getRole()
+            if (!"STAFF".equals(staff.getRoleName())) {
                 return ApiResponse.error("Only STAFF can update question status");
             }
 
@@ -125,8 +125,9 @@ public class QuestionService {
             }
             UserDtls user = userOpt.get();
 
-            // Check if user has appropriate role
-            if (!user.getRole().equals("STAFF") && !user.getRole().equals("CONSULTANT")) {
+            // Cập nhật: Sử dụng getRoleName() thay vì getRole()
+            String userRole = user.getRoleName();
+            if (!"STAFF".equals(userRole) && !"CONSULTANT".equals(userRole)) {
                 return ApiResponse.error("Only STAFF or CONSULTANT can answer questions");
             }
 
@@ -206,12 +207,13 @@ public class QuestionService {
         }
 
         UserDtls user = optionalUser.get();
-        String role = user.getRole();
+        // Cập nhật: Sử dụng getRoleName() thay vì getRole()
+        String role = user.getRoleName();
 
         // Check permissions - only owner, STAFF or CONSULTANT can view
         if (!userId.equals(question.getCustomer().getId()) &&
-                !role.equals("STAFF") &&
-                !role.equals("CONSULTANT")) {
+                !"STAFF".equals(role) &&
+                !"CONSULTANT".equals(role)) {
             return ApiResponse.error("Bạn không có quyền xem câu hỏi này");
         }
 
@@ -231,7 +233,8 @@ public class QuestionService {
 
             // Check if staff exists and has STAFF role
             Optional<UserDtls> staffOpt = userRepository.findById(staffId);
-            if (staffOpt.isEmpty() || !staffOpt.get().getRole().equals("STAFF")) {
+            // Cập nhật: Sử dụng getRoleName() thay vì getRole()
+            if (staffOpt.isEmpty() || !"STAFF".equals(staffOpt.get().getRoleName())) {
                 return ApiResponse.error("Only STAFF can delete questions");
             }
 

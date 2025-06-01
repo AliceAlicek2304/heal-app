@@ -3,6 +3,7 @@ package com.healapp.service;
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.STIServiceRequest;
 import com.healapp.dto.STIServiceResponse;
+import com.healapp.model.Role;
 import com.healapp.model.STIService;
 import com.healapp.model.ServiceTestComponent;
 import com.healapp.model.UserDtls;
@@ -48,21 +49,36 @@ public class STIServiceServiceTest {
     private STIServiceRequest validRequest;
     private List<ServiceTestComponent> testComponents;
 
+    // Cập nhật: Thêm Role entities
+    private Role adminRole;
+    private Role userRole;
+
     @BeforeEach
     void setUp() {
-        // Khởi tạo user admin
+        // Cập nhật: Khởi tạo Role entities
+        adminRole = new Role();
+        adminRole.setRoleId(1L);
+        adminRole.setRoleName("ADMIN");
+        adminRole.setDescription("Administrator role");
+
+        userRole = new Role();
+        userRole.setRoleId(2L);
+        userRole.setRoleName("USER");
+        userRole.setDescription("Regular user role");
+
+        // Cập nhật: Khởi tạo user admin với Role entity
         adminUser = new UserDtls();
         adminUser.setId(1L);
         adminUser.setUsername("admin");
         adminUser.setFullName("Admin User");
-        adminUser.setRole("ADMIN");
+        adminUser.setRole(adminRole);
 
-        // Khởi tạo user thường
+        // Cập nhật: Khởi tạo user thường với Role entity
         regularUser = new UserDtls();
         regularUser.setId(2L);
         regularUser.setUsername("user");
         regularUser.setFullName("Regular User");
-        regularUser.setRole("USER");
+        regularUser.setRole(userRole);
 
         // Khởi tạo các thành phần xét nghiệm
         testComponents = new ArrayList<>();
@@ -329,5 +345,105 @@ public class STIServiceServiceTest {
         assertEquals("Active STI services retrieved successfully", response.getMessage());
         assertNotNull(response.getData());
         assertEquals(0, response.getData().size());
+    }
+
+    @Test
+    @DisplayName("Cập nhật dịch vụ STI - Thất bại do người dùng không phải Admin")
+    void updateServiceWithComponents_NotAdmin() {
+        // Chuẩn bị dữ liệu
+        when(userRepository.findById(regularUser.getId())).thenReturn(Optional.of(regularUser));
+
+        // Thực hiện hành động
+        ApiResponse<STIServiceResponse> response = stiServiceService.updateServiceWithComponents(
+                stiService.getServiceId(), validRequest, regularUser.getId());
+
+        // Kiểm tra kết quả
+        assertFalse(response.isSuccess());
+        assertEquals("Only ADMIN can update STI services", response.getMessage());
+        verify(stiServiceRepository, never()).save(any(STIService.class));
+    }
+
+    @Test
+    @DisplayName("Cập nhật dịch vụ STI - Thất bại do không tìm thấy người dùng")
+    void updateServiceWithComponents_UserNotFound() {
+        // Chuẩn bị dữ liệu
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+        // Thực hiện hành động
+        ApiResponse<STIServiceResponse> response = stiServiceService.updateServiceWithComponents(
+                stiService.getServiceId(), validRequest, 999L);
+
+        // Kiểm tra kết quả
+        assertFalse(response.isSuccess());
+        assertEquals("Admin user not found", response.getMessage());
+        verify(stiServiceRepository, never()).save(any(STIService.class));
+    }
+
+    @Test
+    @DisplayName("Tạo dịch vụ STI - Thất bại do ngoại lệ xảy ra")
+    void createServiceWithComponents_Exception() {
+        // Chuẩn bị dữ liệu
+        when(userRepository.findById(adminUser.getId())).thenReturn(Optional.of(adminUser));
+        when(stiServiceRepository.existsByNameIgnoreCase(anyString())).thenReturn(false);
+        when(stiServiceRepository.save(any(STIService.class))).thenThrow(new RuntimeException("Database error"));
+
+        // Thực hiện hành động và kiểm tra exception
+        RuntimeException thrown = assertThrows(RuntimeException.class, () -> {
+            stiServiceService.createServiceWithComponents(validRequest, adminUser.getId());
+        });
+
+        // Kiểm tra kết quả
+        assertTrue(thrown.getMessage().contains("Failed to create STI service"));
+        verify(stiServiceRepository, times(1)).save(any(STIService.class));
+    }
+
+    @Test
+    @DisplayName("Cập nhật dịch vụ STI - Thất bại do ngoại lệ xảy ra")
+    void updateServiceWithComponents_Exception() {
+        // Chuẩn bị dữ liệu
+        when(userRepository.findById(adminUser.getId())).thenReturn(Optional.of(adminUser));
+        when(stiServiceRepository.findById(anyLong())).thenReturn(Optional.of(stiService));
+        when(stiServiceRepository.findByNameIgnoreCase(anyString())).thenReturn(Optional.of(stiService));
+        when(stiServiceRepository.save(any(STIService.class))).thenThrow(new RuntimeException("Database error"));
+
+        // Thực hiện hành động
+        ApiResponse<STIServiceResponse> response = stiServiceService.updateServiceWithComponents(
+                stiService.getServiceId(), validRequest, adminUser.getId());
+
+        // Kiểm tra kết quả
+        assertFalse(response.isSuccess());
+        assertTrue(response.getMessage().contains("Failed to update STI service"));
+        assertNull(response.getData());
+    }
+
+    @Test
+    @DisplayName("Lấy danh sách dịch vụ STI đang hoạt động - Thất bại do ngoại lệ xảy ra")
+    void getActiveServices_Exception() {
+        // Chuẩn bị dữ liệu
+        when(stiServiceRepository.findByIsActiveTrue()).thenThrow(new RuntimeException("Database error"));
+
+        // Thực hiện hành động
+        ApiResponse<List<STIServiceResponse>> response = stiServiceService.getActiveServices();
+
+        // Kiểm tra kết quả
+        assertFalse(response.isSuccess());
+        assertTrue(response.getMessage().contains("Failed to retrieve active STI services"));
+        assertNull(response.getData());
+    }
+
+    @Test
+    @DisplayName("Lấy chi tiết dịch vụ STI - Thất bại do ngoại lệ xảy ra")
+    void getServiceWithComponents_Exception() {
+        // Chuẩn bị dữ liệu
+        when(stiServiceRepository.findByIdWithComponents(anyLong())).thenThrow(new RuntimeException("Database error"));
+
+        // Thực hiện hành động
+        ApiResponse<STIServiceResponse> response = stiServiceService
+                .getServiceWithComponents(stiService.getServiceId());
+
+        // Kiểm tra kết quả
+        assertFalse(response.isSuccess());
+        assertTrue(response.getMessage().contains("Failed to retrieve STI service"));
+        assertNull(response.getData());
     }
 }

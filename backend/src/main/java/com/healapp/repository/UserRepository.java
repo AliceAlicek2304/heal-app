@@ -1,7 +1,10 @@
 package com.healapp.repository;
 
+import com.healapp.model.Role;
 import com.healapp.model.UserDtls;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -21,7 +24,10 @@ public interface UserRepository extends JpaRepository<UserDtls, Long> {
 
     Optional<UserDtls> findByUsernameOrEmail(String username, String email);
 
-    List<UserDtls> findByRole(String role);
+    List<UserDtls> findByRole(Role role);
+
+    @Query("SELECT u FROM UserDtls u WHERE u.role.roleName = :roleName")
+    List<UserDtls> findByRoleName(@Param("roleName") String roleName);
 
     Iterable<UserDtls> findByIsActive(Boolean isActive);
 
@@ -29,11 +35,13 @@ public interface UserRepository extends JpaRepository<UserDtls, Long> {
 
     LocalDate findBirthDayById(Long id);
 
-    Long countByRole(String role);
+    Long countByRole(Role role);
 
-    List<UserDtls> findByRoleAndIsActive(String role, boolean isActive);
+    List<UserDtls> findByRoleAndIsActive(Role role, boolean isActive);
 
-    List<UserDtls> findByRoleIn(List<String> roles);
+    @Query("SELECT u FROM UserDtls u WHERE u.role.roleName IN :roleNames")
+    List<UserDtls> findByRoleNameIn(@Param("roleNames") List<String> roleNames);
 
-    List<UserDtls> findByRoleOrderByCreatedDateDesc(String role);
+    @Query("SELECT u FROM UserDtls u WHERE u.role.roleName = :roleName ORDER BY u.createdDate DESC")
+    List<UserDtls> findByRoleNameOrderByCreatedDateDesc(@Param("roleName") String roleName);
 }

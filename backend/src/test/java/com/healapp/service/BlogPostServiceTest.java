@@ -10,6 +10,7 @@ import com.healapp.model.BlogPost;
 import com.healapp.model.BlogPostStatus;
 import com.healapp.model.BlogSection;
 import com.healapp.model.Category;
+import com.healapp.model.Role;
 import com.healapp.model.UserDtls;
 import com.healapp.repository.BlogPostRepository;
 import com.healapp.repository.BlogSectionRepository;
@@ -63,21 +64,48 @@ public class BlogPostServiceTest {
     private UserDtls regularUser;
     private UserDtls consultantUser;
 
+    // Cập nhật: Thêm Role entities
+    private Role adminRole;
+    private Role staffRole;
+    private Role userRole;
+    private Role consultantRole;
+
     @BeforeEach
     void setUp() {
+        // Cập nhật: Khởi tạo Role entities
+        adminRole = new Role();
+        adminRole.setRoleId(1L);
+        adminRole.setRoleName("ADMIN");
+        adminRole.setDescription("Administrator role");
+
+        staffRole = new Role();
+        staffRole.setRoleId(2L);
+        staffRole.setRoleName("STAFF");
+        staffRole.setDescription("Staff role");
+
+        userRole = new Role();
+        userRole.setRoleId(3L);
+        userRole.setRoleName("USER");
+        userRole.setDescription("Regular user role");
+
+        consultantRole = new Role();
+        consultantRole.setRoleId(4L);
+        consultantRole.setRoleName("CONSULTANT");
+        consultantRole.setDescription("Consultant role");
+
         // Khởi tạo category
         category = new Category();
         category.setCategoryId(1L);
         category.setName("Health Tips");
         category.setDescription("Tips for maintaining good health");
 
-        // Khởi tạo users với các vai trò khác nhau
+        // Cập nhật: Khởi tạo users với Role entities thay vì String
         adminUser = new UserDtls();
         adminUser.setId(1L);
         adminUser.setUsername("admin");
         adminUser.setFullName("Admin User");
         adminUser.setEmail("admin@example.com");
-        adminUser.setRole("ADMIN");
+        adminUser.setRole(adminRole); // Sử dụng Role entity
         adminUser.setAvatar("/img/avatar/admin.jpg");
 
         staffUser = new UserDtls();
@@ -85,7 +113,7 @@ public class BlogPostServiceTest {
         staffUser.setUsername("staff");
         staffUser.setFullName("Staff User");
         staffUser.setEmail("staff@example.com");
-        staffUser.setRole("STAFF");
+        staffUser.setRole(staffRole); // Sử dụng Role entity
         staffUser.setAvatar("/img/avatar/staff.jpg");
 
         regularUser = new UserDtls();
@@ -93,17 +121,18 @@ public class BlogPostServiceTest {
         regularUser.setUsername("user");
         regularUser.setFullName("Regular User");
         regularUser.setEmail("user@example.com");
-        regularUser.setRole("USER");
+        regularUser.setRole(userRole); // Sử dụng Role entity
         regularUser.setAvatar("/img/avatar/user.jpg");
 
-        // Thêm user consultant
         consultantUser = new UserDtls();
         consultantUser.setId(4L);
         consultantUser.setUsername("consultant");
         consultantUser.setFullName("Consultant User");
         consultantUser.setEmail("consultant@example.com");
-        consultantUser.setRole("CONSULTANT");
-        consultantUser.setAvatar("/img/avatar/consultant.jpg"); // Khởi tạo blog post request
+        consultantUser.setRole(consultantRole); // Sử dụng Role entity
+        consultantUser.setAvatar("/img/avatar/consultant.jpg");
+
+        // Khởi tạo blog post request
         blogPostRequest = new BlogPostRequest();
         blogPostRequest.setTitle("10 Tips for Better Sleep");
         blogPostRequest.setContent("Getting good sleep is essential for health...");
@@ -782,8 +811,6 @@ public class BlogPostServiceTest {
         savedPost.setReviewedAt(LocalDateTime.now());
 
         when(blogPostRepository.save(any(BlogPost.class))).thenReturn(savedPost);
-
-        // Không cần mock cho blogSectionRepository.save() vì void method
 
         // Act
         ApiResponse<BlogPostResponse> response = blogPostService.createPost(requestWithSections, 1L);
