@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "user_details")
+@Table(name = "[user]")
 public class UserDtls {
 
     @Id
