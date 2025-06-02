@@ -67,8 +67,8 @@ public class QuestionServiceTest {
         // Cập nhật: Khởi tạo Role entities
         userRole = new Role();
         userRole.setRoleId(1L);
-        userRole.setRoleName("USER");
-        userRole.setDescription("Regular user role");
+        userRole.setRoleName("CUSTOMER");
+        userRole.setDescription("Regular customer role");
 
         staffRole = new Role();
         staffRole.setRoleId(2L);

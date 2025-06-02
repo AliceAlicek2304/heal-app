@@ -479,8 +479,8 @@ public class STITestService {
         } else if ("ADMIN".equals(userRole)) {
             // ADMIN có thể thực hiện mọi chuyển đổi trạng thái
             return true;
-        } else if ("USER".equals(userRole) || "CONSULTANT".equals(userRole)) {
-            // USER và CONSULTANT chỉ có thể hủy lịch hẹn
+        } else if ("CUSTOMER".equals(userRole) || "CONSULTANT".equals(userRole)) {
+            // CUSTOMER và CONSULTANT chỉ có thể hủy lịch hẹn
             if (currentStatus == TestStatus.PENDING && newStatus == TestStatus.CANCELED)
                 return true;
         }

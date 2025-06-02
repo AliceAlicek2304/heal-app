@@ -39,11 +39,9 @@ public class RoleService {
             log.error("Error getting role by name: {}", e.getMessage(), e);
             return ApiResponse.error("Failed to get role: " + e.getMessage());
         }
-    }
-
-    public Role getDefaultUserRole() {
-        return roleRepository.findByRoleName("USER")
-                .orElseThrow(() -> new RuntimeException("Default USER role not found"));
+    }    public Role getDefaultUserRole() {
+        return roleRepository.findByRoleName("CUSTOMER")
+                .orElseThrow(() -> new RuntimeException("Default CUSTOMER role not found"));
     }
 
     public boolean isValidRole(String roleName) {

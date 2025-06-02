@@ -138,9 +138,9 @@ public class ConsultantService {
             Optional<ConsultantProfile> profileOpt = consultantProfileRepository.findByUser(user);
             profileOpt.ifPresent(consultantProfileRepository::delete);
 
-            // Cập nhật: Lấy role USER từ database và set cho user
-            Role userRole = roleRepository.findByRoleName("USER")
-                    .orElseThrow(() -> new RuntimeException("USER role not found in database"));
+            // Cập nhật: Lấy role CUSTOMER từ database và set cho user
+            Role userRole = roleRepository.findByRoleName("CUSTOMER")
+                    .orElseThrow(() -> new RuntimeException("CUSTOMER role not found in database"));
 
             user.setRole(userRole);
             userRepository.save(user);

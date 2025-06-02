@@ -62,8 +62,8 @@ public class ConsultantServiceTest {
 
         userRole = new Role();
         userRole.setRoleId(2L);
-        userRole.setRoleName("USER");
-        userRole.setDescription("Regular user role");
+        userRole.setRoleName("CUSTOMER");
+        userRole.setDescription("Regular customer role");
 
         // Cập nhật: Tạo mẫu dữ liệu test với Role entity
         consultantUser = new UserDtls();
@@ -348,8 +348,8 @@ public class ConsultantServiceTest {
         // Arrange
         when(userRepository.findById(1L)).thenReturn(Optional.of(consultantUser));
         when(consultantProfileRepository.findByUser(consultantUser)).thenReturn(Optional.of(consultantProfile));
-        // Cập nhật: Mock RoleRepository để trả về USER role
-        when(roleRepository.findByRoleName("USER")).thenReturn(Optional.of(userRole));
+        // Cập nhật: Mock RoleRepository để trả về CUSTOMER role
+        when(roleRepository.findByRoleName("CUSTOMER")).thenReturn(Optional.of(userRole));
 
         // Act
         ApiResponse<String> response = consultantService.removeConsultantRole(1L);
@@ -363,7 +363,7 @@ public class ConsultantServiceTest {
         verify(consultantProfileRepository).delete(consultantProfile);
         verify(userRepository).save(consultantUser);
         // Cập nhật: Verify Role entity được set
-        verify(roleRepository).findByRoleName("USER");
+        verify(roleRepository).findByRoleName("CUSTOMER");
         assertEquals(userRole, consultantUser.getRole());
     }
 
@@ -406,13 +406,13 @@ public class ConsultantServiceTest {
     }
 
     @Test
-    @DisplayName("Xóa role consultant thất bại khi không tìm thấy USER role")
+    @DisplayName("Xóa role consultant thất bại khi không tìm thấy CUSTOMER role")
     void removeConsultantRole_WhenUserRoleNotFound_ShouldReturnError() {
         // Arrange
         when(userRepository.findById(1L)).thenReturn(Optional.of(consultantUser));
         when(consultantProfileRepository.findByUser(consultantUser)).thenReturn(Optional.of(consultantProfile));
         // Cập nhật: Mock RoleRepository trả về empty để test error case
-        when(roleRepository.findByRoleName("USER")).thenReturn(Optional.empty());
+        when(roleRepository.findByRoleName("CUSTOMER")).thenReturn(Optional.empty());
 
         // Act
         ApiResponse<String> response = consultantService.removeConsultantRole(1L);
@@ -420,12 +420,12 @@ public class ConsultantServiceTest {
         // Assert
         assertFalse(response.isSuccess());
         assertTrue(response.getMessage().contains("Failed to remove consultant role"));
-        assertTrue(response.getMessage().contains("USER role not found in database"));
+        assertTrue(response.getMessage().contains("CUSTOMER role not found in database"));
         assertNull(response.getData());
         verify(userRepository).findById(1L);
         verify(consultantProfileRepository).findByUser(consultantUser);
         verify(consultantProfileRepository).delete(consultantProfile);
-        verify(roleRepository).findByRoleName("USER");
+        verify(roleRepository).findByRoleName("CUSTOMER");
         // User không được save khi có lỗi
         verify(userRepository, never()).save(any(UserDtls.class));
     }

@@ -77,12 +77,11 @@ class UserServiceTest {
     private Role adminRole;
 
     @BeforeEach
-    void setUp() {
-        // Setup Role entities
+    void setUp() {        // Setup Role entities
         userRole = new Role();
         userRole.setRoleId(1L);
-        userRole.setRoleName("USER");
-        userRole.setDescription("Regular user role");
+        userRole.setRoleName("CUSTOMER");
+        userRole.setDescription("Regular customer role");
 
         consultantRole = new Role();
         consultantRole.setRoleId(2L);
@@ -308,14 +307,12 @@ class UserServiceTest {
         when(userRepository.findByUsername("nguyenvana")).thenReturn(Optional.of(sampleUser));
         when(passwordEncoder.matches("password123", "encodedPassword")).thenReturn(true);
 
-        ApiResponse<LoginResponse> response = userService.login(request);
-
-        assertTrue(response.isSuccess());
+        ApiResponse<LoginResponse> response = userService.login(request);        assertTrue(response.isSuccess());
         assertEquals("Login successful", response.getMessage());
         assertNotNull(response.getData());
         assertEquals(1L, response.getData().getUserId());
         assertEquals("nguyenvana", response.getData().getUsername());
-        assertEquals("USER", response.getData().getRole());
+        assertEquals("CUSTOMER", response.getData().getRole());
 
         verify(userRepository).findByUsername("nguyenvana");
         verify(passwordEncoder).matches("password123", "encodedPassword");
@@ -544,10 +541,8 @@ class UserServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
         when(roleService.isValidRole("INVALID_ROLE")).thenReturn(false);
 
-        ApiResponse<UserResponse> response = userService.updateUserRoleAndStatus(1L, request);
-
-        assertFalse(response.isSuccess());
-        assertEquals("Invalid role. Role must be USER, CONSULTANT, STAFF or ADMIN", response.getMessage());
+        ApiResponse<UserResponse> response = userService.updateUserRoleAndStatus(1L, request);        assertFalse(response.isSuccess());
+        assertEquals("Invalid role. Role must be CUSTOMER, CONSULTANT, STAFF or ADMIN", response.getMessage());
 
         verify(roleService).isValidRole("INVALID_ROLE");
         verify(userRepository, never()).save(any(UserDtls.class));
@@ -619,13 +614,11 @@ class UserServiceTest {
 
         when(userRepository.findAll()).thenReturn(users);
 
-        ApiResponse<List<UserResponse>> response = userService.getAllUsers();
-
-        assertTrue(response.isSuccess());
+        ApiResponse<List<UserResponse>> response = userService.getAllUsers();        assertTrue(response.isSuccess());
         assertEquals("Get list of users successfully", response.getMessage());
         assertNotNull(response.getData());
         assertEquals(2, response.getData().size());
-        assertEquals("USER", response.getData().get(0).getRole());
+        assertEquals("CUSTOMER", response.getData().get(0).getRole());
         assertEquals("STAFF", response.getData().get(1).getRole());
 
         verify(userRepository).findAll();
@@ -636,13 +629,11 @@ class UserServiceTest {
     void getUserById_Success() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
 
-        ApiResponse<UserResponse> response = userService.getUserById(1L);
-
-        assertTrue(response.isSuccess());
+        ApiResponse<UserResponse> response = userService.getUserById(1L);        assertTrue(response.isSuccess());
         assertEquals("Get user information successfully", response.getMessage());
         assertNotNull(response.getData());
         assertEquals(1L, response.getData().getId());
-        assertEquals("USER", response.getData().getRole());
+        assertEquals("CUSTOMER", response.getData().getRole());
 
         verify(userRepository).findById(1L);
     }
@@ -683,10 +674,8 @@ class UserServiceTest {
     void getUsersByRole_InvalidRole_ShouldFail() {
         when(roleService.isValidRole("INVALID")).thenReturn(false);
 
-        ApiResponse<List<UserResponse>> response = userService.getUsersByRole("INVALID");
-
-        assertFalse(response.isSuccess());
-        assertEquals("Invalid role. Valid roles are: USER, CONSULTANT, STAFF, ADMIN", response.getMessage());
+        ApiResponse<List<UserResponse>> response = userService.getUsersByRole("INVALID");        assertFalse(response.isSuccess());
+        assertEquals("Invalid role. Valid roles are: CUSTOMER, CONSULTANT, STAFF, ADMIN", response.getMessage());
 
         verify(roleService).isValidRole("INVALID");
         verifyNoInteractions(userRepository);
@@ -699,12 +688,10 @@ class UserServiceTest {
 
         when(roleRepository.findAll()).thenReturn(roles);
 
-        ApiResponse<List<String>> response = userService.getAvailableRoles();
-
-        assertTrue(response.isSuccess());
+        ApiResponse<List<String>> response = userService.getAvailableRoles();        assertTrue(response.isSuccess());
         assertEquals("Available roles retrieved successfully", response.getMessage());
         assertEquals(4, response.getData().size());
-        assertTrue(response.getData().contains("USER"));
+        assertTrue(response.getData().contains("CUSTOMER"));
         assertTrue(response.getData().contains("CONSULTANT"));
         assertTrue(response.getData().contains("STAFF"));
         assertTrue(response.getData().contains("ADMIN"));
@@ -724,12 +711,10 @@ class UserServiceTest {
         when(userRepository.countByRole(adminRole)).thenReturn(1L);
         when(userRepository.count()).thenReturn(19L);
 
-        ApiResponse<Map<String, Long>> response = userService.getUserCountByRole();
-
-        assertTrue(response.isSuccess());
+        ApiResponse<Map<String, Long>> response = userService.getUserCountByRole();        assertTrue(response.isSuccess());
         assertEquals("User count by role retrieved successfully", response.getMessage());
         assertNotNull(response.getData());
-        assertEquals(10L, response.getData().get("USER"));
+        assertEquals(10L, response.getData().get("CUSTOMER"));
         assertEquals(5L, response.getData().get("CONSULTANT"));
         assertEquals(3L, response.getData().get("STAFF"));
         assertEquals(1L, response.getData().get("ADMIN"));

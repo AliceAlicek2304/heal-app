@@ -267,11 +267,9 @@ public class UserService {
 
             UserDtls user = userOpt.get();
             String oldRoleName = user.getRoleName();
-            String newRoleName = request.getRole();
-
-            // Kiểm tra role hợp lệ
+            String newRoleName = request.getRole();            // Kiểm tra role hợp lệ
             if (!roleService.isValidRole(newRoleName)) {
-                return ApiResponse.error("Invalid role. Role must be USER, CONSULTANT, STAFF or ADMIN");
+                return ApiResponse.error("Invalid role. Role must be CUSTOMER, CONSULTANT, STAFF or ADMIN");
             }
 
             // Lấy role entity từ database
@@ -333,10 +331,9 @@ public class UserService {
     }
 
     public ApiResponse<List<UserResponse>> getUsersByRole(String roleName) {
-        try {
-            // Validate role
+        try {            // Validate role
             if (!roleService.isValidRole(roleName)) {
-                return ApiResponse.error("Invalid role. Valid roles are: USER, CONSULTANT, STAFF, ADMIN");
+                return ApiResponse.error("Invalid role. Valid roles are: CUSTOMER, CONSULTANT, STAFF, ADMIN");
             }
 
             List<UserDtls> users = userRepository.findByRoleName(roleName);
