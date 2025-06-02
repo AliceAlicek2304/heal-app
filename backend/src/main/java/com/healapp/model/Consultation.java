@@ -33,18 +33,6 @@ public class Consultation {
 
     @Column(name = "meet_url")
     private String meetUrl;
-    @Column(nullable = false)
-    private Float price; // Đơn vị: VND
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "payment_method")
-    private PaymentMethod paymentMethod;
-
-    @Column(name = "stripe_payment_id")
-    private String stripePaymentId;
-
-    @Column(name = "payment_date")
-    private LocalDateTime paymentDate;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;

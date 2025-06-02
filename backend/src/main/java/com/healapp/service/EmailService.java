@@ -155,50 +155,13 @@ public class EmailService {
         sendEmail(consultant.getEmail(), subject, htmlContent);
     }
 
-    @Async
-    public void sendRefundConfirmationAsync(Consultation consultation) {
-        try {
-            sendRefundConfirmation(consultation);
-        } catch (MessagingException e) {
-            System.err.println("Failed to send refund confirmation email: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
 
-    private void sendRefundConfirmation(Consultation consultation) throws MessagingException {
-        UserDtls customer = consultation.getCustomer();
-
-        String subject = "Xác nhận hoàn tiền cho cuộc tư vấn #" + consultation.getConsultationId();
-
-        String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
-                +
-                "<h2 style='color: #4a6ee0;'>Xác nhận hoàn tiền</h2>" +
-                "<p>Xin chào " + customer.getFullName() + ",</p>" +
-                "<p>Cuộc tư vấn của bạn đã bị hủy và khoản thanh toán đã được hoàn lại.</p>" +
-                "<p><strong>Thông tin chi tiết:</strong></p>" +
-                "<ul>" +
-                "<li>Mã cuộc tư vấn: #" + consultation.getConsultationId() + "</li>" +
-                "<li>Tư vấn viên: " + consultation.getConsultant().getFullName() + "</li>" +
-                "<li>Thời gian đã đặt: " + formatDateTime(consultation.getStartTime()) + " - " +
-                formatDateTime(consultation.getEndTime()) + "</li>" +
-                "<li>Số tiền hoàn lại: " + formatPrice(consultation.getPrice()) + " VNĐ</li>" +
-                "</ul>" +
-                "<p>Khoản tiền sẽ được hoàn lại vào phương thức thanh toán ban đầu của bạn trong vòng 5-7 ngày làm việc.</p>"
-                +
-                "<p>Nếu bạn cần hỗ trợ thêm, vui lòng liên hệ với chúng tôi.</p>" +
-                "<p>Trân trọng,<br/>HealApp Team</p>" +
-                "</div>";
-
-        sendEmail(customer.getEmail(), subject, htmlContent);
-    }
 
     private String formatDateTime(LocalDateTime dateTime) {
         return dateTime.format(DATETIME_FORMATTER);
     }
 
-    private String formatPrice(Float price) {
-        return String.format("%,.0f", price).replace(",", ".");
-    }
+
 
     private MimeMessage createEmailVerificationMessage(String to, String code) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();

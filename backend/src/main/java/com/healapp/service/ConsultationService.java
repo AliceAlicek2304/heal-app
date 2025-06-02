@@ -7,13 +7,11 @@ import com.healapp.dto.ConsultationResponse;
 import com.healapp.model.Consultation;
 import com.healapp.model.ConsultantProfile;
 import com.healapp.model.ConsultationStatus;
-import com.healapp.model.PaymentMethod;
 import com.healapp.model.UserDtls;
 import com.healapp.repository.ConsultantProfileRepository;
 import com.healapp.repository.ConsultationRepository;
 import com.healapp.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,31 +43,7 @@ public class ConsultationService {
     @Autowired
     private EmailService emailService;
 
-    @Autowired
-    private StripeService stripeService;
-
-    @Autowired
-    private AppConfigService appConfigService;
-
-    @Value("${app.consultation.hourly-rate:150000.0}")
-    private Float defaultHourlyRate;
-
     private static final List<String> TIME_SLOTS = Arrays.asList("8-10", "10-12", "13-15", "15-17");
-
-    private Float getHourlyRate() {
-        try {
-            ApiResponse<Double> response = appConfigService.getCurrentConsultationPrice();
-            if (response.isSuccess() && response.getData() != null) {
-                return response.getData().floatValue();
-            }
-        } catch (Exception e) {
-            log.error("Error getting hourly rate from config, using default: {}", e.getMessage());
-        }
-
-        // Fallback to default
-        log.info("Using default hourly rate: {}", defaultHourlyRate);
-        return defaultHourlyRate;
-    }
 
     public ApiResponse<List<AvailableTimeSlot>> getAvailableTimeSlots(Long consultantId, LocalDate date) {
         try {
@@ -174,57 +148,17 @@ public class ConsultationService {
                 }
             }
 
-            // Tính phí tư vấn dựa trên thời lượng
-            int durationHours = Integer.parseInt(hours[1]) - Integer.parseInt(hours[0]);
-            Float price = getHourlyRate() * durationHours;
-
             // Tạo lịch tư vấn
             Consultation consultation = new Consultation();
             consultation.setCustomer(customer);
             consultation.setConsultant(consultant);
             consultation.setStartTime(consultationStartTime);
             consultation.setEndTime(consultationEndTime);
-            consultation.setPaymentMethod(request.getPaymentMethod());
-            consultation.setPrice(price);
+            consultation.setStatus(ConsultationStatus.PENDING);
 
-            // Xử lý phương thức thanh toán
-            if (request.getPaymentMethod() == PaymentMethod.VISA) {
-                consultation.setStatus(ConsultationStatus.PAYMENT_PENDING);
-                Consultation savedConsultation = consultationRepository.save(consultation);
-
-                // Xử lý thanh toán qua Stripe
-                ApiResponse<String> paymentResponse = stripeService.processPayment(
-                        savedConsultation,
-                        request.getCardNumber(),
-                        request.getExpiryMonth(),
-                        request.getExpiryYear(),
-                        request.getCvc(),
-                        request.getCardHolderName());
-
-                if (paymentResponse.isSuccess()) {
-                    // Thanh toán thành công, cập nhật thông tin
-                    savedConsultation.setStripePaymentId(paymentResponse.getData());
-                    savedConsultation.setPaymentDate(LocalDateTime.now());
-                    savedConsultation.setStatus(ConsultationStatus.PENDING);
-                    savedConsultation = consultationRepository.save(savedConsultation);
-
-                    ConsultationResponse response = convertToResponse(savedConsultation);
-                    return ApiResponse.success("Consultation scheduled and payment processed successfully", response);
-                } else {
-                    // Thanh toán thất bại
-                    savedConsultation.setStatus(ConsultationStatus.PAYMENT_FAILED);
-                    consultationRepository.save(savedConsultation);
-                    return ApiResponse.error(paymentResponse.getMessage());
-                }
-            } else {
-                // COD
-                consultation.setStatus(ConsultationStatus.PENDING);
-                consultation.setStripePaymentId(null);
-                Consultation savedConsultation = consultationRepository.save(consultation);
-
-                ConsultationResponse response = convertToResponse(savedConsultation);
-                return ApiResponse.success("Consultation scheduled successfully", response);
-            }
+            Consultation savedConsultation = consultationRepository.save(consultation);
+            ConsultationResponse response = convertToResponse(savedConsultation);
+            return ApiResponse.success("Consultation scheduled successfully", response);
         } catch (Exception e) {
             return ApiResponse.error("Failed to schedule consultation: " + e.getMessage());
         }
@@ -259,20 +193,7 @@ public class ConsultationService {
                 if (!consultation.getCustomer().getId().equals(userId) &&
                         !consultation.getConsultant().getId().equals(userId)) {
                     return ApiResponse.error("You don't have permission to cancel this consultation");
-                }
-
-                // Xử lý hoàn tiền nếu đã thanh toán qua VISA
-                if (consultation.getPaymentMethod() == PaymentMethod.VISA &&
-                        consultation.getStripePaymentId() != null) {
-
-                    ApiResponse<String> refundResponse = stripeService.processRefund(consultation.getStripePaymentId());
-                    if (!refundResponse.isSuccess()) {
-                        return ApiResponse.error("Failed to process refund: " + refundResponse.getMessage());
-                    }
-
-                    // Lưu lại quá trình hoàn tiền
-                    consultation.setPaymentDate(LocalDateTime.now());
-                }
+                }                // No payment processing required for cancellation
             } else if (newStatus == ConsultationStatus.COMPLETED) {
                 if (!consultation.getConsultant().getId().equals(userId)) {
                     return ApiResponse.error("Only assigned consultant can mark the consultation as completed");
@@ -421,10 +342,6 @@ public class ConsultationService {
         response.setEndTime(consultation.getEndTime());
         response.setStatus(consultation.getStatus());
         response.setMeetUrl(consultation.getMeetUrl());
-
-        response.setPrice(consultation.getPrice());
-        response.setPaymentMethod(consultation.getPaymentMethod());
-        response.setPaymentDate(consultation.getPaymentDate());
 
         response.setCreatedAt(consultation.getCreatedAt());
         response.setUpdatedAt(consultation.getUpdatedAt());

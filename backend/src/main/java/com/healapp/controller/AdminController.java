@@ -1,7 +1,5 @@
 package com.healapp.controller;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.ConsultantProfileRequest;
 import com.healapp.dto.ConsultantProfileResponse;
@@ -23,7 +21,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -105,12 +102,6 @@ public class AdminController {
             @PathVariable Long userId,
             @Valid @RequestBody UserUpdateRequest request) {
         ApiResponse<UserResponse> response = userService.updateUserRoleAndStatus(userId, request);
-        return getResponseEntity(response);
-    }
-
-    @GetMapping("/config/consultation-price")
-    public ResponseEntity<ApiResponse<Double>> getCurrentConsultationPrice() {
-        ApiResponse<Double> response = appConfigService.getCurrentConsultationPrice();
         return getResponseEntity(response);
     }
 

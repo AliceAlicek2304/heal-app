@@ -7,7 +7,6 @@ import com.healapp.repository.AppConfigRepository;
 import com.healapp.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,8 +28,7 @@ public class AppConfigService {
     @Autowired
     private FileStorageService fileStorageService;
 
-    @Value("${app.consultation.hourly-rate:150000.0}")
-    private Double defaultConsultationPrice;
+
 
     /**
      * Lấy cấu hình hiện tại (PUBLIC API)
@@ -38,12 +36,6 @@ public class AppConfigService {
     public ApiResponse<Map<String, String>> getCurrentConfig() {
         try {
             Map<String, String> configMap = getAllConfigAsMap();
-
-            if (configMap.isEmpty()) {
-                // Khởi tạo với priceConsultation mặc định
-                initializeDefaultConfig();
-                configMap = getAllConfigAsMap();
-            }
 
             return ApiResponse.success("App configuration retrieved successfully", configMap);
 
@@ -173,11 +165,6 @@ public class AppConfigService {
                 return ApiResponse.error("Only ADMIN can change configuration status");
             }
 
-            // Không cho phép inactive priceConsultation
-            if ("priceConsultation".equals(key) && !isActive) {
-                return ApiResponse.error("Cannot inactive system required configuration: priceConsultation");
-            }
-
             // Tìm config (bao gồm cả inactive)
             Optional<AppConfig> configOpt = appConfigRepository.findByConfigKey(key);
             if (configOpt.isEmpty()) {
@@ -230,11 +217,6 @@ public class AppConfigService {
                 return ApiResponse.error("Only ADMIN can delete configuration");
             }
 
-            // Không cho phép xóa priceConsultation
-            if ("priceConsultation".equals(key)) {
-                return ApiResponse.error("Cannot delete system required configuration: priceConsultation");
-            }
-
             Optional<AppConfig> configOpt = appConfigRepository.findByConfigKeyAndIsActiveTrue(key);
             if (configOpt.isEmpty()) {
                 return ApiResponse.error("Configuration key not found: " + key);
@@ -268,35 +250,7 @@ public class AppConfigService {
         }
     }
 
-    /**
-     * Lấy giá consultation hiện tại
-     */
-    public ApiResponse<Double> getCurrentConsultationPrice() {
-        try {
-            String priceStr = getConfigValue("priceConsultation");
-            Double price;
 
-            if (priceStr != null) {
-                try {
-                    price = Double.parseDouble(priceStr);
-                } catch (NumberFormatException e) {
-                    price = defaultConsultationPrice;
-                    // Cập nhật lại giá trị đúng
-                    setConfigValue("priceConsultation", price.toString(), "Consultation hourly rate", null);
-                }
-            } else {
-                price = defaultConsultationPrice;
-                // Lưu giá mặc định vào database
-                setConfigValue("priceConsultation", price.toString(), "Consultation hourly rate", null);
-            }
-
-            return ApiResponse.success("Current consultation price retrieved successfully", price);
-
-        } catch (Exception e) {
-            log.error("Error retrieving consultation price: {}", e.getMessage(), e);
-            return ApiResponse.error("Failed to retrieve consultation price: " + e.getMessage());
-        }
-    }
 
     /**
      * Cập nhật một config key cụ thể
@@ -395,27 +349,13 @@ public class AppConfigService {
         appConfigRepository.save(config);
     }
 
-    /**
-     * Khởi tạo cấu hình mặc định
-     */
-    private void initializeDefaultConfig() {
-        if (!appConfigRepository.existsByConfigKeyAndIsActiveTrue("priceConsultation")) {
-            setConfigValue("priceConsultation", defaultConsultationPrice.toString(), "Consultation hourly rate", null);
-        }
 
-        log.info("Default app configuration initialized");
-    }
 
     /**
      * Lấy description cho key
      */
     private String getDescriptionForKey(String key) {
-        switch (key) {
-            case "priceConsultation":
-                return "Consultation hourly rate";
-            default:
-                return "Custom configuration";
-        }
+        return "Custom configuration";
     }
 
     /**

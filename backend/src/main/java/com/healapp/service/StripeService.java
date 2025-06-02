@@ -1,7 +1,6 @@
 package com.healapp.service;
 
 import com.healapp.dto.ApiResponse;
-import com.healapp.model.Consultation;
 import com.healapp.model.STITest;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
@@ -33,23 +32,6 @@ public class StripeService {
     }
 
 
-    // HYBRID - Xử lý thanh toán Consultation (Test cards + Real cards)
-    public ApiResponse<String> processPayment(Consultation consultation, String cardNumber,
-            String expMonth, String expYear, String cvc, String cardholderName) {
-
-        // Kiểm tra xem có phải test card không
-        String testPaymentMethodId = getTestPaymentMethodId(cardNumber);
-
-        if (testPaymentMethodId != null) {
-            // Sử dụng test payment method
-            return processPaymentWithTestCard(consultation, testPaymentMethodId, "consultation");
-        } else {
-            // Sử dụng real card data
-            return processPaymentWithRealCard(consultation, cardNumber, expMonth, expYear, cvc, cardholderName,
-                    "consultation");
-        }
-    }
-
     // HYBRID - Xử lý thanh toán STI Test (Test cards + Real cards)
     public ApiResponse<String> processPaymentForSTITest(STITest stiTest, String cardNumber,
             String expMonth, String expYear, String cvc, String cardholderName) {
@@ -59,43 +41,30 @@ public class StripeService {
 
         if (testPaymentMethodId != null) {
             // Sử dụng test payment method
-            return processPaymentWithTestCard(stiTest, testPaymentMethodId, "sti_test");
+            return processPaymentWithTestCard(stiTest, testPaymentMethodId);
         } else {
             // Sử dụng real card data
-            return processPaymentWithRealCard(stiTest, cardNumber, expMonth, expYear, cvc, cardholderName, "sti_test");
+            return processPaymentWithRealCard(stiTest, cardNumber, expMonth, expYear, cvc, cardholderName);
         }
     }
 
     // Xử lý thanh toán với Test Cards (sử dụng predefined payment methods)
-    private ApiResponse<String> processPaymentWithTestCard(Object entity, String paymentMethodId, String type) {
+    private ApiResponse<String> processPaymentWithTestCard(STITest stiTest, String paymentMethodId) {
         try {
-            PaymentIntentCreateParams.Builder paramsBuilder = PaymentIntentCreateParams.builder()
+            PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                     .setCurrency("vnd")
+                    .setAmount(stiTest.getTotalPrice().longValue())
+                    .setDescription("TEST - STI Test #" + stiTest.getTestId())
+                    .setReceiptEmail(stiTest.getCustomer().getEmail())
                     .setPaymentMethod(paymentMethodId)
                     .setConfirm(true)
-                    .setReturnUrl("https://healapp.com/payment/return");
+                    .setReturnUrl("https://healapp.com/payment/return")
+                    .putMetadata("testId", stiTest.getTestId().toString())
+                    .putMetadata("customerId", stiTest.getCustomer().getId().toString())
+                    .putMetadata("type", "test_sti")
+                    .build();
 
-            if ("consultation".equals(type)) {
-                Consultation consultation = (Consultation) entity;
-                paramsBuilder
-                        .setAmount(consultation.getPrice().longValue())
-                        .setDescription("TEST - Consultation #" + consultation.getConsultationId())
-                        .setReceiptEmail(consultation.getCustomer().getEmail())
-                        .putMetadata("consultationId", consultation.getConsultationId().toString())
-                        .putMetadata("customerId", consultation.getCustomer().getId().toString())
-                        .putMetadata("type", "test_consultation");
-            } else if ("sti_test".equals(type)) {
-                STITest stiTest = (STITest) entity;
-                paramsBuilder
-                        .setAmount(stiTest.getTotalPrice().longValue())
-                        .setDescription("TEST - STI Test #" + stiTest.getTestId())
-                        .setReceiptEmail(stiTest.getCustomer().getEmail())
-                        .putMetadata("testId", stiTest.getTestId().toString())
-                        .putMetadata("customerId", stiTest.getCustomer().getId().toString())
-                        .putMetadata("type", "test_sti");
-            }
-
-            PaymentIntent paymentIntent = PaymentIntent.create(paramsBuilder.build());
+            PaymentIntent paymentIntent = PaymentIntent.create(params);
 
             if ("succeeded".equals(paymentIntent.getStatus())) {
                 log.info("Test payment successful - PaymentIntent: {}", paymentIntent.getId());
@@ -116,39 +85,26 @@ public class StripeService {
     }
 
     // Xử lý thanh toán với Real Cards (tạo payment method từ card data)
-    private ApiResponse<String> processPaymentWithRealCard(Object entity, String cardNumber,
-            String expMonth, String expYear, String cvc, String cardholderName, String type) {
+    private ApiResponse<String> processPaymentWithRealCard(STITest stiTest, String cardNumber,
+            String expMonth, String expYear, String cvc, String cardholderName) {
         try {
             // Chỉ hoạt động khi Stripe account được enable raw card data
             String paymentMethodId = createPaymentMethod(cardNumber, expMonth, expYear, cvc, cardholderName);
 
-            PaymentIntentCreateParams.Builder paramsBuilder = PaymentIntentCreateParams.builder()
+            PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                     .setCurrency("vnd")
+                    .setAmount(stiTest.getTotalPrice().longValue())
+                    .setDescription("💳 REAL - STI Test #" + stiTest.getTestId())
+                    .setReceiptEmail(stiTest.getCustomer().getEmail())
                     .setPaymentMethod(paymentMethodId)
                     .setConfirm(true)
-                    .setReturnUrl("https://healapp.com/payment/return");
+                    .setReturnUrl("https://healapp.com/payment/return")
+                    .putMetadata("testId", stiTest.getTestId().toString())
+                    .putMetadata("customerId", stiTest.getCustomer().getId().toString())
+                    .putMetadata("type", "real_sti")
+                    .build();
 
-            if ("consultation".equals(type)) {
-                Consultation consultation = (Consultation) entity;
-                paramsBuilder
-                        .setAmount(consultation.getPrice().longValue())
-                        .setDescription("💳 REAL - Consultation #" + consultation.getConsultationId())
-                        .setReceiptEmail(consultation.getCustomer().getEmail())
-                        .putMetadata("consultationId", consultation.getConsultationId().toString())
-                        .putMetadata("customerId", consultation.getCustomer().getId().toString())
-                        .putMetadata("type", "real_consultation");
-            } else if ("sti_test".equals(type)) {
-                STITest stiTest = (STITest) entity;
-                paramsBuilder
-                        .setAmount(stiTest.getTotalPrice().longValue())
-                        .setDescription("💳 REAL - STI Test #" + stiTest.getTestId())
-                        .setReceiptEmail(stiTest.getCustomer().getEmail())
-                        .putMetadata("testId", stiTest.getTestId().toString())
-                        .putMetadata("customerId", stiTest.getCustomer().getId().toString())
-                        .putMetadata("type", "real_sti");
-            }
-
-            PaymentIntent paymentIntent = PaymentIntent.create(paramsBuilder.build());
+            PaymentIntent paymentIntent = PaymentIntent.create(params);
 
             if ("succeeded".equals(paymentIntent.getStatus())) {
                 log.info("💳 Real payment successful - PaymentIntent: {}", paymentIntent.getId());

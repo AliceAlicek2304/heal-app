@@ -8,8 +8,6 @@ import com.healapp.dto.ConsultationResponse;
 import com.healapp.dto.ConsultationStatusRequest;
 import com.healapp.model.ConsultationStatus;
 import com.healapp.model.UserDtls;
-import com.healapp.repository.ConsultantProfileRepository;
-import com.healapp.service.AppConfigService;
 import com.healapp.service.ConsultantService;
 import com.healapp.service.ConsultationService;
 import com.healapp.service.UserService;
@@ -31,12 +29,6 @@ public class ConsultationController {
 
     @Autowired
     private ConsultationService consultationService;
-
-    @Autowired
-    private ConsultantProfileRepository consultantProfileRepository;
-
-    @Autowired
-    private AppConfigService appConfigService;
 
     @Autowired
     private UserService userService;
@@ -163,17 +155,6 @@ public class ConsultationController {
     public ResponseEntity<ApiResponse<ConsultantProfileResponse>> getConsultantProfileForConsultation(
             @PathVariable Long consultantId) {
         ApiResponse<ConsultantProfileResponse> response = consultantService.getConsultantProfileById(consultantId);
-
-        if (response.isSuccess()) {
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.badRequest().body(response);
-        }
-    }
-
-    @GetMapping("/consultation-price")
-    public ResponseEntity<ApiResponse<Double>> getConsultationPrice() {
-        ApiResponse<Double> response = appConfigService.getCurrentConsultationPrice();
 
         if (response.isSuccess()) {
             return ResponseEntity.ok(response);

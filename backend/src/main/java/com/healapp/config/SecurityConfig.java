@@ -61,19 +61,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/question-categories/{categoryId}").permitAll()
 
                         // API Questions (Public endpoints)
-                        .requestMatchers(HttpMethod.GET, "/questions/answered").permitAll()
-
-                        // API Consultants (Public GET endpoints)
+                        .requestMatchers(HttpMethod.GET, "/questions/answered").permitAll()                        // API Consultants (Public GET endpoints)
                         .requestMatchers(HttpMethod.GET, "/consultants").permitAll()
                         .requestMatchers(HttpMethod.GET, "/consultants/{userId}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/consultations/consultant/{consultantId}/profile").permitAll()
                         .requestMatchers(HttpMethod.GET, "/consultations/consultants").permitAll()
                         .requestMatchers(HttpMethod.GET, "/consultations/available-slots").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/consultations/consultation-price").permitAll()
 
                         // API App Config (Public endpoints)
                         .requestMatchers(HttpMethod.GET, "/config").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/config/consultation-price").permitAll()
                         .requestMatchers(HttpMethod.GET, "/config/{key}").permitAll()
 
                         // API STI Services (Public GET endpoints)
@@ -200,11 +196,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/admin/config").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/admin/config").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/admin/config/{key}").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/admin/config/{key}").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/admin/config/{key}/inactive").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/admin/config/{key}").hasRole("ADMIN")                        .requestMatchers(HttpMethod.PUT, "/admin/config/{key}/inactive").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/admin/config/{key}/active").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/admin/config/{key}/upload").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/admin/config/consultation-price").hasRole("ADMIN")
 
                         // API STI Services Management (Admin only)
                         .requestMatchers(HttpMethod.POST, "/admin/sti-services").hasRole("ADMIN")

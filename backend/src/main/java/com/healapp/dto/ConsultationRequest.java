@@ -1,6 +1,5 @@
 package com.healapp.dto;
 
-import com.healapp.model.PaymentMethod;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,14 +20,4 @@ public class ConsultationRequest {
 
     @NotEmpty(message = "Time slot is required")
     private String timeSlot;
-
-    @NotNull(message = "Payment method is required")
-    private PaymentMethod paymentMethod;
-
-    // Visa
-    private String cardNumber;
-    private String expiryMonth;
-    private String expiryYear;
-    private String cvc;
-    private String cardHolderName;
 }

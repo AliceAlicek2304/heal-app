@@ -1,7 +1,6 @@
 package com.healapp.dto;
 
 import com.healapp.model.ConsultationStatus;
-import com.healapp.model.PaymentMethod;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,11 +25,6 @@ public class ConsultationResponse {
     private LocalDateTime endTime;
     private ConsultationStatus status;
     private String meetUrl;
-
-    // Thông tin thanh toán
-    private Float price;
-    private PaymentMethod paymentMethod;
-    private LocalDateTime paymentDate;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
