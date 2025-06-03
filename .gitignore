@@ -31,3 +31,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### SECURITY - QUAN TRỌNG! ###
+**/application.properties
+**/application-*.properties
+.env
+.env.*
+**/*.properties
+!**/application.properties.example
