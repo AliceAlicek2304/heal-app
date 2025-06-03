@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -43,9 +45,9 @@ public class UserDtls {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
-
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id", nullable = false)
+    @JsonIgnoreProperties("users")
     private Role role;
 
     @Column(name = "created_date", nullable = false)

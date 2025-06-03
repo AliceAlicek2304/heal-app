@@ -20,7 +20,6 @@ const Consultation = () => {
     const [loading, setLoading] = useState(true);
     const [selectedConsultant, setSelectedConsultant] = useState(null);
     const [showBookingModal, setShowBookingModal] = useState(false);
-    const [consultationPrice, setConsultationPrice] = useState(150000);
 
     // Auth modals
     const {
@@ -44,11 +43,8 @@ const Consultation = () => {
         try {
             setLoading(true);
 
-            // Fetch consultants và price parallel
-            const [consultantsRes, priceRes] = await Promise.all([
-                consultationService.getAllConsultants(handleAuthRequired),
-                consultationService.getConsultationPrice(handleAuthRequired)
-            ]);
+            // Chỉ fetch danh sách consultants
+            const consultantsRes = await consultationService.getAllConsultants(handleAuthRequired);
 
             if (consultantsRes.success) {
                 setConsultants(consultantsRes.data || []);
@@ -56,19 +52,9 @@ const Consultation = () => {
                 toast.error(consultantsRes.message || 'Không thể tải danh sách chuyên gia');
             }
 
-            // Handle price response với fallback
-            if (priceRes.success && priceRes.data) {
-                setConsultationPrice(priceRes.data);
-            } else {
-                console.warn('Failed to get consultation price, using fallback:', priceRes.message);
-                setConsultationPrice(150000);
-                toast.warning('Không thể tải giá tư vấn, sử dụng giá mặc định');
-            }
-
         } catch (error) {
             console.error('Error fetching consultation data:', error);
             toast.error('Có lỗi xảy ra khi tải dữ liệu');
-            setConsultationPrice(150000);
         } finally {
             setLoading(false);
         }
@@ -92,13 +78,9 @@ const Consultation = () => {
     const handleBookingSuccess = (bookingData) => {
         setShowBookingModal(false);
         setSelectedConsultant(null);
-
-        // Hiển thị thông báo thành công với thông tin chi tiết
-        if (bookingData && bookingData.paymentMethod === 'VISA') {
-            toast.success('Thanh toán thành công! Đặt lịch tư vấn hoàn tất. Bạn có thể xem chi tiết trong mục "Lịch tư vấn của tôi"');
-        } else {
-            toast.success('Đặt lịch tư vấn thành công! Bạn có thể xem chi tiết trong mục "Lịch tư vấn của tôi"');
-        }
+        toast.success('Đặt lịch tư vấn thành công! Chuyên gia sẽ xác nhận lịch trong vòng 24 giờ và gửi link tham gia qua email.', {
+            duration: 8000
+        });
     };
 
     const handleBookingError = (error) => {
@@ -112,8 +94,6 @@ const Consultation = () => {
 
             if (message.includes('check constraint') || message.includes('constraint')) {
                 errorMessage = 'Có lỗi dữ liệu. Vui lòng thử lại sau ít phút.';
-            } else if (message.includes('payment failed') || message.includes('payment')) {
-                errorMessage = 'Thanh toán thất bại. Vui lòng kiểm tra thông tin thẻ và thử lại.';
             } else if (message.includes('time slot') || message.includes('not available')) {
                 errorMessage = 'Khung giờ đã được đặt. Vui lòng chọn khung giờ khác.';
             } else if (message.includes('consultant not found')) {
@@ -167,11 +147,38 @@ const Consultation = () => {
                     <p>Đặt lịch tư vấn với các chuyên gia y tế có kinh nghiệm</p>
 
                     <div className={styles.consultationInfo}>
-                        <div className={styles.priceInfo}>
-                            <span className={styles.priceLabel}>Giá tư vấn:</span>
-                            <span className={styles.priceValue}>
-                                {consultationPrice.toLocaleString('vi-VN')} VNĐ/giờ
-                            </span>
+                        <div className={styles.serviceInfo}>
+                            <div className={styles.serviceFeature}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M14 9V5a3 3 0 0 0-6 0v4"></path>
+                                    <rect x="2" y="9" width="20" height="12" rx="2" ry="2"></rect>
+                                    <circle cx="12" cy="15" r="1"></circle>
+                                </svg>
+                                <span>Tư vấn trực tuyến 1-1</span>
+                            </div>
+
+                            <div className={styles.serviceFeature}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12,6 12,12 16,14"></polyline>
+                                </svg>
+                                <span>Thời lượng 2 giờ</span>
+                            </div>
+
+                            <div className={styles.serviceFeature}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M9 11l3 3L22 4"></path>
+                                    <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+                                </svg>
+                                <span>Chuyên gia có kinh nghiệm</span>
+                            </div>
+
+                            <div className={styles.serviceFeature}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                                </svg>
+                                <span>Miễn phí tư vấn</span>
+                            </div>
                         </div>
 
                         <button
@@ -198,7 +205,6 @@ const Consultation = () => {
                                 <ConsultantCard
                                     key={consultant.id}
                                     consultant={consultant}
-                                    consultationPrice={consultationPrice}
                                     onBookConsultation={handleBookConsultation}
                                     onAuthRequired={handleAuthRequired}
                                 />
@@ -232,7 +238,6 @@ const Consultation = () => {
             {showBookingModal && selectedConsultant && (
                 <BookingModal
                     consultant={selectedConsultant}
-                    consultationPrice={consultationPrice}
                     onClose={handleCloseBookingModal}
                     onSuccess={handleBookingSuccess}
                     onError={handleBookingError}

@@ -97,7 +97,7 @@ public class UserService {
         }
     }
 
-    public ApiResponse<UserDtls> registerUser(RegisterRequest request, MultipartFile avatarFile) {
+    public ApiResponse<UserResponse> registerUser(RegisterRequest request, MultipartFile avatarFile) {
         try {
             // Kiểm tra mã xác thực email
             boolean isVerified = emailVerificationService.verifyCode(request.getEmail(), request.getVerificationCode());
@@ -125,12 +125,15 @@ public class UserService {
             user.setAvatar(defaultAvatarPath);
             user.setIsActive(true);
 
-            // Set role mặc định là USER
+            // Set role mặc định là customer
             Role userRole = roleService.getDefaultUserRole();
             user.setRole(userRole);
 
             UserDtls savedUser = userRepository.save(user);
-            return ApiResponse.success("Đăng ký thành công", savedUser);
+
+            UserResponse userResponse = mapUserToResponse(savedUser);
+
+            return ApiResponse.success("Đăng ký thành công", userResponse);
 
         } catch (Exception e) {
             return ApiResponse.error("Lỗi đăng ký: " + e.getMessage());
@@ -267,7 +270,7 @@ public class UserService {
 
             UserDtls user = userOpt.get();
             String oldRoleName = user.getRoleName();
-            String newRoleName = request.getRole();            // Kiểm tra role hợp lệ
+            String newRoleName = request.getRole(); // Kiểm tra role hợp lệ
             if (!roleService.isValidRole(newRoleName)) {
                 return ApiResponse.error("Invalid role. Role must be CUSTOMER, CONSULTANT, STAFF or ADMIN");
             }
@@ -331,7 +334,7 @@ public class UserService {
     }
 
     public ApiResponse<List<UserResponse>> getUsersByRole(String roleName) {
-        try {            // Validate role
+        try { // Validate role
             if (!roleService.isValidRole(roleName)) {
                 return ApiResponse.error("Invalid role. Valid roles are: CUSTOMER, CONSULTANT, STAFF, ADMIN");
             }

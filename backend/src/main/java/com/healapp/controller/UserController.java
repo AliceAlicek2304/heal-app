@@ -43,14 +43,27 @@ public class UserController {
     private EmailVerificationService emailVerificationService;
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<UserDtls>> registerUser(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<ApiResponse<UserResponse>> registerUser(@Valid @RequestBody RegisterRequest request) {
+        try {
+            ApiResponse<UserResponse> response = userService.registerUser(request, null);
 
-        ApiResponse<UserDtls> response = userService.registerUser(request, null);
+            if (response.isSuccess()) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(response);
+            } else {
+                return ResponseEntity.badRequest()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(response);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
 
-        if (response.isSuccess()) {
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.badRequest().body(response);
+            ApiResponse<UserResponse> errorResponse = ApiResponse.error("Lỗi server: " + e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(errorResponse);
         }
     }
 

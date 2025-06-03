@@ -77,7 +77,7 @@ class UserServiceTest {
     private Role adminRole;
 
     @BeforeEach
-    void setUp() {        // Setup Role entities
+    void setUp() { // Setup Role entities
         userRole = new Role();
         userRole.setRoleId(1L);
         userRole.setRoleName("CUSTOMER");
@@ -223,11 +223,13 @@ class UserServiceTest {
         when(roleService.getDefaultUserRole()).thenReturn(userRole);
         when(userRepository.save(any(UserDtls.class))).thenReturn(sampleUser);
 
-        ApiResponse<UserDtls> response = userService.registerUser(request, avatarFile);
+        ApiResponse<UserResponse> response = userService.registerUser(request, avatarFile);
 
         assertTrue(response.isSuccess());
         assertEquals("Đăng ký thành công", response.getMessage());
         assertNotNull(response.getData());
+        assertEquals("Nguyen Van A", response.getData().getFullName());
+        assertEquals("CUSTOMER", response.getData().getRole());
 
         verify(emailVerificationService).verifyCode("test@example.com", "123456");
         verify(userRepository).existsByUsername("testuser");
@@ -246,7 +248,7 @@ class UserServiceTest {
 
         when(emailVerificationService.verifyCode("test@example.com", "wrong_code")).thenReturn(false);
 
-        ApiResponse<UserDtls> response = userService.registerUser(request, null);
+        ApiResponse<UserResponse> response = userService.registerUser(request, null);
 
         assertFalse(response.isSuccess());
         assertEquals("Mã xác thực không đúng hoặc đã hết hạn", response.getMessage());
@@ -266,7 +268,7 @@ class UserServiceTest {
         when(emailVerificationService.verifyCode("test@example.com", "123456")).thenReturn(true);
         when(userRepository.existsByUsername("existinguser")).thenReturn(true);
 
-        ApiResponse<UserDtls> response = userService.registerUser(request, null);
+        ApiResponse<UserResponse> response = userService.registerUser(request, null);
 
         assertFalse(response.isSuccess());
         assertEquals("Username đã tồn tại", response.getMessage());
@@ -287,7 +289,7 @@ class UserServiceTest {
         when(userRepository.existsByUsername("newuser")).thenReturn(false);
         when(userRepository.existsByEmail("existing@example.com")).thenReturn(true);
 
-        ApiResponse<UserDtls> response = userService.registerUser(request, null);
+        ApiResponse<UserResponse> response = userService.registerUser(request, null);
 
         assertFalse(response.isSuccess());
         assertEquals("Email đã tồn tại", response.getMessage());
@@ -307,7 +309,8 @@ class UserServiceTest {
         when(userRepository.findByUsername("nguyenvana")).thenReturn(Optional.of(sampleUser));
         when(passwordEncoder.matches("password123", "encodedPassword")).thenReturn(true);
 
-        ApiResponse<LoginResponse> response = userService.login(request);        assertTrue(response.isSuccess());
+        ApiResponse<LoginResponse> response = userService.login(request);
+        assertTrue(response.isSuccess());
         assertEquals("Login successful", response.getMessage());
         assertNotNull(response.getData());
         assertEquals(1L, response.getData().getUserId());
@@ -541,7 +544,8 @@ class UserServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
         when(roleService.isValidRole("INVALID_ROLE")).thenReturn(false);
 
-        ApiResponse<UserResponse> response = userService.updateUserRoleAndStatus(1L, request);        assertFalse(response.isSuccess());
+        ApiResponse<UserResponse> response = userService.updateUserRoleAndStatus(1L, request);
+        assertFalse(response.isSuccess());
         assertEquals("Invalid role. Role must be CUSTOMER, CONSULTANT, STAFF or ADMIN", response.getMessage());
 
         verify(roleService).isValidRole("INVALID_ROLE");
@@ -614,7 +618,8 @@ class UserServiceTest {
 
         when(userRepository.findAll()).thenReturn(users);
 
-        ApiResponse<List<UserResponse>> response = userService.getAllUsers();        assertTrue(response.isSuccess());
+        ApiResponse<List<UserResponse>> response = userService.getAllUsers();
+        assertTrue(response.isSuccess());
         assertEquals("Get list of users successfully", response.getMessage());
         assertNotNull(response.getData());
         assertEquals(2, response.getData().size());
@@ -629,7 +634,8 @@ class UserServiceTest {
     void getUserById_Success() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
 
-        ApiResponse<UserResponse> response = userService.getUserById(1L);        assertTrue(response.isSuccess());
+        ApiResponse<UserResponse> response = userService.getUserById(1L);
+        assertTrue(response.isSuccess());
         assertEquals("Get user information successfully", response.getMessage());
         assertNotNull(response.getData());
         assertEquals(1L, response.getData().getId());
@@ -674,7 +680,8 @@ class UserServiceTest {
     void getUsersByRole_InvalidRole_ShouldFail() {
         when(roleService.isValidRole("INVALID")).thenReturn(false);
 
-        ApiResponse<List<UserResponse>> response = userService.getUsersByRole("INVALID");        assertFalse(response.isSuccess());
+        ApiResponse<List<UserResponse>> response = userService.getUsersByRole("INVALID");
+        assertFalse(response.isSuccess());
         assertEquals("Invalid role. Valid roles are: CUSTOMER, CONSULTANT, STAFF, ADMIN", response.getMessage());
 
         verify(roleService).isValidRole("INVALID");
@@ -688,7 +695,8 @@ class UserServiceTest {
 
         when(roleRepository.findAll()).thenReturn(roles);
 
-        ApiResponse<List<String>> response = userService.getAvailableRoles();        assertTrue(response.isSuccess());
+        ApiResponse<List<String>> response = userService.getAvailableRoles();
+        assertTrue(response.isSuccess());
         assertEquals("Available roles retrieved successfully", response.getMessage());
         assertEquals(4, response.getData().size());
         assertTrue(response.getData().contains("CUSTOMER"));
@@ -711,7 +719,8 @@ class UserServiceTest {
         when(userRepository.countByRole(adminRole)).thenReturn(1L);
         when(userRepository.count()).thenReturn(19L);
 
-        ApiResponse<Map<String, Long>> response = userService.getUserCountByRole();        assertTrue(response.isSuccess());
+        ApiResponse<Map<String, Long>> response = userService.getUserCountByRole();
+        assertTrue(response.isSuccess());
         assertEquals("User count by role retrieved successfully", response.getMessage());
         assertNotNull(response.getData());
         assertEquals(10L, response.getData().get("CUSTOMER"));

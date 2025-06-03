@@ -103,63 +103,6 @@ export const consultationService = {
         }
     },
 
-    // Lấy giá tư vấn hiện tại
-    getConsultationPrice: async (onAuthRequired = null) => {
-        try {
-            const credentials = localStorage.getItem('credentials');
-
-            const response = await fetch(`${API_BASE_URL}/consultations/consultation-price`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(credentials && { 'Authorization': `Basic ${credentials}` })
-                }
-            });
-
-            if (response.status === 401) {
-                localStorage.removeItem('credentials');
-                localStorage.removeItem('user');
-                if (onAuthRequired) {
-                    onAuthRequired();
-                }
-                return {
-                    success: true,
-                    data: 150000,
-                    message: 'Sử dụng giá mặc định'
-                };
-            }
-
-            if (!response.ok) {
-                console.error('Response not ok:', response.status, response.statusText);
-                return {
-                    success: true,
-                    data: 150000,
-                    message: `HTTP Error: ${response.status}, sử dụng giá mặc định`
-                };
-            }
-
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                console.error('Response is not JSON:', contentType);
-                return {
-                    success: true,
-                    data: 150000,
-                    message: 'Server response is not JSON, sử dụng giá mặc định'
-                };
-            }
-
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            console.error('Error fetching consultation price:', error);
-            return {
-                success: true,
-                data: 150000,
-                message: 'Không thể tải giá tư vấn, sử dụng giá mặc định'
-            };
-        }
-    },
-
     // Đặt lịch tư vấn
     createConsultation: async (consultationData, onAuthRequired = null) => {
         try {
