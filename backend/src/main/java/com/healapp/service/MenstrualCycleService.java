@@ -26,6 +26,9 @@ public class MenstrualCycleService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private PregnancyProbLogService pregnancyProbLogService;
+
     // lưu thong tin chu ky kinh nguyet
     public MenstrualCycle saveMenstrualCycle(MenstrualCycle menstrualCycle) {
         return menstrualCycleRepository.save(menstrualCycle);
@@ -41,50 +44,30 @@ public class MenstrualCycleService {
     public double calculateProb(MenstrualCycle menstrualCycle) {
         LocalDate today = LocalDate.now();
         long daysSinceOvulation = today.toEpochDay() - menstrualCycle.getOvulationDate().toEpochDay();
-        // double heSo = 0.0; // he so de tinh xac suat mang thai theo do tuoi
         double tiLe = 0.0; // ti le thu thai
 
-        // lay do tuoi cua user
-        // if (menstrualCycle.getUser() != null) {
-        // int userAge = LocalDate.now().getYear()
-        // -
-        // userRepository.findBirthDayById(menstrualCycle.getUser().getId()).getYear();
-        // if (userAge >= 20 && userAge <= 29) {
-        // heSo = 1.0;
-        // } else if (userAge >= 30 && userAge <= 34) {
-        // heSo = 0.9;
-        // } else if (userAge >= 35 && userAge < 40) {
-        // heSo = 0.75;
-        // } else if (userAge >= 40 && userAge < 45) {
-        // heSo = 0.5;
-        // } else {
-        // heSo = 0.2;
-        // }
-        // }
-
         if (daysSinceOvulation == -5) {
-            tiLe = 15; // truoc 5 ngay
+            tiLe = 6.4; // truoc 5 ngay
         } else if (daysSinceOvulation == -4) {
-            tiLe = 20; // truoc 4 ngay
+            tiLe = 7.8; // truoc 4 ngay
         } else if (daysSinceOvulation == -3) {
-            tiLe = 27; // truoc 3 ngay
+            tiLe = 10.7; // truoc 3 ngay
         } else if (daysSinceOvulation == -2) {
-            tiLe = 33; // truoc 2 ngay
+            tiLe = 19.3; // truoc 2 ngay
         } else if (daysSinceOvulation == -1) {
-            tiLe = 31; // truoc 1 ngay
+            tiLe = 23.5; // truoc 1 ngay
         } else if (daysSinceOvulation == 0) {
-            tiLe = 22; // Ngày rụng trứng
+            tiLe = 15.7; // Ngày rụng trứng
         } else if (daysSinceOvulation == 1) {
-            tiLe = 15; // sau 1 ngày
+            tiLe = 5.7; // sau 1 ngày
         } else {
             tiLe = 1; // Ngày còn lại
         }
         // Cập nhật xác suất mang thai vào cơ sở dữ liệu
-        // return heSo * tiLe;
-        return tiLe; // Trả về xác suất mang thai
+        return tiLe;
     }
 
-    //
+    //TÍnh số ngày trong chu kỳ kinh nguyệt
     public long dayInMenstrualCycle(MenstrualCycle menstrualCycle) {
         LocalDate today = LocalDate.now();
         long daysSinceOvulation = today.toEpochDay() - menstrualCycle.getOvulationDate().toEpochDay();
@@ -126,8 +109,6 @@ public class MenstrualCycleService {
             // Calculate dates and probabilities
             LocalDate ovulationDate = calculateOvulationDate(menstrualCycle);
             menstrualCycle.setOvulationDate(ovulationDate);
-            double pregnancyProbability = calculateProb(menstrualCycle);
-            menstrualCycle.setPregnancyProbability(pregnancyProbability);
 
             // Save to database
             menstrualCycle = menstrualCycleRepository.save(menstrualCycle);
@@ -141,10 +122,12 @@ public class MenstrualCycleService {
             response.setCycleLength(request.getCycleLength());
             response.setOvulationDate(ovulationDate);
             response.setReminderEnabled(false);
-            response.setPregnancyProbability(pregnancyProbability);
             response.setCreatedAt(menstrualCycle.getCreatedAt());
 
-            return ApiResponse.success("Menstrual cycle added successfully", response);
+            // Lưu log xác suất mang thai
+            pregnancyProbLogService.updatePregnancyProbability(menstrualCycle.getId());
+
+            return ApiResponse.success("Menstrual cycle added successfully!", response);
 
         } catch (Exception e) {
             return ApiResponse.error("Error adding menstrual cycle: " + e.getMessage());
@@ -160,7 +143,7 @@ public class MenstrualCycleService {
             // Lấy tất cả chu kỳ kinh nguyệt của người dùng
             List<MenstrualCycle> cycles = menstrualCycleRepository.findAllByUserId(userId);
             if (cycles.isEmpty()) {
-                return ApiResponse.error("Khôngg có chu kỳ kinh nguyệt nào được tìm thấy cho người dùng này");
+                return ApiResponse.error("Không có chu kỳ kinh nguyệt nào được tìm thấy cho người dùng này");
             }
 
             // Chuyển đổi sang response
@@ -173,7 +156,6 @@ public class MenstrualCycleService {
                         response.setNumberOfDays(cycle.getNumberOfDays());
                         response.setCycleLength(cycle.getCycleLength());
                         response.setOvulationDate(cycle.getOvulationDate());
-                        response.setPregnancyProbability(cycle.getPregnancyProbability());
                         response.setReminderEnabled(cycle.isReminderEnabled());
                         response.setCreatedAt(cycle.getCreatedAt());
                         return response;
@@ -213,7 +195,6 @@ public class MenstrualCycleService {
             response.setNumberOfDays(menstrualCycle.getNumberOfDays());
             response.setCycleLength(menstrualCycle.getCycleLength());
             response.setOvulationDate(menstrualCycle.getOvulationDate());
-            response.setPregnancyProbability(menstrualCycle.getPregnancyProbability());
             response.setReminderEnabled(menstrualCycle.isReminderEnabled());
             response.setCreatedAt(menstrualCycle.getCreatedAt());
 
@@ -227,7 +208,7 @@ public class MenstrualCycleService {
         }
     }
 
-    // cap nhat chu kỳ kinh nguyệt
+    // Cập nhật chu kỳ kinh nguyệt
     public ApiResponse<MenstrualCycleResponse> updateCycle(Long id, MenstrualCycleRequest request) {
         try {
             // Validate input
@@ -240,8 +221,12 @@ public class MenstrualCycleService {
             }
 
             // Find existing cycle
-            MenstrualCycle menstrualCycle = menstrualCycleRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Menstrual cycle not found"));
+            Optional<MenstrualCycle> cycleOpt = menstrualCycleRepository.findById(id);
+            if (cycleOpt.isEmpty()) {
+                return ApiResponse.error("Menstrual cycle does not exist");
+            }
+
+            MenstrualCycle menstrualCycle = cycleOpt.get();
 
             // Update cycle details
             menstrualCycle.setStartDate(startDate);
@@ -251,8 +236,6 @@ public class MenstrualCycleService {
             // Calculate dates and probabilities
             LocalDate ovulationDate = calculateOvulationDate(menstrualCycle);
             menstrualCycle.setOvulationDate(ovulationDate);
-            double pregnancyProbability = calculateProb(menstrualCycle);
-            menstrualCycle.setPregnancyProbability(pregnancyProbability);
 
             // Save updated cycle
             menstrualCycle = menstrualCycleRepository.save(menstrualCycle);
@@ -265,15 +248,19 @@ public class MenstrualCycleService {
             response.setNumberOfDays(menstrualCycle.getNumberOfDays());
             response.setCycleLength(menstrualCycle.getCycleLength());
             response.setOvulationDate(menstrualCycle.getOvulationDate());
-            response.setPregnancyProbability(menstrualCycle.getPregnancyProbability());
             response.setReminderEnabled(menstrualCycle.isReminderEnabled());
+
+            // Lưu log xác suất mang thai
+            pregnancyProbLogService.updatePregnancyProbability(menstrualCycle.getId());
+
+            // Trả về phản hồi thành công
             return ApiResponse.success("Cập nhật chu kỳ kinh nguyệt thành công", response);
         } catch (Exception e) {
             return ApiResponse.error("Error updating menstrual cycle: " + e.getMessage());
         }
     }
 
-    // Xoa chu kỳ kinh nguyệt
+    // Xóa chu kỳ kinh nguyệt
     public ApiResponse<String> deleteCycle(Long id) {
         try {
             // Kiểm tra xem chu kỳ kinh nguyệt có tồn tại không
@@ -281,8 +268,13 @@ public class MenstrualCycleService {
                 return ApiResponse.error("Chu kỳ kinh nguyệt không tồn tại");
             }
 
+            // Xóa các bản ghi xác suất mang thai liên quan
+            pregnancyProbLogService.deletePregnancyProbLog(id);
+
             // Xóa chu kỳ kinh nguyệt
             menstrualCycleRepository.deleteById(id);
+
+            // Trả về phản hồi thành công
             return ApiResponse.success("Xóa chu kỳ kinh nguyệt thành công");
         } catch (Exception e) {
             return ApiResponse.error("Error deleting menstrual cycle: " + e.getMessage());

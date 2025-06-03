@@ -49,10 +49,6 @@ public class MenstrualCycle {
     @Column(nullable = false)
     private LocalDate ovulationDate; // ngay rung trung
 
-    @Min(value = 0)
-    @Max(value = 100)
-    private double pregnancyProbability; // xac suat mang thai
-
     @Column(name = "reminder_enabled", nullable = false)
     private boolean reminderEnabled = false;
 

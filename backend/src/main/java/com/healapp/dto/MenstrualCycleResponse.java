@@ -19,7 +19,6 @@ public class MenstrualCycleResponse {
     private long numberOfDays;
     private long cycleLength;
     private LocalDate ovulationDate;
-    private double pregnancyProbability;
     private boolean reminderEnabled;
     private LocalDateTime createdAt;
 }
