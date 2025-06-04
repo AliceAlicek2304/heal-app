@@ -1,5 +1,5 @@
-// ConsultantCard.jsx
 import React from 'react';
+import { authService } from '../../../services/authService'; // ✅ Import authService
 import styles from './ConsultantCard.module.css';
 
 const ConsultantCard = ({ consultant, onBookConsultation, onAuthRequired }) => {
@@ -7,15 +7,31 @@ const ConsultantCard = ({ consultant, onBookConsultation, onAuthRequired }) => {
         onBookConsultation(consultant);
     };
 
+    const getAvatarUrl = (avatar) => {
+        if (!avatar) return '/img/avatar/default.jpg';
+
+        if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+            return avatar;
+        }
+        return authService.getAvatarUrl(avatar);
+    };
+    const handleAvatarError = (e) => {
+        e.target.src = '/img/avatar/default.jpg';
+    };
+
     return (
         <div className={styles.consultantCard}>
             <div className={styles.consultantInfo}>
                 <div className={styles.avatar}>
                     {consultant.avatar ? (
-                        <img src={consultant.avatar} alt={consultant.fullName} />
+                        <img
+                            src={getAvatarUrl(consultant.avatar)}
+                            alt={consultant.fullName}
+                            onError={handleAvatarError}
+                        />
                     ) : (
                         <div className={styles.avatarPlaceholder}>
-                            {consultant.fullName?.charAt(0) || 'C'}
+                            {consultant.fullName?.charAt(0)?.toUpperCase() || 'C'}
                         </div>
                     )}
                 </div>

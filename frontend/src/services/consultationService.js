@@ -40,7 +40,10 @@ export const consultationService = {
         try {
             const credentials = localStorage.getItem('credentials');
 
-            const response = await fetch(`${API_BASE_URL}/consultations/available-slots?staffId=${consultantId}&date=${date}`, {
+            const url = `${API_BASE_URL}/consultations/available-slots?consultantId=${consultantId}&date=${date}`;
+            console.log('🔍 Fetching available slots from:', url);
+
+            const response = await fetch(url, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -58,13 +61,22 @@ export const consultationService = {
                 return { success: false, message: 'Phiên đăng nhập hết hạn' };
             }
 
+            if (!response.ok) {
+                const errorText = await response.text();
+                return {
+                    success: false,
+                    message: `Server error: ${response.status}`
+                };
+            }
+
             const data = await response.json();
+
             return data;
         } catch (error) {
-            console.error('Error fetching available slots:', error);
+            console.error('❌ Network error fetching available slots:', error);
             return {
                 success: false,
-                message: 'Không thể tải khung giờ'
+                message: 'Không thể kết nối đến server'
             };
         }
     },

@@ -1,4 +1,5 @@
-.modalBackdrop {
+/* ✅ Updated: Modal Overlay và Content */
+.modalOverlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -13,7 +14,7 @@
     backdrop-filter: blur(4px);
 }
 
-.bookingModal {
+.modalContent {
     background: white;
     border-radius: 16px;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
@@ -38,6 +39,7 @@
     }
 }
 
+/* ✅ Updated: Modal Header */
 .modalHeader {
     display: flex;
     align-items: center;
@@ -49,19 +51,13 @@
     flex-shrink: 0;
 }
 
-.headerContent {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.headerContent h3 {
+.modalHeader h2 {
     margin: 0;
     font-size: 1.25rem;
     font-weight: 600;
 }
 
-.modalCloseBtn {
+.closeButton {
     background: rgba(255, 255, 255, 0.2);
     border: none;
     padding: 8px;
@@ -74,10 +70,11 @@
     justify-content: center;
 }
 
-.modalCloseBtn:hover {
+.closeButton:hover {
     background: rgba(255, 255, 255, 0.3);
 }
 
+/* ✅ Updated: Modal Body */
 .modalBody {
     flex: 1;
     overflow-y: auto;
@@ -97,7 +94,8 @@
     border-radius: 3px;
 }
 
-.consultantSummary {
+/* ✅ Updated: Consultant Info trong Modal */
+.consultantInfo {
     display: flex;
     align-items: center;
     gap: 16px;
@@ -108,53 +106,66 @@
     margin-bottom: 24px;
 }
 
-.consultantAvatarSmall {
-    width: 50px;
-    height: 50px;
+.consultantAvatar {
+    width: 60px;
+    height: 60px;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.consultantAvatar img {
+    width: 100%;
+    height: 100%;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid #3b82f6;
 }
 
-.consultantSummaryInfo {
+.avatarPlaceholder {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    font-weight: 600;
+    border: 2px solid #3b82f6;
+}
+
+.consultantDetails {
     flex: 1;
 }
 
-.consultantSummaryInfo h4 {
-    margin: 0 0 4px 0;
-    font-size: 1rem;
+.consultantDetails h3 {
+    margin: 0 0 8px 0;
+    font-size: 1.1rem;
     font-weight: 600;
     color: #1e293b;
 }
 
-.consultantSummaryInfo p {
-    margin: 0;
-    font-size: 0.85rem;
+.qualifications,
+.experience {
+    margin: 4px 0;
+    font-size: 0.875rem;
     color: #64748b;
     display: flex;
     align-items: center;
     gap: 6px;
 }
 
-.consultantSummaryInfo p svg {
+.qualifications svg,
+.experience svg {
     color: #3b82f6;
+    width: 16px;
+    height: 16px;
 }
 
-.consultantRating {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.8rem;
-    color: #059669;
-    font-weight: 500;
-}
-
-.consultantRating svg {
-    fill: #059669;
-    stroke: #059669;
-}
-
-.bookingForm {
+/* ✅ Updated: Form Elements */
+.dateTimeSelection,
+.confirmationDetails {
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -166,21 +177,13 @@
     gap: 8px;
 }
 
-.formLabel {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+.formGroup label {
     font-size: 0.9rem;
     font-weight: 500;
     color: #374151;
 }
 
-.formLabel svg {
-    color: #3b82f6;
-}
-
-.formInput,
-.formSelect {
+.dateInput {
     padding: 12px 16px;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
@@ -190,25 +193,14 @@
     color: #1e293b;
 }
 
-.formInput:focus,
-.formSelect:focus {
+.dateInput:focus {
     border-color: #3b82f6;
     outline: none;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.formInput:disabled,
-.formSelect:disabled {
-    background: #f8fafc;
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
-.formInput::placeholder {
-    color: #94a3b8;
-}
-
-.checkingSlots {
+/* ✅ Updated: Time Slots */
+.loadingSlots {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -224,23 +216,7 @@
     gap: 12px;
 }
 
-.timeSlotOption {
-    position: relative;
-    cursor: pointer;
-}
-
-.timeSlotOption.unavailable {
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
-.radioInput {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-}
-
-.timeSlotLabel {
+.timeSlotButton {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -248,180 +224,123 @@
     border: 2px solid #e2e8f0;
     border-radius: 8px;
     background: white;
-    transition: all 0.2s ease;
-}
-
-.timeSlotOption:not(.unavailable):hover .timeSlotLabel {
-    border-color: #3b82f6;
-    background: #f8fafc;
-}
-
-.radioInput:checked + .timeSlotLabel {
-    border-color: #3b82f6;
-    background: #eff6ff;
-}
-
-.radioInput:checked + .timeSlotLabel svg {
-    opacity: 1;
-    color: #3b82f6;
-}
-
-.timeSlotLabel svg {
-    opacity: 0;
-    transition: all 0.2s ease;
-}
-
-.timeSlotText {
-    font-weight: 500;
-    color: #1e293b;
-}
-
-.unavailableText {
-    color: #ef4444;
-    font-size: 0.8rem;
-    font-weight: 500;
-}
-
-.formNote {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 12px;
-    background: #fffbeb;
-    border: 1px solid #fbbf24;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    color: #92400e;
-}
-
-.formNote svg {
-    color: #f59e0b;
-    flex-shrink: 0;
-    margin-top: 2px;
-}
-
-.paymentMethods {
-    display: grid;
-    gap: 12px;
-}
-
-.paymentMethodOption {
     cursor: pointer;
-}
-
-.paymentMethodLabel {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 16px;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    background: white;
     transition: all 0.2s ease;
-}
-
-.paymentMethodOption:hover .paymentMethodLabel {
-    border-color: #3b82f6;
-    background: #f8fafc;
-}
-
-.radioInput:checked + .paymentMethodLabel {
-    border-color: #3b82f6;
-    background: #eff6ff;
-}
-
-.paymentIcon {
-    width: 40px;
-    height: 40px;
-    background: #f1f5f9;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #3b82f6;
-}
-
-.radioInput:checked + .paymentMethodLabel .paymentIcon {
-    background: #3b82f6;
-    color: white;
-}
-
-.visaFields {
-    background: #f8fafc;
-    padding: 20px;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    margin-top: 16px;
-}
-
-.visaHeader {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-    color: #1e293b;
-}
-
-.visaHeader h4 {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-}
-
-.visaHeader svg {
-    color: #3b82f6;
-}
-
-.formRow {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 12px;
-}
-
-.priceSummary {
-    background: #f8fafc;
-    padding: 20px;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    margin-top: 16px;
-}
-
-.priceHeader {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-    color: #1e293b;
-}
-
-.priceHeader h4 {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-}
-
-.priceHeader svg {
-    color: #3b82f6;
-}
-
-.priceRow {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
     font-size: 0.9rem;
+    width: 100%;
+}
+
+.timeSlotButton:hover:not(.unavailable) {
+    border-color: #3b82f6;
+    background: #f8fafc;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.timeSlotButton.selected {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.timeSlotButton.unavailable {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: #f8fafc;
+}
+
+.timeLabel {
+    font-weight: 500;
+    color: #1e293b;
+}
+
+.status {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.timeSlotButton:not(.unavailable) .status {
+    color: #059669;
+}
+
+.timeSlotButton.unavailable .status {
+    color: #ef4444;
+}
+
+/* ✅ Updated: Confirmation Details */
+.detailItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.detailItem:last-child {
+    border-bottom: none;
+}
+
+.label {
+    font-weight: 500;
     color: #64748b;
 }
 
-.priceRow.total {
-    border-top: 1px solid #e2e8f0;
-    padding-top: 12px;
-    margin-top: 8px;
+.value {
     font-weight: 600;
-    font-size: 1rem;
     color: #1e293b;
 }
 
+/* ✅ Updated: Important Note */
+.importantNote {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    background: #fffbeb;
+    border: 1px solid #fbbf24;
+    border-radius: 12px;
+    margin-top: 20px;
+}
+
+.noteIcon {
+    color: #f59e0b;
+    flex-shrink: 0;
+}
+
+.noteContent h4 {
+    margin: 0 0 12px 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #92400e;
+}
+
+.noteContent ul {
+    margin: 0;
+    padding-left: 16px;
+    color: #92400e;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.noteContent li {
+    margin-bottom: 6px;
+}
+
+/* ✅ Updated: Loading Container */
+.loadingContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    gap: 16px;
+}
+
+.loadingContainer p {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+/* ✅ Updated: Modal Footer */
 .modalFooter {
     display: flex;
     gap: 12px;
@@ -431,67 +350,65 @@
     flex-shrink: 0;
 }
 
-.btn {
+.step1Actions,
+.step2Actions {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
+    gap: 12px;
+    width: 100%;
+}
+
+.cancelButton,
+.backButton {
+    flex: 1;
     padding: 12px 20px;
+    background: #f8fafc;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cancelButton:hover,
+.backButton:hover {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.nextButton,
+.confirmButton {
+    flex: 1;
+    padding: 12px 20px;
+    background: #3b82f6;
+    color: white;
     border: none;
     border-radius: 8px;
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
-    flex: 1;
 }
 
-.btnSecondary {
-    background: #f8fafc;
-    color: #64748b;
-    border: 1px solid #e2e8f0;
-}
-
-.btnSecondary:hover:not(:disabled) {
-    background: #f1f5f9;
-    color: #475569;
-}
-
-.btnPrimary {
-    background: #3b82f6;
-    color: white;
-}
-
-.btnPrimary:hover:not(:disabled) {
+.nextButton:hover:not(:disabled),
+.confirmButton:hover:not(:disabled) {
     background: #2563eb;
 }
 
-.btn:disabled {
+.nextButton:disabled,
+.confirmButton:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
-.modalLoadingOverlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.9);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-    border-radius: 16px;
-}
-
-/* Responsive */
+/* Responsive Design */
 @media (max-width: 768px) {
-    .modalBackdrop {
+    .modalOverlay {
         padding: 12px;
     }
     
-    .bookingModal {
+    .modalContent {
         max-height: 95vh;
         border-radius: 12px;
     }
@@ -500,7 +417,7 @@
         padding: 16px 20px;
     }
     
-    .headerContent h3 {
+    .modalHeader h2 {
         font-size: 1.1rem;
     }
     
@@ -508,33 +425,36 @@
         padding: 20px;
     }
     
-    .consultantSummary {
+    .consultantInfo {
         padding: 12px;
         margin-bottom: 20px;
     }
     
-    .consultantAvatarSmall {
-        width: 40px;
-        height: 40px;
+    .consultantAvatar {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .avatarPlaceholder {
+        font-size: 18px;
     }
     
     .modalFooter {
         padding: 16px 20px;
-        flex-direction: column;
     }
     
-    .formRow {
-        grid-template-columns: 1fr;
-        gap: 16px;
+    .step1Actions,
+    .step2Actions {
+        flex-direction: column;
     }
 }
 
 @media (max-width: 480px) {
-    .modalBackdrop {
+    .modalOverlay {
         padding: 8px;
     }
     
-    .bookingModal {
+    .modalContent {
         max-height: 98vh;
         border-radius: 8px;
     }
@@ -547,28 +467,22 @@
         padding: 16px;
     }
     
-    .consultantSummary {
+    .consultantInfo {
         flex-direction: column;
         text-align: center;
         gap: 12px;
     }
     
-    .timeSlotLabel {
+    .detailItem {
         flex-direction: column;
         align-items: flex-start;
-        gap: 8px;
+        gap: 4px;
+        padding: 8px 0;
     }
     
-    .paymentMethodLabel {
+    .importantNote {
         flex-direction: column;
-        align-items: center;
-        text-align: center;
         gap: 8px;
-    }
-    
-    .visaFields,
-    .priceSummary {
-        padding: 16px;
     }
     
     .modalFooter {
@@ -577,10 +491,6 @@
 }
 
 /* Animation cho loading states */
-.checkingSlots {
-    animation: fadeIn 0.3s ease;
-}
-
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -592,29 +502,24 @@
     }
 }
 
-/* Hover effects cho các interactive elements */
-.timeSlotOption:not(.unavailable) .timeSlotLabel:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+.loadingSlots {
+    animation: fadeIn 0.3s ease;
 }
 
-.paymentMethodOption .paymentMethodLabel:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+/* Focus states cho accessibility */
+.timeSlotButton:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
 }
 
-/* Loading spinner integration */
-.btn .loadingSpinner {
-    width: 16px;
-    height: 16px;
+.dateInput:focus {
+    outline: none;
 }
 
-/* Form validation states */
-.formInput:invalid {
-    border-color: #ef4444;
-}
-
-.formInput:invalid:focus {
-    border-color: #ef4444;
-    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+.cancelButton:focus,
+.backButton:focus,
+.nextButton:focus,
+.confirmButton:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
 }

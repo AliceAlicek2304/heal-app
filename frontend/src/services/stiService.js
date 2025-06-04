@@ -96,18 +96,9 @@ export const stiService = {
                 return { success: false, message: 'Authentication required' };
             }
 
-            // Xây dựng URL với pagination parameters nếu có
-            let url = `${API_BASE_URL}/sti-services/my-tests`;
-            if (paginationParams && typeof paginationParams === 'object') {
-                const params = new URLSearchParams();
-                if (paginationParams.page !== undefined) params.append('page', paginationParams.page);
-                if (paginationParams.size !== undefined) params.append('size', paginationParams.size);
-                if (params.toString()) {
-                    url += `?${params.toString()}`;
-                }
-            }
+            console.log('🔍 Fetching STI tests from backend...'); // Debug log
 
-            const response = await fetch(url, {
+            const response = await fetch(`${API_BASE_URL}/sti-services/my-tests`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -115,21 +106,115 @@ export const stiService = {
                 },
             });
 
+            // Handle authentication error
             if (response.status === 401 && onAuthRequired) {
                 onAuthRequired();
                 return { success: false, message: 'Authentication required' };
             }
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                return { success: false, message: data.message || 'Failed to fetch tests' };
+            if (response.status === 500) {
+                console.warn('⚠️ Server error 500 - returning empty result');
+                return {
+                    success: true,
+                    message: 'No STI tests found',
+                    data: {
+                        content: [],
+                        totalPages: 0,
+                        totalElements: 0,
+                        number: 0,
+                        size: paginationParams?.size || 5,
+                        first: true,
+                        last: true,
+                        numberOfElements: 0
+                    }
+                };
             }
 
-            return data;
+            if (!response.ok) {
+                console.error('❌ HTTP error:', response.status);
+                return {
+                    success: true,
+                    message: 'No STI tests found',
+                    data: {
+                        content: [],
+                        totalPages: 0,
+                        totalElements: 0,
+                        number: 0,
+                        size: paginationParams?.size || 5,
+                        first: true,
+                        last: true,
+                        numberOfElements: 0
+                    }
+                };
+            }
+
+            const data = await response.json();
+            console.log('📦 Backend response:', data); // Debug log
+
+            if (data.success && data.data) {
+                const tests = Array.isArray(data.data) ? data.data : [];
+
+                const page = paginationParams?.page || 0;
+                const size = paginationParams?.size || 5;
+
+                const totalElements = tests.length;
+                const totalPages = Math.ceil(totalElements / size);
+                const startIndex = page * size;
+                const endIndex = Math.min(startIndex + size, totalElements);
+
+                const pageContent = tests.slice(startIndex, endIndex);
+
+                console.log(`📊 Pagination: page=${page}, size=${size}, total=${totalElements}, showing=${pageContent.length}`);
+
+                return {
+                    success: true,
+                    message: data.message || 'STI tests retrieved successfully',
+                    data: {
+                        content: pageContent,
+                        totalPages: totalPages,
+                        totalElements: totalElements,
+                        number: page,
+                        size: size,
+                        first: page === 0,
+                        last: page >= totalPages - 1,
+                        numberOfElements: pageContent.length
+                    }
+                };
+            } else {
+                console.log('📭 No tests found or error response');
+                return {
+                    success: true,
+                    message: 'No STI tests found',
+                    data: {
+                        content: [],
+                        totalPages: 0,
+                        totalElements: 0,
+                        number: 0,
+                        size: paginationParams?.size || 5,
+                        first: true,
+                        last: true,
+                        numberOfElements: 0
+                    }
+                };
+            }
+
         } catch (error) {
-            console.error('Error fetching my tests:', error);
-            return { success: false, message: 'Network error occurred' };
+            console.error('🚨 Network error fetching STI tests:', error);
+
+            return {
+                success: true,
+                message: 'No STI tests found',
+                data: {
+                    content: [],
+                    totalPages: 0,
+                    totalElements: 0,
+                    number: 0,
+                    size: paginationParams?.size || 5,
+                    first: true,
+                    last: true,
+                    numberOfElements: 0
+                }
+            };
         }
     },
 

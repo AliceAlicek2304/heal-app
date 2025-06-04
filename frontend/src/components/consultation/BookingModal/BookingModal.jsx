@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { consultationService } from '../../../services/consultationService';
+import { authService } from '../../../services/authService';
 import LoadingSpinner from '../../common/LoadingSpinner/LoadingSpinner';
 import styles from './BookingModal.module.css';
 
@@ -43,6 +44,20 @@ const BookingModal = ({
         return maxDate.toISOString().split('T')[0];
     };
 
+    const getConsultantAvatarUrl = (avatar) => {
+        if (!avatar) return '/img/avatar/default.jpg';
+
+        if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+            return avatar;
+        }
+
+        return authService.getAvatarUrl(avatar);
+    };
+
+    const handleAvatarError = (e) => {
+        e.target.src = '/img/avatar/default.jpg';
+    };
+
     // Fetch available slots when date changes
     useEffect(() => {
         if (selectedDate && consultant.id) {
@@ -55,6 +70,11 @@ const BookingModal = ({
 
         setLoadingSlots(true);
         try {
+            console.log('🔍 Fetching available slots:', {
+                consultantId: consultant.id,
+                date: selectedDate
+            });
+
             const response = await consultationService.getAvailableTimeSlots(
                 consultant.id,
                 selectedDate,
@@ -62,12 +82,14 @@ const BookingModal = ({
             );
 
             if (response.success) {
-                setAvailableSlots(response.data || []);
+                const slots = response.data || [];
+                setAvailableSlots(slots);
             } else {
+                setAvailableSlots([]);
                 onError(new Error(response.message || 'Không thể tải khung giờ trống'));
             }
         } catch (error) {
-            console.error('Error fetching available slots:', error);
+            setAvailableSlots([]);
             onError(error);
         } finally {
             setLoadingSlots(false);
@@ -89,8 +111,7 @@ const BookingModal = ({
             onError(new Error('Vui lòng chọn ngày và khung giờ tư vấn'));
             return;
         }
-
-        const selectedSlot = availableSlots.find(slot => slot.timeSlot === selectedTimeSlot);
+        const selectedSlot = availableSlots.find(slot => slot.slot === selectedTimeSlot);
         if (!selectedSlot || !selectedSlot.available) {
             onError(new Error('Khung giờ đã chọn không còn trống. Vui lòng chọn khung giờ khác.'));
             return;
@@ -181,20 +202,38 @@ const BookingModal = ({
                     <div className={styles.consultantInfo}>
                         <div className={styles.consultantAvatar}>
                             {consultant.avatar ? (
-                                <img src={consultant.avatar} alt={consultant.fullName} />
+                                <img
+                                    src={getConsultantAvatarUrl(consultant.avatar)}
+                                    alt={consultant.fullName}
+                                    onError={handleAvatarError}
+                                />
                             ) : (
                                 <div className={styles.avatarPlaceholder}>
-                                    {consultant.fullName?.charAt(0) || 'C'}
+                                    {consultant.fullName?.charAt(0)?.toUpperCase() || 'C'}
                                 </div>
                             )}
                         </div>
                         <div className={styles.consultantDetails}>
                             <h3>{consultant.fullName}</h3>
+
                             {consultant.qualifications && (
-                                <p className={styles.qualifications}>{consultant.qualifications}</p>
+                                <div className={styles.qualifications}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                    </svg>
+                                    <span>{consultant.qualifications}</span>
+                                </div>
                             )}
+
                             {consultant.experience && (
-                                <p className={styles.experience}>Kinh nghiệm: {consultant.experience} năm</p>
+                                <div className={styles.experience}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                    </svg>
+                                    <span>{consultant.experience} năm kinh nghiệm</span>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -228,8 +267,9 @@ const BookingModal = ({
                                         <div className={styles.timeSlots}>
                                             {timeSlots.map(slot => {
                                                 const availableSlot = availableSlots.find(
-                                                    as => as.timeSlot === slot.value
+                                                    as => as.slot === slot.value
                                                 );
+
                                                 const isAvailable = availableSlot ? availableSlot.available : false;
                                                 const isSelected = selectedTimeSlot === slot.value;
 
@@ -237,8 +277,7 @@ const BookingModal = ({
                                                     <button
                                                         key={slot.value}
                                                         type="button"
-                                                        className={`${styles.timeSlotButton} ${isSelected ? styles.selected : ''
-                                                            } ${!isAvailable ? styles.unavailable : ''}`}
+                                                        className={`${styles.timeSlotButton} ${isSelected ? styles.selected : ''} ${!isAvailable ? styles.unavailable : ''}`}
                                                         onClick={() => isAvailable && handleTimeSlotChange(slot.value)}
                                                         disabled={!isAvailable}
                                                     >

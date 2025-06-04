@@ -60,26 +60,20 @@ export const ToastProvider = ({ children, maxToasts = 5, position = 'top-right' 
         return id;
     }, [generateId, maxToasts, position]);
 
-    // Completely rewritten hideToast function with robust error handling
+    // ✅ Simplified and more reliable hideToast function
     const hideToast = useCallback((id) => {
-        console.log('Hiding toast with ID:', id);
 
-        // Directly set new state with the toast filtered out
-        setToasts(prevToasts => {
-            console.log('Current toasts before removal:', prevToasts.map(t => t.id));
-
-            // Simple filter approach with explicit string comparison
-            const filteredToasts = prevToasts.filter(toast => String(toast.id) !== String(id));
-
-            console.log('Toasts after removal:', filteredToasts.map(t => t.id));
-            return filteredToasts;
-        });
-
-        // Clean up any timeouts
+        // Clear timeout immediately
         if (toastTimeouts.current.has(id)) {
             clearTimeout(toastTimeouts.current.get(id));
             toastTimeouts.current.delete(id);
         }
+
+        // Remove from state immediately
+        setToasts(prevToasts => {
+            const filteredToasts = prevToasts.filter(toast => toast.id !== id);
+            return filteredToasts;
+        });
     }, []);
 
     const hideAllToasts = useCallback(() => {
@@ -89,25 +83,22 @@ export const ToastProvider = ({ children, maxToasts = 5, position = 'top-right' 
     }, []);
 
     // Enhanced type methods with better default durations
-    const success = useCallback((message, duration = 3000, options = {}) =>
-        showToast(message, 'success', duration, options),
-        [showToast]
-    );
+    const success = useCallback((message, duration = 3000, options = {}) => {
+        return showToast(message, 'success', duration, options);
+    }, [showToast]);
 
-    const error = useCallback((message, duration = 5000, options = {}) =>
-        showToast(message, 'error', duration, options),
-        [showToast]
-    );
+    const error = useCallback((message, duration = 5000, options = {}) => {
+        return showToast(message, 'error', duration, options);
+    }, [showToast]);
 
-    const warning = useCallback((message, duration = 4000, options = {}) =>
-        showToast(message, 'warning', duration, options),
-        [showToast]
-    );
+    const warning = useCallback((message, duration = 4000, options = {}) => {
+        return showToast(message, 'warning', duration, options);
+        return showToast(message, 'warning', duration, options);
+    }, [showToast]);
 
-    const info = useCallback((message, duration = 3000, options = {}) =>
-        showToast(message, 'info', duration, options),
-        [showToast]
-    );
+    const info = useCallback((message, duration = 3000, options = {}) => {
+        return showToast(message, 'info', duration, options);
+    }, [showToast]);
 
     // Group toasts by position for better organization
     const groupedToasts = toasts.reduce((groups, toast) => {
@@ -135,7 +126,6 @@ export const ToastProvider = ({ children, maxToasts = 5, position = 'top-right' 
         <ToastContext.Provider value={contextValue}>
             {children}
 
-            {/* Render toast containers for each position */}
             {Object.entries(groupedToasts).map(([pos, positionToasts]) => (
                 <div
                     key={pos}
@@ -150,11 +140,7 @@ export const ToastProvider = ({ children, maxToasts = 5, position = 'top-right' 
                             type={toast.type}
                             duration={toast.duration}
                             position={toast.position}
-                            // CRITICAL FIX: Create a specific handler for each toast
-                            onClose={(toastId) => {
-                                console.log('Close button clicked for toast:', toastId);
-                                hideToast(toastId);
-                            }}
+                            onClose={hideToast}
                         />
                     ))}
                 </div>

@@ -1,31 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styles from './ToastMessage.module.css';
 
 const ToastMessage = ({ id, message, type = 'success', duration = 5000, onClose, position = 'top-right' }) => {
     const [isVisible, setIsVisible] = useState(true);
     const [isLeaving, setIsLeaving] = useState(false);
-
-    // No auto-dismiss timer here - that's handled by the context
-
+    const closeRef = useRef(false); // ✅ Prevent multiple close calls
     const handleClose = (e) => {
-        // Stop event propagation
         if (e) {
             e.preventDefault();
             e.stopPropagation();
         }
-        
-        // Debug log
-        console.log('Close button clicked for toast with ID:', id);
-        
-        // Prevent multiple close attempts
-        if (isLeaving) return;
-        
+
+        if (closeRef.current || isLeaving) {
+            console.log('Close already in progress for toast:', id);
+            return;
+        }
+
+        console.log('🔴 Closing toast:', id);
+        closeRef.current = true;
         setIsLeaving(true);
-        
-        // Critical: Call onClose with the ID parameter
+
         if (typeof onClose === 'function') {
             onClose(id);
         }
+
+        setTimeout(() => {
+            setIsVisible(false);
+        }, 300);
     };
 
     const getIcon = () => {
@@ -70,7 +71,7 @@ const ToastMessage = ({ id, message, type = 'success', duration = 5000, onClose,
 
     return (
         <div
-            className={`${styles.toastMessage} ${styles[type]} ${styles[position]} ${isLeaving ? styles.leaving : styles.entering}`}
+            className={`${styles.toastMessage} ${styles[type]} ${styles[position.replace('-', '')]} ${isLeaving ? styles.leaving : styles.entering}`}
             data-toast-id={id}
         >
             <div className={styles.toastContainer}>
@@ -86,8 +87,10 @@ const ToastMessage = ({ id, message, type = 'success', duration = 5000, onClose,
                 <button
                     className={styles.toastClose}
                     onClick={handleClose}
+                    onMouseDown={(e) => e.stopPropagation()}
                     aria-label="Đóng thông báo"
                     type="button"
+                    disabled={isLeaving}
                 >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -96,12 +99,14 @@ const ToastMessage = ({ id, message, type = 'success', duration = 5000, onClose,
                 </button>
             </div>
 
-            <div className={styles.toastProgressBar}>
-                <div
-                    className={styles.toastProgress}
-                    style={{ animationDuration: `${duration}ms` }}
-                ></div>
-            </div>
+            {duration > 0 && (
+                <div className={styles.toastProgressBar}>
+                    <div
+                        className={styles.toastProgress}
+                        style={{ animationDuration: `${duration}ms` }}
+                    ></div>
+                </div>
+            )}
         </div>
     );
 };

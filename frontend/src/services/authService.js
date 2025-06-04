@@ -339,25 +339,11 @@ export const authService = {
     getMenstrualCycles: async (userId) => {
         try {
             const credentials = localStorage.getItem('credentials');
-            const userStr = localStorage.getItem('user');
-            const user = userStr ? JSON.parse(userStr) : null;
-
             if (!credentials) {
-                console.log("Không có thông tin đăng nhập");
                 return { success: false, message: 'Chưa đăng nhập' };
             }
 
-            // Đảm bảo userId hợp lệ
-            const actualUserId = userId || (user ? user.userId : null);
-
-            if (!actualUserId) {
-                console.log("Không có userId hợp lệ:", userId, user);
-                return { success: false, message: 'Không có thông tin người dùng' };
-            }
-
-            console.log("Đang gửi request với userId:", actualUserId);
-
-            const response = await fetch(`${API_BASE_URL}/menstrual-cycle/${actualUserId}`, {
+            const response = await fetch(`${API_BASE_URL}/menstrual-cycle/${userId}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Basic ${credentials}`,
@@ -366,18 +352,16 @@ export const authService = {
                 credentials: 'include'
             });
 
-            console.log("Response status:", response.status);
-
             if (response.status === 401) {
-                // Xóa thông tin đăng nhập không hợp lệ
                 localStorage.removeItem('credentials');
+                localStorage.removeItem('user');
                 return { success: false, message: 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại' };
             }
 
             const data = await response.json();
+
             return data;
         } catch (error) {
-            console.error('Error fetching menstrual cycles:', error);
             return { success: false, message: 'Không thể kết nối đến server' };
         }
     },
@@ -389,8 +373,8 @@ export const authService = {
                 return { success: false, message: 'Chưa đăng nhập' };
             }
 
-            console.log("Dữ liệu gửi đi:", JSON.stringify(cycleData));
 
+            // ✅ Updated: Sử dụng endpoint mới
             const response = await fetch(`${API_BASE_URL}/menstrual-cycle/addCycle`, {
                 method: 'POST',
                 headers: {
@@ -401,27 +385,16 @@ export const authService = {
                 body: JSON.stringify(cycleData)
             });
 
-            // Xử lý response
             if (response.status === 401) {
                 localStorage.removeItem('credentials');
+                localStorage.removeItem('user');
                 return { success: false, message: 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại' };
             }
 
-            // Xử lý lỗi 400 (Bad Request) - tự xử lý không hiển thị lỗi từ server
-            if (response.status === 400) {
-                console.error("Lỗi dữ liệu không hợp lệ");
-                // Trả về thông báo tự định nghĩa thay vì thông báo từ server
-                return {
-                    success: false,
-                    message: 'Vui lòng kiểm tra lại thông tin chu kỳ'
-                };
-            }
-
-            // Xử lý các trường hợp còn lại
             const data = await response.json();
+
             return data;
         } catch (error) {
-            console.error('Error adding menstrual cycle:', error);
             return { success: false, message: 'Không thể kết nối đến server' };
         }
     },

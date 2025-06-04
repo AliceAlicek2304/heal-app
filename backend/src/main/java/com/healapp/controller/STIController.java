@@ -48,7 +48,7 @@ public class STIController {
     }
 
     @PostMapping("/book-test")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<ApiResponse<STITestResponse>> bookSTITest(
             @Valid @RequestBody STITestRequest request) {
 
@@ -58,7 +58,7 @@ public class STIController {
     }
 
     @GetMapping("/my-tests")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<ApiResponse<List<STITestResponse>>> getMySTITests() {
 
         Long customerId = getCurrentUserId();
@@ -67,7 +67,7 @@ public class STIController {
     }
 
     @GetMapping("/tests/{testId}")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<ApiResponse<STITestResponse>> getSTITestDetails(@PathVariable Long testId) {
 
         Long userId = getCurrentUserId();
@@ -76,7 +76,7 @@ public class STIController {
     }
 
     @PutMapping("/tests/{testId}/cancel")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<ApiResponse<STITestResponse>> cancelSTITest(@PathVariable Long testId) {
 
         Long userId = getCurrentUserId();
@@ -160,7 +160,7 @@ public class STIController {
     }
 
     @GetMapping("/tests/{testId}/results")
-    @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<ApiResponse<List<TestResultResponse>>> getTestResults(@PathVariable Long testId) {
         Long userId = getCurrentUserId();
         ApiResponse<List<TestResultResponse>> response = stiTestService.getTestResults(testId, userId);

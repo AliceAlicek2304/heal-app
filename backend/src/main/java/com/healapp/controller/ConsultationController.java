@@ -48,10 +48,10 @@ public class ConsultationController {
 
     @GetMapping("/available-slots")
     public ResponseEntity<ApiResponse<List<AvailableTimeSlot>>> getAvailableTimeSlots(
-            @RequestParam Long staffId,
+            @RequestParam Long consultantId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
 
-        ApiResponse<List<AvailableTimeSlot>> response = consultationService.getAvailableTimeSlots(staffId, date);
+        ApiResponse<List<AvailableTimeSlot>> response = consultationService.getAvailableTimeSlots(consultantId, date);
 
         if (response.isSuccess()) {
             return ResponseEntity.ok(response);
