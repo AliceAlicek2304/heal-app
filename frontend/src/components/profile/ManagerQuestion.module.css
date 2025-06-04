@@ -771,15 +771,6 @@
   border: none;
 }
 
-.successBtn {
-  background-color: #4285f4;
-  color: white;
-}
-
-.successBtn:hover:not(:disabled) {
-  background-color: #3367d6;
-}
-
 .successBtn:disabled {
   opacity: 0.6;
   cursor: not-allowed;

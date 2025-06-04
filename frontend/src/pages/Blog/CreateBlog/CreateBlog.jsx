@@ -9,7 +9,7 @@ import styles from './CreateBlog.module.css';
 
 const CreateBlog = () => {
     const navigate = useNavigate();
-    const { user, isLoading } = useAuth();
+    const { user } = useAuth();
     const toast = useToast();
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState([]);
@@ -19,82 +19,124 @@ const CreateBlog = () => {
         content: '',
         categoryId: '',
         thumbnail: null,
-        sections: []
+        sections: [
+            {
+                sectionTitle: '',
+                sectionContent: '',
+                displayOrder: 1,
+                sectionImage: null
+            }
+        ]
     });
-    const [thumbnailPreview, setThumbnailPreview] = useState('');
 
-    // Check authentication
+    const [thumbnailPreview, setThumbnailPreview] = useState(null);
+
     useEffect(() => {
-        if (isLoading) return;
         if (!user) {
-            navigate('/');
+            navigate('/blog');
             return;
         }
         fetchCategories();
-    }, [user, isLoading, navigate]);
+    }, [user, navigate]);
 
     const fetchCategories = async () => {
         try {
-            const resp = await blogService.getCategories();
-            if (resp.success && resp.data) {
-                setCategories(resp.data);
-            } else {
-                toast.error(resp.message || 'Không thể tải danh mục');
+            const response = await blogService.getCategories();
+            if (response.success) {
+                setCategories(response.data);
             }
-        } catch (e) {
-            console.error(e);
-            toast.error('Có lỗi khi tải danh mục');
+        } catch (error) {
+            console.error('Error fetching categories:', error);
+            toast.error('Không thể tải danh mục');
         }
     };
 
-    const handleInputChange = e => {
+    const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData(f => ({ ...f, [name]: value }));
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
     };
 
-    const handleThumbnailChange = e => {
+    const handleThumbnailChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setFormData(f => ({ ...f, thumbnail: file }));
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error('Kích thước ảnh không được vượt quá 5MB');
+                return;
+            }
+            setFormData(prev => ({ ...prev, thumbnail: file }));
             setThumbnailPreview(URL.createObjectURL(file));
         }
     };
 
+    const handleSectionChange = (index, field, value) => {
+        const updatedSections = [...formData.sections];
+        updatedSections[index] = {
+            ...updatedSections[index],
+            [field]: value
+        };
+        setFormData(prev => ({
+            ...prev,
+            sections: updatedSections
+        }));
+    };
+
+    const handleSectionImageChange = (index, file) => {
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error('Kích thước ảnh không được vượt quá 5MB');
+                return;
+            }
+        }
+        const updatedSections = [...formData.sections];
+        updatedSections[index] = {
+            ...updatedSections[index],
+            sectionImage: file
+        };
+        setFormData(prev => ({
+            ...prev,
+            sections: updatedSections
+        }));
+    };
+
     const addSection = () => {
-        setFormData(f => ({
-            ...f,
-            sections: [
-                ...f.sections,
-                { sectionTitle: '', sectionContent: '', sectionImage: null, displayOrder: f.sections.length + 1 }
-            ]
+        const newSection = {
+            sectionTitle: '',
+            sectionContent: '',
+            displayOrder: formData.sections.length + 1,
+            sectionImage: null
+        };
+        setFormData(prev => ({
+            ...prev,
+            sections: [...prev.sections, newSection]
         }));
     };
 
-    const removeSection = idx => {
-        setFormData(f => ({
-            ...f,
-            sections: f.sections
-                .filter((_, i) => i !== idx)
-                .map((s, i) => ({ ...s, displayOrder: i + 1 }))
+    const removeSection = (index) => {
+        if (formData.sections.length <= 1) {
+            toast.error('Phải có ít nhất một phần');
+            return;
+        }
+        const updatedSections = formData.sections.filter((_, i) => i !== index);
+        const reorderedSections = updatedSections.map((section, i) => ({
+            ...section,
+            displayOrder: i + 1
+        }));
+        setFormData(prev => ({
+            ...prev,
+            sections: reorderedSections
         }));
     };
 
-    const handleSectionChange = (idx, field, value) => {
-        setFormData(f => ({
-            ...f,
-            sections: f.sections.map((s, i) =>
-                i === idx ? { ...s, [field]: value } : s
-            )
-        }));
+    const removeThumbnail = () => {
+        setFormData(prev => ({ ...prev, thumbnail: null }));
+        setThumbnailPreview(null);
     };
 
-    const handleSectionImageChange = (idx, file) => {
-        setFormData(f => ({
-            ...f,
-            sections: f.sections.map((s, i) =>
-                i === idx ? { ...s, sectionImage: file } : s
-            )
-        }));
+    const removeSectionImage = (index) => {
+        handleSectionImageChange(index, null);
     };
 
     const validateForm = () => {
@@ -103,7 +145,7 @@ const CreateBlog = () => {
             return false;
         }
         if (!formData.content.trim()) {
-            toast.error('Vui lòng nhập nội dung chính');
+            toast.error('Vui lòng nhập nội dung tổng quan');
             return false;
         }
         if (!formData.categoryId) {
@@ -111,26 +153,27 @@ const CreateBlog = () => {
             return false;
         }
         if (!formData.thumbnail) {
-            toast.error('Vui lòng chọn ảnh đại diện');
+            toast.error('Vui lòng chọn ảnh thumbnail');
             return false;
         }
         for (let i = 0; i < formData.sections.length; i++) {
-            const s = formData.sections[i];
-            if (!s.sectionTitle.trim()) {
-                toast.error(`Vui lòng nhập tiêu đề phần ${i + 1}`);
+            const section = formData.sections[i];
+            if (!section.sectionTitle.trim()) {
+                toast.error(`Vui lòng nhập tiêu đề cho phần ${i + 1}`);
                 return false;
             }
-            if (!s.sectionContent.trim()) {
-                toast.error(`Vui lòng nhập nội dung phần ${i + 1}`);
+            if (!section.sectionContent.trim()) {
+                toast.error(`Vui lòng nhập nội dung cho phần ${i + 1}`);
                 return false;
             }
         }
         return true;
     };
 
-    const handleSubmit = async e => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validateForm()) return;
+        
         setLoading(true);
         try {
             const blogData = {
@@ -141,12 +184,11 @@ const CreateBlog = () => {
                 sections: formData.sections.map(s => ({
                     sectionTitle: s.sectionTitle,
                     sectionContent: s.sectionContent,
-                    displayOrder: s.displayOrder
-                })),
-                sectionImages: formData.sections
-                    .map(s => s.sectionImage)
-                    .filter(Boolean)
+                    displayOrder: s.displayOrder,
+                    sectionImage: s.sectionImage
+                }))
             };
+
             const resp = await blogService.createBlogPost(blogData);
             if (resp.success) {
                 toast.success('Tạo bài viết thành công! Đang chờ duyệt.');
@@ -156,26 +198,11 @@ const CreateBlog = () => {
             }
         } catch (e) {
             console.error(e);
-            toast.error('Lỗi khi tạo bài viết');
+            toast.error('Lỗi khi tạo bài viết: ' + (e.message || ''));
         } finally {
             setLoading(false);
         }
     };
-
-    const handleCancel = () => navigate('/blog');
-
-    if (isLoading) {
-        return (
-            <div className={styles.createBlogPage}>
-                <Navbar />
-                <div className={styles.loadingContainer}>
-                    <LoadingSpinner />
-                </div>
-            </div>
-        );
-    }
-
-    if (!user) return null;
 
     return (
         <div className={styles.createBlogPage}>
@@ -183,69 +210,109 @@ const CreateBlog = () => {
             <div className={styles.container}>
                 <div className={styles.createBlogHeader}>
                     <h1>Tạo Bài Viết Mới</h1>
-                    <p>Chia sẻ kiến thức y tế hữu ích với cộng đồng</p>
+                    <p>Chia sẻ kiến thức của bạn với cộng đồng</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className={styles.createBlogForm}>
+                <form className={styles.createBlogForm} onSubmit={handleSubmit}>
+                    {loading && (
+                        <div className={styles.loadingOverlay}>
+                            <LoadingSpinner />
+                            <p>Đang tạo bài viết...</p>
+                        </div>
+                    )}
+
                     {/* Basic Information */}
                     <div className={styles.formSection}>
                         <h3>Thông tin cơ bản</h3>
+                        
                         <div className={styles.formGroup}>
-                            <label>Tiêu đề <span className={styles.required}>*</span></label>
+                            <label htmlFor="title">
+                                Tiêu đề <span className={styles.required}>*</span>
+                            </label>
                             <input
                                 type="text"
+                                id="title"
                                 name="title"
+                                className={styles.formInput}
                                 value={formData.title}
                                 onChange={handleInputChange}
+                                placeholder="Nhập tiêu đề bài viết"
                                 required
-                                placeholder="Nhập tiêu đề..."
                             />
                         </div>
+
                         <div className={styles.formGroup}>
-                            <label>Danh mục <span className={styles.required}>*</span></label>
+                            <label htmlFor="content">
+                                Nội dung tổng quan <span className={styles.required}>*</span>
+                            </label>
+                            <textarea
+                                id="content"
+                                name="content"
+                                className={styles.formTextarea}
+                                value={formData.content}
+                                onChange={handleInputChange}
+                                placeholder="Mô tả tổng quan về nội dung bài viết"
+                                rows="4"
+                                required
+                            />
+                        </div>
+
+                        <div className={styles.formGroup}>
+                            <label htmlFor="categoryId">
+                                Danh mục <span className={styles.required}>*</span>
+                            </label>
                             <select
+                                id="categoryId"
                                 name="categoryId"
+                                className={styles.formSelect}
                                 value={formData.categoryId}
                                 onChange={handleInputChange}
                                 required
                             >
                                 <option value="">Chọn danh mục</option>
-                                {categories.map(c => (
-                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                {categories.map(category => (
+                                    <option key={category.categoryId} value={category.categoryId}>
+                                        {category.name}
+                                    </option>
                                 ))}
                             </select>
                         </div>
+
                         <div className={styles.formGroup}>
-                            <label>Nội dung chính <span className={styles.required}>*</span></label>
-                            <textarea
-                                name="content"
-                                value={formData.content}
-                                onChange={handleInputChange}
-                                rows={8}
-                                required
-                                placeholder="Nhập nội dung..."
-                            />
-                        </div>
-                        <div className={styles.formGroup}>
-                            <label>Ảnh đại diện <span className={styles.required}>*</span></label>
+                            <label htmlFor="thumbnail">
+                                Ảnh thumbnail <span className={styles.required}>*</span>
+                            </label>
                             <input
                                 type="file"
+                                id="thumbnail"
+                                className={styles.formFile}
                                 accept="image/*"
                                 onChange={handleThumbnailChange}
                                 required
                             />
                             {thumbnailPreview && (
                                 <div className={styles.imagePreview}>
-                                    <img src={thumbnailPreview} alt="preview" />
+                                    <img src={thumbnailPreview} alt="Thumbnail preview" />
+                                    <button
+                                        type="button"
+                                        className={styles.removeImageBtn}
+                                        onClick={removeThumbnail}
+                                        title="Xóa ảnh"
+                                    >
+                                        ×
+                                    </button>
+                                    <div className={styles.imageInfo}>
+                                        {formData.thumbnail?.name}
+                                    </div>
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    {/* Detail Sections */}
+                    {/* Sections */}
                     <div className={styles.formSection}>
                         <div className={styles.sectionHeader}>
-                            <h3>Các phần chi tiết (tùy chọn)</h3>
+                            <h3>Nội dung chi tiết</h3>
                             <button
                                 type="button"
                                 className={styles.btnSecondary}
@@ -258,60 +325,103 @@ const CreateBlog = () => {
                                 Thêm phần
                             </button>
                         </div>
-                        {formData.sections.map((s, i) => (
-                            <div key={i} className={styles.blogSection}>
+
+                        {formData.sections.map((section, index) => (
+                            <div key={index} className={styles.blogSection}>
                                 <div className={styles.sectionTitle}>
-                                    <h4>Phần {i + 1}</h4>
-                                    <button
-                                        type="button"
-                                        className={styles.btnDanger}
-                                        onClick={() => removeSection(i)}
-                                    >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                                        </svg>
-                                        Xóa
-                                    </button>
+                                    <h4>Phần {index + 1}</h4>
+                                    {formData.sections.length > 1 && (
+                                        <button
+                                            type="button"
+                                            className={styles.btnDanger}
+                                            onClick={() => removeSection(index)}
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                                            </svg>
+                                            Xóa phần
+                                        </button>
+                                    )}
                                 </div>
+
                                 <div className={styles.formGroup}>
-                                    <label>Tiêu đề phần</label>
+                                    <label htmlFor={`sectionTitle-${index}`}>
+                                        Tiêu đề phần <span className={styles.required}>*</span>
+                                    </label>
                                     <input
                                         type="text"
-                                        value={s.sectionTitle}
-                                        onChange={e => handleSectionChange(i, 'sectionTitle', e.target.value)}
-                                        placeholder="Nhập tiêu đề phần"
+                                        id={`sectionTitle-${index}`}
+                                        className={styles.formInput}
+                                        value={section.sectionTitle}
+                                        onChange={(e) => handleSectionChange(index, 'sectionTitle', e.target.value)}
+                                        placeholder="Nhập tiêu đề cho phần này"
+                                        required
                                     />
                                 </div>
+
                                 <div className={styles.formGroup}>
-                                    <label>Nội dung phần</label>
+                                    <label htmlFor={`sectionContent-${index}`}>
+                                        Nội dung phần <span className={styles.required}>*</span>
+                                    </label>
                                     <textarea
-                                        value={s.sectionContent}
-                                        onChange={e => handleSectionChange(i, 'sectionContent', e.target.value)}
-                                        rows={4}
-                                        placeholder="Nhập nội dung phần"
+                                        id={`sectionContent-${index}`}
+                                        className={styles.formTextarea}
+                                        value={section.sectionContent}
+                                        onChange={(e) => handleSectionChange(index, 'sectionContent', e.target.value)}
+                                        placeholder="Nhập nội dung chi tiết cho phần này"
+                                        rows="6"
+                                        required
                                     />
                                 </div>
+
                                 <div className={styles.formGroup}>
-                                    <label>Ảnh minh họa</label>
+                                    <label htmlFor={`sectionImage-${index}`}>
+                                        Ảnh minh họa (tùy chọn)
+                                    </label>
                                     <input
                                         type="file"
+                                        id={`sectionImage-${index}`}
+                                        className={styles.formFile}
                                         accept="image/*"
-                                        onChange={e => handleSectionImageChange(i, e.target.files[0])}
+                                        onChange={(e) => handleSectionImageChange(index, e.target.files[0])}
                                     />
+                                    {section.sectionImage && (
+                                        <div className={styles.imagePreview}>
+                                            <img 
+                                                src={URL.createObjectURL(section.sectionImage)} 
+                                                alt={`Section ${index + 1} preview`} 
+                                            />
+                                            <button
+                                                type="button"
+                                                className={styles.removeImageBtn}
+                                                onClick={() => removeSectionImage(index)}
+                                                title="Xóa ảnh"
+                                            >
+                                                ×
+                                            </button>
+                                            <div className={styles.imageInfo}>
+                                                {section.sectionImage.name}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}
                     </div>
 
-                    {/* Action Buttons */}
+                    {/* Form Actions */}
                     <div className={styles.formActions}>
                         <button
                             type="button"
                             className={styles.btnSecondary}
-                            onClick={handleCancel}
+                            onClick={() => navigate('/blog')}
                             disabled={loading}
                         >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12,19 5,12 12,5"></polyline>
+                            </svg>
                             Hủy
                         </button>
                         <button
@@ -321,21 +431,22 @@ const CreateBlog = () => {
                         >
                             {loading ? (
                                 <>
-                                    <svg className={styles.spinner} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M21 12a9 9 0 11-6.219-8.56"></path>
-                                    </svg>
+                                    <LoadingSpinner size="small" />
                                     Đang tạo...
                                 </>
-                            ) : 'Tạo bài viết'}
+                            ) : (
+                                <>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                        <polyline points="17,21 17,13 7,13 7,21"></polyline>
+                                        <polyline points="7,3 7,8 15,8"></polyline>
+                                    </svg>
+                                    Tạo bài viết
+                                </>
+                            )}
                         </button>
                     </div>
                 </form>
-
-                {loading && (
-                    <div className={styles.loadingOverlay}>
-                        <LoadingSpinner />
-                    </div>
-                )}
             </div>
         </div>
     );

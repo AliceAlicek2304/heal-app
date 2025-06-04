@@ -1,7 +1,6 @@
 const API_BASE_URL = 'http://localhost:8080';
 
-export const blogService = {
-    // Tạo blog post mới
+const blogService = {
     createBlogPost: async (blogData) => {
         try {
             const credentials = localStorage.getItem('credentials');
@@ -28,16 +27,16 @@ export const blogService = {
                         sectionImageIndexes.push(index);
                     }
                 });
+            }
 
-                // Append section images
+            // Append section images nếu có
+            if (sectionImages.length > 0) {
                 sectionImages.forEach(image => {
                     formData.append('sectionImages', image);
                 });
 
-                // Append section image indexes
-                sectionImageIndexes.forEach(index => {
-                    formData.append('sectionImageIndexes', index);
-                });
+                // Gửi sectionImageIndexes như JSON string để backend parse thành Integer[]
+                formData.append('sectionImageIndexes', JSON.stringify(sectionImageIndexes));
             }
 
             // 3. Request data (JSON)
@@ -49,29 +48,21 @@ export const blogService = {
                     sectionTitle: section.sectionTitle,
                     sectionContent: section.sectionContent,
                     displayOrder: section.displayOrder
-                    // Không include sectionImage ở đây vì nó được xử lý riêng
                 })) : []
             };
 
-            formData.append('request', new Blob([JSON.stringify(requestData)], {
-                type: 'application/json'
-            }));
+            formData.append('request', JSON.stringify(requestData));
 
-            console.log('Sending create blog request with:');
-            console.log('- Thumbnail:', blogData.thumbnail?.name);
-            console.log('- Section images count:', sectionImages.length);
-            console.log('- Request data:', requestData);
+            console.log('Section images count:', sectionImages.length);
+            console.log('Section image indexes:', sectionImageIndexes);
 
             const response = await fetch(`${API_BASE_URL}/blog`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Basic ${credentials}`
-                    // Không set Content-Type cho multipart/form-data
                 },
                 body: formData
             });
-
-            console.log('Response status:', response.status);
 
             if (!response.ok) {
                 const errorText = await response.text();
@@ -88,67 +79,67 @@ export const blogService = {
         }
     },
 
-    // Lấy danh sách categories
     getCategories: async () => {
         try {
-            console.log('Fetching categories from:', `${API_BASE_URL}/categories`);
+            // Sửa từ /category thành /categories và thêm credentials nếu có
+            const credentials = localStorage.getItem('credentials');
+            const headers = {};
+            
+            if (credentials) {
+                headers['Authorization'] = `Basic ${credentials}`;
+            }
 
             const response = await fetch(`${API_BASE_URL}/categories`, {
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                headers
             });
 
-            console.log('Categories response status:', response.status);
+            if (!response.ok) {
+                // Nếu 401 và không có credentials, thử không cần auth
+                if (response.status === 401 && !credentials) {
+                    console.log('Categories endpoint requires authentication');
+                    return { success: false, message: 'Cần đăng nhập để xem danh mục' };
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error fetching categories:', error);
+            return { success: false, message: 'Không thể tải danh mục' };
+        }
+    },
+
+    getMyPosts: async ({ page = 0, size = 10 }) => {
+        try {
+            const credentials = localStorage.getItem('credentials');
+            if (!credentials) {
+                return { success: false, message: 'Chưa đăng nhập' };
+            }
+
+            const response = await fetch(
+                `${API_BASE_URL}/blog/my-posts?page=${page}&size=${size}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Basic ${credentials}`
+                    }
+                }
+            );
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
-            console.log('Parsed categories data:', data);
-
-            // Backend trả về ApiResponse<List<CategoryResponse>>
-            if (data && data.success && Array.isArray(data.data)) {
-                return {
-                    success: true,
-                    data: data.data.map(category => ({
-                        id: category.categoryId,    // Map categoryId -> id
-                        name: category.name
-                    }))
-                };
-            } else {
-                console.error('Invalid categories response format:', data);
-                return { success: false, message: 'Invalid response format' };
-            }
-
-        } catch (error) {
-            console.error('Error fetching categories:', error);
-            return { success: false, message: 'Không thể kết nối đến server' };
-        }
-    }, getMyPosts: async ({ page = 0, size = 10, sortBy = 'createdAt', sortDir = 'desc' } = {}) => {
-        try {
-            const credentials = localStorage.getItem('credentials');
-            if (!credentials) {
-                return { success: false, message: 'Chưa đăng nhập' };
-            }
-            const url = `${API_BASE_URL}/blog/my-posts?page=${page}&size=${size}&sortBy=${sortBy}&sortDir=${sortDir}`;
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Basic ${credentials}`
-                }
-            });
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            const data = await response.json();
             return data;
         } catch (error) {
             console.error('Error fetching my posts:', error);
-            return { success: false, message: 'Không thể tải lịch sử bài viết' };
+            return { success: false, message: 'Không thể tải bài viết của bạn' };
         }
-    },
+    }
 };
+
+export { blogService };
+export default blogService;

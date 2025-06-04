@@ -51,7 +51,7 @@ public class BlogPostService {
             // Kiểm tra vai trò tác giả
             UserDtls authorUser = author.get();
             String authorRole = authorUser.getRoleName();
-            if (!"USER".equals(authorRole) &&
+            if (!"CUSTOMER".equals(authorRole) &&
                     !"CONSULTANT".equals(authorRole) &&
                     !"STAFF".equals(authorRole) &&
                     !"ADMIN".equals(authorRole)) {

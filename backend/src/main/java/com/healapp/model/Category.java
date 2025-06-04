@@ -20,10 +20,10 @@ public class Category {
     @Column(name = "category_id")
     private Long categoryId;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, columnDefinition = "NVARCHAR(255)")
     private String name;
 
-    @Column
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String description;
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
