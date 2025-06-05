@@ -20,16 +20,58 @@ public class STITestRequest {
     private LocalDateTime appointmentDate;
 
     @NotBlank(message = "Payment method is required")
-    @Pattern(regexp = "COD|VISA", message = "Payment method must be COD or VISA")
+    @Pattern(regexp = "COD|VISA|QR_CODE", message = "Payment method must be COD, VISA, or QR_CODE")
     private String paymentMethod;
 
     @Size(max = 500, message = "Customer notes must not exceed 500 characters")
     private String customerNotes;
 
     // VISA (optional)
+    @Size(min = 16, max = 16, message = "Card number must be 16 digits")
+    @Pattern(regexp = "\\d{16}", message = "Card number must contain only digits")
     private String cardNumber;
+
+    @Pattern(regexp = "(0[1-9]|1[0-2])", message = "Expiry month must be 01-12")
     private String expiryMonth;
+
+    @Pattern(regexp = "\\d{4}", message = "Expiry year must be 4 digits")
     private String expiryYear;
+
+    @Pattern(regexp = "\\d{3,4}", message = "CVC must be 3-4 digits")
     private String cvc;
+
+    @Size(max = 100, message = "Card holder name cannot exceed 100 characters")
     private String cardHolderName;
+
+    // QR code
+    @Size(max = 50, message = "QR payment reference cannot exceed 50 characters")
+    private String qrPaymentReference;
+
+    public boolean isValidForPaymentMethod() {
+        if (paymentMethod == null) {
+            return false;
+        }
+
+        switch (paymentMethod.toUpperCase()) {
+            case "VISA":
+                return cardNumber != null && expiryMonth != null &&
+                        expiryYear != null && cvc != null && cardHolderName != null;
+            case "QR_CODE":
+                return true;
+            case "COD":
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public boolean isQrPaymentConfirmation() {
+        return "QR_CODE".equalsIgnoreCase(paymentMethod) &&
+                qrPaymentReference != null && !qrPaymentReference.trim().isEmpty();
+    }
+
+    public boolean isQrPaymentGeneration() {
+        return "QR_CODE".equalsIgnoreCase(paymentMethod) &&
+                (qrPaymentReference == null || qrPaymentReference.trim().isEmpty());
+    }
 }

@@ -2,5 +2,6 @@ package com.healapp.model;
 
 public enum PaymentMethod {
     COD,
-    VISA
+    VISA,
+    QR_CODE
 }

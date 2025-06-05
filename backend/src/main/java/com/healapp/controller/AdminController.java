@@ -7,8 +7,10 @@ import com.healapp.dto.STIServiceRequest;
 import com.healapp.dto.STIServiceResponse;
 import com.healapp.dto.UserResponse;
 import com.healapp.dto.UserUpdateRequest;
+import com.healapp.model.Payment;
 import com.healapp.service.AppConfigService;
 import com.healapp.service.ConsultantService;
+import com.healapp.service.PaymentService;
 import com.healapp.service.STIServiceService;
 import com.healapp.service.UserService;
 
@@ -40,6 +42,9 @@ public class AdminController {
 
     @Autowired
     private STIServiceService stiServiceService;
+
+    @Autowired
+    private PaymentService paymentService;
 
     // CONSULTANT MANAGEMENT
     @GetMapping("/consultants")
@@ -139,6 +144,36 @@ public class AdminController {
         return getResponseEntity(response);
     }
 
+    // ========== PAYMENT MANAGEMENT ==========
+
+    @GetMapping("/payments")
+    public ResponseEntity<ApiResponse<List<Payment>>> getAllPayments(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "50") int size) {
+
+        ApiResponse<List<Payment>> response = paymentService.getAllPayments(page, size);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/payments/{paymentId}")
+    public ResponseEntity<ApiResponse<Payment>> getPaymentDetails(@PathVariable Long paymentId) {
+
+        ApiResponse<Payment> response = paymentService.getPaymentByIdAdmin(paymentId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/payments/{paymentId}/refund")
+    public ResponseEntity<ApiResponse<Payment>> processRefund(
+            @PathVariable Long paymentId,
+            @RequestBody Map<String, String> request) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        String reason = request.get("reason");
+
+        ApiResponse<Payment> response = paymentService.processRefund(paymentId, reason);
+        return ResponseEntity.ok(response);
+    }
     // ========= APP CONFIG MANAGEMENT =========
 
     @GetMapping("/config")

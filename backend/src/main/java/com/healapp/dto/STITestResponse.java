@@ -4,10 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
-
-import com.healapp.model.PaymentMethod;
-import com.healapp.model.TestStatus;
 
 @Data
 @NoArgsConstructor
@@ -23,20 +21,94 @@ public class STITestResponse {
     private Long serviceId;
     private String serviceName;
     private String serviceDescription;
-    private Double totalPrice;
-
+    private BigDecimal totalPrice;
     private Long staffId;
     private String staffName;
 
+    private Long consultantId;
+    private String consultantName;
+
     private LocalDateTime appointmentDate;
+    private String status;
+
+    private Long paymentId;
     private String paymentMethod;
-    private LocalDateTime paymentDate;
-    private String stripePaymentId;
+    private String paymentStatus;
+    private LocalDateTime paidAt;
+    private String paymentTransactionId;
+
+    private String stripePaymentIntentId;
+
+    private String qrPaymentReference;
+    private LocalDateTime qrExpiresAt;
+    private String qrCodeUrl;
 
     private String customerNotes;
     private String consultantNotes;
-    private String status; // PENDING, CONFIRMED, SAMPLE_COLLECTED, PROCESSING, COMPLETED, CANCELED
+    private LocalDateTime resultDate;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    public boolean isPaymentCompleted() {
+        return "COMPLETED".equals(this.paymentStatus);
+    }
+
+    public boolean isCODPayment() {
+        return "COD".equals(this.paymentMethod);
+    }
+
+    public boolean isStripePayment() {
+        return "VISA".equals(this.paymentMethod);
+    }
+
+    public boolean isQRPayment() {
+        return "QR_CODE".equals(this.paymentMethod);
+    }
+
+    public boolean isQRExpired() {
+        return isQRPayment() && qrExpiresAt != null && qrExpiresAt.isBefore(LocalDateTime.now());
+    }
+
+    public boolean canBeCancelled() {
+        return "PENDING".equals(this.status) || "CONFIRMED".equals(this.status);
+    }
+
+    public String getPaymentDisplayText() {
+        if (paymentMethod == null)
+            return "Unknown";
+
+        switch (paymentMethod) {
+            case "COD":
+                return "Cash on Delivery";
+            case "VISA":
+                return "Credit Card";
+            case "QR_CODE":
+                return "QR Code Transfer";
+            default:
+                return paymentMethod;
+        }
+    }
+
+    public String getStatusDisplayText() {
+        if (status == null)
+            return "Unknown";
+
+        switch (status) {
+            case "PENDING":
+                return "Pending Confirmation";
+            case "CONFIRMED":
+                return "Confirmed";
+            case "SAMPLED":
+                return "Sample Collected";
+            case "RESULTED":
+                return "Results Available";
+            case "COMPLETED":
+                return "Completed";
+            case "CANCELED":
+                return "Cancelled";
+            default:
+                return status;
+        }
+    }
 }

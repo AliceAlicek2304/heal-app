@@ -2,13 +2,16 @@ package com.healapp.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -40,17 +43,11 @@ public class STITest {
     private LocalDateTime appointmentDate;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "payment_method", length = 20)
-    private PaymentMethod paymentMethod;
+    @Column(name = "status", nullable = false, length = 20)
+    private TestStatus status = TestStatus.PENDING;
 
-    @Column(name = "payment_date")
-    private LocalDateTime paymentDate;
-
-    @Column(name = "stripe_payment_id", length = 100)
-    private String stripePaymentId;
-
-    @Column(name = "total_price", nullable = false)
-    private Double totalPrice;
+    @Column(name = "total_price", nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalPrice;
 
     @Column(name = "customer_notes", columnDefinition = "NVARCHAR(MAX)")
     private String customerNotes;
@@ -61,17 +58,16 @@ public class STITest {
     @Column(name = "result_date")
     private LocalDateTime resultDate;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 20)
-    private TestStatus status;
-
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    // Quan hệ 1-N với TestResult
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "service_id")
+    private List<Payment> payments;
+
     @OneToMany(mappedBy = "stiTest", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<TestResult> testResults;
 
@@ -87,5 +83,52 @@ public class STITest {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public Payment getLatestPayment() {
+        if (payments == null || payments.isEmpty()) {
+            return null;
+        }
+        return payments.stream()
+                .max((p1, p2) -> p1.getCreatedAt().compareTo(p2.getCreatedAt()))
+                .orElse(null);
+    }
+
+    public Payment getCompletedPayment() {
+        if (payments == null || payments.isEmpty()) {
+            return null;
+        }
+        return payments.stream()
+                .filter(p -> p.getPaymentStatus() == PaymentStatus.COMPLETED)
+                .findFirst()
+                .orElse(null);
+    }
+
+    public boolean isPaymentCompleted() {
+        return getCompletedPayment() != null;
+    }
+
+    public boolean canBeConfirmed() {
+        Payment completedPayment = getCompletedPayment();
+        if (completedPayment == null) {
+            return false;
+        }
+
+        // COD can be confirmed without actual payment
+        if (completedPayment.getPaymentMethod() == PaymentMethod.COD) {
+            return true;
+        }
+
+        return completedPayment.isCompleted();
+    }
+
+    public PaymentMethod getPaymentMethod() {
+        Payment latestPayment = getLatestPayment();
+        return latestPayment != null ? latestPayment.getPaymentMethod() : null;
+    }
+
+    public PaymentStatus getPaymentStatus() {
+        Payment latestPayment = getLatestPayment();
+        return latestPayment != null ? latestPayment.getPaymentStatus() : PaymentStatus.PENDING;
     }
 }
