@@ -13,15 +13,15 @@ spring.servlet.multipart.max-file-size=10MB
 spring.servlet.multipart.max-request-size=10MB
 
 #avatar
-app.avatar.storage.location=src/main/resources/static/img/avatar
+app.avatar.storage.location=${AVATAR_STORAGE_PATH:uploads/img/avatar}
 app.avatar.url.pattern=/img/avatar/
 
 #blog images
-app.blog.storage.location=src/main/resources/static/img/blog
+app.blog.storage.location=${BLOG_STORAGE_PATH:uploads/img/blog}
 app.blog.url.pattern=/img/blog/
 
 #app config images (logo, banner)
-app.config.storage.location=src/main/resources/static/img/app
+app.config.storage.location=${APP_CONFIG_STORAGE_PATH:uploads/img/app}
 app.config.url.pattern=/img/app/
 
 # Java mail
@@ -36,19 +36,39 @@ spring.mail.properties.mail.smtp.starttls.enable=true
 logging.level.com.healapp.service.EmailService=DEBUG
 
 #Stripe
-stripe.api.key=${STRIPE_SECRET_KEY:your_stripe_secret_key}
-stripe.publishable.key=${STRIPE_PUBLISHABLE_KEY:your_stripe_publishable_key}
+stripe.api.key=${STRIPE_SECRET_KEY:sk_test_your_stripe_secret_key}
+stripe.publishable.key=${STRIPE_PUBLISHABLE_KEY:pk_test_your_stripe_publishable_key}
+
+# MB Bank API
+banking.mb.api.url=${MB_API_URL:https://api.mbbank.com.vn}
+banking.mb.api.key=${MB_API_KEY:your_mb_api_key}
+banking.mb.device.id=${MB_DEVICE_ID:healapp-device-001}
+
+# MB Bank Account Information
+banking.mb.account.number=${MB_ACCOUNT_NUMBER:your_account_number}
+banking.mb.account.name=${MB_ACCOUNT_NAME:YOUR ACCOUNT NAME}
+
+# QR Payment Settings
+qr.payment.expiry.hours=${QR_EXPIRY_HOURS:24}
+qr.payment.check.interval.minutes=${QR_CHECK_INTERVAL:2}
+qr.payment.auto.check.enabled=${QR_AUTO_CHECK:true}
+
+# Banking Integration Settings
+banking.api.timeout.seconds=${BANKING_TIMEOUT:30}
+banking.api.retry.attempts=${BANKING_RETRY_ATTEMPTS:3}
+# Set to true for testing, false for production
+banking.simulation.enabled=${BANKING_SIMULATION:false}
 
 # MCP Server Configuration
-mcp.api.provider=google
-mcp.api.base-url=https://generativelanguage.googleapis.com/v1beta
+mcp.api.provider=${MCP_PROVIDER:google}
+mcp.api.base-url=${MCP_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
 mcp.api.key=${GOOGLE_API_KEY:your_google_api_key}
-mcp.api.model=gemini-2.0-flash
+mcp.api.model=${MCP_MODEL:gemini-2.0-flash}
 
 # Content Moderation Configuration
-healapp.moderation.enabled=true
-healapp.moderation.cache.enabled=true
-healapp.moderation.cache.ttl=3600
+healapp.moderation.enabled=${MODERATION_ENABLED:true}
+healapp.moderation.cache.enabled=${MODERATION_CACHE_ENABLED:true}
+healapp.moderation.cache.ttl=${MODERATION_CACHE_TTL:3600}
 
 # AI Assistant Configuration
-healapp.assistant.max-history=10
+healapp.assistant.max-history=${ASSISTANT_MAX_HISTORY:10}
