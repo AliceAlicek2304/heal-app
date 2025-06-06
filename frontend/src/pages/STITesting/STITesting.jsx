@@ -78,6 +78,10 @@ const STITesting = () => {
 
         if (bookingData && bookingData.paymentMethod === 'VISA') {
             toast.success('Thanh toán thành công! Đặt lịch xét nghiệm hoàn tất. Bạn có thể xem chi tiết trong "Lịch sử xét nghiệm"');
+        } else if (bookingData && bookingData.paymentMethod === 'QR_CODE') {
+            toast.success('Đặt lịch xét nghiệm thành công! Vui lòng quét mã QR để thanh toán. Bạn có thể xem chi tiết và trạng thái thanh toán trong "Lịch sử xét nghiệm"');
+        } else if (bookingData && bookingData.paymentMethod === 'COD') {
+            toast.success('Đặt lịch xét nghiệm thành công! Thanh toán khi nhận dịch vụ. Bạn có thể xem chi tiết trong "Lịch sử xét nghiệm"');
         } else {
             toast.success('Đặt lịch xét nghiệm thành công! Bạn có thể xem chi tiết trong "Lịch sử xét nghiệm"');
         }
@@ -91,12 +95,18 @@ const STITesting = () => {
         if (error.message) {
             const message = error.message.toLowerCase();
 
-            if (message.includes('payment failed') || message.includes('payment')) {
+            if (message.includes('payment failed') || message.includes('stripe')) {
                 errorMessage = 'Thanh toán thất bại. Vui lòng kiểm tra thông tin thẻ và thử lại.';
+            } else if (message.includes('qr') || message.includes('qr code')) {
+                errorMessage = 'Không thể tạo mã QR thanh toán. Vui lòng thử lại hoặc chọn phương thức thanh toán khác.';
             } else if (message.includes('appointment') || message.includes('time')) {
-                errorMessage = 'Thời gian hẹn không hợp lệ. Vui lòng chọn thời gian khác.';
+                errorMessage = 'Thời gian hẹn không hợp lệ. Vui lòng chọn thời gian ít nhất 2 giờ sau hiện tại.';
             } else if (message.includes('service not found')) {
                 errorMessage = 'Không tìm thấy dịch vụ. Vui lòng thử lại.';
+            } else if (message.includes('service is not available')) {
+                errorMessage = 'Dịch vụ hiện không khả dụng. Vui lòng chọn dịch vụ khác.';
+            } else if (message.includes('invalid payment method')) {
+                errorMessage = 'Phương thức thanh toán không hợp lệ. Vui lòng chọn lại.';
             } else {
                 errorMessage = error.message;
             }
@@ -155,6 +165,18 @@ const STITesting = () => {
                                     <polyline points="12 6 12 12 16 14"></polyline>
                                 </svg>
                                 <span>Kết quả nhanh chóng</span>
+                            </div>
+                            {/* ✅ Thêm highlight cho QR payment */}
+                            <div className={styles.highlightItem}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <rect x="7" y="7" width="3" height="3"></rect>
+                                    <rect x="14" y="7" width="3" height="3"></rect>
+                                    <rect x="7" y="14" width="3" height="3"></rect>
+                                    <path d="m14 14 3 3"></path>
+                                    <path d="m14 17 3-3"></path>
+                                </svg>
+                                <span>Thanh toán QR tiện lợi</span>
                             </div>
                         </div>
 

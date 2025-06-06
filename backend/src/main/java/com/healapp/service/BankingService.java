@@ -37,6 +37,9 @@ public class BankingService {
     @Value("${banking.mb.device.id:healapp-device-001}")
     private String mbDeviceId;
 
+    @Value("${banking.simulation.enabled:false}")
+    private boolean simulationEnabled;
+
     private final RestTemplate restTemplate = new RestTemplate();
 
     /**
@@ -44,8 +47,8 @@ public class BankingService {
      */
     public ApiResponse<BankTransactionResponse> checkTransaction(String qrReference, BigDecimal expectedAmount) {
         try {
-            log.info("Checking MB Bank transaction for QR reference: {} - Expected amount: {}",
-                    qrReference, expectedAmount);
+            log.info("Checking MB Bank transaction for QR reference: {} - Expected amount: {} - Simulation enabled: {}",
+                    qrReference, expectedAmount, simulationEnabled);
 
             // Prepare request headers for MB Bank API
             HttpHeaders headers = new HttpHeaders();
@@ -76,29 +79,42 @@ public class BankingService {
                 BankTransactionResponse bankResponse = response.getBody();
 
                 if (bankResponse != null && bankResponse.isTransactionFound()) {
-                    log.info(" MB Bank transaction found - QR: {} - Amount: {} - TX ID: {}",
+                    log.info("💰 MB Bank transaction found - QR: {} - Amount: {} - TX ID: {}",
                             qrReference, bankResponse.getAmount(), bankResponse.getTransactionId());
                     return ApiResponse.success("Transaction found", bankResponse);
                 } else {
-                    log.debug(" No MB Bank transaction found for QR reference: {}", qrReference);
+                    log.debug("🔍 No MB Bank transaction found for QR reference: {}", qrReference);
                     return ApiResponse.error("Transaction not found");
                 }
 
             } catch (Exception apiException) {
-                log.warn("MB Bank API call failed: {} - Using fallback simulation", apiException.getMessage());
+                log.warn("⚠️ MB Bank API call failed: {}", apiException.getMessage());
 
-                //  FALLBACK: Simulate transaction check for development
-                return simulateTransactionCheck(qrReference, expectedAmount);
+                //  CHỈ SIMULATE KHI ĐƯỢC BẬT
+                if (simulationEnabled) {
+                    log.info("🎭 Simulation ENABLED - Using fallback simulation");
+                    return simulateTransactionCheck(qrReference, expectedAmount);
+                } else {
+                    log.info(" Simulation DISABLED - Returning transaction not found");
+                    return ApiResponse.error("MB Bank API unavailable - Transaction not found");
+                }
             }
 
         } catch (Exception e) {
-            log.error("Error checking MB Bank transaction for QR {}: {}", qrReference, e.getMessage(), e);
-            return ApiResponse.error("Banking API error: " + e.getMessage());
+            log.error(" Error checking MB Bank transaction for QR {}: {}", qrReference, e.getMessage(), e);
+
+            //  CHỈ SIMULATE KHI ĐƯỢC BẬT
+            if (simulationEnabled) {
+                log.info("🎭 Simulation ENABLED - Using fallback for error");
+                return simulateTransactionCheck(qrReference, expectedAmount);
+            } else {
+                return ApiResponse.error("Banking API error: " + e.getMessage());
+            }
         }
     }
 
     /**
-     *  Simulate transaction check for development/testing
+     * Simulate transaction check for development/testing
      */
     private ApiResponse<BankTransactionResponse> simulateTransactionCheck(String qrReference,
             BigDecimal expectedAmount) {
@@ -129,7 +145,7 @@ public class BankingService {
     }
 
     /**
-     *  Get recent transactions from MB Bank account
+     * Get recent transactions from MB Bank account
      */
     public ApiResponse<BankTransactionResponse[]> getRecentTransactions() {
         try {
@@ -159,7 +175,7 @@ public class BankingService {
     }
 
     /**
-     *  Generate QR Code URL for MB Bank
+     * Generate QR Code URL for MB Bank
      */
     public String generateMBBankQRUrl(String qrReference, BigDecimal amount) {
         try {
@@ -187,7 +203,7 @@ public class BankingService {
     }
 
     /**
-     *  Validate MB Bank account
+     * Validate MB Bank account
      */
     public ApiResponse<String> validateAccount() {
         try {

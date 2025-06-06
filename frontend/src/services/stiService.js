@@ -58,7 +58,7 @@ export const stiService = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    ...(credentials && { 'Authorization': `Basic ${credentials}` })
+                    'Authorization': `Basic ${credentials}`
                 },
                 body: JSON.stringify(testData)
             });
@@ -96,8 +96,6 @@ export const stiService = {
                 return { success: false, message: 'Authentication required' };
             }
 
-            console.log('🔍 Fetching STI tests from backend...'); // Debug log
-
             const response = await fetch(`${API_BASE_URL}/sti-services/my-tests`, {
                 method: 'GET',
                 headers: {
@@ -106,114 +104,28 @@ export const stiService = {
                 },
             });
 
-            // Handle authentication error
             if (response.status === 401 && onAuthRequired) {
                 onAuthRequired();
                 return { success: false, message: 'Authentication required' };
             }
 
-            if (response.status === 500) {
-                console.warn('⚠️ Server error 500 - returning empty result');
-                return {
-                    success: true,
-                    message: 'No STI tests found',
-                    data: {
-                        content: [],
-                        totalPages: 0,
-                        totalElements: 0,
-                        number: 0,
-                        size: paginationParams?.size || 5,
-                        first: true,
-                        last: true,
-                        numberOfElements: 0
-                    }
-                };
-            }
-
             if (!response.ok) {
-                console.error('❌ HTTP error:', response.status);
                 return {
                     success: true,
                     message: 'No STI tests found',
-                    data: {
-                        content: [],
-                        totalPages: 0,
-                        totalElements: 0,
-                        number: 0,
-                        size: paginationParams?.size || 5,
-                        first: true,
-                        last: true,
-                        numberOfElements: 0
-                    }
+                    data: []
                 };
             }
 
             const data = await response.json();
-            console.log('📦 Backend response:', data); // Debug log
-
-            if (data.success && data.data) {
-                const tests = Array.isArray(data.data) ? data.data : [];
-
-                const page = paginationParams?.page || 0;
-                const size = paginationParams?.size || 5;
-
-                const totalElements = tests.length;
-                const totalPages = Math.ceil(totalElements / size);
-                const startIndex = page * size;
-                const endIndex = Math.min(startIndex + size, totalElements);
-
-                const pageContent = tests.slice(startIndex, endIndex);
-
-                console.log(`📊 Pagination: page=${page}, size=${size}, total=${totalElements}, showing=${pageContent.length}`);
-
-                return {
-                    success: true,
-                    message: data.message || 'STI tests retrieved successfully',
-                    data: {
-                        content: pageContent,
-                        totalPages: totalPages,
-                        totalElements: totalElements,
-                        number: page,
-                        size: size,
-                        first: page === 0,
-                        last: page >= totalPages - 1,
-                        numberOfElements: pageContent.length
-                    }
-                };
-            } else {
-                console.log('📭 No tests found or error response');
-                return {
-                    success: true,
-                    message: 'No STI tests found',
-                    data: {
-                        content: [],
-                        totalPages: 0,
-                        totalElements: 0,
-                        number: 0,
-                        size: paginationParams?.size || 5,
-                        first: true,
-                        last: true,
-                        numberOfElements: 0
-                    }
-                };
-            }
+            return data;
 
         } catch (error) {
-            console.error('🚨 Network error fetching STI tests:', error);
-
+            console.error('Error fetching user tests:', error);
             return {
                 success: true,
                 message: 'No STI tests found',
-                data: {
-                    content: [],
-                    totalPages: 0,
-                    totalElements: 0,
-                    number: 0,
-                    size: paginationParams?.size || 5,
-                    first: true,
-                    last: true,
-                    numberOfElements: 0
-                }
+                data: []
             };
         }
     },
@@ -319,6 +231,137 @@ export const stiService = {
             return data;
         } catch (error) {
             console.error('Error fetching test results:', error);
+            return { success: false, message: 'Network error occurred' };
+        }
+    },
+
+    // ✅ Lấy thông tin thanh toán - sử dụng paymentId từ test response
+    getPaymentInfo: async (testId, onAuthRequired) => {
+        try {
+            const credentials = localStorage.getItem('credentials');
+            if (!credentials && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            // Trước tiên lấy thông tin test để có paymentId
+            const testResponse = await fetch(`${API_BASE_URL}/sti-services/tests/${testId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Basic ${credentials}`
+                },
+            });
+
+            if (testResponse.status === 401 && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            if (!testResponse.ok) {
+                return { success: false, message: 'Failed to fetch test details' };
+            }
+
+            const testData = await testResponse.json();
+
+            if (!testData.success || !testData.data?.paymentId) {
+                return { success: false, message: 'Payment information not found' };
+            }
+
+            // Sau đó lấy thông tin payment chi tiết
+            const paymentResponse = await fetch(`${API_BASE_URL}/payments/${testData.data.paymentId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Basic ${credentials}`
+                },
+            });
+
+            if (paymentResponse.status === 401 && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            const paymentData = await paymentResponse.json();
+
+            if (!paymentResponse.ok) {
+                return { success: false, message: paymentData.message || 'Failed to fetch payment info' };
+            }
+
+            return paymentData;
+        } catch (error) {
+            console.error('Error fetching payment info:', error);
+            return { success: false, message: 'Network error occurred' };
+        }
+    },
+
+    // ✅ Tạo thanh toán QR
+    createQRPayment: async (testId, onAuthRequired) => {
+        try {
+            const credentials = localStorage.getItem('credentials');
+            if (!credentials && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            const response = await fetch(`${API_BASE_URL}/payments/qr/create`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Basic ${credentials}`
+                },
+                body: JSON.stringify({ testId })
+            });
+
+            if (response.status === 401 && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                return { success: false, message: data.message || 'Failed to create QR payment' };
+            }
+
+            return data;
+        } catch (error) {
+            console.error('Error creating QR payment:', error);
+            return { success: false, message: 'Network error occurred' };
+        }
+    },
+
+    // ✅ Kiểm tra trạng thái thanh toán QR
+    checkQRPaymentStatus: async (qrReference, onAuthRequired) => {
+        try {
+            const credentials = localStorage.getItem('credentials');
+            if (!credentials && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            const response = await fetch(`${API_BASE_URL}/payments/qr/${qrReference}/check`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Basic ${credentials}`
+                },
+            });
+
+            if (response.status === 401 && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                return { success: false, message: data.message || 'Failed to check payment status' };
+            }
+
+            return data;
+        } catch (error) {
+            console.error('Error checking QR payment status:', error);
             return { success: false, message: 'Network error occurred' };
         }
     }
