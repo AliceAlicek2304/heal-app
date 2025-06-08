@@ -331,6 +331,74 @@ export const stiService = {
         }
     },
 
+    regenerateQRCode: async (paymentId, onAuthRequired) => {
+        try {
+            const credentials = localStorage.getItem('credentials');
+            if (!credentials && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            const response = await fetch(`${API_BASE_URL}/payments/${paymentId}/regenerate-qr`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Basic ${credentials}`
+                },
+            });
+
+            if (response.status === 401 && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                return { success: false, message: data.message || 'Failed to regenerate QR code' };
+            }
+
+            return data;
+        } catch (error) {
+            console.error('Error regenerating QR code:', error);
+            return { success: false, message: 'Network error occurred' };
+        }
+    },
+
+    regenerateQRCodeByReference: async (qrReference, onAuthRequired) => {
+        try {
+            const credentials = localStorage.getItem('credentials');
+            if (!credentials && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            const response = await fetch(`${API_BASE_URL}/payments/qr/${qrReference}/regenerate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Basic ${credentials}`
+                },
+            });
+
+            if (response.status === 401 && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                return { success: false, message: data.message || 'Failed to regenerate QR code' };
+            }
+
+            return data;
+        } catch (error) {
+            console.error('Error regenerating QR code by reference:', error);
+            return { success: false, message: 'Network error occurred' };
+        }
+    },
+
     // ✅ Kiểm tra trạng thái thanh toán QR
     checkQRPaymentStatus: async (qrReference, onAuthRequired) => {
         try {

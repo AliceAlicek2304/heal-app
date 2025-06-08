@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import Navbar from '../../components/layout/Navbar/Navbar';
+import Footer from '../../components/layout/Footer/Footer';
 import { authService } from '../../services/authService';
 import BlogCard from '../../components/blog/BlogCard/BlogCard';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
@@ -166,6 +167,7 @@ const Blog = () => {
                     </div>
                 )}
             </div>
+            <Footer />
         </div>
     );
 };

@@ -27,6 +27,10 @@ public class UserDtls {
     @Column(name = "birth_day")
     private LocalDate birthDay;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "gender", length = 10)
+    private Gender gender;
+
     @Column(length = 15)
     private String phone;
 
@@ -55,5 +59,9 @@ public class UserDtls {
 
     public String getRoleName() {
         return role != null ? role.getRoleName() : null;
+    }
+
+    public String getGenderDisplayName() {
+        return gender != null ? gender.getDisplayName() : null;
     }
 }

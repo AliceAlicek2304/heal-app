@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useToast } from '../../contexts/ToastContext';
 import Navbar from '../../components/layout/Navbar/Navbar';
+import Footer from '../../components/layout/Footer/Footer';
 import { authService } from '../../services/authService';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
 import styles from './BlogDetail.module.css';
@@ -192,6 +193,7 @@ const BlogDetail = () => {
                     </Link>
                 </div>
             </div>
+            <Footer />
         </div>
     );
 };

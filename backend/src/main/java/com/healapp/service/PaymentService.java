@@ -40,9 +40,11 @@ public class PaymentService {
 
     @Autowired
     private com.healapp.repository.UserRepository userRepository;
-
     @Autowired
     private com.healapp.repository.STIServiceRepository stiServiceRepository;
+
+    @Autowired
+    private com.healapp.repository.STITestRepository stiTestRepository;
 
     @Autowired
     private BankingService bankingService;
@@ -188,6 +190,79 @@ public class PaymentService {
             log.error("Error generating QR payment: {}", e.getMessage(), e);
             return ApiResponse.error("Failed to generate QR payment: " + e.getMessage());
         }
+    }
+
+    public ApiResponse<Payment> regenerateQRCode(Long paymentId) {
+        try {
+            Optional<Payment> paymentOpt = paymentRepository.findById(paymentId);
+            if (paymentOpt.isEmpty()) {
+                return ApiResponse.error("Không tìm thấy thông tin thanh toán");
+            }            Payment payment = paymentOpt.get(); 
+            
+            // Kiểm tra trạng thái payment - CHO PHÉP EXPIRED để có thể regenerate
+            if (payment.getPaymentStatus() == PaymentStatus.COMPLETED ||
+                    payment.getPaymentStatus() == PaymentStatus.FAILED ||
+                    payment.getPaymentStatus() == PaymentStatus.REFUNDED) {
+                return ApiResponse.error("Không thể tạo lại QR cho thanh toán đã hoàn thành");
+            }
+
+            // Kiểm tra phương thức thanh toán
+            if (payment.getPaymentMethod() != PaymentMethod.QR_CODE) {
+                return ApiResponse.error("Chỉ có thể tạo lại QR cho phương thức thanh toán QR Code");
+            }
+
+            // Kiểm tra trạng thái STI Test nếu là STI payment
+            if ("STI_TEST".equals(payment.getServiceType()) && payment.getServiceId() != null) {
+                Optional<com.healapp.model.STITest> stiTestOpt = stiTestRepository.findById(payment.getServiceId());
+                if (stiTestOpt.isPresent()) {
+                    com.healapp.model.STITest stiTest = stiTestOpt.get();
+
+                    // Không cho phép tạo lại QR nếu test đã bị huỷ hoặc hoàn thành
+                    if (stiTest.getStatus() == com.healapp.model.TestStatus.CANCELED) {
+                        return ApiResponse.error("Không thể tạo lại QR cho xét nghiệm đã bị hủy");
+                    }
+
+                    if (stiTest.getStatus() == com.healapp.model.TestStatus.COMPLETED) {
+                        return ApiResponse.error("Không thể tạo lại QR cho xét nghiệm đã hoàn thành");
+                    }
+                }
+            }            // Generate new QR reference với timestamp mới
+            String newQrReference = generateQRReference(
+                    payment.getServiceType(),
+                    payment.getServiceId(),
+                    payment.getUserId());
+
+            // Update payment với QR mới và reset status về PENDING
+            payment.setQrPaymentReference(newQrReference);
+            payment.setExpiresAt(LocalDateTime.now().plusHours(24)); // Extend thêm 24h
+            payment.setUpdatedAt(LocalDateTime.now());
+            
+            // IMPORTANT: Reset payment status về PENDING khi tạo lại QR
+            payment.setPaymentStatus(PaymentStatus.PENDING);
+
+            // Generate new QR URL
+            String newQrCodeUrl = bankingService.generateMBBankQRUrl(newQrReference, payment.getAmount());
+            payment.setQrCodeUrl(newQrCodeUrl);
+
+            Payment savedPayment = paymentRepository.save(payment);
+
+            log.info("QR Code regenerated for payment ID: {}, new reference: {}",
+                    paymentId, newQrReference);
+
+            // FIX: Đúng thứ tự parameters (message, data)
+            return ApiResponse.success("Đã tạo lại mã QR thành công", savedPayment);
+
+        } catch (Exception e) {
+            log.error("Error regenerating QR code for payment {}: {}", paymentId, e.getMessage());
+            return ApiResponse.error("Có lỗi xảy ra khi tạo lại mã QR: " + e.getMessage());
+        }
+    }
+
+    public boolean isQRCodeExpired(Payment payment) {
+        if (payment.getExpiresAt() == null) {
+            return false;
+        }
+        return LocalDateTime.now().isAfter(payment.getExpiresAt());
     }
 
     public ApiResponse<Payment> autoCheckQRPayment(String qrReference) {
@@ -658,5 +733,4 @@ public class PaymentService {
             return ApiResponse.error("Failed to get payment status: " + e.getMessage());
         }
     }
-
 }

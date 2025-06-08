@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-import { authService } from '../../services/authService';
+import { menstrualCycleService } from '../../services/menstrualCycleService';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
 import styles from './MenstrualHistoryComponent.module.css';
 
@@ -31,7 +31,7 @@ const MenstrualHistoryComponent = () => {
             }
 
             // Sử dụng userId thay vì id
-            const response = await authService.getMenstrualCycles(user.userId);
+            const response = await menstrualCycleService.getCyclesByUserId(user.userId);
 
             if (response.success) {
                 // Sắp xếp chu kỳ theo thời gian bắt đầu giảm dần (mới nhất lên đầu)
@@ -64,7 +64,7 @@ const MenstrualHistoryComponent = () => {
         try {
             setLoading(true);
 
-            const response = await authService.toggleCycleReminder(id, !isEnabled);
+            const response = await menstrualCycleService.toggleReminder(id, !isEnabled);
 
             if (response.success) {
                 // Cập nhật danh sách chu kỳ
@@ -101,7 +101,7 @@ const MenstrualHistoryComponent = () => {
         try {
             setLoading(true);
 
-            const response = await authService.deleteMenstrualCycle(id);
+            const response = await menstrualCycleService.deleteCycle(id);
 
             if (response.success) {
                 // Cập nhật danh sách chu kỳ

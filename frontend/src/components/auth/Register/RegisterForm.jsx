@@ -11,6 +11,7 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
         email: '',
         phone: '',
         birthDay: '',
+        gender: '',
         password: '',
         confirmPassword: '',
         verificationCode: '',
@@ -128,6 +129,10 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
             newErrors.birthDay = 'Ngày sinh không được để trống';
         }
 
+        if (!formData.gender) {
+            newErrors.gender = 'Giới tính không được để trống';
+        }
+
         const passwordErrors = validatePassword(formData.password);
         if (passwordErrors.length > 0) {
             newErrors.password = passwordErrors[0];
@@ -226,6 +231,7 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
                 email: formData.email,
                 phone: formData.phone,
                 birthDay: formData.birthDay,
+                gender: formData.gender,
                 password: formData.password,
                 verificationCode: formData.verificationCode,
             };
@@ -439,6 +445,30 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
                         className={`${styles.input} ${errors.birthDay ? styles.inputError : ''}`}
                     />
                     {errors.birthDay && <span className={styles.errorMessage}>{errors.birthDay}</span>}
+                </div>
+
+                <div className={styles.formGroup}>
+                    <label htmlFor="gender" className={styles.label}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="9" cy="9" r="9"></circle>
+                            <path d="M10.6 15.8a9 9 0 0 0 4.4 0"></path>
+                            <path d="M13.5 7.5a3 3 0 1 1-3 0"></path>
+                        </svg>
+                        Giới tính
+                    </label>
+                    <select
+                        id="gender"
+                        name="gender"
+                        value={formData.gender}
+                        onChange={handleInputChange}
+                        className={`${styles.input} ${styles.selectInput} ${errors.gender ? styles.inputError : ''}`}
+                    >
+                        <option value="">Chọn giới tính</option>
+                        <option value="Nam">Nam</option>
+                        <option value="Nữ">Nữ</option>
+                        <option value="Khác">Khác</option>
+                    </select>
+                    {errors.gender && <span className={styles.errorMessage}>{errors.gender}</span>}
                 </div>
 
                 <div className={styles.formGroup}>

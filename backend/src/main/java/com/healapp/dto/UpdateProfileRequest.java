@@ -21,5 +21,8 @@ public class UpdateProfileRequest {
     @Pattern(regexp = "^[0-9]{10,11}$", message = "Phone number must be 10-11 digits")
     private String phone;
 
+    @Pattern(regexp = "^(Nam|Nữ|Khác)$", message = "Giới tính phải là: Nam, Nữ, hoặc Khác")
+    private String gender;
+
     private LocalDate birthDay;
 }

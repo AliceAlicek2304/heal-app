@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-import { authService } from '../../services/authService';
-import { format } from 'date-fns';
+import { menstrualCycleService } from '../../services/menstrualCycleService';
+import { format, addDays, isValid, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import Navbar from '../../components/layout/Navbar/Navbar';
+import Footer from '../../components/layout/Footer/Footer';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
 import styles from './MenstrualCycleCalculator.module.css';
 
@@ -34,18 +35,16 @@ const MenstrualCycleCalculator = () => {
 
             if (!userId) {
                 toast.error("Không thể xác định người dùng");
-                setLoading(false);
                 return;
             }
 
-            const response = await authService.getMenstrualCycles(userId);
-            if (response.success) {
+            const response = await menstrualCycleService.getCyclesByUserId(userId);
+            if (response.success && response.data) {
+                // Sắp xếp theo ngày tạo mới nhất
                 const sortedCycles = response.data.sort((a, b) => {
-                    // Ưu tiên sắp xếp theo createdAt nếu có
-                    if (a.createdAt && b.createdAt) {
-                        return new Date(b.createdAt) - new Date(a.createdAt);
-                    }
-                    return b.id - a.id;
+                    const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+                    const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+                    return dateB - dateA;
                 });
 
                 setCycles(sortedCycles);
@@ -76,48 +75,37 @@ const MenstrualCycleCalculator = () => {
                 return;
             }
 
+            const startDate = new Date(formData.startDate);
+            if (startDate > new Date()) {
+                toast.error("Ngày bắt đầu không thể trong tương lai");
+                return;
+            }
+
             setLoading(true);
 
             const cycleData = {
-                startDate: formData.startDate instanceof Date
-                    ? formData.startDate.toISOString().split('T')[0]
-                    : formData.startDate,
+                startDate: formData.startDate,
                 numberOfDays: parseInt(formData.numberOfDays),
                 cycleLength: parseInt(formData.cycleLength)
             };
 
             console.log('🔍 Sending cycle data:', cycleData);
 
-            const response = await authService.addMenstrualCycle(cycleData);
+            const response = await menstrualCycleService.addCycle(cycleData);
 
-            if (response.success) {
+            if (response.success && response.data) {
                 const result = response.data;
-
                 console.log('✅ Calculation result:', result);
 
+                // Tính toán các ngày quan trọng
+                const calculatedDates = menstrualCycleService.calculateCycleDates(result);
+
                 setCalculationResult({
-                    id: result.id,
-                    startDate: new Date(result.startDate),
-                    endDate: new Date(new Date(result.startDate).setDate(
-                        new Date(result.startDate).getDate() + result.numberOfDays - 1
-                    )),
-                    ovulationDate: new Date(result.ovulationDate),
-                    nextCycleDate: new Date(new Date(result.startDate).setDate(
-                        new Date(result.startDate).getDate() + result.cycleLength
-                    )),
-                    fertileStart: new Date(new Date(result.ovulationDate).setDate(
-                        new Date(result.ovulationDate).getDate() - 5
-                    )),
-                    fertileEnd: new Date(new Date(result.ovulationDate).setDate(
-                        new Date(result.ovulationDate).getDate() + 1
-                    )),
-                    pregnancyProbability: calculateCurrentPregnancyProbability(result.ovulationDate),
-                    cycleLength: result.cycleLength,
-                    numberOfDays: result.numberOfDays,
-                    reminderEnabled: result.reminderEnabled,
-                    createdAt: result.createdAt
+                    ...result,
+                    ...calculatedDates
                 });
 
+                // Refresh danh sách chu kỳ
                 if (isAuthenticated) {
                     await fetchCycles();
                 }
@@ -134,74 +122,28 @@ const MenstrualCycleCalculator = () => {
         }
     };
 
-    const calculateCurrentPregnancyProbability = (ovulationDate) => {
-        const today = new Date();
-        const ovulation = new Date(ovulationDate);
-        const daysDiff = Math.round((today - ovulation) / (1000 * 60 * 60 * 24));
-
-        switch (daysDiff) {
-            case -5: return 6.4;   // 5 ngày trước rụng trứng
-            case -4: return 7.8;   // 4 ngày trước rụng trứng
-            case -3: return 10.7;  // 3 ngày trước rụng trứng
-            case -2: return 19.3;  // 2 ngày trước rụng trứng
-            case -1: return 23.5;  // 1 ngày trước rụng trứng
-            case 0: return 15.7;  // Ngày rụng trứng
-            case 1: return 5.7;   // 1 ngày sau rụng trứng
-            default: return 1.0;   // Các ngày khác
-        }
-    };
-
     const handleViewCycleDetails = (cycle) => {
-        const enhancedCycle = {
+        const enhancedCycle = menstrualCycleService.calculateCycleDates(cycle);
+        setSelectedCycle({
             ...cycle,
-            // Tính khoảng thời gian dễ thụ thai
-            fertileStart: new Date(new Date(cycle.ovulationDate).setDate(
-                new Date(cycle.ovulationDate).getDate() - 5
-            )),
-            fertileEnd: new Date(new Date(cycle.ovulationDate).setDate(
-                new Date(cycle.ovulationDate).getDate() + 1
-            )),
-            // Tính xác suất mang thai hiện tại
-            currentPregnancyProbability: calculateCurrentPregnancyProbability(cycle.ovulationDate),
-            // Tính chu kỳ tiếp theo
-            nextCycleDate: new Date(new Date(cycle.startDate).setDate(
-                new Date(cycle.startDate).getDate() + cycle.cycleLength
-            ))
-        };
-
-        setSelectedCycle(enhancedCycle);
+            ...enhancedCycle
+        });
     };
 
     const handleToggleReminder = async (cycleId, isEnabled) => {
         try {
             setLoading(true);
-            const response = await authService.toggleCycleReminder(cycleId, !isEnabled);
+            const response = await menstrualCycleService.toggleReminder(cycleId, !isEnabled);
 
             if (response.success) {
-                // Cập nhật state local
-                setCycles(prevCycles =>
-                    prevCycles.map(cycle =>
-                        cycle.id === cycleId
-                            ? { ...cycle, reminderEnabled: !isEnabled }
-                            : cycle
-                    )
-                );
-
-                // Cập nhật selectedCycle nếu đang xem
-                if (selectedCycle && selectedCycle.id === cycleId) {
-                    setSelectedCycle({
-                        ...selectedCycle,
-                        reminderEnabled: !isEnabled
-                    });
-                }
-
-                toast.success(`Đã ${!isEnabled ? 'bật' : 'tắt'} nhắc nhở cho chu kỳ`);
+                toast.success(response.message || "Đã cập nhật cài đặt nhắc nhở");
+                await fetchCycles();
             } else {
-                toast.error(response.message || "Không thể cập nhật trạng thái nhắc nhở");
+                toast.error(response.message || "Không thể cập nhật cài đặt nhắc nhở");
             }
         } catch (err) {
             console.error("Error toggling reminder:", err);
-            toast.error("Đã xảy ra lỗi khi cập nhật trạng thái nhắc nhở");
+            toast.error("Đã xảy ra lỗi khi cập nhật nhắc nhở");
         } finally {
             setLoading(false);
         }
@@ -214,20 +156,18 @@ const MenstrualCycleCalculator = () => {
         if (window.confirm(`Bạn có chắc chắn muốn xóa chu kỳ bắt đầu ngày ${cycleDate} không?\n\nHành động này không thể hoàn tác!`)) {
             try {
                 setLoading(true);
-                const response = await authService.deleteMenstrualCycle(cycleId);
+                const response = await menstrualCycleService.deleteCycle(cycleId);
 
                 if (response.success) {
-                    // Cập nhật danh sách chu kỳ
-                    setCycles(prevCycles => prevCycles.filter(cycle => cycle.id !== cycleId));
+                    toast.success("Đã xóa chu kỳ kinh nguyệt thành công!");
+                    await fetchCycles();
 
-                    // Đóng chi tiết nếu đang xem chu kỳ bị xóa
+                    // Đóng modal nếu đang xem chu kỳ bị xóa
                     if (selectedCycle && selectedCycle.id === cycleId) {
                         setSelectedCycle(null);
                     }
-
-                    toast.success("Đã xóa chu kỳ thành công");
                 } else {
-                    toast.error(response.message || "Không thể xóa chu kỳ");
+                    toast.error(response.message || "Không thể xóa chu kỳ kinh nguyệt");
                 }
             } catch (err) {
                 console.error("Error deleting cycle:", err);
@@ -239,57 +179,163 @@ const MenstrualCycleCalculator = () => {
     };
 
     const formatDate = (dateString) => {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        return format(date, 'dd MMMM yyyy', { locale: vi });
+        try {
+            if (!dateString) return 'N/A';
+
+            let date;
+            if (Array.isArray(dateString)) {
+                // Backend trả về LocalDate dạng [year, month, day]
+                const [year, month, day] = dateString;
+                date = new Date(year, month - 1, day); // month - 1 vì JS Date tháng bắt đầu từ 0
+            } else if (typeof dateString === 'string') {
+                date = parseISO(dateString);
+            } else {
+                date = new Date(dateString);
+            }
+
+            if (!isValid(date)) {
+                console.warn('Invalid date:', dateString);
+                return 'N/A';
+            }
+
+            return format(date, 'dd/MM/yyyy', { locale: vi });
+        } catch (error) {
+            console.error('Error formatting date:', error, dateString);
+            return 'N/A';
+        }
     };
 
     const formatCreatedAt = (dateTimeString) => {
-        if (!dateTimeString) return '';
-        const date = new Date(dateTimeString);
-        return format(date, 'dd/MM/yyyy HH:mm', { locale: vi });
+        try {
+            if (!dateTimeString) return 'N/A';
+
+            let date;
+            if (Array.isArray(dateTimeString)) {
+                // Backend trả về LocalDateTime dạng [year, month, day, hour, minute, second]
+                const [year, month, day, hour = 0, minute = 0, second = 0] = dateTimeString;
+                date = new Date(year, month - 1, day, hour, minute, second);
+            } else {
+                date = new Date(dateTimeString);
+            }
+
+            if (!isValid(date)) {
+                console.warn('Invalid datetime:', dateTimeString);
+                return 'N/A';
+            }
+
+            return format(date, 'dd/MM/yyyy HH:mm', { locale: vi });
+        } catch (error) {
+            console.error('Error formatting datetime:', error, dateTimeString);
+            return 'N/A';
+        }
     };
 
-    const isInFertilePeriod = (cycle) => {
-        const today = new Date();
-        const fertileStart = new Date(new Date(cycle.ovulationDate).setDate(
-            new Date(cycle.ovulationDate).getDate() - 5
-        ));
-        const fertileEnd = new Date(new Date(cycle.ovulationDate).setDate(
-            new Date(cycle.ovulationDate).getDate() + 1
-        ));
+    const getDaysUntilNextCycle = (cycle) => {
+        try {
+            const today = new Date();
+            let startDate;
 
-        return today >= fertileStart && today <= fertileEnd;
+            if (Array.isArray(cycle.startDate)) {
+                const [year, month, day] = cycle.startDate;
+                startDate = new Date(year, month - 1, day);
+            } else {
+                startDate = new Date(cycle.startDate);
+            }
+
+            const nextCycleDate = addDays(startDate, cycle.cycleLength);
+            const daysUntil = Math.ceil((nextCycleDate - today) / (1000 * 60 * 60 * 24));
+
+            return Math.max(0, daysUntil);
+        } catch (error) {
+            console.error('Error calculating days until next cycle:', error);
+            return 0;
+        }
     };
+
+    const getPregnancyProbabilityColor = (probability) => {
+        if (probability >= 20) return '#e74c3c'; // Đỏ - rất cao
+        if (probability >= 10) return '#f39c12'; // Cam - cao
+        if (probability >= 5) return '#f1c40f';  // Vàng - trung bình
+        return '#27ae60'; // Xanh - thấp
+    };
+
+    const getStatusText = (cycle) => {
+        const daysUntil = getDaysUntilNextCycle(cycle);
+        const isInFertile = menstrualCycleService.isInFertilePeriod(cycle.ovulationDate);
+
+        if (daysUntil <= 0) {
+            return { text: 'Chu kỳ mới đã bắt đầu', color: '#e74c3c' };
+        } else if (isInFertile) {
+            return { text: 'Thời kỳ dễ thụ thai', color: '#f39c12' };
+        } else if (daysUntil <= 3) {
+            return { text: 'Sắp đến chu kỳ mới', color: '#f1c40f' };
+        } else {
+            return { text: 'Bình thường', color: '#27ae60' };
+        }
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    if (!isAuthenticated) {
+        return (
+            <div className={styles.authRequired}>
+                <Navbar />
+                <div className={styles.authMessage}>
+                    <h2>Đăng nhập để sử dụng tính năng này</h2>
+                    <p>Vui lòng đăng nhập để theo dõi chu kỳ kinh nguyệt của bạn.</p>
+                    <button
+                        className={styles.loginBtn}
+                        onClick={() => window.location.href = '/login'}
+                    >
+                        Đăng nhập
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className={styles.menstrualCyclePage}>
+        <div className={styles.menstrualCalculator}>
             <Navbar />
-            <div className={styles.menstrualCycleContainer}>
-                <h1 className={styles.pageTitle}>Tính chu kỳ kinh nguyệt</h1>
 
-                <div className={styles.menstrualCycleContent}>
-                    <div className={styles.calculatorSection}>
-                        <div className={styles.calculatorFormContainer}>
-                            <h2>Nhập thông tin chu kỳ</h2>
-                            <form onSubmit={handleCalculate} className={styles.calculatorForm}>
+            <div className={styles.container}>
+                <div className={styles.header}>
+                    <h1 className={styles.title}>
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        Tính toán chu kỳ kinh nguyệt
+                    </h1>
+                    <p className={styles.subtitle}>
+                        Theo dõi chu kỳ kinh nguyệt và dự đoán ngày rụng trứng với độ chính xác cao
+                    </p>
+                </div>
+
+                <div className={styles.content}>
+                    {/* Form nhập liệu */}
+                    <div className={styles.calculatorCard}>
+                        <h2 className={styles.cardTitle}>Nhập thông tin chu kỳ</h2>
+
+                        <form onSubmit={handleCalculate} className={styles.calculatorForm}>
+                            <div className={styles.formRow}>
                                 <div className={styles.formGroup}>
                                     <label htmlFor="startDate">Ngày bắt đầu chu kỳ gần nhất</label>
                                     <input
                                         type="date"
                                         id="startDate"
                                         name="startDate"
-                                        value={formData.startDate instanceof Date
-                                            ? formData.startDate.toISOString().split('T')[0]
-                                            : formData.startDate}
-                                        onChange={(e) => {
-                                            setFormData({
-                                                ...formData,
-                                                startDate: e.target.value
-                                            });
-                                        }}
+                                        value={formData.startDate}
+                                        onChange={handleInputChange}
                                         max={new Date().toISOString().split('T')[0]}
-                                        className={styles.dateInput}
                                         required
                                     />
                                 </div>
@@ -301,17 +347,12 @@ const MenstrualCycleCalculator = () => {
                                         id="numberOfDays"
                                         name="numberOfDays"
                                         value={formData.numberOfDays}
-                                        onChange={(e) => setFormData({
-                                            ...formData,
-                                            numberOfDays: parseInt(e.target.value) || 0
-                                        })}
+                                        onChange={handleInputChange}
                                         min="1"
-                                        max="15"
+                                        max="10"
                                         required
                                     />
-                                    <small className={styles.formText}>
-                                        Thông thường từ 3-7 ngày
-                                    </small>
+                                    <small>Thông thường từ 3-7 ngày</small>
                                 </div>
 
                                 <div className={styles.formGroup}>
@@ -321,366 +362,345 @@ const MenstrualCycleCalculator = () => {
                                         id="cycleLength"
                                         name="cycleLength"
                                         value={formData.cycleLength}
-                                        onChange={(e) => setFormData({
-                                            ...formData,
-                                            cycleLength: parseInt(e.target.value) || 0
-                                        })}
+                                        onChange={handleInputChange}
                                         min="21"
                                         max="45"
                                         required
                                     />
-                                    <small className={styles.formText}>
-                                        Thông thường từ 21-35 ngày (trung bình 28 ngày)
-                                    </small>
+                                    <small>Thông thường từ 21-35 ngày</small>
                                 </div>
+                            </div>
 
-                                <div className={styles.formActions}>
-                                    <button
-                                        type="submit"
-                                        className={styles.btnPrimary}
-                                        disabled={loading}
-                                    >
-                                        {loading ? (
-                                            <>
-                                                <svg className={styles.spinner} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                    <path d="M21 12a9 9 0 11-6.219-8.56"></path>
-                                                </svg>
-                                                Đang tính toán...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                                                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                                                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                                                </svg>
-                                                Tính toán chu kỳ
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                            <button
+                                type="submit"
+                                className={styles.calculateBtn}
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <>
+                                        <LoadingSpinner size="small" />
+                                        Đang tính toán...
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        Tính toán chu kỳ
+                                    </>
+                                )}
+                            </button>
+                        </form>
+                    </div>
 
-                        {calculationResult && (
-                            <div className={styles.calculationResult}>
-                                <h2>Kết quả tính toán</h2>
-                                <div className={styles.resultCard}>
-                                    <div className={styles.resultItem}>
-                                        <span className={styles.resultLabel}>Ngày hành kinh:</span>
-                                        <span className={styles.resultValue}>
-                                            {formatDate(calculationResult.startDate)} - {formatDate(calculationResult.endDate)}
-                                        </span>
+                    {/* Kết quả tính toán */}
+                    {calculationResult && (
+                        <div className={styles.resultCard}>
+                            <h2 className={styles.cardTitle}>Kết quả tính toán</h2>
+
+                            <div className={styles.resultGrid}>
+                                <div className={styles.resultItem}>
+                                    <div className={styles.resultIcon} style={{ color: '#e74c3c' }}>
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <polyline points="12,6 12,12 16,14"></polyline>
+                                        </svg>
                                     </div>
-
-                                    <div className={styles.resultItem}>
-                                        <span className={styles.resultLabel}>Ngày rụng trứng dự kiến:</span>
-                                        <span className={`${styles.resultValue} ${styles.highlight}`}>
-                                            {formatDate(calculationResult.ovulationDate)}
-                                        </span>
-                                    </div>
-
-                                    <div className={styles.resultItem}>
-                                        <span className={styles.resultLabel}>Khoảng thời gian dễ thụ thai:</span>
-                                        <span className={`${styles.resultValue} ${styles.fertile}`}>
-                                            {formatDate(calculationResult.fertileStart)} - {formatDate(calculationResult.fertileEnd)}
-                                        </span>
-                                    </div>
-
-                                    <div className={styles.resultItem}>
-                                        <span className={styles.resultLabel}>Chu kỳ tiếp theo dự kiến:</span>
+                                    <div className={styles.resultInfo}>
+                                        <span className={styles.resultLabel}>Chu kỳ tiếp theo</span>
                                         <span className={styles.resultValue}>
                                             {formatDate(calculationResult.nextCycleDate)}
                                         </span>
                                     </div>
+                                </div>
 
-                                    <div className={styles.resultItem}>
-                                        <span className={styles.resultLabel}>Xác suất mang thai hiện tại:</span>
-                                        <span className={`${styles.resultValue} ${styles.probability}`}>
-                                            {calculationResult.pregnancyProbability}%
+                                <div className={styles.resultItem}>
+                                    <div className={styles.resultIcon} style={{ color: '#f39c12' }}>
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                        </svg>
+                                    </div>
+                                    <div className={styles.resultInfo}>
+                                        <span className={styles.resultLabel}>Ngày rụng trứng</span>
+                                        <span className={styles.resultValue}>
+                                            {formatDate(calculationResult.ovulationDate)}
                                         </span>
                                     </div>
                                 </div>
 
-                                <div className={styles.resultNote}>
-                                    <div className={styles.noteHeader}>
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <circle cx="12" cy="12" r="10"></circle>
-                                            <line x1="12" y1="8" x2="12" y2="12"></line>
-                                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                <div className={styles.resultItem}>
+                                    <div className={styles.resultIcon} style={{ color: '#27ae60' }}>
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
                                         </svg>
-                                        <strong>Lưu ý quan trọng:</strong>
                                     </div>
-                                    <ul>
-                                        <li>Kết quả tính toán chỉ mang tính tham khảo, không thay thế ý kiến chuyên gia</li>
-                                        <li>Chu kỳ có thể thay đổi do stress, thay đổi cân nặng, tập luyện hoặc vấn đề sức khỏe</li>
-                                        <li>Xác suất mang thai cao nhất trong khoảng 5 ngày trước và 1 ngày sau rụng trứng</li>
-                                        <li>Nếu chu kỳ bất thường hoặc có vấn đề sức khỏe, hãy tham khảo ý kiến bác sĩ</li>
-                                    </ul>
+                                    <div className={styles.resultInfo}>
+                                        <span className={styles.resultLabel}>Thời kỳ dễ thụ thai</span>
+                                        <span className={styles.resultValue}>
+                                            {formatDate(calculationResult.fertileStart)} - {formatDate(calculationResult.fertileEnd)}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className={styles.resultItem}>
+                                    <div
+                                        className={styles.resultIcon}
+                                        style={{ color: getPregnancyProbabilityColor(calculationResult.currentPregnancyProbability) }}
+                                    >
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div className={styles.resultInfo}>
+                                        <span className={styles.resultLabel}>Xác suất mang thai hôm nay</span>
+                                        <span
+                                            className={styles.resultValue}
+                                            style={{ color: getPregnancyProbabilityColor(calculationResult.currentPregnancyProbability) }}
+                                        >
+                                            {calculationResult.currentPregnancyProbability.toFixed(1)}%
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
-                        )}
-                    </div>
 
-                    <div className={styles.historySection}>
-                        <div className={styles.historyHeader}>
-                            <h2>Lịch sử chu kỳ</h2>
-                            {cycles.length > 0 && (
-                                <span className={styles.cycleCount}>
-                                    {cycles.length} chu kỳ đã lưu
-                                </span>
+                            {calculationResult.isInFertilePeriod && (
+                                <div className={styles.fertileAlert}>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                    </svg>
+                                    <span>Bạn đang trong thời kỳ dễ thụ thai!</span>
+                                </div>
                             )}
                         </div>
+                    )}
 
-                        {!isAuthenticated ? (
-                            <div className={styles.authPrompt}>
-                                <div className={styles.authIcon}>
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                        <path d="M9 12l2 2 4-4"></path>
-                                        <path d="M21 12c.552 0 1-.448 1-1V8c0-.552-.448-1-1-1h-1c-.552 0-1-.448-1-1V4c0-.552-.448-1-1-1H8c-.552 0-1 .448-1 1v2c0 .552-.448 1-1 1H5c-.552 0-1 .448-1 1v3c0 .552.448 1 1 1"></path>
-                                    </svg>
-                                </div>
-                                <h3>Đăng nhập để lưu lịch sử</h3>
-                                <p>Đăng nhập để lưu trữ và theo dõi lịch sử chu kỳ kinh nguyệt của bạn</p>
-                            </div>
-                        ) : loading ? (
-                            <div className={styles.loading}>
-                                <LoadingSpinner />
-                                <p>Đang tải lịch sử chu kỳ...</p>
-                            </div>
-                        ) : cycles.length === 0 ? (
-                            <div className={styles.emptyHistory}>
-                                <div className={styles.emptyIcon}>
-                                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <path d="M2 12h20"></path>
-                                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                                    </svg>
-                                </div>
-                                <h3>Chưa có chu kỳ nào được lưu</h3>
-                                <p>Hãy tính toán chu kỳ đầu tiên để bắt đầu theo dõi!</p>
-                            </div>
-                        ) : (
-                            <div className={styles.cycleHistoryList}>
-                                {cycles.map(cycle => {
-                                    const isCurrentFertile = isInFertilePeriod(cycle);
+                    {/* Lịch sử chu kỳ */}
+                    {cycles.length > 0 && (
+                        <div className={styles.historyCard}>
+                            <h2 className={styles.cardTitle}>
+                                Lịch sử chu kỳ kinh nguyệt
+                                <span className={styles.cycleCount}>({cycles.length} chu kỳ)</span>
+                            </h2>
+
+                            <div className={styles.cyclesList}>
+                                {cycles.map((cycle, index) => {
+                                    const status = getStatusText(cycle);
+                                    const daysUntil = getDaysUntilNextCycle(cycle);
+                                    const probability = menstrualCycleService.calculateCurrentPregnancyProbability(cycle.ovulationDate);
 
                                     return (
-                                        <div
-                                            key={cycle.id}
-                                            className={`${styles.cycleItem} ${selectedCycle && selectedCycle.id === cycle.id ? styles.active : ''} ${isCurrentFertile ? styles.fertile : ''}`}
-                                            onClick={() => handleViewCycleDetails(cycle)}
-                                        >
-                                            <div className={styles.cycleDate}>
-                                                <div className={styles.mainDate}>
-                                                    {formatDate(cycle.startDate)}
-                                                </div>
-                                                {cycle.createdAt && (
-                                                    <div className={styles.createdDate}>
-                                                        Lưu: {formatCreatedAt(cycle.createdAt)}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div className={styles.cycleInfo}>
-                                                <span className={styles.duration}>
-                                                    {cycle.numberOfDays} ngày kinh
-                                                </span>
-                                                <span className={styles.length}>
-                                                    Chu kỳ {cycle.cycleLength} ngày
-                                                </span>
-                                                {isCurrentFertile && (
-                                                    <span className={styles.fertileTag}>
-                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                            <path d="M12 2a10 10 0 1 0 10 10c0-5.93-4.64-10.75-10.5-10S1.07 6.57 1.07 12.5"></path>
-                                                        </svg>
-                                                        Dễ thụ thai
+                                        <div key={cycle.id} className={styles.cycleItem}>
+                                            <div className={styles.cycleHeader}>
+                                                <div className={styles.cycleInfo}>
+                                                    <span className={styles.cycleName}>
+                                                        Chu kỳ #{cycles.length - index}
                                                     </span>
-                                                )}
-                                            </div>
-
-                                            <div className={styles.cycleActions}>
-                                                <div className={styles.reminderStatus}>
-                                                    {cycle.reminderEnabled ? (
-                                                        <span className={styles.reminderEnabled} title="Nhắc nhở đã bật">
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                                                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                                                            </svg>
-                                                        </span>
-                                                    ) : (
-                                                        <span className={styles.reminderDisabled} title="Nhắc nhở đã tắt">
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                                                                <path d="M18.63 13A17.89 17.89 0 0 1 18 8"></path>
-                                                                <path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"></path>
-                                                                <path d="M18 8a6 6 0 0 0-9.33-5"></path>
-                                                                <line x1="1" y1="1" x2="23" y2="23"></line>
-                                                            </svg>
-                                                        </span>
-                                                    )}
+                                                    <span className={styles.cycleDate}>
+                                                        {formatDate(cycle.startDate)}
+                                                    </span>
                                                 </div>
 
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={styles.expandIcon}>
-                                                    <polyline points="9,18 15,12 9,6"></polyline>
-                                                </svg>
+                                                <div className={styles.cycleStatus}>
+                                                    <span
+                                                        className={styles.statusBadge}
+                                                        style={{ backgroundColor: status.color + '20', color: status.color }}
+                                                    >
+                                                        {status.text}
+                                                    </span>
+                                                </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
 
-                        {selectedCycle && (
-                            <div className={styles.cycleDetails}>
-                                <div className={styles.detailsHeader}>
-                                    <h3>
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <circle cx="12" cy="12" r="10"></circle>
-                                            <path d="M2 12h20"></path>
-                                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                                        </svg>
-                                        Chi tiết chu kỳ
-                                    </h3>
-                                    <button
-                                        className={styles.closeDetailsBtn}
-                                        onClick={() => setSelectedCycle(null)}
-                                        title="Đóng"
-                                    >
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                                        </svg>
-                                    </button>
-                                </div>
+                                            <div className={styles.cycleDetails}>
+                                                <div className={styles.cycleMetrics}>
+                                                    <div className={styles.metric}>
+                                                        <span className={styles.metricLabel}>Độ dài chu kỳ</span>
+                                                        <span className={styles.metricValue}>{cycle.cycleLength} ngày</span>
+                                                    </div>
+                                                    <div className={styles.metric}>
+                                                        <span className={styles.metricLabel}>Số ngày hành kinh</span>
+                                                        <span className={styles.metricValue}>{cycle.numberOfDays} ngày</span>
+                                                    </div>
+                                                    <div className={styles.metric}>
+                                                        <span className={styles.metricLabel}>Ngày rụng trứng</span>
+                                                        <span className={styles.metricValue}>{formatDate(cycle.ovulationDate)}</span>
+                                                    </div>
+                                                    <div className={styles.metric}>
+                                                        <span className={styles.metricLabel}>Xác suất mang thai</span>
+                                                        <span
+                                                            className={styles.metricValue}
+                                                            style={{ color: getPregnancyProbabilityColor(probability) }}
+                                                        >
+                                                            {probability.toFixed(1)}%
+                                                        </span>
+                                                    </div>
+                                                </div>
 
-                                <div className={styles.detailsContent}>
-                                    <div className={styles.detailsGrid}>
-                                        <div className={styles.detailItem}>
-                                            <span className={styles.detailLabel}>Ngày bắt đầu:</span>
-                                            <span className={styles.detailValue}>{formatDate(selectedCycle.startDate)}</span>
-                                        </div>
+                                                <div className={styles.cycleActions}>
+                                                    <button
+                                                        className={styles.actionBtn}
+                                                        onClick={() => handleViewCycleDetails(cycle)}
+                                                    >
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                            <circle cx="12" cy="12" r="3"></circle>
+                                                        </svg>
+                                                        Chi tiết
+                                                    </button>
 
-                                        <div className={styles.detailItem}>
-                                            <span className={styles.detailLabel}>Số ngày hành kinh:</span>
-                                            <span className={styles.detailValue}>{selectedCycle.numberOfDays} ngày</span>
-                                        </div>
-
-                                        <div className={styles.detailItem}>
-                                            <span className={styles.detailLabel}>Độ dài chu kỳ:</span>
-                                            <span className={styles.detailValue}>{selectedCycle.cycleLength} ngày</span>
-                                        </div>
-
-                                        <div className={styles.detailItem}>
-                                            <span className={styles.detailLabel}>Ngày rụng trứng:</span>
-                                            <span className={`${styles.detailValue} ${styles.highlight}`}>
-                                                {formatDate(selectedCycle.ovulationDate)}
-                                            </span>
-                                        </div>
-
-                                        <div className={styles.detailItem}>
-                                            <span className={styles.detailLabel}>Thời gian dễ thụ thai:</span>
-                                            <span className={`${styles.detailValue} ${styles.fertile}`}>
-                                                {formatDate(selectedCycle.fertileStart)} - {formatDate(selectedCycle.fertileEnd)}
-                                            </span>
-                                        </div>
-
-                                        <div className={styles.detailItem}>
-                                            <span className={styles.detailLabel}>Chu kỳ tiếp theo:</span>
-                                            <span className={styles.detailValue}>
-                                                {formatDate(selectedCycle.nextCycleDate)}
-                                            </span>
-                                        </div>
-
-                                        <div className={styles.detailItem}>
-                                            <span className={styles.detailLabel}>Xác suất mang thai hiện tại:</span>
-                                            <span className={`${styles.detailValue} ${styles.probability}`}>
-                                                {selectedCycle.currentPregnancyProbability}%
-                                            </span>
-                                        </div>
-
-                                        <div className={styles.detailItem}>
-                                            <span className={styles.detailLabel}>Nhắc nhở:</span>
-                                            <span className={styles.detailValue}>
-                                                {selectedCycle.reminderEnabled ? (
-                                                    <span className={styles.enabled}>
+                                                    <button
+                                                        className={`${styles.actionBtn} ${cycle.reminderEnabled ? styles.reminderActive : ''}`}
+                                                        onClick={() => handleToggleReminder(cycle.id, cycle.reminderEnabled)}
+                                                        disabled={loading}
+                                                    >
                                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                                                             <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                                                         </svg>
-                                                        Đã bật
-                                                    </span>
-                                                ) : (
-                                                    <span className={styles.disabled}>
-                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                                                            <path d="M18.63 13A17.89 17.89 0 0 1 18 8"></path>
-                                                            <path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"></path>
-                                                            <path d="M18 8a6 6 0 0 0-9.33-5"></path>
-                                                            <line x1="1" y1="1" x2="23" y2="23"></line>
-                                                        </svg>
-                                                        Đã tắt
-                                                    </span>
-                                                )}
-                                            </span>
-                                        </div>
+                                                        {cycle.reminderEnabled ? 'Tắt nhắc nhở' : 'Bật nhắc nhở'}
+                                                    </button>
 
-                                        {selectedCycle.createdAt && (
-                                            <div className={styles.detailItem}>
-                                                <span className={styles.detailLabel}>Ngày tạo:</span>
-                                                <span className={styles.detailValue}>
-                                                    {formatCreatedAt(selectedCycle.createdAt)}
-                                                </span>
+                                                    <button
+                                                        className={`${styles.actionBtn} ${styles.deleteBtn}`}
+                                                        onClick={() => handleDeleteCycle(cycle.id)}
+                                                        disabled={loading}
+                                                    >
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <polyline points="3,6 5,6 21,6"></polyline>
+                                                            <path d="M19,6V20a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2V6"></path>
+                                                        </svg>
+                                                        Xóa
+                                                    </button>
+                                                </div>
                                             </div>
-                                        )}
+
+                                            {daysUntil <= 3 && daysUntil > 0 && (
+                                                <div className={styles.upcomingAlert}>
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                        <polyline points="12,6 12,12 16,14"></polyline>
+                                                    </svg>
+                                                    <span>Chu kỳ mới trong {daysUntil} ngày</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Empty state */}
+                    {!loading && cycles.length === 0 && (
+                        <div className={styles.emptyState}>
+                            <div className={styles.emptyIcon}>
+                                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                            </div>
+                            <h3>Chưa có dữ liệu chu kỳ</h3>
+                            <p>Hãy nhập thông tin chu kỳ kinh nguyệt đầu tiên để bắt đầu theo dõi!</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Modal chi tiết chu kỳ */}
+                {selectedCycle && (
+                    <div className={styles.modal} onClick={() => setSelectedCycle(null)}>
+                        <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+                            <div className={styles.modalHeader}>
+                                <h3>Chi tiết chu kỳ kinh nguyệt</h3>
+                                <button
+                                    className={styles.closeBtn}
+                                    onClick={() => setSelectedCycle(null)}
+                                >
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div className={styles.modalBody}>
+                                <div className={styles.detailsGrid}>
+                                    <div className={styles.detailItem}>
+                                        <span className={styles.detailLabel}>Ngày bắt đầu</span>
+                                        <span className={styles.detailValue}>{formatDate(selectedCycle.startDate)}</span>
+                                    </div>
+                                    <div className={styles.detailItem}>
+                                        <span className={styles.detailLabel}>Ngày kết thúc</span>
+                                        <span className={styles.detailValue}>{formatDate(selectedCycle.endDate)}</span>
+                                    </div>
+                                    <div className={styles.detailItem}>
+                                        <span className={styles.detailLabel}>Ngày rụng trứng</span>
+                                        <span className={styles.detailValue}>{formatDate(selectedCycle.ovulationDate)}</span>
+                                    </div>
+                                    <div className={styles.detailItem}>
+                                        <span className={styles.detailLabel}>Chu kỳ tiếp theo</span>
+                                        <span className={styles.detailValue}>{formatDate(selectedCycle.nextCycleDate)}</span>
+                                    </div>
+                                    <div className={styles.detailItem}>
+                                        <span className={styles.detailLabel}>Thời kỳ dễ thụ thai</span>
+                                        <span className={styles.detailValue}>
+                                            {formatDate(selectedCycle.fertileStart)} - {formatDate(selectedCycle.fertileEnd)}
+                                        </span>
+                                    </div>
+                                    <div className={styles.detailItem}>
+                                        <span className={styles.detailLabel}>Xác suất mang thai hiện tại</span>
+                                        <span
+                                            className={styles.detailValue}
+                                            style={{ color: getPregnancyProbabilityColor(selectedCycle.currentPregnancyProbability) }}
+                                        >
+                                            {selectedCycle.currentPregnancyProbability.toFixed(1)}%
+                                        </span>
+                                    </div>
+                                    <div className={styles.detailItem}>
+                                        <span className={styles.detailLabel}>Độ dài chu kỳ</span>
+                                        <span className={styles.detailValue}>{selectedCycle.cycleLength} ngày</span>
+                                    </div>
+                                    <div className={styles.detailItem}>
+                                        <span className={styles.detailLabel}>Số ngày hành kinh</span>
+                                        <span className={styles.detailValue}>{selectedCycle.numberOfDays} ngày</span>
+                                    </div>
+                                    <div className={styles.detailItem}>
+                                        <span className={styles.detailLabel}>Nhắc nhở</span>
+                                        <span className={styles.detailValue}>
+                                            {selectedCycle.reminderEnabled ? '✅ Đã bật' : '❌ Đã tắt'}
+                                        </span>
+                                    </div>
+                                    <div className={styles.detailItem}>
+                                        <span className={styles.detailLabel}>Ngày tạo</span>
+                                        <span className={styles.detailValue}>{formatCreatedAt(selectedCycle.createdAt)}</span>
                                     </div>
                                 </div>
 
-                                <div className={styles.detailsActions}>
-                                    <button
-                                        className={`${styles.btn} ${selectedCycle.reminderEnabled ? styles.btnWarning : styles.btnSuccess}`}
-                                        onClick={() => handleToggleReminder(selectedCycle.id, selectedCycle.reminderEnabled)}
-                                        disabled={loading}
-                                    >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            {selectedCycle.reminderEnabled ? (
-                                                <>
-                                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                                                    <path d="M18.63 13A17.89 17.89 0 0 1 18 8"></path>
-                                                    <path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"></path>
-                                                    <path d="M18 8a6 6 0 0 0-9.33-5"></path>
-                                                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                                                </>
-                                            )}
+                                {selectedCycle.isInFertilePeriod && (
+                                    <div className={styles.fertileAlert}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
                                         </svg>
-                                        {selectedCycle.reminderEnabled ? 'Tắt nhắc nhở' : 'Bật nhắc nhở'}
-                                    </button>
-
-                                    <button
-                                        className={`${styles.btn} ${styles.btnDanger}`}
-                                        onClick={() => handleDeleteCycle(selectedCycle.id)}
-                                        disabled={loading}
-                                    >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <polyline points="3,6 5,6 21,6"></polyline>
-                                            <path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2V6"></path>
-                                            <line x1="10" y1="11" x2="10" y2="17"></line>
-                                            <line x1="14" y1="11" x2="14" y2="17"></line>
-                                        </svg>
-                                        Xóa chu kỳ
-                                    </button>
-                                </div>
+                                        <span>Hiện tại đang trong thời kỳ dễ thụ thai!</span>
+                                    </div>
+                                )}
                             </div>
-                        )}
+                        </div>
                     </div>
-                </div>
+                )}
+
+                {/* Loading overlay */}
+                {loading && (
+                    <div className={styles.loadingOverlay}>
+                        <LoadingSpinner />
+                    </div>
+                )}
             </div>
+            <Footer />
         </div>
     );
 };

@@ -6,8 +6,8 @@ const Services = () => {
     const services = [
         {
             id: 1,
-            title: "Xét nghiệm STIs",
-            description: "Xét nghiệm các bệnh lây truyền qua đường tình dục với độ chính xác cao và bảo mật tuyệt đối",
+            title: "Xét nghiệm STI",
+            description: "Xét nghiệm các bệnh lây truyền qua đường tình dục với độ chính xác cao, bảo mật tuyệt đối và kết quả nhanh chóng",
             icon: (
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -18,21 +18,8 @@ const Services = () => {
         },
         {
             id: 2,
-            title: "Tư vấn sức khỏe",
-            description: "Tư vấn trực tuyến với đội ngũ bác sĩ chuyên nghiệp 24/7, hỗ trợ mọi vấn đề sức khỏe",
-            icon: (
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-            ),
-            link: "/consultation",
-            color: "#059669"
-        },
-        {
-            id: 3,
-            title: "Chu kỳ kinh nguyệt",
-            description: "Theo dõi và dự đoán chu kỳ kinh nguyệt một cách chính xác với AI thông minh",
+            title: "Theo dõi chu kỳ kinh nguyệt",
+            description: "Theo dõi và dự đoán chu kỳ kinh nguyệt với AI thông minh, giúp bạn hiểu rõ hơn về cơ thể mình",
             icon: (
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -45,9 +32,34 @@ const Services = () => {
             color: "#dc2626"
         },
         {
+            id: 3,
+            title: "Tính toán tỷ lệ mang thai",
+            description: "Công cụ tính toán tỷ lệ mang thai và những ngày có khả năng thụ thai cao dựa trên chu kỳ của bạn",
+            icon: (
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
+            ),
+            link: "/pregnancy-calculator",
+            color: "#f59e0b"
+        },
+        {
             id: 4,
-            title: "Blog sức khỏe",
-            description: "Cập nhật những thông tin y tế mới nhất, bài viết chuyên sâu từ các chuyên gia",
+            title: "Tư vấn sức khỏe sinh sản",
+            description: "Tư vấn trực tuyến với đội ngũ chuyên gia y tế về các vấn đề sức khỏe sinh sản và tình dục",
+            icon: (
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            ),
+            link: "/consultation",
+            color: "#059669"
+        },
+        {
+            id: 5,
+            title: "Kiến thức sức khỏe",
+            description: "Thư viện kiến thức y khoa chuyên sâu về sức khỏe sinh sản, được biên soạn bởi các chuyên gia",
             icon: (
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -60,9 +72,9 @@ const Services = () => {
             color: "#7c3aed"
         },
         {
-            id: 5,
-            title: "Đặt câu hỏi",
-            description: "Đặt câu hỏi trực tiếp với chuyên gia y tế, nhận tư vấn miễn phí và nhanh chóng",
+            id: 6,
+            title: "Hỏi đáp với chuyên gia",
+            description: "Đặt câu hỏi trực tiếp với các chuyên gia y tế, nhận tư vấn miễn phí và bảo mật về mọi thắc mắc",
             icon: (
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <circle cx="12" cy="12" r="10"></circle>
@@ -72,19 +84,6 @@ const Services = () => {
             ),
             link: "/questions",
             color: "#ea580c"
-        },
-        {
-            id: 6,
-            title: "Hỗ trợ 24/7",
-            description: "Đội ngũ hỗ trợ luôn sẵn sàng giải đáp mọi thắc mắc của bạn mọi lúc mọi nơi",
-            icon: (
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polyline points="12,6 12,12 16,14"></polyline>
-                </svg>
-            ),
-            link: "/support",
-            color: "#0891b2"
         }
     ];
 
@@ -93,10 +92,11 @@ const Services = () => {
             <div className={styles.servicesContainer}>
                 <div className={styles.servicesHeader}>
                     <h2 className={styles.servicesTitle}>
-                        Dịch vụ <span className={styles.highlight}>chăm sóc sức khỏe</span> toàn diện
+                        Dịch vụ <span className={styles.highlight}>sức khỏe sinh sản</span> toàn diện
                     </h2>
                     <p className={styles.servicesDescription}>
-                        Khám phá các dịch vụ y tế hiện đại được thiết kế đặc biệt cho nhu cầu chăm sóc sức khỏe của bạn
+                        Khám phá các dịch vụ chăm sóc sức khỏe sinh sản hiện đại được thiết kế đặc biệt 
+                        để đáp ứng nhu cầu riêng tư và chuyên nghiệp của bạn
                     </p>
                 </div>
 
@@ -134,8 +134,8 @@ const Services = () => {
 
                 <div className={styles.servicesFooter}>
                     <p className={styles.footerText}>
-                        Không tìm thấy dịch vụ bạn cần?
-                        <Link to="/contact" className={styles.footerLink}>Liên hệ với chúng tôi</Link>
+                        Cần hỗ trợ thêm?
+                        <Link to="/contact" className={styles.footerLink}>Liên hệ với đội ngũ chuyên gia</Link>
                     </p>
                 </div>
             </div>

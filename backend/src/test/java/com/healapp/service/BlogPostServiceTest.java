@@ -85,7 +85,7 @@ public class BlogPostServiceTest {
 
         userRole = new Role();
         userRole.setRoleId(3L);
-        userRole.setRoleName("USER");
+        userRole.setRoleName("CUSTOMER");
         userRole.setDescription("Regular user role");
 
         consultantRole = new Role();
@@ -220,7 +220,7 @@ public class BlogPostServiceTest {
     }
 
     @Test
-    @DisplayName("Tạo blog post thành công với quyền USER - trạng thái PROCESSING")
+    @DisplayName("Tạo blog post thành công với quyền CUSTOMER - trạng thái PROCESSING")
     void createPost_WithUserRole_ShouldBeProcessing() {
         // Arrange
         when(userRepository.findById(3L)).thenReturn(Optional.of(regularUser));

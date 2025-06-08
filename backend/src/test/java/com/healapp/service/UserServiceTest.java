@@ -2,6 +2,7 @@ package com.healapp.service;
 
 import com.healapp.dto.*;
 import com.healapp.model.ConsultantProfile;
+import com.healapp.model.Gender;
 import com.healapp.model.Role;
 import com.healapp.model.UserDtls;
 import com.healapp.repository.ConsultantProfileRepository;
@@ -208,6 +209,7 @@ class UserServiceTest {
         RegisterRequest request = new RegisterRequest();
         request.setFullName("Test User");
         request.setBirthDay(LocalDate.of(1995, 5, 15));
+        request.setGender("Nam"); // ✅ THÊM GENDER
         request.setPhone("0987654321");
         request.setEmail("test@example.com");
         request.setUsername("testuser");
@@ -231,12 +233,17 @@ class UserServiceTest {
         assertEquals("Nguyen Van A", response.getData().getFullName());
         assertEquals("CUSTOMER", response.getData().getRole());
 
+        // ✅ VERIFY GENDER WAS SET CORRECTLY
+        ArgumentCaptor<UserDtls> userCaptor = ArgumentCaptor.forClass(UserDtls.class);
+        verify(userRepository).save(userCaptor.capture());
+        UserDtls savedUser = userCaptor.getValue();
+        assertEquals(Gender.MALE, savedUser.getGender()); // Verify gender enum
+
         verify(emailVerificationService).verifyCode("test@example.com", "123456");
         verify(userRepository).existsByUsername("testuser");
         verify(userRepository).existsByEmail("test@example.com");
         verify(passwordEncoder).encode("password123");
         verify(roleService).getDefaultUserRole();
-        verify(userRepository).save(any(UserDtls.class));
     }
 
     @Test

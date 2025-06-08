@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useToast } from '../../../contexts/ToastContext';
 import Navbar from '../../../components/layout/Navbar/Navbar';
+import Footer from '../../../components/layout/Footer/Footer';
 import LoadingSpinner from '../../../components/common/LoadingSpinner/LoadingSpinner';
 import { questionService } from '../../../services/questionService';
 import styles from './CreateQuestion.module.css';
@@ -208,6 +209,7 @@ const CreateQuestion = () => {
                     </div>
                 )}
             </div>
+            <Footer />
         </div>
     );
 };

@@ -15,4 +15,5 @@ public class ConsultantProfileResponse {
     private String experience;
     private String bio;
     private LocalDateTime updatedAt;
+    private String gender;
 }

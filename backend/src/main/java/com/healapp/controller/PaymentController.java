@@ -65,6 +65,14 @@ public class PaymentController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/{paymentId}/regenerate-qr")
+    public ResponseEntity<ApiResponse<Payment>> regenerateQRCode(@PathVariable Long paymentId) {
+        log.info("User requesting QR regeneration for payment: {}", paymentId);
+
+        ApiResponse<Payment> response = paymentService.regenerateQRCode(paymentId);
+        return ResponseEntity.ok(response);
+    }
+
     // Simulate successful QR payment
     @PostMapping("/qr/{qrReference}/simulate-success")
     @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_STAFF')")

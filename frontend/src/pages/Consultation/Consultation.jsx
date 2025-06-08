@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import Navbar from '../../components/layout/Navbar/Navbar';
+import Footer from '../../components/layout/Footer/Footer';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
 import ConsultantCard from '../../components/consultation/ConsultantCard/ConsultantCard';
 import BookingModal from '../../components/consultation/BookingModal/BookingModal';
@@ -269,6 +270,7 @@ const Consultation = () => {
                     </div>
                 </div>
             )}
+            <Footer />
         </div>
     );
 };

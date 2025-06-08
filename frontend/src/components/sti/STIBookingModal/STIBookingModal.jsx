@@ -25,12 +25,12 @@ const TIME_SLOTS = [
 const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired }) => {
     const { user } = useAuth();
     const toast = useToast();
-    
+
     // ✅ THÊM STATE CHO QR CODE
     const [showQRModal, setShowQRModal] = useState(false);
     const [qrPaymentData, setQrPaymentData] = useState(null);
     const [checkingPayment, setCheckingPayment] = useState(false);
-    
+
     const [formData, setFormData] = useState({
         serviceId: service.serviceId,
         appointmentDate: '',
@@ -67,7 +67,6 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
         }
     }, [user]);
 
-    // ✅ THÊM FUNCTION ĐỂ FORMAT PRICE
     const formatPrice = (price) => {
         return new Intl.NumberFormat('vi-VN', {
             style: 'currency',
@@ -75,55 +74,51 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
         }).format(price);
     };
 
-    // ✅ THÊM FUNCTION ĐỂ GENERATE QR CODE URL
     const generateQRCodeUrl = (qrData, amount = 500000) => {
         if (!qrData) return null;
-        
+
         // Fallback QR generators
         const fallbackQR = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&format=png&margin=10&data=${encodeURIComponent(`STK: 0349079940\nTen: NGUYEN VAN CUONG\nNH: MB Bank\nST: ${amount.toLocaleString()}\nND: ${qrData}`)}`;
-        
+
         return qrPaymentData?.qrCodeUrl || fallbackQR;
     };
 
-    // ✅ THÊM FUNCTION CHECK PAYMENT STATUS
     const handleCheckPaymentStatus = async () => {
-        if (!qrPaymentData?.qrReference) return;
-        
+        if (!qrPaymentData?.qrReference) {
+            toast.error('Không tìm thấy thông tin QR để kiểm tra');
+            return;
+        }
+
         try {
             setCheckingPayment(true);
-            
-            // Call backend API to check payment status
-            const response = await fetch(`/api/payments/qr/${qrPaymentData.qrReference}/check`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'Content-Type': 'application/json'
-                }
+            const response = await stiService.checkQRPaymentStatus(qrPaymentData.qrReference, () => {
+                window.location.href = '/login';
             });
-            
-            const result = await response.json();
-            
-            if (result.success && result.data?.paymentStatus === 'COMPLETED') {
-                toast.success('Thanh toán thành công!');
-                setShowQRModal(false);
-                setTimeout(() => {
-                    onSuccess({
-                        ...qrPaymentData,
-                        paymentStatus: 'COMPLETED'
-                    });
-                }, 1000);
+
+            if (response.success) {
+                if (response.data?.status === 'COMPLETED' || response.data?.paymentStatus === 'COMPLETED') {
+                    toast.success('Thanh toán thành công!');
+                    setShowQRModal(false);
+                    setTimeout(() => {
+                        onSuccess({
+                            ...qrPaymentData,
+                            paymentStatus: 'COMPLETED'
+                        });
+                    }, 1000);
+                } else {
+                    toast.info('Chưa nhận được thanh toán. Vui lòng thử lại sau.');
+                }
             } else {
-                toast.info('Chưa nhận được thanh toán. Vui lòng thử lại sau.');
+                toast.error(response.message || 'Không thể kiểm tra trạng thái thanh toán');
             }
         } catch (error) {
             console.error('Error checking payment:', error);
-            toast.error('Lỗi kiểm tra thanh toán');
+            toast.error('Có lỗi xảy ra khi kiểm tra thanh toán');
         } finally {
             setCheckingPayment(false);
         }
     };
 
-    // ✅ CLOSE QR MODAL
     const handleCloseQRModal = () => {
         setShowQRModal(false);
         setQrPaymentData(null);
@@ -471,7 +466,7 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
                                             <strong>💰 Số tiền:</strong> {formatPrice(service.price || 500000)}
                                         </div>
                                         <div className={styles.qrInfoNote}>
-                                            <strong>📝 Lưu ý:</strong> Sau khi đặt lịch, bạn sẽ nhận được mã QR để thanh toán. 
+                                            <strong>📝 Lưu ý:</strong> Sau khi đặt lịch, bạn sẽ nhận được mã QR để thanh toán.
                                             Bạn có thể thanh toán ngay hoặc thanh toán sau trong mục "Lịch sử xét nghiệm".
                                         </div>
                                     </div>

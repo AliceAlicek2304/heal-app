@@ -64,13 +64,6 @@ public class ConsultantController {
         return getResponseEntity(response);
     }
 
-    @DeleteMapping("/{userId}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<ApiResponse<String>> removeConsultantRole(@PathVariable Long userId) {
-        ApiResponse<String> response = consultantService.removeConsultantRole(userId);
-        return getResponseEntity(response);
-    }
-
     private <T> ResponseEntity<ApiResponse<T>> getResponseEntity(ApiResponse<T> response) {
         if (response.isSuccess()) {
             return ResponseEntity.ok(response);

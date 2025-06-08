@@ -12,25 +12,23 @@ const PersonalInfoForm = () => {
         fullName: '',
         birthDay: '',
         phone: '',
+        gender: '',
     });
     const [loading, setLoading] = useState(false);
     const [avatarFile, setAvatarFile] = useState(null);
     const [avatarPreview, setAvatarPreview] = useState('');
 
-    // Cập nhật useEffect để xử lý birthDay đúng cách
     useEffect(() => {
         if (!isLoading && user) {
-            console.log('User data loaded:', user); // Debug log
+            console.log('User data loaded:', user);
 
-            // Xử lý birthDay - backend có thể trả về array [year, month, day] hoặc string
+            // Xử lý birthDay
             let formattedBirthDay = '';
             if (user.birthDay) {
                 if (Array.isArray(user.birthDay)) {
-                    // Nếu là array [year, month, day] từ LocalDate của Java
                     const [year, month, day] = user.birthDay;
                     formattedBirthDay = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 } else {
-                    // Nếu là string, parse thành date
                     try {
                         formattedBirthDay = new Date(user.birthDay).toISOString().split('T')[0];
                     } catch (e) {
@@ -44,6 +42,7 @@ const PersonalInfoForm = () => {
                 fullName: user.fullName || '',
                 birthDay: formattedBirthDay,
                 phone: user.phone || '',
+                gender: user.gender || '',
             });
 
             if (user.avatar) {
@@ -120,6 +119,11 @@ const PersonalInfoForm = () => {
             return;
         }
 
+        if (formData.gender && !['Nam', 'Nữ', 'Khác'].includes(formData.gender)) {
+            toast.error('Giới tính không hợp lệ');
+            return;
+        }
+
         try {
             setLoading(true);
             const response = await authService.updateBasicProfile(formData);
@@ -132,7 +136,8 @@ const PersonalInfoForm = () => {
                         ...user,
                         fullName: response.data.fullName,
                         birthDay: response.data.birthDay,
-                        phone: response.data.phone
+                        phone: response.data.phone,
+                        gender: response.data.gender
                     };
                     updateUser(newUser);
                 }
@@ -298,6 +303,24 @@ const PersonalInfoForm = () => {
                                     placeholder="Nhập số điện thoại"
                                     className={styles.input}
                                 />
+                            </div>
+
+                            <div className={styles.formGroup}>
+                                <label htmlFor="gender" className={styles.label}>
+                                    Giới tính
+                                </label>
+                                <select
+                                    id="gender"
+                                    name="gender"
+                                    value={formData.gender}
+                                    onChange={handleInputChange}
+                                    className={`${styles.input} ${styles.selectInput}`}
+                                >
+                                    <option value="">Chọn giới tính</option>
+                                    <option value="Nam">Nam</option>
+                                    <option value="Nữ">Nữ</option>
+                                    <option value="Khác">Khác</option>
+                                </select>
                             </div>
 
                             <div className={styles.formGroup}>

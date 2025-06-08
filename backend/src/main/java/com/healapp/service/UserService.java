@@ -6,6 +6,7 @@ import com.healapp.dto.LoginRequest;
 import com.healapp.dto.LoginResponse;
 import com.healapp.dto.RegisterRequest;
 import com.healapp.model.ConsultantProfile;
+import com.healapp.model.Gender;
 import com.healapp.model.Role;
 import com.healapp.model.UserDtls;
 import com.healapp.repository.ConsultantProfileRepository;
@@ -118,6 +119,11 @@ public class UserService {
             UserDtls user = new UserDtls();
             user.setFullName(request.getFullName());
             user.setBirthDay(request.getBirthDay());
+            try {
+                user.setGender(Gender.fromDisplayName(request.getGender()));
+            } catch (IllegalArgumentException e) {
+                return ApiResponse.error("Giới tính không hợp lệ");
+            }
             user.setPhone(request.getPhone());
             user.setEmail(request.getEmail());
             user.setUsername(request.getUsername());
@@ -398,6 +404,14 @@ public class UserService {
             user.setPhone(request.getPhone());
             user.setBirthDay(request.getBirthDay());
 
+            if (request.getGender() != null && !request.getGender().trim().isEmpty()) {
+                try {
+                    user.setGender(Gender.fromDisplayName(request.getGender()));
+                } catch (IllegalArgumentException e) {
+                    return ApiResponse.error("Giới tính không hợp lệ");
+                }
+            }
+
             UserDtls updatedUser = userRepository.save(user);
             UserResponse response = mapUserToResponse(updatedUser);
 
@@ -576,6 +590,7 @@ public class UserService {
         response.setId(user.getId());
         response.setFullName(user.getFullName());
         response.setBirthDay(user.getBirthDay());
+        response.setGender(user.getGenderDisplayName());
         response.setPhone(user.getPhone());
         response.setEmail(user.getEmail());
         response.setUsername(user.getUsername());

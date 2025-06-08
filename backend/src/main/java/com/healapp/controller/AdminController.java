@@ -3,6 +3,7 @@ package com.healapp.controller;
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.ConsultantProfileRequest;
 import com.healapp.dto.ConsultantProfileResponse;
+import com.healapp.dto.CreateConsultantAccountRequest;
 import com.healapp.dto.STIServiceRequest;
 import com.healapp.dto.STIServiceResponse;
 import com.healapp.dto.UserResponse;
@@ -53,8 +54,28 @@ public class AdminController {
         return getResponseEntity(response);
     }
 
-    @PostMapping("/consultants/{userId}")
-    public ResponseEntity<ApiResponse<ConsultantProfileResponse>> createOrUpdateConsultantProfile(
+    @GetMapping("/consultants/active")
+    public ResponseEntity<ApiResponse<List<ConsultantProfileResponse>>> getActiveConsultantProfiles() {
+        ApiResponse<List<ConsultantProfileResponse>> response = consultantService.getActiveConsultantProfiles();
+        return getResponseEntity(response);
+    }
+
+    @GetMapping("/consultants/{userId}")
+    public ResponseEntity<ApiResponse<ConsultantProfileResponse>> getConsultantProfileById(@PathVariable Long userId) {
+        ApiResponse<ConsultantProfileResponse> response = consultantService.getConsultantProfileById(userId);
+        return getResponseEntity(response);
+    }
+
+    @PostMapping("/consultants/create")
+    public ResponseEntity<ApiResponse<ConsultantProfileResponse>> createConsultantAccount(
+            @Valid @RequestBody CreateConsultantAccountRequest request) {
+
+        ApiResponse<ConsultantProfileResponse> response = consultantService.createConsultantAccount(request);
+        return getResponseEntity(response);
+    }
+
+    @PutMapping("/consultants/{userId}/profile")
+    public ResponseEntity<ApiResponse<ConsultantProfileResponse>> updateConsultantProfile(
             @PathVariable Long userId,
             @Valid @RequestBody ConsultantProfileRequest request) {
 
@@ -63,7 +84,25 @@ public class AdminController {
         return getResponseEntity(response);
     }
 
-    @DeleteMapping("/consultants/{userId}")
+    @PutMapping("/consultants/{userId}/activate")
+    public ResponseEntity<ApiResponse<ConsultantProfileResponse>> activateConsultant(@PathVariable Long userId) {
+        ApiResponse<ConsultantProfileResponse> response = consultantService.activateConsultant(userId);
+        return getResponseEntity(response);
+    }
+
+    @PutMapping("/consultants/{userId}/deactivate")
+    public ResponseEntity<ApiResponse<String>> deactivateConsultant(@PathVariable Long userId) {
+        ApiResponse<String> response = consultantService.deactivateConsultant(userId);
+        return getResponseEntity(response);
+    }
+
+    @PutMapping("/consultants/{userId}/add-role")
+    public ResponseEntity<ApiResponse<ConsultantProfileResponse>> addConsultantRole(@PathVariable Long userId) {
+        ApiResponse<ConsultantProfileResponse> response = consultantService.addConsultantRole(userId);
+        return getResponseEntity(response);
+    }
+
+    @DeleteMapping("/consultants/{userId}/remove-role")
     public ResponseEntity<ApiResponse<String>> removeConsultantRole(@PathVariable Long userId) {
         ApiResponse<String> response = consultantService.removeConsultantRole(userId);
         return getResponseEntity(response);

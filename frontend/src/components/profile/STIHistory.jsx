@@ -56,13 +56,7 @@ const PAYMENT_STATUS_CONFIG = {
         label: 'Chờ thanh toán',
         color: 'warning',
         icon: 'clock'
-    },
-    COMPLETED: {
-        label: 'Đã thanh toán',
-        color: 'success',
-        icon: 'check-circle'
-    },
-    PAID: {
+    }, COMPLETED: {
         label: 'Đã thanh toán',
         color: 'success',
         icon: 'check-circle'
@@ -108,6 +102,7 @@ const STIHistory = () => {
     const [paymentInfo, setPaymentInfo] = useState(null);
     const [loadingPayment, setLoadingPayment] = useState(false);
     const [checkingPayment, setCheckingPayment] = useState(false);
+    const [regeneratingQR, setRegeneratingQR] = useState(false);
 
     useEffect(() => {
         fetchAllServices();
@@ -122,9 +117,9 @@ const STIHistory = () => {
     const fetchAllServices = async () => {
         try {
             const response = await stiService.getActiveServices();
-            
+
             if (response.success && response.data) {
-                
+
                 setAllServices(response.data);
             } else {
                 console.error(' Failed to fetch services:', response.message);
@@ -263,11 +258,18 @@ const STIHistory = () => {
         } finally {
             setLoadingPayment(false);
         }
-    };
-
-    //  Xử lý thanh toán ngay - hiển thị modal QR
+    };    //  Xử lý thanh toán ngay - hiển thị modal QR hoặc tạo lại QR nếu hết hạn
     const handlePayNow = async (test) => {
-        await handleViewPayment(test);
+        // Sử dụng function kiểm tra expired đã được cải thiện
+        const isExpired = isQRExpiredFromTestData(test);
+
+        if (isExpired) {
+            // QR đã hết hạn, cần tạo lại
+            await handleRegenerateQR(test);
+        } else {
+            // QR còn hiệu lực, hiển thị modal thanh toán bình thường
+            await handleViewPayment(test);
+        }
     };
 
     const handleCheckPaymentStatus = async () => {
@@ -286,9 +288,7 @@ const STIHistory = () => {
 
             if (response.success) {
                 // Refresh payment info
-                await handleViewPayment(selectedTest);
-
-                if (response.data?.status === 'COMPLETED' || response.data?.status === 'PAID') {
+                await handleViewPayment(selectedTest); if (response.data?.status === 'COMPLETED') {
                     toast.success('Thanh toán thành công!');
                     fetchUserTests(); // Refresh danh sách tests
                 } else {
@@ -401,10 +401,91 @@ const STIHistory = () => {
 
     const hasResults = (test) => {
         return test.status === 'RESULTED' || test.status === 'COMPLETED';
-    };
+    }; const needsPayment = (test) => {
+        // Chỉ hiển thị nút thanh toán nếu test chưa bị hủy và chưa hoàn thành
+        if (test.status === 'CANCELED' || test.status === 'COMPLETED') {
+            return false;
+        }
 
-    const needsPayment = (test) => {
-        return test.paymentMethod === 'QR_CODE' && test.paymentStatus === 'PENDING';
+        // Hiển thị nút thanh toán cho QR_CODE payment với status PENDING hoặc EXPIRED
+        if (test.paymentMethod === 'QR_CODE') {
+            return test.paymentStatus === 'PENDING' || test.paymentStatus === 'EXPIRED';
+        }
+        return false;
+    };    // Helper function để kiểm tra QR có hết hạn từ frontend data không
+    const isQRExpiredFromTestData = (test) => {
+        // Nếu không phải QR payment, không expired
+        if (test.paymentMethod !== 'QR_CODE') {
+            return false;
+        }
+
+        // Nếu payment status là PENDING hoặc COMPLETED, không expired
+        if (test.paymentStatus === 'PENDING' || test.paymentStatus === 'COMPLETED') {
+            return false;
+        }
+
+        // Nếu payment status là EXPIRED, kiểm tra thời gian thực sự
+        if (test.paymentStatus === 'EXPIRED') {
+            // Nếu không có thông tin thời gian, tin tưởng backend status
+            if (!test.createdAt && !test.updatedAt && !test.paymentUpdatedAt && !test.paymentCreatedAt) {
+                return true;
+            }
+
+            try {
+                let creationTime;
+                // Ưu tiên payment timestamps, sau đó test timestamps
+                const timeToCheck = test.paymentUpdatedAt || test.paymentCreatedAt || test.updatedAt || test.createdAt;
+
+                if (Array.isArray(timeToCheck)) {
+                    const [year, month, day, hour, minute, second] = timeToCheck;
+                    creationTime = new Date(year, month - 1, day, hour, minute, second);
+                } else {
+                    creationTime = new Date(timeToCheck);
+                }
+
+                if (isNaN(creationTime.getTime())) {
+                    return true; // Invalid date, tin tưởng backend status
+                }
+
+                const currentTime = new Date();
+                const diffInHours = (currentTime - creationTime) / (1000 * 60 * 60);
+
+                return diffInHours >= 24; // QR expires after 24 hours
+            } catch (error) {
+                console.error('Error checking QR expiry from test data:', error);
+                return true; // Error case, tin tưởng backend status
+            }
+        }
+
+        return false; // Default case
+    };// Helper function để xác định text và style của nút thanh toán
+    const getPaymentButtonConfig = (test) => {
+        // Kiểm tra trạng thái test trước
+        if (test.status === 'CANCELED') {
+            return {
+                text: 'Xét nghiệm đã hủy',
+                className: `${styles.btn} ${styles.btnSecondary}`,
+                icon: 'times',
+                disabled: true
+            };
+        } if (test.status === 'COMPLETED') {
+            return {
+                text: 'Đã hoàn thành',
+                className: `${styles.btn} ${styles.btnSecondary}`,
+                icon: 'check',
+                disabled: true
+            };
+        }
+
+        // Sử dụng function kiểm tra expired đã được cải thiện
+        const isExpired = isQRExpiredFromTestData(test);
+
+        return {
+            text: isExpired ? 'Tạo QR mới' : 'Thanh toán ngay',
+            className: isExpired ? `${styles.btn} ${styles.btnDanger}` : `${styles.btn} ${styles.btnWarning}`,
+            icon: isExpired ? 'exclamation-triangle' : 'credit-card',
+            disabled: false
+        };
     };
 
     const getStatusConfig = (status) => {
@@ -464,7 +545,107 @@ const STIHistory = () => {
         ];
 
         return providers[0];
+    }; const handleRegenerateQR = async (test = null) => {
+        const targetTest = test || selectedTest;
+
+        if (!targetTest) {
+            toast.error('Không tìm thấy thông tin test');
+            return;
+        }
+
+        try {
+            setRegeneratingQR(true);
+
+            // Nếu được gọi từ handlePayNow với test parameter, 
+            // cần lấy paymentId từ test
+            let paymentId;
+            if (test) {
+                // Lấy payment info để có paymentId
+                const paymentResponse = await stiService.getPaymentInfo(test.testId, () => {
+                    window.location.href = '/login';
+                });
+
+                if (!paymentResponse.success) {
+                    toast.error('Không thể lấy thông tin thanh toán');
+                    return;
+                }
+
+                paymentId = paymentResponse.data.paymentId;
+            } else {
+                // Gọi từ modal, sử dụng paymentInfo hiện tại
+                if (!paymentInfo) {
+                    toast.error('Không tìm thấy thông tin thanh toán');
+                    return;
+                }
+                paymentId = paymentInfo.paymentId;
+            }
+
+            const response = await stiService.regenerateQRCode(paymentId, () => {
+                window.location.href = '/login';
+            }); if (response.success) {
+                toast.success('Đã tạo lại mã QR thành công!');
+
+                // Refresh danh sách tests trước để cập nhật trạng thái
+                await fetchUserTests();
+
+                // Lấy test object mới nhất từ danh sách đã refresh
+                const refreshedTests = await stiService.getMyTests(null, () => {
+                    window.location.href = '/login';
+                });
+
+                if (refreshedTests.success && refreshedTests.data) {
+                    const updatedTest = refreshedTests.data.find(t => t.testId === targetTest.testId);
+                    if (updatedTest) {
+                        // Sử dụng test object đã được refresh để hiển thị payment modal
+                        await handleViewPayment(updatedTest);
+                    } else {
+                        // Fallback nếu không tìm thấy test
+                        await handleViewPayment(targetTest);
+                    }
+                } else {
+                    // Fallback nếu không thể refresh
+                    await handleViewPayment(targetTest);
+                }
+            } else {
+                toast.error(response.message || 'Không thể tạo lại mã QR');
+            }
+        } catch (error) {
+            console.error('Error regenerating QR:', error);
+            toast.error('Có lỗi xảy ra khi tạo lại mã QR');
+        } finally {
+            setRegeneratingQR(false);
+        }
     };
+
+    // Helper function to check if QR code has expired (24 hours)
+    const isQRExpired = (paymentInfo) => {
+        if (!paymentInfo?.updatedAt && !paymentInfo?.qrCreatedAt && !paymentInfo?.createdAt) {
+            return false; // If no creation time, assume not expired
+        }
+
+        try {
+            let qrCreationTime;
+            // Ưu tiên updatedAt (thời điểm regenerate gần nhất), fallback qrCreatedAt, cuối cùng createdAt
+            const creationTime = paymentInfo.updatedAt || paymentInfo.qrCreatedAt || paymentInfo.createdAt;
+
+            if (Array.isArray(creationTime)) {
+                // Handle array format: [2025, 6, 6, 10, 47, 20, 645941000]
+                const [year, month, day, hour, minute, second] = creationTime;
+                qrCreationTime = new Date(year, month - 1, day, hour, minute, second);
+            } else {
+                qrCreationTime = new Date(creationTime);
+            }
+
+            const currentTime = new Date();
+            const diffInHours = (currentTime - qrCreationTime) / (1000 * 60 * 60);
+
+            return diffInHours >= 24; // QR expires after 24 hours
+        } catch (error) {
+            console.error('Error checking QR expiry:', error);
+            return false;
+        }
+    };
+
 
     const generateFallbackQR = (qrData, amount = 500000) => {
         return `https://api.qrserver.com/v1/create-qr-code/?size=320x320&format=png&margin=10&data=${encodeURIComponent(`STK: 0349079940\nTen: NGUYEN VAN CUONG\nNH: MB Bank\nST: ${amount.toLocaleString()}\nND: ${qrData}`)}`;
@@ -708,18 +889,22 @@ const STIHistory = () => {
                                     >
                                         {renderSVGIcon('info-circle')}
                                         Chi tiết
-                                    </button>
+                                    </button>                                    {needsPayment(test) && (() => {
+                                        const buttonConfig = getPaymentButtonConfig(test);
+                                        const isExpired = isQRExpiredFromTestData(test);
+                                        const isLoading = loadingPayment || regeneratingQR;
 
-                                    {needsPayment(test) && (
-                                        <button
-                                            className={`${styles.btn} ${styles.btnWarning}`}
-                                            onClick={() => handlePayNow(test)}
-                                            disabled={loadingPayment}
-                                        >
-                                            {renderSVGIcon('credit-card')}
-                                            {loadingPayment ? 'Đang tải...' : 'Thanh toán ngay'}
-                                        </button>
-                                    )}
+                                        return (
+                                            <button
+                                                className={buttonConfig.className}
+                                                onClick={buttonConfig.disabled ? undefined : () => handlePayNow(test)}
+                                                disabled={isLoading || buttonConfig.disabled}
+                                            >
+                                                {renderSVGIcon((isLoading && !buttonConfig.disabled) ? 'spinner' : buttonConfig.icon)}
+                                                {isLoading && !buttonConfig.disabled ? (isExpired ? 'Đang tạo QR mới...' : 'Đang tải...') : buttonConfig.text}
+                                            </button>
+                                        );
+                                    })()}
 
                                     {hasResults(test) && (
                                         <button
@@ -956,9 +1141,7 @@ const STIHistory = () => {
                                         </div>
                                     )}
                                 </div>
-                            </div>
-
-                            {/* QR Code Section - IMPROVED ERROR HANDLING */}
+                            </div>                            {/* QR Code Section - IMPROVED ERROR HANDLING WITH EXPIRY DETECTION */}
                             {paymentInfo.paymentMethod === 'QR_CODE' &&
                                 (paymentInfo.status === 'PENDING' || paymentInfo.paymentStatus === 'PENDING') && (
                                     <div className={styles.qrPaymentSection}>
@@ -968,10 +1151,18 @@ const STIHistory = () => {
                                                 Quét mã QR để thanh toán
                                             </h5>
                                             <p>Sử dụng ứng dụng ngân hàng để quét mã QR bên dưới</p>
+
+                                            {/* QR Expiry Warning */}
+                                            {isQRExpired(paymentInfo) && (
+                                                <div className={styles.qrExpiredWarning}>
+                                                    {renderSVGIcon('exclamation-triangle')}
+                                                    <span>Mã QR đã hết hạn (sau 24 giờ). Vui lòng tạo mã QR mới để thanh toán.</span>
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className={styles.qrCodeContainer}>
-                                            <div className={styles.qrCodeWrapper}>
+                                            <div className={`${styles.qrCodeWrapper} ${isQRExpired(paymentInfo) ? styles.expired : ''}`}>
                                                 {/*  Primary QR Code với fallback chain */}
                                                 {(paymentInfo.qrCodeData || paymentInfo.qrCodeUrl) ? (
                                                     <img
@@ -1056,6 +1247,16 @@ const STIHistory = () => {
                                                         <span>Đang tạo mã QR...</span>
                                                     </div>
                                                 )}
+
+                                                {/* Expired QR Overlay */}
+                                                {isQRExpired(paymentInfo) && (
+                                                    <div className={styles.qrExpiredOverlay}>
+                                                        <div className={styles.expiredMessage}>
+                                                            {renderSVGIcon('exclamation-triangle')}
+                                                            <span>Mã QR đã hết hạn</span>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
 
                                             <div className={styles.qrCodeInfo}>
@@ -1068,6 +1269,18 @@ const STIHistory = () => {
                                                 {(paymentInfo.qrReference || paymentInfo.qrPaymentReference) && (
                                                     <div className={styles.qrReference}>
                                                         Mã QR: {paymentInfo.qrReference || paymentInfo.qrPaymentReference}
+                                                    </div>
+                                                )}
+
+                                                {/* QR Creation Time */}
+                                                {(paymentInfo.qrCreatedAt || paymentInfo.createdAt) && (
+                                                    <div className={styles.qrTimestamp}>
+                                                        <small>
+                                                            Tạo lúc: {formatDateTime(paymentInfo.qrCreatedAt || paymentInfo.createdAt)}
+                                                            {isQRExpired(paymentInfo) && (
+                                                                <span className={styles.expiredText}> (Đã hết hạn)</span>
+                                                            )}
+                                                        </small>
                                                     </div>
                                                 )}
                                             </div>
@@ -1129,9 +1342,28 @@ const STIHistory = () => {
                                                     </ol>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </div>                                        <div className={styles.qrActions}>
+                                            {/* Regenerate QR Button - Prominent when expired */}
+                                            {isQRExpired(paymentInfo) ? (
+                                                <button
+                                                    className={`${styles.btn} ${styles.btnWarning} ${styles.regenerateQRPrimary}`}
+                                                    onClick={handleRegenerateQR}
+                                                    disabled={regeneratingQR}
+                                                >
+                                                    {renderSVGIcon(regeneratingQR ? 'spinner' : 'refresh')}
+                                                    {regeneratingQR ? 'Đang tạo mã QR mới...' : 'Tạo mã QR mới (Bắt buộc)'}
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    className={`${styles.btn} ${styles.btnSecondary}`}
+                                                    onClick={handleRegenerateQR}
+                                                    disabled={regeneratingQR}
+                                                >
+                                                    {renderSVGIcon(regeneratingQR ? 'spinner' : 'refresh')}
+                                                    {regeneratingQR ? 'Đang tạo...' : 'Tạo mã QR mới'}
+                                                </button>
+                                            )}
 
-                                        <div className={styles.qrActions}>
                                             <button
                                                 className={`${styles.btn} ${styles.btnPrimary}`}
                                                 onClick={handleCheckPaymentStatus}
@@ -1146,9 +1378,7 @@ const STIHistory = () => {
 
                             {/*  Payment Success Section - Fix điều kiện hiển thị */}
                             {(paymentInfo.status === 'COMPLETED' ||
-                                paymentInfo.paymentStatus === 'COMPLETED' ||
-                                paymentInfo.status === 'PAID' ||
-                                paymentInfo.paymentStatus === 'PAID') && (
+                                paymentInfo.paymentStatus === 'COMPLETED') && (
                                     <div className={styles.paymentSuccessSection}>
                                         <div className={styles.successIcon}>
                                             {renderSVGIcon('check-circle')}

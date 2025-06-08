@@ -29,6 +29,10 @@ public class RegisterRequest {
 
     private LocalDate birthDay;
 
+    @NotBlank(message = "Giới tính không được để trống")
+    @Pattern(regexp = "^(Nam|Nữ|Khác)$", message = "Giới tính phải là: Nam, Nữ, hoặc Khác")
+    private String gender;
+
     private MultipartFile avatar;
 
     @NotBlank(message = "Verification code is required")

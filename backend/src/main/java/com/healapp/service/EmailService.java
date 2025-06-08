@@ -155,13 +155,9 @@ public class EmailService {
         sendEmail(consultant.getEmail(), subject, htmlContent);
     }
 
-
-
     private String formatDateTime(LocalDateTime dateTime) {
         return dateTime.format(DATETIME_FORMATTER);
     }
-
-
 
     private MimeMessage createEmailVerificationMessage(String to, String code) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
@@ -402,6 +398,66 @@ public class EmailService {
 
         helper.setText(htmlContent, true);
         return message;
+    }
+
+    @Async
+    public void sendConsultantDeactivatedNotificationAsync(String email, String fullName) {
+        try {
+            String subject = "Account Deactivated - HealApp Consultant";
+            String body = String.format("""
+                    Dear %s,
+
+                    Your consultant account has been deactivated by the administrator.
+
+                    Your account is temporarily disabled. Please contact support if you have any questions.
+
+                    Best regards,
+                    HealApp Administration Team
+                    """, fullName);
+
+            sendEmail(email, subject, body);
+        } catch (Exception e) {
+        }
+    }
+
+    @Async
+    public void sendConsultantActivatedNotificationAsync(String email, String fullName) {
+        try {
+            String subject = "Account Reactivated - HealApp Consultant";
+            String body = String.format("""
+                    Dear %s,
+
+                    Your consultant account has been reactivated by the administrator.
+
+                    You can now log in and resume your consultant activities.
+
+                    Best regards,
+                    HealApp Administration Team
+                    """, fullName);
+
+            sendEmail(email, subject, body);
+        } catch (Exception e) {
+        }
+    }
+
+    @Async
+    public void sendConsultantRoleRemovedNotificationAsync(String email, String fullName) {
+        try {
+            String subject = "Consultant Role Removed - HealApp";
+            String body = String.format("""
+                    Dear %s,
+
+                    Your consultant role has been removed by the administrator.
+
+                    Your account has been converted to a regular customer account.
+
+                    Best regards,
+                    HealApp Administration Team
+                    """, fullName);
+
+            sendEmail(email, subject, body);
+        } catch (Exception e) {
+        }
     }
 
     private void sendEmail(String to, String subject, String htmlContent) throws MessagingException {

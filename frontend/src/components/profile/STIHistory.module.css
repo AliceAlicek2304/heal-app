@@ -1,151 +1,206 @@
-/* Clean & Simple Design */
+/* Main Container */
 .stiHistory {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 }
 
+/* Header Styles */
 .stiHistoryHeader {
-  text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 1.5rem;
 }
 
 .title {
-  font-size: 28px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 10px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
+  font-size: 1.5rem;
+  margin: 0 0 0.5rem;
+  color: #333;
+  gap: 0.75rem;
 }
 
 .subtitle {
   color: #666;
-  font-size: 16px;
+  margin: 0;
+  font-size: 0.9rem;
 }
 
 .historyStats {
-  margin-top: 15px;
+  margin-top: 1rem;
 }
 
 .totalCount {
-  background: #4f46e5;
-  color: white;
-  padding: 8px 20px;
+  display: inline-flex;
+  align-items: center;
+  background-color: rgba(66, 133, 244, 0.1);
+  color: #4285f4;
+  padding: 0.5rem 1rem;
   border-radius: 20px;
-  font-size: 14px;
+  font-size: 0.85rem;
   font-weight: 500;
+}
+
+/* Loading State */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 0;
+  gap: 1rem;
+  color: #666;
+}
+
+/* Empty State */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.emptyIcon {
+  color: #ccc;
+  margin-bottom: 1.5rem;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.emptyState h3 {
+  font-size: 1.25rem;
+  margin: 0 0 0.5rem;
+  color: #333;
+}
+
+.emptyState p {
+  color: #666;
+  margin: 0 0 1.5rem;
+  max-width: 400px;
+  line-height: 1.5;
 }
 
 /* Test Cards */
 .testsList {
-  display: grid;
-  gap: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .testCard {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 20px;
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .testCard:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
 }
 
 .testHeader {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 15px;
+  margin-bottom: 1rem;
 }
 
 .testInfo h3 {
-  font-size: 18px;
+  font-size: 1.1rem;
   font-weight: 600;
-  color: #111827;
-  margin: 0 0 8px 0;
+  color: #333;
+  margin: 0 0 0.5rem 0;
 }
 
 .testMeta {
   display: flex;
-  gap: 15px;
+  gap: 1rem;
   align-items: center;
 }
 
 .testId {
-  background: #f3f4f6;
-  color: #4f46e5;
-  padding: 4px 8px;
+  background-color: rgba(96, 125, 139, 0.1);
+  color: #607d8b;
+  padding: 0.25rem 0.5rem;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 0.8rem;
   font-weight: 500;
   font-family: monospace;
 }
 
 .testDate {
-  color: #6b7280;
-  font-size: 14px;
+  color: #666;
+  font-size: 0.85rem;
 }
 
 /* Status Badges */
 .statusBadges {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.5rem;
   align-items: flex-end;
 }
 
 .statusBadge, .paymentBadge {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 12px;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
-  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .statusSuccess, .paymentSuccess {
-  background: #dcfce7;
-  color: #166534;
+  background-color: rgba(76, 175, 80, 0.1);
+  color: #4caf50;
 }
 
 .statusInfo {
-  background: #dbeafe;
-  color: #1e40af;
+  background-color: rgba(33, 150, 243, 0.1);
+  color: #2196f3;
 }
 
 .statusWarning, .paymentWarning {
-  background: #fef3c7;
-  color: #92400e;
+  background-color: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
 }
 
 .statusDanger, .paymentDanger {
-  background: #fee2e2;
-  color: #dc2626;
+  background-color: rgba(244, 67, 54, 0.1);
+  color: #f44336;
+}
+
+.statusSecondary {
+  background-color: rgba(96, 125, 139, 0.1);
+  color: #607d8b;
 }
 
 /* Test Details */
 .testDetails {
-  margin: 15px 0;
-  padding: 15px;
-  background: #f9fafb;
-  border-radius: 6px;
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-radius: 8px;
 }
 
 .detailRow {
   display: flex;
   justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid #e5e7eb;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .detailRow:last-child {
@@ -153,158 +208,172 @@
 }
 
 .detailRow .label {
-  color: #6b7280;
-  font-size: 14px;
+  color: #666;
+  font-size: 0.85rem;
 }
 
 .detailRow .value {
-  color: #111827;
+  color: #333;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 0.85rem;
 }
 
 .price {
-  color: #059669 !important;
+  color: #4caf50 !important;
   font-weight: 600 !important;
 }
 
-/* Buttons */
+/* Actions */
 .testActions {
   display: flex;
-  gap: 10px;
-  margin-top: 15px;
+  gap: 0.75rem;
+  margin-top: 1rem;
   flex-wrap: wrap;
 }
 
+/* Buttons */
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 16px;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  border: none;
   text-decoration: none;
 }
 
 .btnPrimary {
-  background: #4f46e5;
+  background-color: #4285f4;
   color: white;
 }
 
-.btnPrimary:hover {
-  background: #4338ca;
+.btnPrimary:hover:not(:disabled) {
+  background-color: #3367d6;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .btnSuccess {
-  background: #059669;
+  background-color: #4caf50;
   color: white;
 }
 
-.btnSuccess:hover {
-  background: #047857;
+.btnSuccess:hover:not(:disabled) {
+  background-color: #45a049;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .btnWarning {
-  background: #d97706;
+  background-color: #ff9800;
   color: white;
 }
 
-.btnWarning:hover {
-  background: #b45309;
+.btnWarning:hover:not(:disabled) {
+  background-color: #f57c00;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.btnDanger {
+  background-color: #f44336;
+  color: white;
+  animation: pulse 2s infinite;
+}
+
+.btnDanger:hover:not(:disabled) {
+  background-color: #d32f2f;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(244, 67, 54, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(244, 67, 54, 0);
+  }
 }
 
 .btnSecondary {
-  background: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  background-color: #f1f3f4;
+  color: #333;
 }
 
-.btnSecondary:hover {
-  background: #e5e7eb;
+.btnSecondary:hover:not(:disabled) {
+  background-color: #e2e6ea;
 }
 
 .btnOutlineDanger {
-  background: transparent;
-  color: #dc2626;
-  border: 1px solid #dc2626;
+  background-color: transparent;
+  color: #f44336;
+  border: 1px solid #f44336;
 }
 
-.btnOutlineDanger:hover {
-  background: #dc2626;
+.btnOutlineDanger:hover:not(:disabled) {
+  background-color: #f44336;
   color: white;
 }
 
 .btnOutlinePrimary {
-  background: transparent;
-  color: #4f46e5;
-  border: 1px solid #4f46e5;
+  background-color: transparent;
+  color: #4285f4;
+  border: 1px solid #4285f4;
 }
 
-.btnOutlinePrimary:hover {
-  background: #4f46e5;
+.btnOutlinePrimary:hover:not(:disabled) {
+  background-color: #4285f4;
   color: white;
 }
 
-/* Empty State */
-.emptyState {
-  text-align: center;
-  padding: 60px 20px;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.emptyIcon {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto 20px;
-  background: #f3f4f6;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #9ca3af;
-}
-
-.emptyState h3 {
-  color: #111827;
-  margin: 0 0 10px 0;
-  font-size: 20px;
-  font-weight: 600;
-}
-
-.emptyState p {
-  color: #6b7280;
-  margin: 0 0 30px 0;
-  line-height: 1.5;
-}
-
-/* Modals */
+/* Modal Styles */
 .modalOverlay {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 20px;
+  padding: 1rem;
+  overflow-y: auto;
 }
 
 .modalContent {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  background-color: white;
+  border-radius: 12px;
   max-width: 90vw;
   max-height: 90vh;
   overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .detailsModal, .resultsModal {
@@ -314,322 +383,409 @@
 
 .paymentModal {
   width: 100%;
-  max-width: 600px;
+  max-width: 700px;
 }
 
 .modalHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 20px 0;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .modalHeader h3 {
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: #111827;
+  font-size: 1.25rem;
+  color: #333;
 }
 
 .modalCloseBtn {
-  background: none;
+  background: transparent;
   border: none;
-  font-size: 20px;
+  color: #666;
   cursor: pointer;
-  color: #6b7280;
-  padding: 8px;
-  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
 }
 
 .modalCloseBtn:hover {
-  background: #f3f4f6;
-  color: #374151;
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #333;
 }
 
 .modalBody {
-  padding: 20px;
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .modalFooter {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  padding: 0 20px 20px;
-  border-top: 1px solid #e5e7eb;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 /* Service Info & Details */
 .serviceInfo, .appointmentDetails, .paymentDetails {
-  margin-bottom: 25px;
+  margin-bottom: 1.5rem;
 }
 
 .serviceInfo h5, .appointmentDetails h5, .paymentDetails h4 {
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 600;
-  color: #111827;
-  margin: 0 0 15px 0;
+  color: #333;
+  margin: 0 0 1rem;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .infoGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 15px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
 }
 
 .infoItem {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0.35rem;
 }
 
 .infoLabel {
-  font-size: 13px;
-  color: #6b7280;
+  font-size: 0.8rem;
+  color: #666;
   font-weight: 500;
 }
 
 .infoValue {
-  font-size: 14px;
-  color: #111827;
+  font-size: 0.95rem;
+  color: #333;
   font-weight: 500;
 }
 
 .detailsGrid {
   display: grid;
-  gap: 15px;
+  gap: 1rem;
 }
 
 .detailItem {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 15px;
-  background: #f9fafb;
-  border-radius: 6px;
+  gap: 0.75rem;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-radius: 8px;
 }
 
 .detailItem svg {
-  color: #4f46e5;
-  margin-top: 2px;
+  color: #4285f4;
+  margin-top: 0.125rem;
+  flex-shrink: 0;
 }
 
 .detailItem .label {
-  font-size: 13px;
-  color: #6b7280;
-  margin-bottom: 4px;
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 0.25rem;
   display: block;
 }
 
 .detailItem .value {
-  font-size: 14px;
-  color: #111827;
+  font-size: 0.95rem;
+  color: #333;
   font-weight: 500;
 }
 
-/* Notes */
+/* Notes Section */
 .notesSection {
-  margin-top: 20px;
-  padding: 15px;
-  background: #f0f9ff;
-  border-radius: 6px;
-  border: 1px solid #e0f2fe;
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: rgba(66, 133, 244, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(66, 133, 244, 0.1);
 }
 
 .notesSection h6 {
-  margin: 0 0 10px 0;
-  font-size: 14px;
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  color: #0369a1;
+  color: #4285f4;
 }
 
 .notesContent {
   display: flex;
-  gap: 10px;
+  gap: 0.75rem;
 }
 
 .notesContent svg {
-  color: #0369a1;
-  margin-top: 2px;
+  color: #4285f4;
+  margin-top: 0.125rem;
+  flex-shrink: 0;
 }
 
 .notesContent p {
   margin: 0;
-  font-size: 14px;
-  color: #374151;
+  font-size: 0.85rem;
+  color: #555;
   line-height: 1.5;
 }
 
-/* QR Payment Section - SIMPLE & LARGE */
+/* QR Payment Section */
 .qrPaymentSection {
-  margin-top: 25px;
-  padding: 25px;
-  background: #f8fafc;
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e9ecef;
 }
 
 .qrHeader {
   text-align: center;
-  margin-bottom: 25px;
+  margin-bottom: 1.5rem;
 }
 
 .qrHeader h5 {
-  margin: 0 0 8px 0;
-  font-size: 18px;
-  color: #4f46e5;
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  color: #4285f4;
   font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .qrHeader p {
   margin: 0;
-  color: #6b7280;
-  font-size: 14px;
+  color: #666;
+  font-size: 0.9rem;
 }
 
-/* QR Code Container - PHÓNG TO */
+/* QR Code Container */
 .qrCodeContainer {
   text-align: center;
-  margin: 25px 0;
-  padding: 25px;
-  background: white;
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  background-color: white;
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #e9ecef;
 }
 
 .qrCodeWrapper {
-  margin-bottom: 20px;
+  margin-bottom: 1rem;
+  display: inline-block;
+  padding: 1rem;
+  background-color: white;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* QR Code Image - 320x320 PIXELS */
 .qrCodeImageLarge {
-  width: 320px !important;
-  height: 320px !important;
+  width: 280px !important;
+  height: 280px !important;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  background: white;
-  padding: 10px;
-  border: 1px solid #e5e7eb;
+  display: block;
 }
 
 .qrCodePlaceholder {
-  width: 320px;
-  height: 320px;
+  width: 280px;
+  height: 280px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #f9fafb;
-  border: 2px dashed #d1d5db;
+  background-color: #f8f9fa;
+  border: 2px dashed #dee2e6;
   border-radius: 8px;
-  color: #6b7280;
-  gap: 15px;
+  color: #6c757d;
+  text-align: center;
+  padding: 1rem;
   margin: 0 auto;
 }
 
-.qrCodePlaceholder svg {
-  width: 48px;
-  height: 48px;
-}
-
-.qrCodePlaceholder span {
-  font-size: 16px;
-  font-weight: 500;
+.qrCodePlaceholder h6 {
+  margin: 0.5rem 0;
+  font-size: 1rem;
+  color: #495057;
 }
 
 .qrCodeInfo {
   text-align: center;
+  margin-bottom: 1rem;
 }
 
 .paymentAmount {
-  font-size: 24px;
+  font-size: 1.5rem;
   font-weight: 700;
-  color: #059669;
-  margin-bottom: 10px;
+  color: #4caf50;
+  margin-bottom: 0.5rem;
 }
 
 .paymentNote {
-  font-size: 16px;
-  color: #374151;
-  margin-bottom: 10px;
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 0.25rem;
 }
 
 .qrReference {
-  font-size: 14px;
-  color: #6b7280;
-  font-family: monospace;
-  background: #f3f4f6;
-  padding: 8px 12px;
+  font-size: 0.8rem;
+  color: #999;
+  font-family: 'Courier New', monospace;
+  background-color: #f8f9fa;
+  padding: 0.25rem 0.5rem;
   border-radius: 4px;
   display: inline-block;
 }
 
+/* Manual Payment Backup */
+.manualPaymentBackup {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.manualPaymentBackup h6 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  color: #333;
+  text-align: center;
+}
+
+.bankingDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.bankRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.bankRow:last-child {
+  border-bottom: none;
+}
+
+.bankLabel {
+  font-weight: 500;
+  color: #495057;
+  min-width: 120px;
+}
+
+.bankValue {
+  color: #333;
+  font-weight: 400;
+  text-align: right;
+}
+
+.transferContent {
+  font-family: 'Courier New', monospace;
+  background-color: #fff3cd;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  border: 1px solid #ffeaa7;
+}
+
+.transferNote {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  padding: 0.75rem;
+  font-size: 0.85rem;
+  color: #856404;
+  line-height: 1.4;
+}
+
 /* QR Instructions */
 .qrInstructions {
-  margin: 25px 0;
-  padding: 20px;
-  background: white;
-  border-radius: 6px;
+  margin-top: 1.5rem;
+  text-align: left;
 }
 
 .qrInstructions h6 {
-  margin: 0 0 15px 0;
-  font-size: 16px;
-  color: #111827;
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  color: #333;
+  text-align: center;
+}
+
+.instructionTabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.instructionTab {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.instructionTab h7 {
+  display: block;
+  margin-bottom: 0.75rem;
+  color: #495057;
+  font-size: 0.9rem;
   font-weight: 600;
 }
 
-.qrInstructions ol {
+.instructionTab ol {
   margin: 0;
-  padding-left: 20px;
-}
-
-.qrInstructions li {
-  margin-bottom: 8px;
-  font-size: 14px;
-  color: #374151;
+  padding-left: 1.25rem;
+  font-size: 0.85rem;
+  color: #6c757d;
   line-height: 1.5;
 }
 
-.qrInstructions li strong {
-  color: #111827;
-  font-weight: 600;
+.instructionTab li {
+  margin-bottom: 0.25rem;
 }
 
 /* QR Actions */
 .qrActions {
   display: flex;
   justify-content: center;
-  gap: 15px;
-  margin-top: 25px;
+  gap: 1rem;
+  margin-top: 1.5rem;
 }
 
 .qrActions .btn {
-  min-width: 160px;
+  min-width: 150px;
 }
 
 /* Payment Success */
 .paymentSuccessSection {
   text-align: center;
-  padding: 30px;
-  background: #ecfdf5;
+  padding: 2rem;
+  background-color: rgba(76, 175, 80, 0.1);
+  border: 1px solid rgba(76, 175, 80, 0.2);
   border-radius: 8px;
-  border: 1px solid #d1fae5;
-  margin-top: 25px;
+  margin-top: 1.5rem;
 }
 
 .successIcon {
   width: 64px;
   height: 64px;
-  margin: 0 auto 15px;
-  background: #059669;
+  margin: 0 auto 1rem;
+  background-color: #4caf50;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -638,146 +794,155 @@
 }
 
 .paymentSuccessSection h5 {
-  margin: 0 0 10px 0;
-  font-size: 20px;
-  color: #059669;
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  color: #4caf50;
   font-weight: 600;
 }
 
 .paymentSuccessSection p {
-  margin: 0 0 15px 0;
-  color: #374151;
+  margin: 0 0 1rem;
+  color: #555;
   line-height: 1.5;
 }
 
 .transactionId {
-  font-family: monospace;
-  background: rgba(5, 150, 105, 0.1);
-  padding: 8px 12px;
+  font-family: 'Courier New', monospace;
+  background-color: rgba(76, 175, 80, 0.1);
+  padding: 0.5rem 0.75rem;
   border-radius: 4px;
   display: inline-block;
-  font-size: 14px;
-  color: #059669;
+  font-size: 0.9rem;
+  color: #4caf50;
   font-weight: 500;
 }
 
-/* Results Table */
+/* Results Section */
+.resultsHeader {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+.patientInfo h4, .resultsContent h4 {
+  margin: 0 0 1rem;
+  color: #333;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
 .resultsTable {
-  margin-top: 20px;
-  border-radius: 6px;
+  margin-top: 1rem;
+  border-radius: 8px;
   overflow: hidden;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #e9ecef;
 }
 
 .resultsTable table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
+  background-color: white;
 }
 
 .resultsTable th {
-  background: #f9fafb;
-  padding: 12px;
+  background-color: #f5f5f5;
+  padding: 0.75rem;
   text-align: left;
   font-weight: 600;
-  color: #111827;
-  border-bottom: 1px solid #e5e7eb;
-  font-size: 14px;
+  color: #333;
+  border-bottom: 1px solid #e9ecef;
+  font-size: 0.9rem;
 }
 
 .resultsTable td {
-  padding: 12px;
+  padding: 0.75rem;
   border-bottom: 1px solid #f3f4f6;
+  font-size: 0.9rem;
 }
 
 .resultsTable tr:hover {
-  background: #f9fafb;
+  background-color: #f9f9f9;
 }
 
 .resultValue {
   font-weight: 500;
-  color: #111827;
+  color: #333;
 }
 
 .unit {
-  color: #6b7280;
+  color: #666;
   font-weight: normal;
-  font-size: 13px;
+  font-size: 0.8rem;
 }
 
 .resultStatus {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
+  gap: 0.35rem;
+  padding: 0.25rem 0.5rem;
   border-radius: 12px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
 }
 
 .resultStatus.normal {
-  background: #dcfce7;
-  color: #166534;
+  background-color: rgba(76, 175, 80, 0.1);
+  color: #4caf50;
 }
 
 .resultStatus.abnormal {
-  background: #fee2e2;
-  color: #dc2626;
+  background-color: rgba(244, 67, 54, 0.1);
+  color: #f44336;
 }
 
 .noResults {
   text-align: center;
-  padding: 40px;
-  color: #6b7280;
+  padding: 2rem;
+  color: #666;
 }
 
-.resultsHeader {
-  margin-bottom: 20px;
-  padding: 15px;
-  background: #f9fafb;
-  border-radius: 6px;
+/* Manual Banking Info */
+.manualBankingInfo {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 0.75rem 0;
+  text-align: left;
+  font-size: 0.85rem;
 }
 
-.patientInfo h4, .resultsContent h4 {
-  margin: 0 0 15px 0;
-  color: #111827;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-/* Loading */
-.loadingContainer {
+.bankDetail {
+  margin: 0.5rem 0;
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  min-height: 300px;
-  gap: 15px;
 }
 
-.loadingContainer p {
-  color: #6b7280;
-  font-size: 14px;
+.bankDetail strong {
+  color: #333;
 }
 
+/* Loading Spinner */
 .spinner {
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-/* Responsive */
+/* Media Queries */
 @media (max-width: 768px) {
-  .stiHistory {
-    padding: 15px;
-  }
-  
   .testHeader {
     flex-direction: column;
-    gap: 15px;
+    gap: 1rem;
   }
   
   .statusBadges {
@@ -796,8 +961,8 @@
   }
   
   .modalContent {
-    margin: 10px;
-    max-width: calc(100vw - 20px);
+    margin: 0.5rem;
+    max-width: calc(100vw - 1rem);
   }
   
   .modalFooter {
@@ -812,26 +977,10 @@
     grid-template-columns: 1fr;
   }
   
-  .qrCodeImageLarge {
-    width: 280px !important;
-    height: 280px !important;
+  .instructionTabs {
+    grid-template-columns: 1fr;
   }
   
-  .qrCodePlaceholder {
-    width: 280px;
-    height: 280px;
-  }
-  
-  .qrActions {
-    flex-direction: column;
-  }
-  
-  .qrActions .btn {
-    width: 100%;
-  }
-}
-
-@media (max-width: 576px) {
   .qrCodeImageLarge {
     width: 240px !important;
     height: 240px !important;
@@ -842,128 +991,199 @@
     height: 240px;
   }
   
+  .qrActions {
+    flex-direction: column;
+  }
+  
+  .qrActions .btn {
+    width: 100%;
+  }
+  
+  .bankRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  
+  .bankLabel {
+    min-width: auto;
+  }
+  
+  .bankValue {
+    text-align: left;
+  }
+}
+
+@media (max-width: 576px) {
+  .modalHeader, .modalBody, .modalFooter {
+    padding: 1rem;
+  }
+  
+  .qrCodeImageLarge {
+    width: 200px !important;
+    height: 200px !important;
+  }
+  
+  .qrCodePlaceholder {
+    width: 200px;
+    height: 200px;
+  }
+  
   .paymentAmount {
-    font-size: 20px;
+    font-size: 1.25rem;
   }
   
   .qrCodeContainer {
-    padding: 20px;
+    padding: 1rem;
+  }
+  
+  .manualPaymentBackup {
+    padding: 1rem;
   }
 }
 
-/* Manual Banking Info Styles */
-.manualBankingInfo {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 15px;
-    margin: 10px 0;
-    text-align: left;
-    font-size: 14px;
+/* Print Styles */
+@media print {
+  .modalOverlay {
+    background-color: white;
+  }
+  
+  .modalContent {
+    box-shadow: none;
+  }
+  
+  .modalCloseBtn, .modalFooter {
+    display: none;
+  }
+  
+  .qrInstructions {
+    display: none;
+  }
 }
 
-.bankDetail {
-    margin: 8px 0;
+.qrActions {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.manualPaymentBackup {
+    gap: 10px;
     margin-top: 20px;
-    padding: 20px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
-}
-
-.bankingDetails {
-    margin: 15px 0;
-}
-
-.bankRow {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid #e9ecef;
-}
-
-.bankRow:last-child {
-    border-bottom: none;
-}
-
-.bankLabel {
-    font-weight: 500;
-    color: #495057;
-    min-width: 120px;
-}
-
-.bankValue {
-    font-weight: 600;
-    color: #212529;
-    text-align: right;
-    flex: 1;
-}
-
-.transferContent {
-    background: #fff3cd;
-    padding: 4px 8px;
-    border-radius: 4px;
-    border: 1px solid #ffeaa7;
-    font-family: 'Monaco', 'Menlo', monospace;
-}
-
-.transferNote {
-    margin-top: 15px;
-    padding: 12px;
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    border-radius: 6px;
-    color: #856404;
-    font-size: 13px;
-}
-
-.instructionTabs {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-top: 15px;
-}
-
-.instructionTab {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
-}
-
-.instructionTab h7 {
-    display: block;
-    margin-bottom: 10px;
-    color: #495057;
-}
-
-.instructionTab ol {
-    margin: 0;
-    padding-left: 20px;
-}
-
-.instructionTab li {
-    margin: 5px 0;
-    font-size: 13px;
-}
-
-/* QR Code placeholder improvements */
-.qrCodePlaceholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: center;
-    min-height: 320px;
-    background: #f8f9fa;
-    border: 2px dashed #dee2e6;
-    border-radius: 8px;
-    text-align: center;
-    padding: 20px;
+}
+
+.qrActions .btn {
+    flex: 1;
+    max-width: 200px;
+}
+
+@media (max-width: 768px) {
+    .qrActions {
+        flex-direction: column;
+    }
+    
+    .qrActions .btn {
+        max-width: 100%;
+    }
+}
+
+/* QR Expiry Styles */
+.qrExpiredWarning {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  color: #856404;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.qrCodeWrapper.expired {
+  opacity: 0.6;
+  position: relative;
+}
+
+.qrExpiredOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  z-index: 1;
+}
+
+.expiredMessage {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  border: 1px solid #f5c2c7;
+  font-weight: 500;
+  font-size: 0.9rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.qrTimestamp {
+  margin-top: 0.5rem;
+  color: #6c757d;
+}
+
+.expiredText {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.regenerateQRPrimary {
+  background-color: #ff9800 !important;
+  border-color: #ff9800 !important;
+  color: white !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3) !important;
+  animation: pulse 2s infinite;
+}
+
+.regenerateQRPrimary:hover {
+  background-color: #f57c00 !important;
+  border-color: #f57c00 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4) !important;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.6);
+  }
+  100% {
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+  }
+}
+
+/* Responsive adjustments for QR expiry features */
+@media (max-width: 768px) {
+  .qrExpiredWarning {
+    font-size: 0.85rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .expiredMessage {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .regenerateQRPrimary {
+    min-width: 100%;
+    margin-bottom: 0.5rem;
+  }
 }

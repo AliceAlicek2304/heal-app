@@ -11,6 +11,7 @@ import ConsultationHistory from '../../components/profile/ConsultationHistory';
 import STIHistory from '../../components/profile/STIHistory';
 import ManagerQuestion from '../../components/profile/ManagerQuestion';
 import Navbar from '../../components/layout/Navbar/Navbar';
+import Footer from '../../components/layout/Footer/Footer';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
 import styles from './ProfilePage.module.css';
 
@@ -116,6 +117,7 @@ const ProfilePage = () => {
                     </div>
                 </div>
             </div>
+            <Footer />
         </div>
     );
 };
