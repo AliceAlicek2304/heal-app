@@ -56,35 +56,27 @@ const BookingModal = ({
 
     const handleAvatarError = (e) => {
         e.target.src = '/img/avatar/default.jpg';
-    };
-
-    // Fetch available slots when date changes
+    };    // Fetch available slots when date changes
     useEffect(() => {
-        if (selectedDate && consultant.id) {
+        if (selectedDate && (consultant.userId || consultant.id)) {
             fetchAvailableSlots();
         }
-    }, [selectedDate, consultant.id]);
+    }, [selectedDate, consultant.userId, consultant.id]);
 
     const fetchAvailableSlots = async () => {
         if (!selectedDate) return;
 
-        setLoadingSlots(true);
-        try {
-            console.log('🔍 Fetching available slots:', {
-                consultantId: consultant.id,
-                date: selectedDate
-            });
+        setLoadingSlots(true); try {
 
             const response = await consultationService.getAvailableTimeSlots(
-                consultant.id,
+                consultant.userId || consultant.id,
                 selectedDate,
                 onAuthRequired
-            );
-
-            if (response.success) {
+            ); if (response.success) {
                 const slots = response.data || [];
                 setAvailableSlots(slots);
             } else {
+                console.log('🔍 Failed to get slots:', response.message);
                 setAvailableSlots([]);
                 onError(new Error(response.message || 'Không thể tải khung giờ trống'));
             }
@@ -126,11 +118,9 @@ const BookingModal = ({
             return;
         }
 
-        setLoading(true);
-
-        try {
+        setLoading(true); try {
             const bookingData = {
-                consultantId: consultant.id,
+                consultantId: consultant.userId || consultant.id,
                 date: selectedDate,
                 timeSlot: selectedTimeSlot
             };
@@ -263,32 +253,33 @@ const BookingModal = ({
                                             <LoadingSpinner size="small" />
                                             <span>Đang tải khung giờ trống...</span>
                                         </div>
-                                    ) : (
-                                        <div className={styles.timeSlots}>
-                                            {timeSlots.map(slot => {
-                                                const availableSlot = availableSlots.find(
-                                                    as => as.slot === slot.value
-                                                );
+                                    ) : (<div className={styles.timeSlots}>
+                                        {timeSlots.map(slot => {
+                                            const availableSlot = availableSlots.find(
+                                                as => as.slot === slot.value
+                                            );
 
-                                                const isAvailable = availableSlot ? availableSlot.available : false;
-                                                const isSelected = selectedTimeSlot === slot.value;
+                                            // Nếu không có dữ liệu từ server, mặc định là available
+                                            // Chỉ khi server trả về slot với available: false thì mới disable
+                                            const isAvailable = availableSlot ? availableSlot.available : true;
+                                            const isSelected = selectedTimeSlot === slot.value;
 
-                                                return (
-                                                    <button
-                                                        key={slot.value}
-                                                        type="button"
-                                                        className={`${styles.timeSlotButton} ${isSelected ? styles.selected : ''} ${!isAvailable ? styles.unavailable : ''}`}
-                                                        onClick={() => isAvailable && handleTimeSlotChange(slot.value)}
-                                                        disabled={!isAvailable}
-                                                    >
-                                                        <span className={styles.timeLabel}>{slot.label}</span>
-                                                        <span className={styles.status}>
-                                                            {isAvailable ? 'Trống' : 'Đã đặt'}
-                                                        </span>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
+                                            return (
+                                                <button
+                                                    key={slot.value}
+                                                    type="button"
+                                                    className={`${styles.timeSlotButton} ${isSelected ? styles.selected : ''} ${!isAvailable ? styles.unavailable : ''}`}
+                                                    onClick={() => isAvailable && handleTimeSlotChange(slot.value)}
+                                                    disabled={!isAvailable}
+                                                >
+                                                    <span className={styles.timeLabel}>{slot.label}</span>
+                                                    <span className={styles.status}>
+                                                        {isAvailable ? 'Trống' : 'Đã đặt'}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
                                     )}
                                 </div>
                             )}

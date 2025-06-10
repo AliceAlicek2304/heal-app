@@ -49,7 +49,7 @@ public class AuthController {
                     accessToken,
                     refreshToken,
                     "Bearer",    // tokenType
-                    3600L,       // expiresIn (1 hour in seconds)
+                    14400L,      // expiresIn (4 hours in seconds)
                     user.getId(), // userId
                     user.getUsername(),
                     user.getEmail(),
@@ -94,7 +94,7 @@ public class AuthController {
                     newAccessToken,
                     newRefreshToken,
                     "Bearer",    // tokenType
-                    3600L,       // expiresIn (1 hour in seconds)
+                    14400L,      // expiresIn (4 hours in seconds)
                     user.getId(), // userId
                     user.getUsername(),
                     user.getEmail(),

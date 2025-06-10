@@ -15,20 +15,42 @@ const clearTokens = () => {
 
 // Refresh access token
 const refreshToken = async () => {
-    const refreshTokenValue = localStorage.getItem('refreshToken');
-    if (!refreshTokenValue) throw new Error('No refresh token');
-    const response = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken: refreshTokenValue })
-    });
-    if (!response.ok) {
+    try {
+        const refreshTokenValue = localStorage.getItem('refreshToken');
+        if (!refreshTokenValue) {
+            console.log('No refresh token available');
+            throw new Error('No refresh token');
+        }
+
+        console.log('Attempting to refresh token...');
+        const response = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken: refreshTokenValue })
+        });
+
+        if (!response.ok) {
+            console.log('Refresh token failed with status:', response.status);
+            clearTokens();
+            return null;
+        }
+
+        const data = await response.json();
+        
+        if (data.success !== false && data.accessToken && data.refreshToken) {
+            setTokens(data.accessToken, data.refreshToken);
+            console.log(' Token refreshed successfully');
+            return data.accessToken;
+        } else {
+            console.log('Refresh response format error:', data);
+            clearTokens();
+            return null;
+        }
+    } catch (error) {
+        console.error('Error during token refresh:', error);
         clearTokens();
         return null;
     }
-    const data = await response.json();
-    setTokens(data.accessToken, data.refreshToken);
-    return data.accessToken;
 };
 
 // API call wrapper with automatic token refresh
@@ -187,12 +209,37 @@ export const authService = {
     // Đăng xuất
     logout: () => {
         clearTokens();
-    },
-    // Kiểm tra trạng thái đăng nhập
+    },    // Kiểm tra trạng thái đăng nhập
     isAuthenticated: () => {
         const token = localStorage.getItem('authToken');
         return !!token;
-    },    // Lấy thông tin user hiện tại từ server hoặc storage
+    },
+
+    // Check if token is expired or about to expire
+    isTokenExpired: () => {
+        const token = localStorage.getItem('authToken');
+        if (!token) return true;
+
+        try {
+            // Decode JWT payload
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(
+                atob(base64)
+                    .split('')
+                    .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                    .join('')
+            );
+            const decoded = JSON.parse(jsonPayload);
+            const now = Date.now() / 1000;
+            
+            // Check if token is expired (with 30 seconds buffer)
+            return decoded.exp && decoded.exp <= (now + 30);
+        } catch (error) {
+            console.error('Error checking token expiry:', error);
+            return true; // Assume expired if we can't decode
+        }
+    },// Lấy thông tin user hiện tại từ server hoặc storage
     getCurrentUser: async () => {       // Always try to get from localStorage first
         const userStr = localStorage.getItem('user');
         const token = localStorage.getItem('authToken');
@@ -345,6 +392,9 @@ export const authService = {
             return { success: false, message: 'Có lỗi xảy ra khi tải thông tin người dùng' };
         }
     },
+
+    // Expose refresh token method
+    refreshToken,
 
     apiCall
 };

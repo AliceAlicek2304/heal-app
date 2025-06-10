@@ -209,11 +209,12 @@ export const consultationService = {
             // Ưu tiên sử dụng user từ context, fallback về authService
             let user = userFromContext;
             if (!user) {
-                user = await authService.getCurrentUser();
+                const userResult = await authService.getCurrentUser();
+                if (!userResult.success) {
+                    return { success: false, message: 'Chưa đăng nhập' };
+                }
+                user = userResult.data;
             }
-            
-            console.log('🔍 Current user:', user);
-            console.log('🔍 User role:', user?.role);
             
             if (!user) {
                 return { success: false, message: 'Chưa đăng nhập' };
@@ -227,20 +228,41 @@ export const consultationService = {
                 method: 'GET'
             });
 
+            // Check for various error statuses
             if (response.status === 401) {
+                // Token expired or invalid
                 authService.logout();
                 if (onAuthRequired) {
                     onAuthRequired();
-                    return { success: false, message: 'Yêu cầu đăng nhập' };
                 }
-                return { success: false, message: 'Phiên đăng nhập hết hạn' };
+                throw new Error('401: Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
             }
 
-            return response.json();
+            if (response.status === 403) {
+                throw new Error('403: Không có quyền truy cập');
+            }
+
+            if (response.status === 500) {
+                throw new Error('500: Lỗi server nội bộ');
+            }
+
+            if (!response.ok) {
+                throw new Error(`${response.status}: Server error`);
+            }
+
+            const data = await response.json();
+            return data;
         } catch (error) {
+            console.error('Error in getCurrentConsultantProfile:', error);
+            
+            // Re-throw specific errors for better handling
+            if (error.message.includes('401') || error.message.includes('403')) {
+                throw error;
+            }
+            
             return {
                 success: false,
-                message: 'Không thể tải thông tin hồ sơ'
+                message: error.message || 'Không thể tải thông tin hồ sơ'
             };
         }
     },

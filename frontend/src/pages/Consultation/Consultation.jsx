@@ -198,13 +198,11 @@ const Consultation = () => {
                 </div>
 
                 <div className={styles.consultantsSection}>
-                    <h2>Chọn chuyên gia tư vấn</h2>
-
-                    {consultants.length > 0 ? (
+                    <h2>Chọn chuyên gia tư vấn</h2>                    {consultants.length > 0 ? (
                         <div className={styles.consultantsGrid}>
                             {consultants.map(consultant => (
                                 <ConsultantCard
-                                    key={consultant.id}
+                                    key={consultant.userId || consultant.profileId || consultant.id}
                                     consultant={consultant}
                                     onBookConsultation={handleBookConsultation}
                                     onAuthRequired={handleAuthRequired}

@@ -14,7 +14,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [isAuthenticatedState, setIsAuthenticatedState] = useState(false); useEffect(() => {
+    const [isAuthenticatedState, setIsAuthenticatedState] = useState(false);    useEffect(() => {
         const verifyAuth = async () => {
             setIsLoading(true);
             try {
@@ -26,6 +26,22 @@ export const AuthProvider = ({ children }) => {
                         const userData = JSON.parse(userStr);
                         setUser(userData);
                         setIsAuthenticatedState(true);
+                    }                    // Check if token is expired and try to refresh
+                    if (authService.isTokenExpired()) {
+                        console.log('Token is expired, attempting refresh...');
+                        try {
+                            const refreshResult = await authService.refreshToken();
+                            if (!refreshResult) {
+                                console.log('Refresh failed, logging out');
+                                await logout();
+                                return;
+                            }
+                            console.log('Token refreshed successfully');
+                        } catch (refreshError) {
+                            console.error('Token refresh failed:', refreshError);
+                            await logout();
+                            return;
+                        }
                     }
 
                     // Then try to refresh from server (optional, in background)

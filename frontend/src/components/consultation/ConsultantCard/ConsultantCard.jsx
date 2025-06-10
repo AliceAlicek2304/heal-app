@@ -23,8 +23,10 @@ const ConsultantCard = ({ consultant, onBookConsultation, onAuthRequired }) => {
     };
     const handleAvatarError = (e) => {
         e.target.src = '/img/avatar/default.jpg';
-    };    return (
-        <div className={`${styles.consultantCard} ${isExpanded ? styles.expanded : ''}`}>
+    };
+
+    return (
+        <div className={styles.consultantCard}>
             <div className={styles.consultantInfo}>
                 <div className={styles.avatar}>
                     {consultant.avatar ? (
@@ -43,57 +45,18 @@ const ConsultantCard = ({ consultant, onBookConsultation, onAuthRequired }) => {
                 <div className={styles.details}>
                     <h3 className={styles.name}>{consultant.fullName}</h3>
 
-                    {/* Phần thông tin cơ bản - luôn hiển thị */}
                     {consultant.qualifications && (
-                        <div className={styles.qualifications}>
+                        <p className={styles.qualifications}>
                             <span className={styles.label}>Chuyên môn:</span>
-                            <div className={isExpanded ? styles.fullContent : styles.truncatedContent}>
-                                {consultant.qualifications}
-                            </div>
-                        </div>
+                            {consultant.qualifications}
+                        </p>
                     )}
 
                     {consultant.experience && (
-                        <div className={styles.experience}>
+                        <p className={styles.experience}>
                             <span className={styles.label}>Kinh nghiệm:</span>
-                            <div className={isExpanded ? styles.fullContent : styles.truncatedContent}>
-                                {consultant.experience}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Bio chỉ hiển thị khi expanded */}
-                    {consultant.bio && (
-                        <div className={`${styles.bio} ${isExpanded ? styles.visible : styles.hidden}`}>
-                            <span className={styles.label}>Giới thiệu:</span>
-                            <div className={styles.fullContent}>
-                                {consultant.bio}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Nút xem thêm/thu gọn */}
-                    {(consultant.qualifications || consultant.experience || consultant.bio) && (
-                        <button 
-                            className={styles.toggleButton}
-                            onClick={toggleExpanded}
-                        >
-                            {isExpanded ? (
-                                <>
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <polyline points="18,15 12,9 6,15"></polyline>
-                                    </svg>
-                                    Thu gọn
-                                </>
-                            ) : (
-                                <>
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <polyline points="6,9 12,15 18,9"></polyline>
-                                    </svg>
-                                    Xem thêm
-                                </>
-                            )}
-                        </button>
+                            {consultant.experience} năm
+                        </p>
                     )}
 
                     <div className={styles.availability}>

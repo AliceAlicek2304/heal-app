@@ -3,10 +3,11 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
 import { consultationService } from '../../services/consultationService';
+import { authService } from '../../services/authService';
 import styles from './ConsultantProfile.module.css';
 
 const ConsultantProfile = () => {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const toast = useToast();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -23,20 +24,18 @@ const ConsultantProfile = () => {
         if (isConsultant) {
             fetchProfile();
         }
-    }, [isConsultant]); const fetchProfile = async () => {
+    }, [isConsultant]);    const fetchProfile = async () => {
         try {
             setLoading(true);
 
-            // Debug user info first
-            console.log('🔍 User from AuthContext:', user);
-            console.log('🔍 User role from AuthContext:', user?.role);
-            console.log('🔍 Is consultant check:', user?.role === 'CONSULTANT');
-
-            const response = await consultationService.getCurrentConsultantProfile(user);
-
-            // Debug: Log the full response
-            console.log('🔍 Full API response:', response);
-            console.log('🔍 Response success:', response.success); console.log('🔍 Response data:', response.data);
+            const response = await consultationService.getCurrentConsultantProfile(user, () => {
+                // onAuthRequired callback
+                toast.error('Phiên đăng nhập hết hạn. Đang đăng xuất...');
+                setTimeout(() => {
+                    logout();
+                    window.location.href = '/';
+                }, 1500);
+            });
 
             // Kiểm tra cấu trúc response data
             if (response.success && response.data) {
@@ -55,10 +54,10 @@ const ConsultantProfile = () => {
                 });
 
                 setHasChanges(false); // Reset hasChanges after successful fetch
-                console.log('Profile loaded successfully:', response.data);
+                console.log('✅ Profile loaded successfully');
             } else {
                 // Profile might not exist yet - that's ok for new consultants
-                console.log('No profile found, starting with empty form');
+                console.log('ℹ️ No profile found, starting with empty form');
                 setProfile({
                     qualifications: '',
                     experience: '',
@@ -67,12 +66,23 @@ const ConsultantProfile = () => {
                 setHasChanges(false);
             }
         } catch (error) {
-            console.error('Error fetching consultant profile:', error);
-            toast.error('Có lỗi xảy ra khi tải thông tin hồ sơ');
+            console.error('❌ Error fetching consultant profile:', error);
+            
+            // Check if it's an auth-related error
+            if (error.message && (error.message.includes('401') || error.message.includes('403'))) {
+                // Don't show toast here as it's already handled by the service
+                // Just logout the user
+                setTimeout(() => {
+                    logout();
+                    window.location.href = '/';
+                }, 1000);
+            } else {
+                toast.error('Có lỗi xảy ra khi tải thông tin hồ sơ');
+            }
         } finally {
             setLoading(false);
         }
-    }; const handleInputChange = (field, value) => {
+    };const handleInputChange = (field, value) => {
         // Validation độ dài
         const maxLengths = {
             qualifications: 1000,
