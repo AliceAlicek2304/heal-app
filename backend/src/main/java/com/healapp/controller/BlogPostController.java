@@ -252,10 +252,16 @@ public class BlogPostController {
         Sort.Direction direction = sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
-        // Kiểm tra xem người dùng có vai trò STAFF hoặc ADMIN không
+        // Kiểm tra xem người dùng có đăng nhập và có vai trò STAFF hoặc ADMIN không
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        boolean isStaffOrAdmin = authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_STAFF") || a.getAuthority().equals("ROLE_ADMIN"));
+        boolean isAuthenticated = authentication != null && authentication.isAuthenticated() &&
+                !"anonymousUser".equals(authentication.getName());
+        boolean isStaffOrAdmin = false;
+
+        if (isAuthenticated) {
+            isStaffOrAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_STAFF") || a.getAuthority().equals("ROLE_ADMIN"));
+        }
 
         ApiResponse<Page<BlogPostResponse>> response;
 
@@ -263,7 +269,8 @@ public class BlogPostController {
             // Nếu là STAFF hoặc ADMIN, trả về tất cả bài viết
             response = blogPostService.getAllPosts(pageable);
         } else {
-            // Nếu là người dùng thông thường, chỉ trả về bài viết đã được duyệt
+            // Nếu là người dùng thông thường hoặc chưa đăng nhập, chỉ trả về bài viết đã
+            // được duyệt
             response = blogPostService.getPostsByStatus(BlogPostStatus.CONFIRMED, pageable);
         }
 

@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import Navbar from '../../components/layout/Navbar/Navbar';
 import Footer from '../../components/layout/Footer/Footer';
-import { authService } from '../../services/authService';
+import { blogService } from '../../services/blogService';
 import BlogCard from '../../components/blog/BlogCard/BlogCard';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
 import Pagination from '../../components/common/Pagination/Pagination';
@@ -23,14 +23,12 @@ const Blog = () => {
 
     useEffect(() => {
         fetchBlogPosts();
-    }, [currentPage]);
-
-    const fetchBlogPosts = async () => {
+    }, [currentPage]);    const fetchBlogPosts = async () => {
         try {
             setLoading(true);
             
-            // Keep using authService.getBlogPosts as in your original code
-            const response = await authService.getBlogPosts(currentPage, pageSize);
+            // Use blogService.getBlogPosts for public blog listing
+            const response = await blogService.getBlogPosts(currentPage, pageSize);
 
             if (response.success && response.data) {
                 setBlogPosts(response.data.content || []);

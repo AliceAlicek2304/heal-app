@@ -1,27 +1,18 @@
-const API_BASE_URL = 'http://localhost:8080';
+import { authService } from './authService';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 export const menstrualCycleService = {
     // Thêm chu kỳ kinh nguyệt mới
     addCycle: async (cycleData) => {
         try {
-            const credentials = localStorage.getItem('credentials');
-            if (!credentials) {
-                return { success: false, message: 'Chưa đăng nhập' };
-            }
-
-            const response = await fetch(`${API_BASE_URL}/menstrual-cycle/addCycle`, {
+            const response = await authService.apiCall(`${API_BASE_URL}/menstrual-cycle/addCycle`, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Basic ${credentials}`,
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
                 body: JSON.stringify(cycleData)
             });
 
             if (response.status === 401) {
-                localStorage.removeItem('credentials');
-                localStorage.removeItem('user');
+                authService.logout();
                 return { success: false, message: 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại' };
             }
 
@@ -36,23 +27,12 @@ export const menstrualCycleService = {
     // Lấy tất cả chu kỳ của user
     getCyclesByUserId: async (userId) => {
         try {
-            const credentials = localStorage.getItem('credentials');
-            if (!credentials) {
-                return { success: false, message: 'Chưa đăng nhập' };
-            }
-
-            const response = await fetch(`${API_BASE_URL}/menstrual-cycle/${userId}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Basic ${credentials}`,
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include'
+            const response = await authService.apiCall(`${API_BASE_URL}/menstrual-cycle/${userId}`, {
+                method: 'GET'
             });
 
             if (response.status === 401) {
-                localStorage.removeItem('credentials');
-                localStorage.removeItem('user');
+                authService.logout();
                 return { success: false, message: 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại' };
             }
 
@@ -67,23 +47,13 @@ export const menstrualCycleService = {
     // Cập nhật chu kỳ kinh nguyệt
     updateCycle: async (cycleId, cycleData) => {
         try {
-            const credentials = localStorage.getItem('credentials');
-            if (!credentials) {
-                return { success: false, message: 'Chưa đăng nhập' };
-            }
-
-            const response = await fetch(`${API_BASE_URL}/menstrual-cycle/${cycleId}`, {
+            const response = await authService.apiCall(`${API_BASE_URL}/menstrual-cycle/${cycleId}`, {
                 method: 'PUT',
-                headers: {
-                    'Authorization': `Basic ${credentials}`,
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
                 body: JSON.stringify(cycleData)
             });
 
             if (response.status === 401) {
-                localStorage.removeItem('credentials');
+                authService.logout();
                 return { success: false, message: 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại' };
             }
 
@@ -98,23 +68,13 @@ export const menstrualCycleService = {
     // Bật/tắt nhắc nhở chu kỳ
     toggleReminder: async (cycleId, isEnabled) => {
         try {
-            const credentials = localStorage.getItem('credentials');
-            if (!credentials) {
-                return { success: false, message: 'Chưa đăng nhập' };
-            }
-
-            const response = await fetch(`${API_BASE_URL}/menstrual-cycle/${cycleId}/reminder`, {
+            const response = await authService.apiCall(`${API_BASE_URL}/menstrual-cycle/${cycleId}/reminder`, {
                 method: 'PUT',
-                headers: {
-                    'Authorization': `Basic ${credentials}`,
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
                 body: JSON.stringify({ reminderEnabled: isEnabled })
             });
 
             if (response.status === 401) {
-                localStorage.removeItem('credentials');
+                authService.logout();
                 return { success: false, message: 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại' };
             }
 
@@ -129,22 +89,12 @@ export const menstrualCycleService = {
     // Xóa chu kỳ kinh nguyệt
     deleteCycle: async (cycleId) => {
         try {
-            const credentials = localStorage.getItem('credentials');
-            if (!credentials) {
-                return { success: false, message: 'Chưa đăng nhập' };
-            }
-
-            const response = await fetch(`${API_BASE_URL}/menstrual-cycle/${cycleId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Basic ${credentials}`,
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include'
+            const response = await authService.apiCall(`${API_BASE_URL}/menstrual-cycle/${cycleId}`, {
+                method: 'DELETE'
             });
 
             if (response.status === 401) {
-                localStorage.removeItem('credentials');
+                authService.logout();
                 return { success: false, message: 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại' };
             }
 

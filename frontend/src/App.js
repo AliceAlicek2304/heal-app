@@ -32,7 +32,7 @@ function App() {
               <Route path="/questions" element={<Questions />} />
               <Route path="/questions/create" element={<CreateQuestion />} />
               <Route path="/consultation" element={<Consultation />} />
-              <Route path="/sti-testing" element={<STITesting />} />
+              <Route path="/sti-testing" element={<STITesting />} />  
             </Routes>
             <ChatBot />
           </div>

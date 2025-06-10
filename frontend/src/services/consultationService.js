@@ -1,22 +1,14 @@
-const API_BASE_URL = 'http://localhost:8080';
+import { authService } from './authService';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 export const consultationService = {
     // Lấy danh sách consultant
     getAllConsultants: async (onAuthRequired = null) => {
         try {
-            const credentials = localStorage.getItem('credentials');
-
-            const response = await fetch(`${API_BASE_URL}/consultations/consultants`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(credentials && { 'Authorization': `Basic ${credentials}` })
-                }
-            });
+            const response = await authService.apiCall(`${API_BASE_URL}/consultations/consultants`, { method: 'GET' });
 
             if (response.status === 401) {
-                localStorage.removeItem('credentials');
-                localStorage.removeItem('user');
+                authService.logout();
                 if (onAuthRequired) {
                     onAuthRequired();
                     return { success: false, message: 'Yêu cầu đăng nhập' };
@@ -38,22 +30,11 @@ export const consultationService = {
     // Lấy khung giờ có sẵn
     getAvailableTimeSlots: async (consultantId, date, onAuthRequired = null) => {
         try {
-            const credentials = localStorage.getItem('credentials');
-
             const url = `${API_BASE_URL}/consultations/available-slots?consultantId=${consultantId}&date=${date}`;
-            console.log('🔍 Fetching available slots from:', url);
-
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(credentials && { 'Authorization': `Basic ${credentials}` })
-                }
-            });
+            const response = await authService.apiCall(url, { method: 'GET' });
 
             if (response.status === 401) {
-                localStorage.removeItem('credentials');
-                localStorage.removeItem('user');
+                authService.logout();
                 if (onAuthRequired) {
                     onAuthRequired();
                     return { success: false, message: 'Yêu cầu đăng nhập' };
@@ -84,19 +65,10 @@ export const consultationService = {
     // Lấy thông tin profile consultant
     getConsultantProfile: async (consultantId, onAuthRequired = null) => {
         try {
-            const credentials = localStorage.getItem('credentials');
-
-            const response = await fetch(`${API_BASE_URL}/consultations/consultant/${consultantId}/profile`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(credentials && { 'Authorization': `Basic ${credentials}` })
-                }
-            });
+            const response = await authService.apiCall(`${API_BASE_URL}/consultations/consultant/${consultantId}/profile`, { method: 'GET' });
 
             if (response.status === 401) {
-                localStorage.removeItem('credentials');
-                localStorage.removeItem('user');
+                authService.logout();
                 if (onAuthRequired) {
                     onAuthRequired();
                     return { success: false, message: 'Yêu cầu đăng nhập' };
@@ -118,26 +90,10 @@ export const consultationService = {
     // Đặt lịch tư vấn
     createConsultation: async (consultationData, onAuthRequired = null) => {
         try {
-            const credentials = localStorage.getItem('credentials');
-            if (!credentials) {
-                if (onAuthRequired) {
-                    onAuthRequired();
-                }
-                return { success: false, message: 'Chưa đăng nhập' };
-            }
-
-            const response = await fetch(`${API_BASE_URL}/consultations`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Basic ${credentials}`
-                },
-                body: JSON.stringify(consultationData)
-            });
+            const response = await authService.apiCall(`${API_BASE_URL}/consultations`, { method: 'POST', body: JSON.stringify(consultationData) });
 
             if (response.status === 401) {
-                localStorage.removeItem('credentials');
-                localStorage.removeItem('user');
+                authService.logout();
                 if (onAuthRequired) {
                     onAuthRequired();
                 }
@@ -158,25 +114,10 @@ export const consultationService = {
     // Lấy lịch tư vấn của user
     getMyConsultations: async (onAuthRequired = null) => {
         try {
-            const credentials = localStorage.getItem('credentials');
-            if (!credentials) {
-                if (onAuthRequired) {
-                    onAuthRequired();
-                }
-                return { success: false, message: 'Chưa đăng nhập' };
-            }
-
-            const response = await fetch(`${API_BASE_URL}/consultations/my-consultations`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Basic ${credentials}`
-                }
-            });
+            const response = await authService.apiCall(`${API_BASE_URL}/consultations/my-consultations`, { method: 'GET' });
 
             if (response.status === 401) {
-                localStorage.removeItem('credentials');
-                localStorage.removeItem('user');
+                authService.logout();
                 if (onAuthRequired) {
                     onAuthRequired();
                 }
@@ -197,26 +138,10 @@ export const consultationService = {
     // Cập nhật trạng thái lịch tư vấn
     updateConsultationStatus: async (consultationId, status, onAuthRequired = null) => {
         try {
-            const credentials = localStorage.getItem('credentials');
-            if (!credentials) {
-                if (onAuthRequired) {
-                    onAuthRequired();
-                }
-                return { success: false, message: 'Chưa đăng nhập' };
-            }
-
-            const response = await fetch(`${API_BASE_URL}/consultations/${consultationId}/status`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Basic ${credentials}`
-                },
-                body: JSON.stringify({ status: status })
-            });
+            const response = await authService.apiCall(`${API_BASE_URL}/consultations/${consultationId}/status`, { method: 'PUT', body: JSON.stringify({ status }) });
 
             if (response.status === 401) {
-                localStorage.removeItem('credentials');
-                localStorage.removeItem('user');
+                authService.logout();
                 if (onAuthRequired) {
                     onAuthRequired();
                 }

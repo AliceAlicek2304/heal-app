@@ -1,10 +1,11 @@
-const API_BASE_URL = 'http://localhost:8080';
+import { authService } from './authService';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
-const blogService = {
+export const blogService = {
     createBlogPost: async (blogData) => {
         try {
-            const credentials = localStorage.getItem('credentials');
-            if (!credentials) {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
                 return { success: false, message: 'Chưa đăng nhập' };
             }
 
@@ -58,9 +59,7 @@ const blogService = {
 
             const response = await fetch(`${API_BASE_URL}/blog`, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Basic ${credentials}`
-                },
+                headers: { 'Authorization': `Bearer ${token}` },
                 body: formData
             });
 
@@ -81,22 +80,9 @@ const blogService = {
 
     getCategories: async () => {
         try {
-            // Sửa từ /category thành /categories và thêm credentials nếu có
-            const credentials = localStorage.getItem('credentials');
-            const headers = {};
-            
-            if (credentials) {
-                headers['Authorization'] = `Basic ${credentials}`;
-            }
-
-            const response = await fetch(`${API_BASE_URL}/categories`, {
-                method: 'GET',
-                headers
-            });
-
-            if (!response.ok) {
-                // Nếu 401 và không có credentials, thử không cần auth
-                if (response.status === 401 && !credentials) {
+            const response = await authService.apiCall(`${API_BASE_URL}/categories`, { method: 'GET' }); if (!response.ok) {
+                // Nếu 401, thử không cần auth
+                if (response.status === 401) {
                     console.log('Categories endpoint requires authentication');
                     return { success: false, message: 'Cần đăng nhập để xem danh mục' };
                 }
@@ -113,21 +99,14 @@ const blogService = {
 
     getMyPosts: async ({ page = 0, size = 10 }) => {
         try {
-            const credentials = localStorage.getItem('credentials');
-            if (!credentials) {
+            const response = await authService.apiCall(
+                `${API_BASE_URL}/blog/my-posts?page=${page}&size=${size}`,
+                { method: 'GET' }
+            );
+            if (response.status === 401) {
+                authService.logout();
                 return { success: false, message: 'Chưa đăng nhập' };
             }
-
-            const response = await fetch(
-                `${API_BASE_URL}/blog/my-posts?page=${page}&size=${size}`,
-                {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Basic ${credentials}`
-                    }
-                }
-            );
-
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -138,8 +117,67 @@ const blogService = {
             console.error('Error fetching my posts:', error);
             return { success: false, message: 'Không thể tải bài viết của bạn' };
         }
+    },    // Get all blog posts with pagination (public endpoint)
+    getBlogPosts: async (page = 0, size = 12) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/blog?page=${page}&size=${size}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Blog posts response:', data); // Debug log
+
+            // Handle the response format from backend
+            if (data.success) {
+                return { success: true, data: data.data };
+            } else {
+                return { success: false, message: data.message || 'Không thể tải danh sách bài viết' };
+            }
+        } catch (error) {
+            console.error('Error fetching blog posts:', error);
+            return { success: false, message: 'Không thể tải danh sách bài viết' };
+        }
+    },
+
+    // Get a specific blog post by ID (public endpoint)
+    getBlogPostById: async (postId) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/blog/${postId}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Blog post detail response:', data); // Debug log
+
+            // Handle the response format from backend
+            if (data.success) {
+                return { success: true, data: data.data };
+            } else {
+                return { success: false, message: data.message || 'Không thể tải bài viết' };
+            }
+        } catch (error) {
+            console.error('Error fetching blog post:', error);
+            return { success: false, message: 'Không thể tải bài viết' };
+        }
+    },
+
+    // Generate blog image URL
+    getBlogImageUrl: (imagePath) => {
+        if (!imagePath) return `${API_BASE_URL}/img/blog/default.jpg`;
+        if (imagePath.startsWith('http')) return imagePath;
+        if (imagePath.startsWith('/img/')) return `${API_BASE_URL}${imagePath}`;
+        return `${API_BASE_URL}/img/blog/${imagePath}`;
     }
 };
 
-export { blogService };
 export default blogService;

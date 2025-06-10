@@ -4,6 +4,7 @@ import { useToast } from '../../contexts/ToastContext';
 import Navbar from '../../components/layout/Navbar/Navbar';
 import Footer from '../../components/layout/Footer/Footer';
 import { authService } from '../../services/authService';
+import { blogService } from '../../services/blogService';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
 import styles from './BlogDetail.module.css';
 
@@ -15,13 +16,11 @@ const BlogDetail = () => {
 
     useEffect(() => {
         fetchBlogPost();
-    }, [id]);
-
-    const fetchBlogPost = async () => {
+    }, [id]);    const fetchBlogPost = async () => {
         try {
             setLoading(true);
 
-            const response = await authService.getBlogPostById(id);
+            const response = await blogService.getBlogPostById(id);
 
             if (response.success && response.data) {
                 setBlogPost(response.data);
@@ -129,15 +128,13 @@ const BlogDetail = () => {
                         />
                         <span className={styles.authorName}>Tác giả: {blogPost.authorName}</span>
                     </div>
-                </div>
-
-                {/* Featured Image */}
+                </div>                {/* Featured Image */}
                 <div className={styles.blogDetailImage}>
                     <img
-                        src={authService.getBlogImageUrl(blogPost.thumbnailImage)}
+                        src={blogService.getBlogImageUrl(blogPost.thumbnailImage)}
                         alt={blogPost.title}
                         onError={(e) => {
-                            e.target.src = authService.getBlogImageUrl('/img/blog/default.jpg');
+                            e.target.src = blogService.getBlogImageUrl('/img/blog/default.jpg');
                         }}
                     />
                 </div>
@@ -159,15 +156,13 @@ const BlogDetail = () => {
                                 <div key={section.sectionId} className={styles.blogSection}>
                                     {section.sectionTitle && (
                                         <h2 className={styles.sectionTitle}>{section.sectionTitle}</h2>
-                                    )}
-
-                                    {section.sectionImage && (
+                                    )}                                    {section.sectionImage && (
                                         <div className={styles.sectionImage}>
                                             <img
-                                                src={authService.getBlogImageUrl(section.sectionImage)}
+                                                src={blogService.getBlogImageUrl(section.sectionImage)}
                                                 alt={section.sectionTitle || "Section image"}
                                                 onError={(e) => {
-                                                    e.target.src = authService.getBlogImageUrl('/img/blog/default.jpg');
+                                                    e.target.src = blogService.getBlogImageUrl('/img/blog/default.jpg');
                                                 }}
                                             />
                                         </div>

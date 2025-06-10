@@ -3,35 +3,47 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { menstrualCycleService } from '../../services/menstrualCycleService';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
-import styles from './MenstrualHistoryComponent.module.css';
+import styles from './MenstrualHistoryComponent.module.css';                                                
 
 const MenstrualHistoryComponent = () => {
     const { user } = useAuth();
     const toast = useToast();
     const [cycles, setCycles] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [selectedCycle, setSelectedCycle] = useState(null);
-
-    // Gọi fetchCycles khi component mount hoặc khi user thay đổi
+    const [selectedCycle, setSelectedCycle] = useState(null);    // Gọi fetchCycles khi component mount hoặc khi user thay đổi
     useEffect(() => {
-        if (user && user.userId) {
+        console.log('🔍 MenstrualHistory useEffect - user:', user);
+        if (user && (user.userId || user.id)) {
             fetchCycles();
-        }
+        } else {
+            console.log('⚠️ MenstrualHistory - No user or user ID available');
+        }       
     }, [user]);
 
-    const fetchCycles = async () => {
+    const fetchCycles = async () => {                   
         try {
             setLoading(true);
 
             // Kiểm tra nếu user không tồn tại
-            if (!user || !user.userId) {
-                console.log("Đang chờ thông tin người dùng...");
+            if (!user) {
+                console.log("⚠️ Đang chờ thông tin người dùng...");
                 setLoading(false);
                 return;
             }
 
+            // Sử dụng userId hoặc id
+            const userId = user.userId || user.id;
+            if (!userId) {
+                console.error("❌ Không thể xác định userId từ user object:", user);
+                toast.error("Không thể xác định thông tin người dùng");
+                setLoading(false);
+                return;
+            }
+
+            console.log('🔍 Fetching cycles for userId:', userId);
+
             // Sử dụng userId thay vì id
-            const response = await menstrualCycleService.getCyclesByUserId(user.userId);
+            const response = await menstrualCycleService.getCyclesByUserId(userId);
 
             if (response.success) {
                 // Sắp xếp chu kỳ theo thời gian bắt đầu giảm dần (mới nhất lên đầu)

@@ -103,6 +103,8 @@ const STIHistory = () => {
     const [loadingPayment, setLoadingPayment] = useState(false);
     const [checkingPayment, setCheckingPayment] = useState(false);
     const [regeneratingQR, setRegeneratingQR] = useState(false);
+    const [qrExpired, setQrExpired] = useState(false); // Track QR expiry state
+    const [forceUpdate, setForceUpdate] = useState(0); // Force re-render
 
     useEffect(() => {
         fetchAllServices();
@@ -113,6 +115,27 @@ const STIHistory = () => {
             fetchUserTests();
         }
     }, [user]);
+
+    // Effect to check QR expiry when paymentInfo changes
+    useEffect(() => {
+        if (paymentInfo) {
+            const expired = isQRExpired(paymentInfo);
+            setQrExpired(expired);
+
+            // Set up interval to check expiry every minute if QR is showing
+            if (showPaymentModal && !expired) {
+                const interval = setInterval(() => {
+                    const currentlyExpired = isQRExpired(paymentInfo);
+                    if (currentlyExpired !== qrExpired) {
+                        setQrExpired(currentlyExpired);
+                        setForceUpdate(prev => prev + 1);
+                    }
+                }, 60000); // Check every minute
+
+                return () => clearInterval(interval);
+            }
+        }
+    }, [paymentInfo, showPaymentModal, qrExpired]);
 
     const fetchAllServices = async () => {
         try {
@@ -236,11 +259,8 @@ const STIHistory = () => {
 
             const response = await stiService.getPaymentInfo(test.testId, () => {
                 window.location.href = '/login';
-            });
-
-            if (response.success && response.data) {
-
-                //  Map API data to expected format
+            }); if (response.success && response.data) {
+                // Map API data to expected format
                 const mappedPaymentInfo = {
                     ...response.data,
                     status: response.data.paymentStatus,  // Map paymentStatus → status
@@ -248,6 +268,11 @@ const STIHistory = () => {
                     qrReference: response.data.qrPaymentReference  // Map qrPaymentReference → qrReference
                 };
                 setPaymentInfo(mappedPaymentInfo);
+
+                // Check and set QR expiry immediately
+                const expired = isQRExpired(mappedPaymentInfo);
+                setQrExpired(expired);
+
                 setShowPaymentModal(true);
             } else {
                 toast.error(response.message || 'Không thể tải thông tin thanh toán');
@@ -284,11 +309,20 @@ const STIHistory = () => {
             const qrRef = paymentInfo.qrReference || paymentInfo.qrPaymentReference;
             const response = await stiService.checkQRPaymentStatus(qrRef, () => {
                 window.location.href = '/login';
-            });
+            }); if (response.success) {
+                // Refresh payment info         
+                await handleViewPayment(selectedTest);
 
-            if (response.success) {
-                // Refresh payment info
-                await handleViewPayment(selectedTest); if (response.data?.status === 'COMPLETED') {
+                // Check QR expiry after refresh
+                if (paymentInfo) {
+                    const expired = isQRExpired(paymentInfo);
+                    setQrExpired(expired);
+                }
+
+                // Force UI update
+                setForceUpdate(prev => prev + 1);
+
+                if (response.data?.status === 'COMPLETED') {
                     toast.success('Thanh toán thành công!');
                     fetchUserTests(); // Refresh danh sách tests
                 } else {
@@ -584,6 +618,10 @@ const STIHistory = () => {
                 window.location.href = '/login';
             }); if (response.success) {
                 toast.success('Đã tạo lại mã QR thành công!');
+
+                // Reset QR expiry state
+                setQrExpired(false);
+                setForceUpdate(prev => prev + 1);
 
                 // Refresh danh sách tests trước để cập nhật trạng thái
                 await fetchUserTests();
@@ -1343,8 +1381,8 @@ const STIHistory = () => {
                                                 </div>
                                             </div>
                                         </div>                                        <div className={styles.qrActions}>
-                                            {/* Regenerate QR Button - Prominent when expired */}
-                                            {isQRExpired(paymentInfo) ? (
+                                            {/* Regenerate QR Button - Use both computed and state check */}
+                                            {(isQRExpired(paymentInfo) || qrExpired) ? (
                                                 <button
                                                     className={`${styles.btn} ${styles.btnWarning} ${styles.regenerateQRPrimary}`}
                                                     onClick={handleRegenerateQR}

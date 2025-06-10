@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { authService } from '../../services/authService';
+import { profileService } from '../../services/profileService';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
 import styles from './PersonalInfoForm.module.css';
 
@@ -16,40 +17,47 @@ const PersonalInfoForm = () => {
     });
     const [loading, setLoading] = useState(false);
     const [avatarFile, setAvatarFile] = useState(null);
-    const [avatarPreview, setAvatarPreview] = useState('');
+    const [avatarPreview, setAvatarPreview] = useState('');    useEffect(() => {
+        const loadUserProfile = async () => {
+            if (!isLoading && user) {
+                console.log('🔍 User data from context:', user);
+                
+                // Only load form data, don't fetch fresh data from server to avoid infinite loop
+                setUserDataToForm(user);
+            }
+        };
 
-    useEffect(() => {
-        if (!isLoading && user) {
-            console.log('User data loaded:', user);
+        loadUserProfile();
+    }, [user, isLoading]); // Removed updateUser from dependency array
 
-            // Xử lý birthDay
-            let formattedBirthDay = '';
-            if (user.birthDay) {
-                if (Array.isArray(user.birthDay)) {
-                    const [year, month, day] = user.birthDay;
-                    formattedBirthDay = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                } else {
-                    try {
-                        formattedBirthDay = new Date(user.birthDay).toISOString().split('T')[0];
-                    } catch (e) {
-                        console.error('Error parsing birthDay:', e);
-                        formattedBirthDay = '';
-                    }
+    const setUserDataToForm = (userData) => {
+        // Xử lý birthDay
+        let formattedBirthDay = '';
+        if (userData.birthDay) {
+            if (Array.isArray(userData.birthDay)) {
+                const [year, month, day] = userData.birthDay;
+                formattedBirthDay = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            } else {
+                try {
+                    formattedBirthDay = new Date(userData.birthDay).toISOString().split('T')[0];
+                } catch (e) {
+                    console.error('Error parsing birthDay:', e);
+                    formattedBirthDay = '';
                 }
             }
-
-            setFormData({
-                fullName: user.fullName || '',
-                birthDay: formattedBirthDay,
-                phone: user.phone || '',
-                gender: user.gender || '',
-            });
-
-            if (user.avatar) {
-                setAvatarPreview(authService.getAvatarUrl(user.avatar));
-            }
         }
-    }, [user, isLoading]);
+
+        setFormData({
+            fullName: userData.fullName || '',
+            birthDay: formattedBirthDay,
+            phone: userData.phone || '',
+            gender: userData.gender || '',
+        });
+
+        if (userData.avatar) {
+            setAvatarPreview(authService.getAvatarUrl(userData.avatar));
+        }
+    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -122,11 +130,9 @@ const PersonalInfoForm = () => {
         if (formData.gender && !['Nam', 'Nữ', 'Khác'].includes(formData.gender)) {
             toast.error('Giới tính không hợp lệ');
             return;
-        }
-
-        try {
+        }        try {
             setLoading(true);
-            const response = await authService.updateBasicProfile(formData);
+            const response = await profileService.updateBasicProfile(formData);
 
             if (response.success) {
                 toast.success('Cập nhật thông tin thành công');

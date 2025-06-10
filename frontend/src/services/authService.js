@@ -1,339 +1,311 @@
 const API_BASE_URL = 'http://localhost:8080';
 
-const createBasicAuthHeader = (username, password) => {
-    return 'Basic ' + btoa(username + ':' + password);
+// Retrieve Authorization header for JWT
+const getAuthHeader = () => {
+    const token = localStorage.getItem('authToken');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+};
+
+// Store tokens
+const setTokens = (accessToken, refreshToken) => {
+    localStorage.setItem('authToken', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+};
+
+// Clear tokens
+const clearTokens = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+};
+
+// Refresh access token
+const refreshToken = async () => {
+    const refreshTokenValue = localStorage.getItem('refreshToken');
+    if (!refreshTokenValue) throw new Error('No refresh token');
+    const response = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+        body: JSON.stringify({ refreshToken: refreshTokenValue })
+    });
+    if (!response.ok) {
+        clearTokens();
+        return null;
+    }
+    const data = await response.json();
+    setTokens(data.accessToken, data.refreshToken);
+    return data.accessToken;
+};
+
+// API call wrapper with automatic token refresh
+const apiCall = async (url, options = {}) => {
+    try {
+        // Add a retry counter to prevent infinite loops
+        let retryCount = 0;
+        const maxRetries = 1;
+        
+        // Try to make the API call, with possible token refresh
+        const makeRequest = async () => {
+            // Ensure we have the latest token for each attempt
+            const currentToken = localStorage.getItem('authToken');
+            const headers = { 
+                'Content-Type': 'application/json', 
+                ...(currentToken ? { 'Authorization': `Bearer ${currentToken}` } : {}),
+                ...options.headers 
+            };
+            
+            console.log(`API call to ${url}, authenticated: ${!!currentToken}`);
+            let response = await fetch(url, { ...options, headers });
+            
+            // Handle unauthorized response by trying to refresh the token once
+            if (response.status === 401 && retryCount < maxRetries) {
+                console.log('Received 401, attempting token refresh');
+                retryCount++;
+                
+                try {
+                    const newToken = await refreshToken();
+                    if (newToken) {
+                        console.log('Token refreshed successfully, retrying request');
+                        // Retry the request with the new token
+                        const newHeaders = { 
+                            ...options.headers, 
+                            'Content-Type': 'application/json', 
+                            'Authorization': `Bearer ${newToken}` 
+                        };
+                        return await fetch(url, { ...options, headers: newHeaders });
+                    } else {
+                        console.log('Token refresh failed, clearing auth data');
+                        clearTokens();
+                        return response;
+                    }
+                } catch (refreshError) {
+                    console.error('Error during token refresh:', refreshError);
+                    clearTokens();
+                    return response;
+                }
+            }
+            
+            return response;
+        };
+        
+        return await makeRequest();
+    } catch (error) {
+        console.error('API Call error:', error);
+        throw error;
+    }
 };
 
 export const authService = {
     // Gửi mã xác thực đến email
     sendVerificationCode: async (email) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/users/send-verification`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email }),
-            });
-
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            console.error('Error sending verification code:', error);
-            throw error;
-        }
+        const response = await fetch(`${API_BASE_URL}/users/send-verification`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        return response.json();
     },
-
     // Đăng ký người dùng
     registerUser: async (userData) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/users/register`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(userData),
-            });
-
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            console.error('Error registering user:', error);
-            throw error;
-        }
-    },
-
-    // Đăng nhập người dùng
+        const response = await fetch(`${API_BASE_URL}/users/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData)
+        });
+        return response.json();
+    },  // Đăng nhập người dùng và lưu token
     loginUser: async (loginData) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/users/login`, {
+            const response = await fetch(`${API_BASE_URL}/auth/login`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    username: loginData.username,
-                    password: loginData.password
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(loginData)
             });
 
-            const data = await response.json();
+            console.log("Login response status:", response.status);
+            console.log("Login response headers:", response.headers);
 
-            // Lưu thông tin nếu đăng nhập thành công
-            if (data.success && data.data) {
-                // Lưu thông tin đăng nhập để tái sử dụng
-                localStorage.setItem('credentials', btoa(loginData.username + ':' + loginData.password));
+            // Check if response has content
+            const responseText = await response.text();
+            console.log("Login response body:", responseText);
 
+            if (!responseText) {
+                return { success: false, message: 'Server trả về phản hồi trống' };
+            }
+
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error("JSON parse error:", parseError);
+                console.error("Response text:", responseText);
+                return { success: false, message: 'Phản hồi từ server không hợp lệ' };
+            }
+
+            console.log("Login response data:", data);
+
+            if (response.ok) {
+                // Store the JWT tokens
+                setTokens(data.accessToken, data.refreshToken);
+
+                // Create user info object from response
                 const userInfo = {
-                    userId: data.data.userId,
-                    username: data.data.username,
-                    fullName: data.data.fullName,
-                    email: data.data.email,
-                    avatar: data.data.avatar,
-                    role: data.data.role,
-                    birthDay: data.data.birthDay,
-                    phone: data.data.phone
+                    username: data.username,
+                    email: data.email,
+                    role: data.role
                 };
 
+                // Store user info
                 localStorage.setItem('user', JSON.stringify(userInfo));
 
                 return {
-                    success: data.success,
-                    message: data.message,
+                    success: true,
                     data: {
-                        user: userInfo
+                        user: userInfo,
+                        accessToken: data.accessToken,
+                        refreshToken: data.refreshToken
                     }
                 };
             }
 
-            return data;
+            return { success: false, message: data.error || data.message || 'Đăng nhập thất bại' };
         } catch (error) {
-            console.error("Lỗi đăng nhập:", error);
-            return {
-                success: false,
-                message: 'Đã xảy ra lỗi khi đăng nhập'
-            };
-        }
-    },
-
-    // Lấy thông tin user hiện tại
-    getCurrentUser: async () => {
-        try {
-            const credentials = localStorage.getItem('credentials');
-            const userStr = localStorage.getItem('user');
-            const storedUser = userStr ? JSON.parse(userStr) : null;
-
-            // Nếu không có credentials nhưng có thông tin user, trả về user
-            if (!credentials && storedUser) {
-                return { success: true, data: storedUser };
-            }
-
-            // Nếu có credentials, thử lấy thông tin user từ server  
-            if (credentials) {
-                const response = await fetch(`${API_BASE_URL}/users/profile`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Basic ${credentials}`,
-                        'Content-Type': 'application/json',
-                    },
-                });
-
-                if (response.status === 401) {
-                    localStorage.removeItem('credentials');
-                    return { success: true, data: storedUser };
-                }
-
-                const data = await response.json();
-
-                if (data.success && data.data) {
-                    // Format user info từ API response - MAPPING ĐÚNG TÊN TRƯỜNG
-                    const userInfo = {
-                        userId: data.data.id || data.data.userId,
-                        username: data.data.username,
-                        fullName: data.data.fullName,
-                        email: data.data.email,
-                        // Xử lý birthDay - có thể là LocalDate array hoặc string
-                        birthDay: data.data.birthDay,
-                        // Xử lý phone từ backend
-                        phone: data.data.phone,
-                        avatar: data.data.avatar,
-                        role: data.data.role
-                    };
-
-                    localStorage.setItem('user', JSON.stringify(userInfo));
-                    return { success: true, data: userInfo };
-                }
-            }
-
-            return { success: true, data: storedUser };
-        } catch (error) {
-            console.error('Error getting current user:', error);
-            const userStr = localStorage.getItem('user');
-            return userStr ? { success: true, data: JSON.parse(userStr) } : { success: false };
-        }
-    },
-    updateBasicProfile: async (profileData) => {
-        try {
-            const credentials = localStorage.getItem('credentials');
-            if (!credentials) {
-                return { success: false, message: 'Chưa đăng nhập' };
-            }
-
-            const response = await fetch(`${API_BASE_URL}/users/profile/basic`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Basic ${credentials}`
-                },
-                body: JSON.stringify(profileData)
-            });
-
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            console.error('Error updating basic profile:', error);
-            return { success: false, message: 'Không thể kết nối đến server' };
-        }
-    },
-    updateAvatar: async (file) => {
-        try {
-            const credentials = localStorage.getItem('credentials');
-            if (!credentials) {
-                return { success: false, message: 'Chưa đăng nhập' };
-            }
-
-            const formData = new FormData();
-            formData.append('file', file);
-
-            const response = await fetch(`${API_BASE_URL}/users/profile/avatar`, { // Sửa từ /users/avatar thành /users/profile/avatar
-                method: 'POST', // Sửa từ PUT thành POST theo backend
-                headers: {
-                    'Authorization': `Basic ${credentials}`
-                },
-                body: formData
-            });
-
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            console.error('Error updating avatar:', error);
-            return { success: false, message: 'Không thể kết nối đến server' };
+            console.error("Login error:", error);
+            return { success: false, message: 'Có lỗi xảy ra trong quá trình đăng nhập' };
         }
     },
     // Đăng xuất
     logout: () => {
-        localStorage.removeItem('credentials');
-        localStorage.removeItem('user');
+        clearTokens();
     },
-
     // Kiểm tra trạng thái đăng nhập
     isAuthenticated: () => {
-        const credentials = localStorage.getItem('credentials');
+        const token = localStorage.getItem('authToken');
+        return !!token;
+    },    // Lấy thông tin user hiện tại từ server hoặc storage
+    getCurrentUser: async () => {
+        // Always try to get from localStorage first
         const userStr = localStorage.getItem('user');
-        return !!(credentials && userStr);
+        const token = localStorage.getItem('authToken');
+
+        if (!token) {
+            clearTokens();
+            return { success: false };
+        }
+
+        // If we have cached user data, return it immediately
+        if (userStr) {
+            try {
+                const userData = JSON.parse(userStr);
+                return { success: true, data: userData };
+            } catch (parseError) {
+                console.error('Error parsing cached user data:', parseError);
+            }
+        }
+
+        // Only try to fetch from server if we don't have cached data
+        try {
+            const response = await apiCall(`${API_BASE_URL}/users/profile`, { method: 'GET' });
+            if (!response.ok) {
+                if (response.status === 401) {
+                    clearTokens();
+                }
+                return { success: false };
+            }
+            const data = await response.json();
+            localStorage.setItem('user', JSON.stringify(data));
+            return { success: true, data };
+        } catch (error) {
+            console.error('Error getting current user from server:', error);
+            // If server call fails but we have a token, assume user is still logged in
+            return userStr ? { success: true, data: JSON.parse(userStr) } : { success: false };
+        }
     },
 
-    // Lấy user từ localStorage
-    getUserFromStorage: () => {
-        const userStr = localStorage.getItem('user');
-        return userStr ? JSON.parse(userStr) : null;
-    },
-
-    // Lấy URL đầy đủ cho avatar
+    // Generate avatar URL
     getAvatarUrl: (avatarPath) => {
-        if (!avatarPath) {
-            return `${API_BASE_URL}/img/avatar/default.jpg`;
-        }
-
-        // Nếu là đường dẫn đầy đủ thì trả về luôn
-        if (avatarPath.startsWith('http')) {
-            return avatarPath;
-        }
-
-        // Nếu đã có domain thì trả về luôn
-        if (avatarPath.startsWith(API_BASE_URL)) {
-            return avatarPath;
-        }
-
-        // Nếu bắt đầu bằng / thì bỏ đi
-        const cleanPath = avatarPath.startsWith('/') ? avatarPath.substring(1) : avatarPath;
-
-        return `${API_BASE_URL}/${cleanPath}`;
+        if (!avatarPath) return `${API_BASE_URL}/img/avatar/default.jpg`;
+        if (avatarPath.startsWith('http')) return avatarPath;
+        if (avatarPath.startsWith('/img/')) return `${API_BASE_URL}${avatarPath}`;
+        return `${API_BASE_URL}/img/avatar/${avatarPath}`;
     },
 
-    getBlogPosts: async (page = 0, size = 10, sortBy = 'createdAt', sortDir = 'desc') => {
-        try {
-            const response = await fetch(
-                `${API_BASE_URL}/blog?page=${page}&size=${size}&sortBy=${sortBy}&sortDir=${sortDir}`,
-                {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                }
-            );
-
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            console.error('Error fetching blog posts:', error);
-            throw error;
-        }
-    },
-
-    // Lấy chi tiết một bài viết
-    getBlogPostById: async (postId) => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/blog/${postId}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
-
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            console.error('Error fetching blog post:', error);
-            throw error;
-        }
-    },
-
-    // Lấy URL đầy đủ cho blog thumbnail
-    getBlogImageUrl: (imagePath) => {
-        if (!imagePath) {
-            return `${API_BASE_URL}/img/blog/default.jpg`;
-        }
-
-        if (imagePath.startsWith('http')) {
-            return imagePath;
-        }
-
-        if (imagePath.startsWith(API_BASE_URL)) {
-            return imagePath;
-        }
-
-        const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
-        return `${API_BASE_URL}/${cleanPath}`;
-    },
+    // Forgot password - send reset code
     forgotPassword: async (email) => {
         try {
             const response = await fetch(`${API_BASE_URL}/users/forgot-password`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })
             });
-
-            const data = await response.json();
-            return data;
+            return response.json();
         } catch (error) {
-            console.error('Error sending reset password request:', error);
-            throw error;
+            console.error('Forgot password error:', error);
+            return { success: false, message: 'Không thể kết nối đến server' };
         }
     },
 
-    // Đặt lại mật khẩu với mã xác thực
-    resetPassword: async (email, code, newPassword) => {
+    // Reset password with verification code
+    resetPassword: async (email, verificationCode, newPassword) => {
         try {
             const response = await fetch(`${API_BASE_URL}/users/reset-password`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     email,
-                    code,
+                    code: verificationCode,
                     newPassword
                 })
             });
+            return response.json();
+        } catch (error) {
+            console.error('Reset password error:', error);
+            return { success: false, message: 'Không thể kết nối đến server' };
+        }
+    },    // Get blog posts (with authentication)
+    getBlogPosts: async (page = 0, size = 12) => {
+        try {
+            const response = await apiCall(`${API_BASE_URL}/blog?page=${page}&size=${size}`, {
+                method: 'GET'
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
             const data = await response.json();
-            return data;
+            return { success: true, data };
         } catch (error) {
-            console.error('Error resetting password:', error);
-            throw error;
+            console.error('Error fetching blog posts:', error);
+            return { success: false, message: 'Không thể tải danh sách bài viết' };
+        }             },
+
+    // Get a specific blog post by ID
+    getBlogPostById: async (postId) => {
+        try {
+            const response = await apiCall(`${API_BASE_URL}/blog/${postId}`, {
+                method: 'GET'
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return { success: true, data };
+        } catch (error) {
+            console.error('Error fetching blog post:', error);
+            return { success: false, message: 'Không thể tải bài viết' };
         }
     },
+
+    // Generate blog image URL
+    getBlogImageUrl: (imagePath) => {
+        if (!imagePath) return `${API_BASE_URL}/img/blog/default.jpg`;
+        if (imagePath.startsWith('http')) return imagePath;
+        if (imagePath.startsWith('/img/')) return `${API_BASE_URL}${imagePath}`;
+        return `${API_BASE_URL}/img/blog/${imagePath}`;
+    },
+
+    apiCall
 };

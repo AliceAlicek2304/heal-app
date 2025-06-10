@@ -138,23 +138,26 @@ public class PaymentService {
     }
 
     private STITest createTempSTITestForPayment(Payment payment, String serviceType, Long serviceId) {
-        // Get user and service info from repositories
+        // Get user info from repositories
         Optional<UserDtls> userOpt = userRepository.findById(payment.getUserId());
         if (userOpt.isEmpty()) {
             throw new RuntimeException("User not found for payment");
         }
 
         if ("STI".equals(serviceType)) {
-            Optional<STIService> serviceOpt = stiServiceRepository.findById(serviceId);
-            if (serviceOpt.isEmpty()) {
-                throw new RuntimeException("STI Service not found for payment");
+            // For STI payments, serviceId is actually the testId of existing STITest
+            Optional<STITest> existingTestOpt = stiTestRepository.findById(serviceId);
+            if (existingTestOpt.isEmpty()) {
+                throw new RuntimeException("STI Test not found for payment - Test ID: " + serviceId);
             }
 
-            // Create temporary STITest object
+            STITest existingTest = existingTestOpt.get();
+
+            // Create temporary STITest object with existing test data
             STITest tempTest = STITest.builder()
-                    .testId(serviceId) // Use serviceId as testId for temp object
+                    .testId(existingTest.getTestId())
                     .customer(userOpt.get())
-                    .stiService(serviceOpt.get())
+                    .stiService(existingTest.getStiService()) // Get service from existing test
                     .totalPrice(payment.getAmount())
                     .build();
 
@@ -197,8 +200,9 @@ public class PaymentService {
             Optional<Payment> paymentOpt = paymentRepository.findById(paymentId);
             if (paymentOpt.isEmpty()) {
                 return ApiResponse.error("Không tìm thấy thông tin thanh toán");
-            }            Payment payment = paymentOpt.get(); 
-            
+            }
+            Payment payment = paymentOpt.get();
+
             // Kiểm tra trạng thái payment - CHO PHÉP EXPIRED để có thể regenerate
             if (payment.getPaymentStatus() == PaymentStatus.COMPLETED ||
                     payment.getPaymentStatus() == PaymentStatus.FAILED ||
@@ -226,7 +230,7 @@ public class PaymentService {
                         return ApiResponse.error("Không thể tạo lại QR cho xét nghiệm đã hoàn thành");
                     }
                 }
-            }            // Generate new QR reference với timestamp mới
+            } // Generate new QR reference với timestamp mới
             String newQrReference = generateQRReference(
                     payment.getServiceType(),
                     payment.getServiceId(),
@@ -236,7 +240,7 @@ public class PaymentService {
             payment.setQrPaymentReference(newQrReference);
             payment.setExpiresAt(LocalDateTime.now().plusHours(24)); // Extend thêm 24h
             payment.setUpdatedAt(LocalDateTime.now());
-            
+
             // IMPORTANT: Reset payment status về PENDING khi tạo lại QR
             payment.setPaymentStatus(PaymentStatus.PENDING);
 

@@ -1,5 +1,6 @@
-import React from 'react';
+                                            import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { blogService } from '../../../services/blogService';
 import { authService } from '../../../services/authService';
 import styles from './BlogCard.module.css';
 
@@ -31,13 +32,12 @@ const BlogCard = ({ post, truncateContent }) => {
     };
 
     return (
-        <article className={styles.blogCard} onClick={handleReadMore}>
-            <div className={styles.blogCardImage}>
+        <article className={styles.blogCard} onClick={handleReadMore}>            <div className={styles.blogCardImage}>
                 <img
-                    src={authService.getBlogImageUrl(post.thumbnailImage)}
+                    src={blogService.getBlogImageUrl(post.thumbnailImage)}
                     alt={post.title}
                     onError={(e) => {
-                        e.target.src = authService.getBlogImageUrl('/img/blog/default.jpg');
+                        e.target.src = blogService.getBlogImageUrl('/img/blog/default.jpg');
                     }}
                 />
 

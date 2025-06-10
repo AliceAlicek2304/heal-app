@@ -14,12 +14,14 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.http.HttpMethod;
 
 import com.healapp.model.UserDtls;
@@ -33,17 +35,27 @@ public class SecurityConfig {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
+
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public JwtAuthenticationFilter jwtAuthenticationFilter() {
+        return new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService());
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         // ========= PUBLIC ENDPOINTS =========
                         // Static resources
-                        .requestMatchers("/img/**").permitAll()
-
-                        // API Authentication & User Management
+                        .requestMatchers("/img/**").permitAll() // API Authentication & User Management
                         .requestMatchers("/users/register", "/users/login", "/users/logout",
                                 "/users/forgot-password", "/users/reset-password", "/users/send-verification")
+                        .permitAll()
+
+                        // JWT Authentication endpoints
+                        .requestMatchers("/auth/login", "/auth/refresh-token", "/auth/logout")
                         .permitAll()
 
                         // API Blog (Public GET endpoints)
@@ -61,7 +73,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/question-categories/{categoryId}").permitAll()
 
                         // API Questions (Public endpoints)
-                        .requestMatchers(HttpMethod.GET, "/questions/answered").permitAll()                        // API Consultants (Public GET endpoints)
+                        .requestMatchers(HttpMethod.GET, "/questions/answered").permitAll()
                         .requestMatchers(HttpMethod.GET, "/consultants").permitAll()
                         .requestMatchers(HttpMethod.GET, "/consultants/{userId}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/consultations/consultant/{consultantId}/profile").permitAll()
@@ -74,10 +86,11 @@ public class SecurityConfig {
 
                         // API STI Services (Public GET endpoints)
                         .requestMatchers(HttpMethod.GET, "/sti-services").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/sti-services/{serviceId}").permitAll()
-
-                        // API Chatbot (Public endpoints)
-                        .requestMatchers(HttpMethod.POST, "/chatbot").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/sti-services/{serviceId}").permitAll()                        // API Chatbot (Public endpoints)
+                        .requestMatchers(HttpMethod.POST, "/chatbot").permitAll()                        // Test endpoints
+                        .requestMatchers("/test/public").permitAll()
+                        .requestMatchers("/test/auth").authenticated()
+                        .requestMatchers("/test/my-posts-debug").authenticated()
 
                         // ========= AUTHENTICATED USER ENDPOINTS =========
                         // USER PROFILE MANAGEMENT
@@ -196,7 +209,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/admin/config").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/admin/config").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/admin/config/{key}").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/admin/config/{key}").hasRole("ADMIN")                        .requestMatchers(HttpMethod.PUT, "/admin/config/{key}/inactive").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/admin/config/{key}").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/admin/config/{key}/inactive").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/admin/config/{key}/active").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/admin/config/{key}/upload").hasRole("ADMIN")
 
@@ -206,11 +220,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/admin/sti-services/{serviceId}").hasRole("ADMIN")
 
                         // All other admin endpoints
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-
-                        // Default rule: all other endpoints require authentication
+                        .requestMatchers("/admin/**").hasRole("ADMIN")                        // Default rule: all other endpoints require authentication
                         .anyRequest().authenticated())
 
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .httpBasic(Customizer.withDefaults())
                 .cors(Customizer.withDefaults())
                 .logout(logout -> logout

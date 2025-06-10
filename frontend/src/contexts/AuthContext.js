@@ -14,62 +14,89 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isAuthenticatedState, setIsAuthenticatedState] = useState(false); useEffect(() => {
+        const verifyAuth = async () => {
+            setIsLoading(true);
+            try {
+                const authenticated = authService.isAuthenticated();
+                if (authenticated) {
+                    // Try to get user from localStorage first
+                    const userStr = localStorage.getItem('user');
+                    if (userStr) {
+                        const userData = JSON.parse(userStr);
+                        setUser(userData);
+                        setIsAuthenticatedState(true);
+                    }
 
-    // Kiểm tra authentication status khi app khởi động
-    useEffect(() => {
-        checkAuthStatus();
-    }, []);
-
-    const checkAuthStatus = async () => {
-        try {
-            if (authService.isAuthenticated()) {
-                const result = await authService.getCurrentUser();
-                if (result.success && result.data) {
-                    setUser(result.data);
+                    // Then try to refresh from server (optional, in background)
+                    try {
+                        const result = await authService.getCurrentUser();
+                        if (result.success && result.data) {
+                            setUser(result.data);
+                            setIsAuthenticatedState(true);
+                        } else if (!userStr) {
+                            // Only logout if we don't have cached user data
+                            authService.logout();
+                            setUser(null);
+                            setIsAuthenticatedState(false);
+                        }
+                    } catch (serverError) {
+                        console.warn('Server verification failed, using cached data:', serverError);
+                        // Keep using cached data if server is unreachable
+                    }
                 } else {
                     setUser(null);
+                    setIsAuthenticatedState(false);
                 }
+            } catch (error) {
+                console.error('Auth verification error:', error);
+                authService.logout();
+                setUser(null);
+                setIsAuthenticatedState(false);
+            } finally {
+                setIsLoading(false);
             }
+        };
+        verifyAuth();
+    }, []);
+
+    const login = async (loginData) => {
+        setIsLoading(true);
+        try {
+            const response = await authService.loginUser(loginData);
+            if (response.success && response.data?.user) {
+                setUser(response.data.user);
+                setIsAuthenticatedState(true);
+                return { success: true, data: response.data };
+            }
+            setIsAuthenticatedState(false);
+            return { success: false, message: response.message || 'Đăng nhập thất bại' };
         } catch (error) {
-            authService.logout();
-            setUser(null);
+            setIsAuthenticatedState(false);
+            return { success: false, message: 'Có lỗi xảy ra trong quá trình đăng nhập' };
         } finally {
             setIsLoading(false);
-        }
-    };
-
-    const login = async (userData) => {
-        try {
-            const response = await authService.loginUser(userData);
-
-            if (response.success && response.data && response.data.user) {
-                setUser(response.data.user);
-                return { success: true, data: response.data };
-            } else {
-                return { success: false, message: response.message || 'Đăng nhập thất bại' };
-            }
-        } catch (error) {
-            return { success: false, message: 'Có lỗi xảy ra trong quá trình đăng nhập' };
         }
     };
 
     const logout = () => {
         authService.logout();
         setUser(null);
+        setIsAuthenticatedState(false);
     };
 
-    const updateUser = (userData) => {
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
+    const updateUser = (newUserData) => {
+        setUser(newUserData);
+        localStorage.setItem('user', JSON.stringify(newUserData));
     };
 
     const value = {
         user,
-        isLoading,
+        isLoading,  // Thêm isLoading vào context   
         login,
         logout,
         updateUser,
-        isAuthenticated: !!user
+        isAuthenticated: isAuthenticatedState
     };
 
     return (

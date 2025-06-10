@@ -2,10 +2,7 @@ package com.healapp.controller;
 
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.ChangePasswordRequest;
-import com.healapp.dto.LoginRequest;
-import com.healapp.dto.LoginResponse;
 import com.healapp.dto.RegisterRequest;
-import com.healapp.model.UserDtls;
 import com.healapp.service.EmailService;
 import com.healapp.service.EmailVerificationService;
 import com.healapp.service.UserService;
@@ -16,8 +13,6 @@ import com.healapp.dto.UpdateProfileRequest;
 import com.healapp.dto.UserResponse;
 import com.healapp.dto.VerificationCodeRequest;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -25,7 +20,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -65,9 +59,7 @@ public class UserController {
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(errorResponse);
         }
-    }
-
-    @PostMapping("/send-verification")
+    }    @PostMapping("/send-verification")
     public ResponseEntity<ApiResponse<String>> sendVerificationCode(
             @Valid @RequestBody VerificationCodeRequest request) {
 
@@ -78,28 +70,6 @@ public class UserController {
         } else {
             return ResponseEntity.badRequest().body(response);
         }
-    }
-
-    @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest loginRequest) {
-        ApiResponse<LoginResponse> response = userService.login(loginRequest);
-
-        if (response.isSuccess()) {
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-        }
-    }
-
-    @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<String>> logout(HttpServletRequest request, HttpServletResponse response) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-
-        if (auth != null) {
-            new SecurityContextLogoutHandler().logout(request, response, auth);
-        }
-
-        return ResponseEntity.ok(ApiResponse.success("Logged out successfully", null));
     }
 
     @PostMapping("/forgot-password")

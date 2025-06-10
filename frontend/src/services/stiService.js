@@ -43,13 +43,11 @@ export const stiService = {
             console.error('Error fetching STI service details:', error);
             return { success: false, message: 'Không thể tải chi tiết dịch vụ' };
         }
-    },
-
-    // Đặt lịch xét nghiệm STI
+    },    // Đặt lịch xét nghiệm STI
     bookTest: async (testData, onAuthRequired) => {
         try {
-            const credentials = localStorage.getItem('credentials');
-            if (!credentials && onAuthRequired) {
+            const token = localStorage.getItem('authToken');
+            if (!token && onAuthRequired) {
                 onAuthRequired();
                 return { success: false, message: 'Authentication required' };
             }
@@ -58,7 +56,7 @@ export const stiService = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Basic ${credentials}`
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify(testData)
             });
@@ -85,13 +83,11 @@ export const stiService = {
                 message: error.message || 'Network error occurred'
             };
         }
-    },
-
-    // Lấy danh sách xét nghiệm của tôi
+    },    // Lấy danh sách xét nghiệm của tôi
     getMyTests: async (paginationParams, onAuthRequired) => {
         try {
-            const credentials = localStorage.getItem('credentials');
-            if (!credentials && onAuthRequired) {
+            const token = localStorage.getItem('authToken');
+            if (!token && onAuthRequired) {
                 onAuthRequired();
                 return { success: false, message: 'Authentication required' };
             }
@@ -100,7 +96,7 @@ export const stiService = {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Basic ${credentials}`
+                    'Authorization': `Bearer ${token}`
                 },
             });
 
@@ -128,13 +124,11 @@ export const stiService = {
                 data: []
             };
         }
-    },
-
-    // Lấy chi tiết xét nghiệm
+    },    // Lấy chi tiết xét nghiệm
     getTestDetails: async (testId, onAuthRequired) => {
         try {
-            const credentials = localStorage.getItem('credentials');
-            if (!credentials && onAuthRequired) {
+            const token = localStorage.getItem('authToken');
+            if (!token && onAuthRequired) {
                 onAuthRequired();
                 return { success: false, message: 'Authentication required' };
             }
@@ -143,7 +137,7 @@ export const stiService = {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Basic ${credentials}`
+                    'Authorization': `Bearer ${token}`
                 },
             });
 
@@ -168,8 +162,8 @@ export const stiService = {
     // Hủy xét nghiệm
     cancelTest: async (testId, onAuthRequired) => {
         try {
-            const credentials = localStorage.getItem('credentials');
-            if (!credentials && onAuthRequired) {
+            const token = localStorage.getItem('authToken');
+            if (!token && onAuthRequired) {
                 onAuthRequired();
                 return { success: false, message: 'Authentication required' };
             }
@@ -178,7 +172,7 @@ export const stiService = {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Basic ${credentials}`
+                    'Authorization': `Bearer ${token}`
                 },
             });
 
@@ -203,8 +197,8 @@ export const stiService = {
     // Lấy kết quả xét nghiệm
     getTestResults: async (testId, onAuthRequired) => {
         try {
-            const credentials = localStorage.getItem('credentials');
-            if (!credentials && onAuthRequired) {
+            const token = localStorage.getItem('authToken');
+            if (!token && onAuthRequired) {
                 onAuthRequired();
                 return { success: false, message: 'Authentication required' };
             }
@@ -213,7 +207,7 @@ export const stiService = {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Basic ${credentials}`
+                    'Authorization': `Bearer ${token}`
                 },
             });
 
@@ -238,8 +232,8 @@ export const stiService = {
     // ✅ Lấy thông tin thanh toán - sử dụng paymentId từ test response
     getPaymentInfo: async (testId, onAuthRequired) => {
         try {
-            const credentials = localStorage.getItem('credentials');
-            if (!credentials && onAuthRequired) {
+            const token = localStorage.getItem('authToken');
+            if (!token && onAuthRequired) {
                 onAuthRequired();
                 return { success: false, message: 'Authentication required' };
             }
@@ -249,7 +243,7 @@ export const stiService = {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Basic ${credentials}`
+                    'Authorization': `Bearer ${token}`
                 },
             });
 
@@ -273,7 +267,7 @@ export const stiService = {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Basic ${credentials}`
+                    'Authorization': `Bearer ${token}`
                 },
             });
 
@@ -298,8 +292,8 @@ export const stiService = {
     // ✅ Tạo thanh toán QR
     createQRPayment: async (testId, onAuthRequired) => {
         try {
-            const credentials = localStorage.getItem('credentials');
-            if (!credentials && onAuthRequired) {
+            const token = localStorage.getItem('authToken');
+            if (!token && onAuthRequired) {
                 onAuthRequired();
                 return { success: false, message: 'Authentication required' };
             }
@@ -308,7 +302,7 @@ export const stiService = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Basic ${credentials}`
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ testId })
             });
@@ -333,8 +327,8 @@ export const stiService = {
 
     regenerateQRCode: async (paymentId, onAuthRequired) => {
         try {
-            const credentials = localStorage.getItem('credentials');
-            if (!credentials && onAuthRequired) {
+            const token = localStorage.getItem('authToken');
+            if (!token && onAuthRequired) {
                 onAuthRequired();
                 return { success: false, message: 'Authentication required' };
             }
@@ -343,7 +337,7 @@ export const stiService = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Basic ${credentials}`
+                    'Authorization': `Bearer ${token}`
                 },
             });
 
@@ -367,8 +361,8 @@ export const stiService = {
 
     regenerateQRCodeByReference: async (qrReference, onAuthRequired) => {
         try {
-            const credentials = localStorage.getItem('credentials');
-            if (!credentials && onAuthRequired) {
+            const token = localStorage.getItem('authToken');
+            if (!token && onAuthRequired) {
                 onAuthRequired();
                 return { success: false, message: 'Authentication required' };
             }
@@ -377,7 +371,7 @@ export const stiService = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Basic ${credentials}`
+                    'Authorization': `Bearer ${token}`
                 },
             });
 
@@ -402,8 +396,8 @@ export const stiService = {
     // ✅ Kiểm tra trạng thái thanh toán QR
     checkQRPaymentStatus: async (qrReference, onAuthRequired) => {
         try {
-            const credentials = localStorage.getItem('credentials');
-            if (!credentials && onAuthRequired) {
+            const token = localStorage.getItem('authToken');
+            if (!token && onAuthRequired) {
                 onAuthRequired();
                 return { success: false, message: 'Authentication required' };
             }
@@ -412,7 +406,7 @@ export const stiService = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Basic ${credentials}`
+                    'Authorization': `Bearer ${token}`
                 },
             });
 

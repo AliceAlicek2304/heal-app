@@ -266,6 +266,10 @@ public class UserService {
         return user != null ? user.getId() : null;
     }
 
+    public UserDtls getUserByUsername(String username) {
+        return userRepository.findByUsername(username).orElse(null);
+    }
+
     // For Admin
     public ApiResponse<UserResponse> updateUserRoleAndStatus(Long userId, UserUpdateRequest request) {
         try {

@@ -20,9 +20,8 @@ const MenstrualCycleCalculator = () => {
     const [cycles, setCycles] = useState([]);
     const [selectedCycle, setSelectedCycle] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [calculationResult, setCalculationResult] = useState(null);
-
-    useEffect(() => {
+    const [calculationResult, setCalculationResult] = useState(null);    useEffect(() => {
+        console.log('🔍 MenstrualCalculator useEffect - isAuthenticated:', isAuthenticated, 'user:', user);
         if (isAuthenticated && user) {
             fetchCycles();
         }
@@ -31,12 +30,15 @@ const MenstrualCycleCalculator = () => {
     const fetchCycles = async () => {
         try {
             setLoading(true);
-            const userId = user?.userId;
+            const userId = user?.userId || user?.id;
 
             if (!userId) {
+                console.error("❌ Không thể xác định userId từ user object:", user);
                 toast.error("Không thể xác định người dùng");
                 return;
             }
+
+            console.log('🔍 Fetching cycles for userId:', userId);
 
             const response = await menstrualCycleService.getCyclesByUserId(userId);
             if (response.success && response.data) {
