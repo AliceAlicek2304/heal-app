@@ -44,15 +44,13 @@ public class AuthController {
                             loginRequest.getPassword()));
             UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
             String accessToken = tokenProvider.generateAccessToken(authentication);
-            String refreshToken = tokenProvider.generateRefreshToken(userPrincipal.getUsername());
-
-            // Get user details
-            UserDtls user = userService.getUserByUsername(userPrincipal.getUsername());
-
-            JwtResponse jwtResponse = new JwtResponse(
+            String refreshToken = tokenProvider.generateRefreshToken(userPrincipal.getUsername()); // Get user details
+            UserDtls user = userService.getUserByUsername(userPrincipal.getUsername());            JwtResponse jwtResponse = new JwtResponse(
                     accessToken,
                     refreshToken,
-                    3600L, // 1 hour in seconds
+                    "Bearer",    // tokenType
+                    3600L,       // expiresIn (1 hour in seconds)
+                    user.getId(), // userId
                     user.getUsername(),
                     user.getEmail(),
                     user.getRoleName());
@@ -80,7 +78,7 @@ public class AuthController {
             if (user == null) {
                 return ResponseEntity.badRequest()
                         .body(new ApiResponse<String>(false, "User not found"));
-            }            // Create a proper UserDetails object for authentication
+            } // Create a proper UserDetails object for authentication
             UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
                     .username(user.getUsername())
                     .password("") // Not needed for token generation
@@ -92,12 +90,12 @@ public class AuthController {
                     userDetails, null, userDetails.getAuthorities());
 
             String newAccessToken = tokenProvider.generateAccessToken(authentication);
-            String newRefreshToken = tokenProvider.generateRefreshToken(username);
-
-            JwtResponse jwtResponse = new JwtResponse(
+            String newRefreshToken = tokenProvider.generateRefreshToken(username);            JwtResponse jwtResponse = new JwtResponse(
                     newAccessToken,
                     newRefreshToken,
-                    3600L, // 1 hour in seconds
+                    "Bearer",    // tokenType
+                    3600L,       // expiresIn (1 hour in seconds)
+                    user.getId(), // userId
                     user.getUsername(),
                     user.getEmail(),
                     user.getRoleName());

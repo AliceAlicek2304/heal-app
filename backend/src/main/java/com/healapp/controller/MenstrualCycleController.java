@@ -60,6 +60,35 @@ public class MenstrualCycleController {
                     .body(ApiResponse.error("Invalid request: " + e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Internal server error: " + e.getMessage()));        }
+    }
+
+    // Endpoint mới: Lấy chu kỳ của current user (giống như STI /my-tests)
+    @GetMapping("/my-cycles")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<List<MenstrualCycleResponse>>> getMyMenstrualCycles() {
+        try {
+            // Lấy thông tin user đang đăng nhập
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || !auth.isAuthenticated()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponse.error("User not authenticated"));
+            }
+
+            // Lấy userId từ username
+            String username = auth.getName();
+            Long userId = userService.getUserIdFromUsername(username);
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.error("User not found"));
+            }
+
+            // Gọi service để lấy thông tin chu kỳ kinh nguyệt
+            ApiResponse<List<MenstrualCycleResponse>> response = menstrualCycleService.getAllCycleByUserId(userId);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Internal server error: " + e.getMessage()));
         }
     }

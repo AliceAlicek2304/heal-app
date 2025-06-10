@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { menstrualCycleService } from '../../services/menstrualCycleService';
@@ -16,25 +16,40 @@ const MenstrualCycleCalculator = () => {
         startDate: new Date().toISOString().split('T')[0],
         numberOfDays: 5,
         cycleLength: 28,
-    });
-    const [cycles, setCycles] = useState([]);
+    }); const [cycles, setCycles] = useState([]);
     const [selectedCycle, setSelectedCycle] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [calculationResult, setCalculationResult] = useState(null);    useEffect(() => {
-        console.log('🔍 MenstrualCalculator useEffect - isAuthenticated:', isAuthenticated, 'user:', user);
-        if (isAuthenticated && user) {
-            fetchCycles();
-        }
-    }, [isAuthenticated, user]);
+    const [calculationResult, setCalculationResult] = useState(null);
 
-    const fetchCycles = async () => {
+    const fetchCycles = useCallback(async () => {
         try {
             setLoading(true);
             const userId = user?.userId || user?.id;
 
+            console.log('🔍 Fetching cycles for user:', {
+                userId,
+                username: user?.username,
+                userObject: user
+            });
+
             if (!userId) {
-                console.error("❌ Không thể xác định userId từ user object:", user);
-                toast.error("Không thể xác định người dùng");
+                console.log("❌ Không có userId, sử dụng username-based endpoint");
+                // Fallback: sử dụng endpoint dựa trên authentication context
+                // Backend sẽ tự động lấy user từ JWT token
+                const response = await menstrualCycleService.getCurrentUserCycles();
+
+                if (response.success && response.data) {
+                    const sortedCycles = response.data.sort((a, b) => {
+                        const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+                        const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+                        return dateB - dateA;
+                    });
+
+                    setCycles(sortedCycles);
+                    console.log('✅ Loaded cycles via current user endpoint:', sortedCycles.length);
+                } else {
+                    toast.error(response.message || "Không thể tải lịch sử chu kỳ kinh nguyệt");
+                }
                 return;
             }
 
@@ -60,7 +75,14 @@ const MenstrualCycleCalculator = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [user, toast]);
+
+    useEffect(() => {
+        console.log('🔍 MenstrualCalculator useEffect - isAuthenticated:', isAuthenticated, 'user:', user);
+        if (isAuthenticated && user) {
+            fetchCycles();
+        }
+    }, [isAuthenticated, user, fetchCycles]); // ← Add fetchCycles to dependencies
 
     const handleCalculate = async (e) => {
         e.preventDefault();

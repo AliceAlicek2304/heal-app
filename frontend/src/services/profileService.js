@@ -7,7 +7,7 @@ export const profileService = {
         try {
             const response = await authService.apiCall(`${API_BASE_URL}/users/profile`, { method: 'GET' });
             if (response.status === 401) { authService.logout(); return { success: false, message: 'Chưa đăng nhập' }; }
-             
+
             return response.json();
         } catch (error) {
             console.error('Error fetching user profile:', error);
@@ -20,7 +20,7 @@ export const profileService = {
         try {
             const response = await authService.apiCall(`${API_BASE_URL}/users/profile/basic`, { method: 'PUT', body: JSON.stringify(profileData) });
             if (response.status === 401) { authService.logout(); return { success: false, message: 'Chưa đăng nhập' }; }
-             
+
             return response.json();
         } catch (error) {
             console.error('Error updating basic profile:', error);
@@ -74,17 +74,29 @@ export const profileService = {
             console.error('Error changing password:', error);
             return { success: false, message: 'Không thể kết nối đến server' };
         }
-    },
-
-    // Cập nhật ảnh đại diện
+    },    // Cập nhật ảnh đại diện
     updateAvatar: async (file) => {
         try {
             const formData = new FormData();
             formData.append('file', file);
-            // Use fetch directly to send FormData with JWT header
-            const headers = authService.getAuthHeader ? authService.getAuthHeader() : {};
-            const response = await fetch(`${API_BASE_URL}/users/profile/avatar`, { method: 'POST', headers, body: formData });
-            if (response.status === 401) { authService.logout(); return { success: false, message: 'Chưa đăng nhập' }; }
+
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                return { success: false, message: 'Chưa đăng nhập' };
+            }
+
+            const response = await fetch(`${API_BASE_URL}/users/profile/avatar`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            if (response.status === 401) {
+                authService.logout();
+                return { success: false, message: 'Chưa đăng nhập' };
+            }
 
             return response.json();
         } catch (error) {

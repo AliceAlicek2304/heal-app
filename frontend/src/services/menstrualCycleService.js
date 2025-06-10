@@ -22,6 +22,32 @@ export const menstrualCycleService = {
             console.error('Error adding menstrual cycle:', error);
             return { success: false, message: 'Không thể kết nối đến server' };
         }
+    },    // Lấy tất cả chu kỳ của current user - đơn giản như stiService
+    getCurrentUserCycles: async () => {
+        try {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                return { success: false, message: 'Chưa đăng nhập' };
+            }
+
+            const response = await fetch(`${API_BASE_URL}/menstrual-cycle/my-cycles`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+            });
+
+            if (response.status === 401) {
+                return { success: false, message: 'Phiên đăng nhập hết hạn' };
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error fetching current user cycles:', error);
+            return { success: false, message: 'Không thể kết nối đến server' };
+        }
     },
 
     // Lấy tất cả chu kỳ của user
@@ -109,7 +135,7 @@ export const menstrualCycleService = {
     // Tính xác suất mang thai hiện tại dựa trên ngày rụng trứng
     calculateCurrentPregnancyProbability: (ovulationDate) => {
         if (!ovulationDate) return 1.0;
-        
+
         const today = new Date();
         const ovulation = new Date(ovulationDate);
         const daysDiff = Math.round((today - ovulation) / (1000 * 60 * 60 * 24));
@@ -129,11 +155,11 @@ export const menstrualCycleService = {
     // Kiểm tra có trong thời kỳ dễ thụ thai không
     isInFertilePeriod: (ovulationDate) => {
         if (!ovulationDate) return false;
-        
+
         const today = new Date();
         const ovulation = new Date(ovulationDate);
         const daysDiff = Math.round((today - ovulation) / (1000 * 60 * 60 * 24));
-        
+
         // Thời kỳ dễ thụ thai: 5 ngày trước đến 1 ngày sau rụng trứng
         return daysDiff >= -5 && daysDiff <= 1;
     },
@@ -146,19 +172,19 @@ export const menstrualCycleService = {
 
         const startDate = new Date(cycle.startDate);
         const ovulationDate = new Date(cycle.ovulationDate);
-        
+
         // Ngày kết thúc kinh nguyệt
         const endDate = new Date(startDate);
         endDate.setDate(startDate.getDate() + cycle.numberOfDays - 1);
-        
+
         // Chu kỳ tiếp theo
         const nextCycleDate = new Date(startDate);
         nextCycleDate.setDate(startDate.getDate() + cycle.cycleLength);
-        
+
         // Thời kỳ dễ thụ thai (5 ngày trước đến 1 ngày sau rụng trứng)
         const fertileStart = new Date(ovulationDate);
         fertileStart.setDate(ovulationDate.getDate() - 5);
-        
+
         const fertileEnd = new Date(ovulationDate);
         fertileEnd.setDate(ovulationDate.getDate() + 1);
 

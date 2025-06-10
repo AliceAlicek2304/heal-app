@@ -123,10 +123,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/sti-services/my-tests").authenticated()
                         .requestMatchers(HttpMethod.GET, "/sti-services/tests/{testId}").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/sti-services/tests/{testId}/cancel").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/sti-services/tests/{testId}/results").authenticated()
-
-                        // API Menstrual Cycle (Authenticated user endpoints)
+                        .requestMatchers(HttpMethod.GET, "/sti-services/tests/{testId}/results").authenticated()                        // API Menstrual Cycle (Authenticated user endpoints)
                         .requestMatchers(HttpMethod.POST, "/menstrual-cycle/addCycle").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/menstrual-cycle/my-cycles").authenticated()
                         .requestMatchers(HttpMethod.GET, "/menstrual-cycle/{userId}").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/menstrual-cycle/{id}").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/menstrual-cycle/{id}/reminder").authenticated()

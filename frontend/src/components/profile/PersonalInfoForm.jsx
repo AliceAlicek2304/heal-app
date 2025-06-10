@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { authService } from '../../services/authService';
 import { profileService } from '../../services/profileService';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
 import styles from './PersonalInfoForm.module.css';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 const PersonalInfoForm = () => {
     const { user, updateUser, isLoading } = useAuth();
@@ -17,20 +19,11 @@ const PersonalInfoForm = () => {
     });
     const [loading, setLoading] = useState(false);
     const [avatarFile, setAvatarFile] = useState(null);
-    const [avatarPreview, setAvatarPreview] = useState('');    useEffect(() => {
-        const loadUserProfile = async () => {
-            if (!isLoading && user) {
-                console.log('🔍 User data from context:', user);
-                
-                // Only load form data, don't fetch fresh data from server to avoid infinite loop
-                setUserDataToForm(user);
-            }
-        };
+    const [avatarPreview, setAvatarPreview] = useState('');
 
-        loadUserProfile();
-    }, [user, isLoading]); // Removed updateUser from dependency array
+    const setUserDataToForm = useCallback((userData) => {
+        console.log('🔄 Setting user data to form:', userData);
 
-    const setUserDataToForm = (userData) => {
         // Xử lý birthDay
         let formattedBirthDay = '';
         if (userData.birthDay) {
@@ -47,15 +40,68 @@ const PersonalInfoForm = () => {
             }
         }
 
-        setFormData({
+        const newFormData = {
             fullName: userData.fullName || '',
             birthDay: formattedBirthDay,
             phone: userData.phone || '',
             gender: userData.gender || '',
+        };
+
+        console.log('✅ Form data set to:', newFormData);
+        setFormData(newFormData);
+
+        // Set avatar preview
+        if (userData.avatar) {
+            const newAvatarUrl = authService.getAvatarUrl(userData.avatar);
+            console.log('🖼️ Setting avatar preview:', newAvatarUrl);
+            setAvatarPreview(newAvatarUrl);
+        } else {
+            console.log('🖼️ No avatar found, clearing preview');
+            setAvatarPreview('');
+        }
+    }, []); // No dependencies needed as this is just a data transformation
+
+    useEffect(() => {
+        console.log('🔍 PersonalInfoForm useEffect triggered:', {
+            isLoading,
+            hasUser: !!user,
+            userKeys: user ? Object.keys(user) : null,
+            userPreview: user ? {
+                username: user.username,
+                email: user.email,
+                fullName: user.fullName,
+                avatar: user.avatar,
+                birthDay: user.birthDay,
+                phone: user.phone,
+                gender: user.gender
+            } : null
         });
 
-        if (userData.avatar) {
-            setAvatarPreview(authService.getAvatarUrl(userData.avatar));
+        if (!isLoading && user) {
+            console.log('✅ Setting form data from user');
+            setUserDataToForm(user);
+            
+            // Check if user data is incomplete (missing fullName, avatar, etc.)
+            if (!user.fullName && !user.avatar && user.username && user.email) {
+                console.log('⚠️ User data seems incomplete, attempting to refresh...');
+                handleRefreshUserData();
+            }
+        } else {
+            console.log('⏳ Waiting for user data...', { isLoading, hasUser: !!user });
+        }
+    }, [user, isLoading, setUserDataToForm]);
+
+    const handleRefreshUserData = async () => {
+        try {
+            const result = await authService.refreshUserProfile();
+            if (result.success && result.data) {
+                console.log('✅ User profile refreshed successfully');
+                updateUser(result.data);
+            } else {
+                console.warn('❌ Failed to refresh user profile:', result.message);
+            }
+        } catch (error) {
+            console.error('❌ Error refreshing user profile:', error);
         }
     };
 
@@ -85,15 +131,13 @@ const PersonalInfoForm = () => {
             setAvatarFile(file);
             setAvatarPreview(URL.createObjectURL(file));
         }
-    };
-
-    const handleAvatarSubmit = async (e) => {
+    }; const handleAvatarSubmit = async (e) => {
         e.preventDefault();
         if (!avatarFile) return;
 
         try {
             setLoading(true);
-            const response = await authService.updateAvatar(avatarFile);
+            const response = await profileService.updateAvatar(avatarFile);
 
             if (response.success) {
                 toast.success('Cập nhật ảnh đại diện thành công');
@@ -130,7 +174,7 @@ const PersonalInfoForm = () => {
         if (formData.gender && !['Nam', 'Nữ', 'Khác'].includes(formData.gender)) {
             toast.error('Giới tính không hợp lệ');
             return;
-        }        try {
+        } try {
             setLoading(true);
             const response = await profileService.updateBasicProfile(formData);
 
@@ -191,21 +235,45 @@ const PersonalInfoForm = () => {
                 <p className={styles.subtitle}>
                     Cập nhật thông tin cá nhân và ảnh đại diện của bạn
                 </p>
+                
+                {/* Add refresh button if user data is incomplete */}
+                {user && !user.fullName && !user.avatar && (
+                    <div style={{ marginTop: '10px' }}>
+                        <button 
+                            onClick={handleRefreshUserData}
+                            style={{ 
+                                background: '#007bff', 
+                                color: 'white', 
+                                border: 'none', 
+                                padding: '8px 16px', 
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '14px'
+                            }}
+                        >
+                            🔄 Tải lại thông tin cá nhân
+                        </button>
+                    </div>
+                )}
             </div>
 
             <div className={styles.content}>
                 {/* Avatar Section */}
                 <div className={styles.avatarSection}>
                     <div className={styles.avatarContainer}>
-                        <div className={styles.avatarImageWrapper}>
-                            <img
-                                src={avatarPreview || '/img/avatar/default.jpg'}
-                                alt="Avatar"
-                                className={styles.avatarImage}
-                                onError={(e) => {
-                                    e.target.src = '/img/avatar/default.jpg';
-                                }}
-                            />
+                        <div className={styles.avatarImageWrapper}>                            <img
+                            src={avatarPreview || authService.getAvatarUrl(user?.avatar || null)}
+                            alt="Avatar"
+                            className={styles.avatarImage}
+                            onError={(e) => {
+                                // Prevent infinite loop by checking if already set to backend default
+                                const backendDefault = `http://localhost:8080/img/avatar/default.jpg`;
+                                console.log('🖼️ Image error, current src:', e.target.src, 'fallback:', backendDefault);
+                                if (e.target.src !== backendDefault) {
+                                    e.target.src = backendDefault;
+                                }
+                            }}
+                        />
                             <label htmlFor="avatar-upload" className={styles.avatarUploadLabel}>
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>

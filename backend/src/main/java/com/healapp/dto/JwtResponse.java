@@ -12,16 +12,8 @@ public class JwtResponse {
     private String refreshToken;
     private String tokenType = "Bearer";
     private Long expiresIn;
+    private Long userId;
     private String username;
     private String email;
     private String role;
-
-    public JwtResponse(String accessToken, String refreshToken, Long expiresIn, String username, String email, String role) {
-        this.accessToken = accessToken;
-        this.refreshToken = refreshToken;
-        this.expiresIn = expiresIn;
-        this.username = username;
-        this.email = email;
-        this.role = role;
-    }
 }
