@@ -6,8 +6,6 @@ import { profileService } from '../../services/profileService';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
 import styles from './PersonalInfoForm.module.css';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-
 const PersonalInfoForm = () => {
     const { user, updateUser, isLoading } = useAuth();
     const toast = useToast();
@@ -22,8 +20,6 @@ const PersonalInfoForm = () => {
     const [avatarPreview, setAvatarPreview] = useState('');
 
     const setUserDataToForm = useCallback((userData) => {
-        console.log('🔄 Setting user data to form:', userData);
-
         // Xử lý birthDay
         let formattedBirthDay = '';
         if (userData.birthDay) {
@@ -34,7 +30,6 @@ const PersonalInfoForm = () => {
                 try {
                     formattedBirthDay = new Date(userData.birthDay).toISOString().split('T')[0];
                 } catch (e) {
-                    console.error('Error parsing birthDay:', e);
                     formattedBirthDay = '';
                 }
             }
@@ -47,47 +42,25 @@ const PersonalInfoForm = () => {
             gender: userData.gender || '',
         };
 
-        console.log('✅ Form data set to:', newFormData);
         setFormData(newFormData);
 
         // Set avatar preview
         if (userData.avatar) {
             const newAvatarUrl = authService.getAvatarUrl(userData.avatar);
-            console.log('🖼️ Setting avatar preview:', newAvatarUrl);
             setAvatarPreview(newAvatarUrl);
         } else {
-            console.log('🖼️ No avatar found, clearing preview');
             setAvatarPreview('');
         }
-    }, []); // No dependencies needed as this is just a data transformation
+    }, []);
 
     useEffect(() => {
-        console.log('🔍 PersonalInfoForm useEffect triggered:', {
-            isLoading,
-            hasUser: !!user,
-            userKeys: user ? Object.keys(user) : null,
-            userPreview: user ? {
-                username: user.username,
-                email: user.email,
-                fullName: user.fullName,
-                avatar: user.avatar,
-                birthDay: user.birthDay,
-                phone: user.phone,
-                gender: user.gender
-            } : null
-        });
-
         if (!isLoading && user) {
-            console.log('✅ Setting form data from user');
             setUserDataToForm(user);
             
             // Check if user data is incomplete (missing fullName, avatar, etc.)
             if (!user.fullName && !user.avatar && user.username && user.email) {
-                console.log('⚠️ User data seems incomplete, attempting to refresh...');
                 handleRefreshUserData();
             }
-        } else {
-            console.log('⏳ Waiting for user data...', { isLoading, hasUser: !!user });
         }
     }, [user, isLoading, setUserDataToForm]);
 
@@ -95,13 +68,10 @@ const PersonalInfoForm = () => {
         try {
             const result = await authService.refreshUserProfile();
             if (result.success && result.data) {
-                console.log('✅ User profile refreshed successfully');
                 updateUser(result.data);
-            } else {
-                console.warn('❌ Failed to refresh user profile:', result.message);
             }
         } catch (error) {
-            console.error('❌ Error refreshing user profile:', error);
+            // Silent fail - không cần toast vì đây là background operation
         }
     };
 
@@ -131,7 +101,9 @@ const PersonalInfoForm = () => {
             setAvatarFile(file);
             setAvatarPreview(URL.createObjectURL(file));
         }
-    }; const handleAvatarSubmit = async (e) => {
+    };
+
+    const handleAvatarSubmit = async (e) => {
         e.preventDefault();
         if (!avatarFile) return;
 
@@ -145,13 +117,12 @@ const PersonalInfoForm = () => {
                     const newUser = { ...user, avatar: response.data };
                     updateUser(newUser);
                 }
-                setAvatarFile(null); // Reset file sau khi upload thành công
+                setAvatarFile(null);
             } else {
                 toast.error(response.message || 'Lỗi khi cập nhật ảnh đại diện');
             }
         } catch (err) {
             toast.error('Đã xảy ra lỗi khi cập nhật ảnh đại diện');
-            console.error('Avatar update error:', err);
         } finally {
             setLoading(false);
         }
@@ -174,13 +145,14 @@ const PersonalInfoForm = () => {
         if (formData.gender && !['Nam', 'Nữ', 'Khác'].includes(formData.gender)) {
             toast.error('Giới tính không hợp lệ');
             return;
-        } try {
+        }
+
+        try {
             setLoading(true);
             const response = await profileService.updateBasicProfile(formData);
 
             if (response.success) {
                 toast.success('Cập nhật thông tin thành công');
-                // Cập nhật thông tin user trong context với data từ response
                 if (user && response.data) {
                     const newUser = {
                         ...user,
@@ -196,7 +168,6 @@ const PersonalInfoForm = () => {
             }
         } catch (err) {
             toast.error('Đã xảy ra lỗi khi cập nhật thông tin');
-            console.error('Profile update error:', err);
         } finally {
             setLoading(false);
         }
@@ -204,7 +175,6 @@ const PersonalInfoForm = () => {
 
     const handleCancelAvatar = () => {
         setAvatarFile(null);
-        // Reset preview về avatar hiện tại
         if (user?.avatar) {
             setAvatarPreview(authService.getAvatarUrl(user.avatar));
         } else {
@@ -212,7 +182,6 @@ const PersonalInfoForm = () => {
         }
     };
 
-    // Hiển thị loading nếu đang tải user data
     if (isLoading) {
         return (
             <div className={styles.loadingContainer}>
@@ -235,45 +204,24 @@ const PersonalInfoForm = () => {
                 <p className={styles.subtitle}>
                     Cập nhật thông tin cá nhân và ảnh đại diện của bạn
                 </p>
-                
-                {/* Add refresh button if user data is incomplete */}
-                {user && !user.fullName && !user.avatar && (
-                    <div style={{ marginTop: '10px' }}>
-                        <button 
-                            onClick={handleRefreshUserData}
-                            style={{ 
-                                background: '#007bff', 
-                                color: 'white', 
-                                border: 'none', 
-                                padding: '8px 16px', 
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontSize: '14px'
-                            }}
-                        >
-                            🔄 Tải lại thông tin cá nhân
-                        </button>
-                    </div>
-                )}
             </div>
 
             <div className={styles.content}>
                 {/* Avatar Section */}
                 <div className={styles.avatarSection}>
                     <div className={styles.avatarContainer}>
-                        <div className={styles.avatarImageWrapper}>                            <img
-                            src={avatarPreview || authService.getAvatarUrl(user?.avatar || null)}
-                            alt="Avatar"
-                            className={styles.avatarImage}
-                            onError={(e) => {
-                                // Prevent infinite loop by checking if already set to backend default
-                                const backendDefault = `http://localhost:8080/img/avatar/default.jpg`;
-                                console.log('🖼️ Image error, current src:', e.target.src, 'fallback:', backendDefault);
-                                if (e.target.src !== backendDefault) {
-                                    e.target.src = backendDefault;
-                                }
-                            }}
-                        />
+                        <div className={styles.avatarImageWrapper}>
+                            <img
+                                src={avatarPreview || authService.getAvatarUrl(user?.avatar || null)}
+                                alt="Avatar"
+                                className={styles.avatarImage}
+                                onError={(e) => {
+                                    const backendDefault = `http://localhost:8080/img/avatar/default.jpg`;
+                                    if (e.target.src !== backendDefault) {
+                                        e.target.src = backendDefault;
+                                    }
+                                }}
+                            />
                             <label htmlFor="avatar-upload" className={styles.avatarUploadLabel}>
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
@@ -449,4 +397,4 @@ const PersonalInfoForm = () => {
     );
 };
 
-export default PersonalInfoForm;
+export default PersonalInfoForm;    

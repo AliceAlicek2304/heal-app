@@ -14,15 +14,13 @@ public class ConsultantProfile {
 
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false)
-    private UserDtls user;
-
-    @Column(nullable = false)
+    private UserDtls user;    @Column(columnDefinition = "nvarchar(1000)", nullable = false)
     private String qualifications;
 
-    @Column(nullable = false)
+    @Column(columnDefinition = "nvarchar(1000)", nullable = false)
     private String experience;
 
-    @Column(columnDefinition = "nvarchar(255)", nullable = false)
+    @Column(columnDefinition = "nvarchar(2000)", nullable = false)
     private String bio;
 
     @Column(nullable = false)

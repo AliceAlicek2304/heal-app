@@ -39,7 +39,6 @@ const MyQuestions = () => {
             });
 
             if (response.success && response.data) {
-                console.log('Questions data:', response.data.content);
                 setQuestions(response.data.content || []);
                 setTotalPages(response.data.totalPages || 0);
             } else {

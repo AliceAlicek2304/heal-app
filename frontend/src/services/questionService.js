@@ -1,19 +1,26 @@
 import { authService } from './authService';
+
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 export const questionService = {
     // Tạo câu hỏi mới
     createQuestion: async (questionData) => {
         try {
-            if (!authService.isAuthenticated()) return { success: false, message: 'Chưa đăng nhập' };
+            if (!authService.isAuthenticated()) {
+                return { success: false, message: 'Chưa đăng nhập' };
+            }
 
-            const response = await authService.apiCall(`${API_BASE_URL}/questions`, { method: 'POST', body: JSON.stringify(questionData) });
-             
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const response = await authService.apiCall(`${API_BASE_URL}/questions`, {
+                method: 'POST',
+                body: JSON.stringify(questionData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
             return response.json();
         } catch (error) {
-            console.error('Error creating question:', error);
             return { success: false, message: 'Không thể tạo câu hỏi' };
         }
     },
@@ -21,10 +28,11 @@ export const questionService = {
     // Lấy câu hỏi của tôi
     getMyQuestions: async ({ page = 0, size = 10, sort = 'createdAt', direction = 'DESC' } = {}) => {
         try {
-            if (!authService.isAuthenticated()) return { success: false, message: 'Chưa đăng nhập' };
+            if (!authService.isAuthenticated()) {
+                return { success: false, message: 'Chưa đăng nhập' };
+            }
 
             const url = `${API_BASE_URL}/questions/my-questions?page=${page}&size=${size}&sort=${sort}&direction=${direction}`;
-
             const response = await authService.apiCall(url, { method: 'GET' });
 
             if (!response.ok) {
@@ -33,7 +41,6 @@ export const questionService = {
 
             return response.json();
         } catch (error) {
-            console.error('Error fetching my questions:', error);
             return { success: false, message: 'Không thể tải câu hỏi' };
         }
     },
@@ -41,16 +48,17 @@ export const questionService = {
     // Lấy danh mục câu hỏi
     getCategories: async () => {
         try {
-            const response = await fetch(`${API_BASE_URL}/question-categories`, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+            const response = await fetch(`${API_BASE_URL}/question-categories`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
-            return data;
+            return response.json();
         } catch (error) {
-            console.error('Error fetching question categories:', error);
             return { success: false, message: 'Không thể tải danh mục' };
         }
     },
@@ -59,32 +67,10 @@ export const questionService = {
     getAnsweredQuestions: async ({ page = 0, size = 10, sort = 'createdAt', direction = 'DESC' } = {}) => {
         try {
             const url = `${API_BASE_URL}/questions/answered?page=${page}&size=${size}&sort=${sort}&direction=${direction}`;
-
             const response = await fetch(url, {
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Content-Type': 'application/json' }
             });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            console.error('Error fetching answered questions:', error);
-            return { success: false, message: 'Không thể tải câu hỏi' };
-        }
-    },
-
-    // Lấy chi tiết câu hỏi
-    getQuestionById: async (questionId) => {
-        try {
-            if (!authService.isAuthenticated()) return { success: false, message: 'Chưa đăng nhập' };
-
-            const response = await authService.apiCall(`${API_BASE_URL}/questions/${questionId}`, { method: 'GET' });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -92,18 +78,41 @@ export const questionService = {
 
             return response.json();
         } catch (error) {
-            console.error('Error fetching question:', error);
             return { success: false, message: 'Không thể tải câu hỏi' };
         }
     },
+
+    // Lấy chi tiết câu hỏi
+    getQuestionById: async (questionId) => {
+        try {
+            if (!authService.isAuthenticated()) {
+                return { success: false, message: 'Chưa đăng nhập' };
+            }
+
+            const response = await authService.apiCall(`${API_BASE_URL}/questions/${questionId}`, {
+                method: 'GET'
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return response.json();
+        } catch (error) {
+            return { success: false, message: 'Không thể tải câu hỏi' };
+        }
+    },
+
+    // Lấy câu hỏi theo trạng thái
     getQuestionsByStatus: async (params = {}) => {
         try {
-            if (!authService.isAuthenticated()) return { success: false, message: 'Chưa đăng nhập' };
+            if (!authService.isAuthenticated()) {
+                return { success: false, message: 'Chưa đăng nhập' };
+            }
 
             let url;
 
             if (params.status && params.status !== 'ALL') {
-                // Sử dụng endpoint /questions/status/{status}
                 const queryParams = new URLSearchParams({
                     page: params.page || 0,
                     size: params.size || 10,
@@ -113,7 +122,6 @@ export const questionService = {
 
                 url = `${API_BASE_URL}/questions/status/${params.status}?${queryParams}`;
             } else {
-                // Nếu là ALL hoặc không có status, lấy tất cả từ answered endpoint
                 const queryParams = new URLSearchParams({
                     page: params.page || 0,
                     size: params.size || 10,
@@ -132,17 +140,17 @@ export const questionService = {
 
             return response.json();
         } catch (error) {
-            console.error('Error fetching questions by status:', error);
             return { success: false, message: 'Không thể tải câu hỏi' };
         }
     },
 
-    // Cập nhật method getAllQuestions để lấy tất cả status
+    // Lấy tất cả câu hỏi
     getAllQuestions: async (params = {}) => {
         try {
-            if (!authService.isAuthenticated()) return { success: false, message: 'Chưa đăng nhập' };
+            if (!authService.isAuthenticated()) {
+                return { success: false, message: 'Chưa đăng nhập' };
+            }
 
-            // Tạo promise array để gọi tất cả các status
             const statuses = ['PROCESSING', 'CONFIRMED', 'ANSWERED'];
             const promises = statuses.map(status =>
                 questionService.getQuestionsByStatus({ ...params, status })
@@ -150,31 +158,24 @@ export const questionService = {
 
             const responses = await Promise.all(promises);
 
-            // Gộp tất cả kết quả
             let allQuestions = [];
-            let totalElements = 0;
-
             responses.forEach(response => {
                 if (response.success && response.data && response.data.content) {
                     allQuestions = allQuestions.concat(response.data.content);
-                    totalElements += response.data.totalElements || 0;
                 }
             });
 
-            // Sắp xếp theo thời gian
             allQuestions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-            // Phân trang thủ công
             const page = params.page || 0;
             const size = params.size || 10;
             const start = page * size;
             const end = start + size;
-            const paginatedQuestions = allQuestions.slice(start, end);
 
             return {
                 success: true,
                 data: {
-                    content: paginatedQuestions,
+                    content: allQuestions.slice(start, end),
                     totalElements: allQuestions.length,
                     totalPages: Math.ceil(allQuestions.length / size),
                     number: page,
@@ -182,97 +183,101 @@ export const questionService = {
                 }
             };
         } catch (error) {
-            console.error('Error fetching all questions:', error);
             return { success: false, message: 'Không thể tải câu hỏi' };
         }
     },
+
+    // Cập nhật trạng thái câu hỏi
     updateQuestionStatus: async (questionId, statusData) => {
         try {
-            if (!authService.isAuthenticated()) return { success: false, message: 'Chưa đăng nhập' };
+            if (!authService.isAuthenticated()) {
+                return { success: false, message: 'Chưa đăng nhập' };
+            }
+
             const response = await authService.apiCall(
                 `${API_BASE_URL}/questions/${questionId}/status`,
                 { method: 'PUT', body: JSON.stringify(statusData) }
             );
 
-             if (!response.ok) {
-                 throw new Error(`HTTP error! status: ${response.status}`);
-             }
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
-             const data = await response.json();
-             return data;
-         } catch (error) {
-             console.error('Error updating question status:', error);
-             return { success: false, message: 'Không thể cập nhật trạng thái' };
-         }
-     },
-     answerQuestion: async (questionId, answerData) => {
-         try {
-            if (!authService.isAuthenticated()) return { success: false, message: 'Chưa đăng nhập' };
+            return response.json();
+        } catch (error) {
+            return { success: false, message: 'Không thể cập nhật trạng thái' };
+        }
+    },
+
+    // Trả lời câu hỏi
+    answerQuestion: async (questionId, answerData) => {
+        try {
+            if (!authService.isAuthenticated()) {
+                return { success: false, message: 'Chưa đăng nhập' };
+            }
+
             const response = await authService.apiCall(
                 `${API_BASE_URL}/questions/${questionId}/answer`,
                 { method: 'PUT', body: JSON.stringify(answerData) }
             );
 
-             if (!response.ok) {
-                 throw new Error(`HTTP error! status: ${response.status}`);
-             }
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
-             const data = await response.json();
-             return data;
-         } catch (error) {
-             console.error('Error answering question:', error);
-             return { success: false, message: 'Không thể trả lời câu hỏi' };
-         }
-     },
-     getAllQuestionsForStaff: async (params = {}) => {
-         try {
-             if (!authService.isAuthenticated()) return { success: false, message: 'Chưa đăng nhập' };
+            return response.json();
+        } catch (error) {
+            return { success: false, message: 'Không thể trả lời câu hỏi' };
+        }
+    },
 
-             // Gọi từng status và gộp lại
-             const statusCalls = ['PROCESSING', 'CONFIRMED', 'ANSWERED'].map(async (status) => {
-                 const queryParams = new URLSearchParams({
-                     page: 0, // Lấy tất cả từ page 0
-                     size: 1000, // Lấy nhiều để đảm bảo có đủ data
-                     sort: params.sort || 'createdAt',
-                     direction: params.direction || 'DESC'
-                 });
+    // Lấy tất cả câu hỏi cho staff
+    getAllQuestionsForStaff: async (params = {}) => {
+        try {
+            if (!authService.isAuthenticated()) {
+                return { success: false, message: 'Chưa đăng nhập' };
+            }
 
-                 const url = `${API_BASE_URL}/questions/status/${status}?${queryParams}`;
-                 const response = await authService.apiCall(url, { method: 'GET' });
+            const statusCalls = ['PROCESSING', 'CONFIRMED', 'ANSWERED'].map(async (status) => {
+                const queryParams = new URLSearchParams({
+                    page: 0,
+                    size: 1000,
+                    sort: params.sort || 'createdAt',
+                    direction: params.direction || 'DESC'
+                });
 
-                 if (response.ok) {
-                     const data = await response.json();
-                     return data.success ? data.data.content : [];
-                 }
-                 return [];
-             });
+                const url = `${API_BASE_URL}/questions/status/${status}?${queryParams}`;
+                const response = await authService.apiCall(url, { method: 'GET' });
 
-             const results = await Promise.all(statusCalls);
-             const allQuestions = results.flat();
+                if (response.ok) {
+                    const data = await response.json();
+                    return data.success ? data.data.content : [];
+                }
+                return [];
+            });
 
-             // Sort by created date
-             allQuestions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            const results = await Promise.all(statusCalls);
+            const allQuestions = results.flat();
 
-             // Manual pagination
-             const page = params.page || 0;
-             const size = params.size || 10;
-             const start = page * size;
-             const end = start + size;
+            allQuestions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-             return {
-                 success: true,
-                 data: {
-                     content: allQuestions.slice(start, end),
-                     totalElements: allQuestions.length,
-                     totalPages: Math.ceil(allQuestions.length / size),
-                     number: page,
-                     size: size
-                 }
-             };
-         } catch (error) {
-             console.error('Error fetching all questions for staff:', error);
-             return { success: false, message: 'Không thể tải câu hỏi' };
-         }
-     }
+            const page = params.page || 0;
+            const size = params.size || 10;
+            const start = page * size;
+            const end = start + size;
+
+            return {
+                success: true,
+                data: {
+                    content: allQuestions.slice(start, end),
+                    totalElements: allQuestions.length,
+                    totalPages: Math.ceil(allQuestions.length / size),
+                    number: page,
+                    size: size
+                }
+            };
+        } catch (error) {
+            return { success: false, message: 'Không thể tải câu hỏi' };
+        }
+    }
 };
-

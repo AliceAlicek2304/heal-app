@@ -47,9 +47,7 @@ public class ConsultantController {
         ApiResponse<ConsultantProfileResponse> response = consultantService.createOrUpdateConsultantProfile(userId,
                 request);
         return getResponseEntity(response);
-    }
-
-    // consultant tự update profile
+    }    // consultant tự update profile
     @PutMapping("/profile")
     @PreAuthorize("hasRole('ROLE_CONSULTANT')")
     public ResponseEntity<ApiResponse<ConsultantProfileResponse>> updateOwnProfile(
@@ -61,6 +59,18 @@ public class ConsultantController {
 
         ApiResponse<ConsultantProfileResponse> response = consultantService.createOrUpdateConsultantProfile(userId,
                 request);
+        return getResponseEntity(response);
+    }
+
+    // consultant lấy profile của chính mình
+    @GetMapping("/profile")
+    @PreAuthorize("hasRole('ROLE_CONSULTANT')")
+    public ResponseEntity<ApiResponse<ConsultantProfileResponse>> getOwnProfile() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        Long userId = userService.getUserIdFromUsername(username);
+
+        ApiResponse<ConsultantProfileResponse> response = consultantService.getConsultantProfileById(userId);
         return getResponseEntity(response);
     }
 

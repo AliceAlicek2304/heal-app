@@ -7,7 +7,6 @@ import com.healapp.dto.ConsultationRequest;
 import com.healapp.dto.ConsultationResponse;
 import com.healapp.dto.ConsultationStatusRequest;
 import com.healapp.model.ConsultationStatus;
-import com.healapp.model.UserDtls;
 import com.healapp.service.ConsultantService;
 import com.healapp.service.ConsultationService;
 import com.healapp.service.UserService;
@@ -37,8 +36,8 @@ public class ConsultationController {
     private ConsultantService consultantService;
 
     @GetMapping("/consultants")
-    public ResponseEntity<ApiResponse<List<UserDtls>>> getAllConsultantMembers() {
-        ApiResponse<List<UserDtls>> response = consultationService.getAllConsultantMembers();
+    public ResponseEntity<ApiResponse<List<ConsultantProfileResponse>>> getAllConsultantMembers() {
+        ApiResponse<List<ConsultantProfileResponse>> response = consultantService.getActiveConsultantProfiles();
         if (response.isSuccess()) {
             return ResponseEntity.ok(response);
         } else {

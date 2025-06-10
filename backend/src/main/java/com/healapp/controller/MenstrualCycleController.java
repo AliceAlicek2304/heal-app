@@ -60,7 +60,8 @@ public class MenstrualCycleController {
                     .body(ApiResponse.error("Invalid request: " + e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error("Internal server error: " + e.getMessage()));        }
+                    .body(ApiResponse.error("Internal server error: " + e.getMessage()));
+        }
     }
 
     // Endpoint mới: Lấy chu kỳ của current user (giống như STI /my-tests)

@@ -67,7 +67,7 @@ public class MenstrualCycleService {
         return tiLe;
     }
 
-    //TÍnh số ngày trong chu kỳ kinh nguyệt
+    // TÍnh số ngày trong chu kỳ kinh nguyệt
     public long dayInMenstrualCycle(MenstrualCycle menstrualCycle) {
         LocalDate today = LocalDate.now();
         long daysSinceOvulation = today.toEpochDay() - menstrualCycle.getOvulationDate().toEpochDay();
@@ -138,15 +138,10 @@ public class MenstrualCycleService {
     public ApiResponse<List<MenstrualCycleResponse>> getAllCycleByUserId(Long userId) {
         try {
             UserDtls user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-
-            // Lấy tất cả chu kỳ kinh nguyệt của người dùng
+                    .orElseThrow(() -> new RuntimeException("User not found")); // Lấy tất cả chu kỳ kinh nguyệt của
+                                                                                // người dùng
             List<MenstrualCycle> cycles = menstrualCycleRepository.findAllByUserId(userId);
-            if (cycles.isEmpty()) {
-                return ApiResponse.error("Không có chu kỳ kinh nguyệt nào được tìm thấy cho người dùng này");
-            }
-
-            // Chuyển đổi sang response
+            // Chuyển đổi sang response (có thể là danh sách rỗng)
             List<MenstrualCycleResponse> responseList = cycles.stream()
                     .map(cycle -> {
                         MenstrualCycleResponse response = new MenstrualCycleResponse();
@@ -162,6 +157,7 @@ public class MenstrualCycleService {
                     })
                     .collect(Collectors.toList());
 
+            // Luôn trả về success, kể cả khi danh sách rỗng
             return ApiResponse.success("Lấy chu kỳ kinh nguyệt thành công", responseList);
         } catch (Exception e) {
             return ApiResponse.error("Error fetching menstrual cycles: " + e.getMessage());

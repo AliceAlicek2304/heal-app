@@ -12,11 +12,10 @@ const MenstrualHistoryComponent = () => {
     const [loading, setLoading] = useState(false);
     const [selectedCycle, setSelectedCycle] = useState(null);    // Gọi fetchCycles khi component mount hoặc khi user thay đổi
     useEffect(() => {
-        console.log('🔍 MenstrualHistory useEffect - user:', user);
         if (user && (user.userId || user.id)) {
             fetchCycles();
         } else {
-            console.log('⚠️ MenstrualHistory - No user or user ID available');
+            console.log(' MenstrualHistory - No user or user ID available');
         }       
     }, [user]);
 
@@ -26,7 +25,6 @@ const MenstrualHistoryComponent = () => {
 
             // Kiểm tra nếu user không tồn tại
             if (!user) {
-                console.log("⚠️ Đang chờ thông tin người dùng...");
                 setLoading(false);
                 return;
             }
@@ -38,23 +36,29 @@ const MenstrualHistoryComponent = () => {
                 toast.error("Không thể xác định thông tin người dùng");
                 setLoading(false);
                 return;
-            }
-
-            console.log('🔍 Fetching cycles for userId:', userId);
-
-            // Sử dụng userId thay vì id
+            }            // Sử dụng userId thay vì id
             const response = await menstrualCycleService.getCyclesByUserId(userId);
-
+            
             if (response.success) {
                 // Sắp xếp chu kỳ theo thời gian bắt đầu giảm dần (mới nhất lên đầu)
-                const sortedCycles = response.data.sort((a, b) => {
+                const sortedCycles = (response.data || []).sort((a, b) => {
                     return new Date(b.startDate) - new Date(a.startDate);
                 });
 
                 setCycles(sortedCycles);
-                console.log("Đã tải thành công lịch sử chu kỳ:", sortedCycles.length, "chu kỳ");
+                
+                // Chỉ log, không hiển thị lỗi cho trường hợp dữ liệu rỗng
+                if (sortedCycles.length === 0) {
+                    console.log('No menstrual cycles found for this user');
+                }
             } else {
-                toast.error(response.message || "Không thể tải lịch sử chu kỳ kinh nguyệt");
+                // Chỉ hiển thị lỗi nếu thực sự có lỗi server, không phải do không có data
+                setCycles([]);
+                console.error('Error from server:', response.message);
+                // Chỉ hiển thị toast error nếu không phải lỗi "không có dữ liệu"
+                if (response.message && !response.message.includes('không có chu kỳ')) {
+                    toast.error(response.message || "Không thể tải lịch sử chu kỳ kinh nguyệt");
+                }
             }
         } catch (err) {
             console.error("Error fetching cycles:", err);

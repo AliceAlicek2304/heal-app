@@ -15,10 +15,8 @@ export const stiService = {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
-            return data;
+            return await response.json();
         } catch (error) {
-            console.error('Error fetching STI services:', error);
             return { success: false, message: 'Không thể tải danh sách dịch vụ' };
         }
     },
@@ -37,13 +35,13 @@ export const stiService = {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
-            return data;
+            return await response.json();
         } catch (error) {
-            console.error('Error fetching STI service details:', error);
             return { success: false, message: 'Không thể tải chi tiết dịch vụ' };
         }
-    },    // Đặt lịch xét nghiệm STI
+    },
+
+    // Đặt lịch xét nghiệm STI
     bookTest: async (testData, onAuthRequired) => {
         try {
             const token = localStorage.getItem('authToken');
@@ -77,13 +75,14 @@ export const stiService = {
 
             return data;
         } catch (error) {
-            console.error('Error booking STI test:', error);
             return {
                 success: false,
                 message: error.message || 'Network error occurred'
             };
         }
-    },    // Lấy danh sách xét nghiệm của tôi
+    },
+
+    // Lấy danh sách xét nghiệm của tôi
     getMyTests: async (paginationParams, onAuthRequired) => {
         try {
             const token = localStorage.getItem('authToken');
@@ -113,18 +112,17 @@ export const stiService = {
                 };
             }
 
-            const data = await response.json();
-            return data;
-
+            return await response.json();
         } catch (error) {
-            console.error('Error fetching user tests:', error);
             return {
                 success: true,
                 message: 'No STI tests found',
                 data: []
             };
         }
-    },    // Lấy chi tiết xét nghiệm
+    },
+
+    // Lấy chi tiết xét nghiệm
     getTestDetails: async (testId, onAuthRequired) => {
         try {
             const token = localStorage.getItem('authToken');
@@ -154,7 +152,6 @@ export const stiService = {
 
             return data;
         } catch (error) {
-            console.error('Error fetching test details:', error);
             return { success: false, message: 'Network error occurred' };
         }
     },
@@ -189,7 +186,6 @@ export const stiService = {
 
             return data;
         } catch (error) {
-            console.error('Error cancelling test:', error);
             return { success: false, message: 'Network error occurred' };
         }
     },
@@ -224,12 +220,11 @@ export const stiService = {
 
             return data;
         } catch (error) {
-            console.error('Error fetching test results:', error);
             return { success: false, message: 'Network error occurred' };
         }
     },
 
-    // ✅ Lấy thông tin thanh toán - sử dụng paymentId từ test response
+    // Lấy thông tin thanh toán
     getPaymentInfo: async (testId, onAuthRequired) => {
         try {
             const token = localStorage.getItem('authToken');
@@ -238,7 +233,7 @@ export const stiService = {
                 return { success: false, message: 'Authentication required' };
             }
 
-            // Trước tiên lấy thông tin test để có paymentId
+            // Lấy thông tin test để có paymentId
             const testResponse = await fetch(`${API_BASE_URL}/sti-services/tests/${testId}`, {
                 method: 'GET',
                 headers: {
@@ -262,7 +257,7 @@ export const stiService = {
                 return { success: false, message: 'Payment information not found' };
             }
 
-            // Sau đó lấy thông tin payment chi tiết
+            // Lấy thông tin payment chi tiết
             const paymentResponse = await fetch(`${API_BASE_URL}/payments/${testData.data.paymentId}`, {
                 method: 'GET',
                 headers: {
@@ -284,12 +279,11 @@ export const stiService = {
 
             return paymentData;
         } catch (error) {
-            console.error('Error fetching payment info:', error);
             return { success: false, message: 'Network error occurred' };
         }
     },
 
-    // ✅ Tạo thanh toán QR
+    // Tạo thanh toán QR
     createQRPayment: async (testId, onAuthRequired) => {
         try {
             const token = localStorage.getItem('authToken');
@@ -320,11 +314,11 @@ export const stiService = {
 
             return data;
         } catch (error) {
-            console.error('Error creating QR payment:', error);
             return { success: false, message: 'Network error occurred' };
         }
     },
 
+    // Tạo lại mã QR theo paymentId
     regenerateQRCode: async (paymentId, onAuthRequired) => {
         try {
             const token = localStorage.getItem('authToken');
@@ -354,11 +348,11 @@ export const stiService = {
 
             return data;
         } catch (error) {
-            console.error('Error regenerating QR code:', error);
             return { success: false, message: 'Network error occurred' };
         }
     },
 
+    // Tạo lại mã QR theo reference
     regenerateQRCodeByReference: async (qrReference, onAuthRequired) => {
         try {
             const token = localStorage.getItem('authToken');
@@ -388,12 +382,11 @@ export const stiService = {
 
             return data;
         } catch (error) {
-            console.error('Error regenerating QR code by reference:', error);
             return { success: false, message: 'Network error occurred' };
         }
     },
 
-    // ✅ Kiểm tra trạng thái thanh toán QR
+    // Kiểm tra trạng thái thanh toán QR
     checkQRPaymentStatus: async (qrReference, onAuthRequired) => {
         try {
             const token = localStorage.getItem('authToken');
@@ -423,7 +416,6 @@ export const stiService = {
 
             return data;
         } catch (error) {
-            console.error('Error checking QR payment status:', error);
             return { success: false, message: 'Network error occurred' };
         }
     }

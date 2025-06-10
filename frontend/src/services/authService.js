@@ -47,8 +47,6 @@ const apiCall = async (url, options = {}) => {
                 ...(currentToken ? { 'Authorization': `Bearer ${currentToken}` } : {}),
                 ...options.headers
             };
-
-            console.log(`API call to ${url}, authenticated: ${!!currentToken}`);
             let response = await fetch(url, { ...options, headers });
 
             // Handle unauthorized response by trying to refresh the token once
@@ -114,14 +112,7 @@ export const authService = {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(loginData)
-            });
-
-            console.log("Login response status:", response.status);
-            console.log("Login response headers:", response.headers);
-
-            // Check if response has content
-            const responseText = await response.text();
-            console.log("Login response body:", responseText);
+            });            const responseText = await response.text();
 
             if (!responseText) {
                 return { success: false, message: 'Server trả về phản hồi trống' };
@@ -132,21 +123,11 @@ export const authService = {
                 data = JSON.parse(responseText);
             } catch (parseError) {
                 console.error("JSON parse error:", parseError);
-                console.error("Response text:", responseText);
                 return { success: false, message: 'Phản hồi từ server không hợp lệ' };
-            } console.log("Login response data:", data);
-            console.log("🔍 Backend response structure:", {
-                accessToken: !!data.accessToken,
-                refreshToken: !!data.refreshToken,
-                userId: data.userId,
-                username: data.username,
-                email: data.email,
-                role: data.role,
-                allKeys: Object.keys(data)
-            }); if (response.ok) {
-                // Store the JWT tokens
-                setTokens(data.accessToken, data.refreshToken);                // Fetch complete user profile after successful login
-                console.log('🔄 Fetching complete user profile after login...');
+            }if (response.ok) {                // Store the JWT tokens
+                setTokens(data.accessToken, data.refreshToken);
+
+                // Fetch complete user profile after successful login
                 try {
                     const profileResponse = await fetch(`${API_BASE_URL}/users/profile`, {
                         method: 'GET',
@@ -156,21 +137,11 @@ export const authService = {
                         }
                     });
 
-                    console.log('🔍 Profile fetch response status:', profileResponse.status);
-
                     if (profileResponse.ok) {
                         const profileData = await profileResponse.json();
-                        console.log("✅ Complete user profile fetched:", {
-                            success: profileData.success,
-                            dataKeys: profileData.data ? Object.keys(profileData.data) : null,
-                            avatar: profileData.data?.avatar,
-                            fullName: profileData.data?.fullName,
-                            fullResponse: profileData
-                        });
 
                         if (profileData.success && profileData.data) {
                             // Store complete user profile
-                            console.log('💾 Storing complete profile to localStorage');
                             localStorage.setItem('user', JSON.stringify(profileData.data));
 
                             return {
@@ -181,12 +152,7 @@ export const authService = {
                                     refreshToken: data.refreshToken
                                 }
                             };
-                        } else {
-                            console.warn("❌ Profile data structure invalid, using basic user info");
                         }
-                    } else {
-                        const errorText = await profileResponse.text();
-                        console.warn("❌ Profile fetch response not ok:", profileResponse.status, errorText);
                     }
                 } catch (profileError) {
                     console.warn("Profile fetch error, using basic user info:", profileError);
@@ -227,21 +193,11 @@ export const authService = {
         const token = localStorage.getItem('authToken');
         return !!token;
     },    // Lấy thông tin user hiện tại từ server hoặc storage
-    getCurrentUser: async () => {
-        console.log('🔍 getCurrentUser called');
-
-        // Always try to get from localStorage first
+    getCurrentUser: async () => {       // Always try to get from localStorage first
         const userStr = localStorage.getItem('user');
         const token = localStorage.getItem('authToken');
 
-        console.log('🔍 LocalStorage check:', {
-            hasUser: !!userStr,
-            hasToken: !!token,
-            userPreview: userStr ? userStr.substring(0, 100) + '...' : null
-        });
-
         if (!token) {
-            console.log('❌ No token found, clearing tokens');
             clearTokens();
             return { success: false };
         }
@@ -250,37 +206,22 @@ export const authService = {
         if (userStr) {
             try {
                 const userData = JSON.parse(userStr);
-                console.log('✅ Using cached user data:', {
-                    userId: userData.userId,
-                    username: userData.username,
-                    email: userData.email,
-                    fullName: userData.fullName,
-                    avatar: userData.avatar,
-                    allKeys: Object.keys(userData)
-                });
                 return { success: true, data: userData };
             } catch (parseError) {
-                console.error('❌ Error parsing cached user data:', parseError);
+                console.error('Error parsing cached user data:', parseError);
             }
         }
 
         // Only try to fetch from server if we don't have cached data
-        console.log('🌐 Fetching user from server...');
         try {
             const response = await apiCall(`${API_BASE_URL}/users/profile`, { method: 'GET' });
             if (!response.ok) {
-                console.log('❌ Server response not ok:', response.status);
                 if (response.status === 401) {
                     clearTokens();
                 }
                 return { success: false };
             }
             const data = await response.json();
-            console.log('✅ Server user data:', {
-                success: data.success,
-                dataKeys: data.data ? Object.keys(data.data) : null,
-                fullData: data
-            });
 
             if (data.success && data.data) {
                 localStorage.setItem('user', JSON.stringify(data.data));
@@ -290,7 +231,7 @@ export const authService = {
                 return { success: true, data };
             }
         } catch (error) {
-            console.error('❌ Error getting current user from server:', error);
+            console.error('Error getting current user from server:', error);
             // If server call fails but we have a token, assume user is still logged in
             return userStr ? { success: true, data: JSON.parse(userStr) } : { success: false };
         }
@@ -378,16 +319,12 @@ export const authService = {
         if (imagePath.startsWith('http')) return imagePath;
         if (imagePath.startsWith('/img/')) return `${API_BASE_URL}${imagePath}`;
         return `${API_BASE_URL}/img/blog/${imagePath}`;
-    },
-
-    // Refresh user profile data
+    },    // Refresh user profile data
     refreshUserProfile: async () => {
-        console.log('🔄 Manually refreshing user profile...');
         try {
             const response = await apiCall(`${API_BASE_URL}/users/profile`, { method: 'GET' });
             
             if (!response.ok) {
-                console.log('❌ Server response not ok:', response.status);
                 if (response.status === 401) {
                     clearTokens();
                     return { success: false, message: 'Chưa đăng nhập' };
@@ -396,11 +333,6 @@ export const authService = {
             }
             
             const data = await response.json();
-            console.log('✅ Refreshed user data from server:', {
-                success: data.success,
-                dataKeys: data.data ? Object.keys(data.data) : null,
-                fullData: data
-            });
 
             if (data.success && data.data) {
                 localStorage.setItem('user', JSON.stringify(data.data));
@@ -409,7 +341,7 @@ export const authService = {
                 return { success: false, message: 'Dữ liệu người dùng không hợp lệ' };
             }
         } catch (error) {
-            console.error('❌ Error refreshing user profile:', error);
+            console.error('Error refreshing user profile:', error);
             return { success: false, message: 'Có lỗi xảy ra khi tải thông tin người dùng' };
         }
     },

@@ -33,18 +33,6 @@ const Services = () => {
         },
         {
             id: 3,
-            title: "Tính toán tỷ lệ mang thai",
-            description: "Công cụ tính toán tỷ lệ mang thai và những ngày có khả năng thụ thai cao dựa trên chu kỳ của bạn",
-            icon: (
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                </svg>
-            ),
-            link: "/pregnancy-calculator",
-            color: "#f59e0b"
-        },
-        {
-            id: 4,
             title: "Tư vấn sức khỏe sinh sản",
             description: "Tư vấn trực tuyến với đội ngũ chuyên gia y tế về các vấn đề sức khỏe sinh sản và tình dục",
             icon: (
@@ -57,7 +45,7 @@ const Services = () => {
             color: "#059669"
         },
         {
-            id: 5,
+            id: 4,
             title: "Kiến thức sức khỏe",
             description: "Thư viện kiến thức y khoa chuyên sâu về sức khỏe sinh sản, được biên soạn bởi các chuyên gia",
             icon: (
@@ -72,7 +60,7 @@ const Services = () => {
             color: "#7c3aed"
         },
         {
-            id: 6,
+            id: 5,
             title: "Hỏi đáp với chuyên gia",
             description: "Đặt câu hỏi trực tiếp với các chuyên gia y tế, nhận tư vấn miễn phí và bảo mật về mọi thắc mắc",
             icon: (

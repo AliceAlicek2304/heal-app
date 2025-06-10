@@ -118,8 +118,6 @@ const ManagerQuestion = () => {
     };
 
     const handleConfirmQuestion = async (questionId) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xác nhận câu hỏi này?')) return;
-
         try {
             const response = await questionService.updateQuestionStatus(questionId, {
                 status: 'CONFIRMED'

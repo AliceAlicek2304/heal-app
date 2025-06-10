@@ -162,8 +162,6 @@ const STIHistory = () => {
                 window.location.href = '/login';
             });
 
-            console.log('STI Tests Response:', response);
-
             if (response.success && response.data) {
                 if (Array.isArray(response.data)) {
                     setTests(response.data);

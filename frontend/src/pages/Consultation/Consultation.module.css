@@ -43,6 +43,43 @@
   margin: 0 auto;
 }
 
+/* Service Info Section */
+.serviceInfo {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.serviceFeature {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.serviceFeature:hover {
+  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.serviceFeature svg {
+  color: #4285f4;
+  flex-shrink: 0;
+}
+
+.serviceFeature span {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #334155;
+}
+
 .priceInfo {
   background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
   padding: 1rem 2rem;
@@ -213,6 +250,19 @@
 
   .consultationHeader p {
     font-size: 1rem;
+  }
+
+  .serviceInfo {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .serviceFeature {
+    padding: 0.75rem;
+  }
+
+  .serviceFeature span {
+    font-size: 0.85rem;
   }
 
   .priceInfo {

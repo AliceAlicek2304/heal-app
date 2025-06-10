@@ -55,18 +55,16 @@ public class AIKnowledgeService {
                                                 "9. Khi lịch hẹn được xác nhận, hệ thống tự động tạo URL Jitsi Meet\n" +
                                                 "10. Cả khách hàng và chuyên gia đều có thể hủy lịch hẹn (CANCELED)\n\n"
                                                 +
-                                                "Lưu ý: Chỉ người đặt lịch và chuyên gia được chỉ định mới có thể xem và cập nhật lịch hẹn.");
-                // Quy trình thanh toán/hoàn tiền
+                                                "Lưu ý: Chỉ người đặt lịch và chuyên gia được chỉ định mới có thể xem và cập nhật lịch hẹn.");                // Quy trình thanh toán/hoàn tiền
                 knowledgeBase.put("payment",
                                 "# Chính sách thanh toán và hoàn tiền trên HealApp\n\n" +
                                                 "## Phương thức thanh toán\n" +
-                                                "HealApp hỗ trợ hai phương thức thanh toán:\n" +
+                                                "HealApp hỗ trợ ba phương thức thanh toán:\n" +
                                                 "1. **Thanh toán COD (Cash On Delivery)**: Thanh toán khi tư vấn, không cần thanh toán trước\n"
                                                 +
-                                                "2. **Thanh toán VISA**: Thanh toán trực tuyến bằng thẻ VISA khi đặt lịch\n\n"
-                                                +
-
-                                                "## Quy trình thanh toán VISA\n" +
+                                                "2. **Thanh toán VISA**: Thanh toán trực tuyến bằng thẻ VISA khi đặt lịch\n" +
+                                                "3. **Thanh toán QR Code**: Thanh toán nhanh chóng bằng cách quét mã QR với ứng dụng ngân hàng\n\n"
+                                                +                                                "## Quy trình thanh toán VISA\n" +
                                                 "1. Người dùng chọn phương thức thanh toán VISA khi đặt lịch\n" +
                                                 "2. Nhập thông tin thẻ (số thẻ, ngày hết hạn, mã CVC, tên chủ thẻ)\n" +
                                                 "3. Hệ thống xử lý thanh toán qua Stripe API\n" +
@@ -75,14 +73,35 @@ public class AIKnowledgeService {
                                                 "5. Nếu thanh toán thất bại, lịch hẹn sẽ ở trạng thái PAYMENT_FAILED\n\n"
                                                 +
 
-                                                "## Chính sách hoàn tiền\n" +
-                                                "1. **Hoàn tiền tự động**: Khi lịch hẹn bị hủy (CANCELED), hệ thống sẽ **tự động hoàn tiền** nếu đã thanh toán bằng VISA\n"
+                                                "## Quy trình thanh toán QR Code\n" +
+                                                "1. Người dùng chọn phương thức thanh toán QR Code khi đặt lịch\n" +
+                                                "2. Hệ thống hiển thị mã QR chứa thông tin thanh toán\n" +
+                                                "3. Người dùng mở ứng dụng ngân hàng và quét mã QR\n" +
+                                                "4. Xác nhận thanh toán trên ứng dụng ngân hàng\n" +
+                                                "5. Hệ thống nhận thông báo thanh toán và cập nhật trạng thái lịch hẹn\n" +
+                                                "6. Khi thanh toán thành công, lịch hẹn chuyển sang trạng thái PENDING\n" +
+                                                "7. Nếu thanh toán thất bại hoặc hết thời gian, lịch hẹn sẽ ở trạng thái PAYMENT_FAILED\n\n"
                                                 +
-                                                "2. **Phương thức hoàn tiền**: Tiền sẽ được hoàn về thẻ đã dùng để thanh toán\n"
+
+                                                "## Ưu điểm thanh toán QR Code\n" +
+                                                "- **Nhanh chóng**: Chỉ cần quét mã và xác nhận\n" +
+                                                "- **An toàn**: Không cần chia sẻ thông tin thẻ\n" +
+                                                "- **Tiện lợi**: Sử dụng ứng dụng ngân hàng có sẵn\n" +
+                                                "- **Hỗ trợ đa ngân hàng**: Tương thích với hầu hết các ngân hàng tại Việt Nam\n\n"
+                                                +
+
+                                                "## Chính sách hoàn tiền\n" +
+                                                "1. **Hoàn tiền tự động**: Khi lịch hẹn bị hủy (CANCELED), hệ thống sẽ **tự động hoàn tiền** nếu đã thanh toán bằng VISA hoặc QR Code\n"
+                                                +
+                                                "2. **Phương thức hoàn tiền**:\n" +
+                                                "   - VISA: Tiền sẽ được hoàn về thẻ đã dùng để thanh toán\n" +
+                                                "   - QR Code: Tiền sẽ được hoàn về tài khoản ngân hàng đã thực hiện thanh toán\n"
                                                 +
                                                 "3. **Điều kiện áp dụng**: Áp dụng cho mọi trường hợp hủy lịch, không phân biệt người hủy là khách hàng hay chuyên gia\n"
                                                 +
-                                                "4. **Thời gian hoàn tiền**: Việc hoàn tiền được xử lý ngay lập tức trong hệ thống, tuy nhiên thời gian tiền về tài khoản ngân hàng có thể mất từ 3-7 ngày làm việc tùy theo chính sách của ngân hàng phát hành thẻ\n"
+                                                "4. **Thời gian hoàn tiền**: \n" +
+                                                "   - VISA: 3-7 ngày làm việc tùy theo ngân hàng phát hành thẻ\n" +
+                                                "   - QR Code: 1-3 ngày làm việc tùy theo ngân hàng\n"
                                                 +
                                                 "5. **Trường hợp đặc biệt**: Nếu có vấn đề trong quá trình hoàn tiền, người dùng nên liên hệ bộ phận hỗ trợ của HealApp\n\n"
                                                 +
@@ -260,10 +279,10 @@ public class AIKnowledgeService {
                                 new String[] { "danh mục", "category", "chủ đề", "chủ đề câu hỏi", "phân loại" });
                 topicKeywords.put("user",
                                 new String[] { "người dùng", "user", "vai trò", "quyền", "consultant", "staff",
-                                                "admin", "vô hiệu hóa", "kích hoạt" });
-                topicKeywords.put("payment", new String[] { "thanh toán", "hoàn tiền", "hủy lịch", "huỷ lịch", "visa",
+                                                "admin", "vô hiệu hóa", "kích hoạt" });                topicKeywords.put("payment", new String[] { "thanh toán", "hoàn tiền", "hủy lịch", "huỷ lịch", "visa",
                                 "thẻ", "refund", "stripe", "cod", "hủy đặt lịch", "huỷ đặt lịch", "trả lại tiền",
-                                "tiền về" });
+                                "tiền về", "qr code", "qr", "mã qr", "quét mã", "ngân hàng", "app ngân hàng", 
+                                "thanh toán nhanh", "thanh toán điện tử", "banking app", "mobile banking" });
                 topicKeywords.put("menstrual-cycle", new String[] {
                                 "chu kỳ kinh nguyệt","chu kì kinh nguyệt", "kinh nguyệt", "ngày đèn đỏ", "hành kinh",
                                 "ngày rụng trứng", "chu kì", "chu ky", "kinh nguyet",

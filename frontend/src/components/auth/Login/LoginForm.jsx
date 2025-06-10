@@ -63,7 +63,6 @@ const LoginForm = ({ onClose, onSwitchToRegister, onLoginSuccess, onSwitchToForg
 
             if (response.success) {
                 console.log("Đăng nhập thành công!");
-                console.log("Token:", localStorage.getItem('authToken')?.substring(0, 10) + "...");
 
                 toast.success('Đăng nhập thành công! Đang chuyển hướng...', 3000);
 

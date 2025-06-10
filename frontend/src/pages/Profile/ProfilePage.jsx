@@ -10,6 +10,7 @@ import MyQuestions from '../../components/profile/MyQuestions';
 import ConsultationHistory from '../../components/profile/ConsultationHistory';
 import STIHistory from '../../components/profile/STIHistory';
 import ManagerQuestion from '../../components/profile/ManagerQuestion';
+import ConsultantProfile from '../../components/profile/ConsultantProfile';
 import Navbar from '../../components/layout/Navbar/Navbar';
 import Footer from '../../components/layout/Footer/Footer';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
@@ -89,6 +90,12 @@ const ProfilePage = () => {
                 return (
                     <div className={styles.contentSection}>
                         <ManagerQuestion />
+                    </div>
+                );
+            case 'consultant-profile':
+                return (
+                    <div className={styles.contentSection}>
+                        <ConsultantProfile />
                     </div>
                 );
             default:

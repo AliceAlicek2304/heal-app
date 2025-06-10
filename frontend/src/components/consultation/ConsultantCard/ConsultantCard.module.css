@@ -1,3 +1,4 @@
+/* ConsultantCard.module.css */
 .consultantCard {
     background: white;
     border-radius: 12px;
@@ -7,9 +8,15 @@
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
-    height: 100%;
+    height: auto;
+    min-height: 280px;
     display: flex;
     flex-direction: column;
+}
+
+.consultantCard.expanded {
+    min-height: auto;
+    max-height: none;
 }
 
 .consultantCard:hover {
@@ -18,14 +25,12 @@
     border-color: #e2e8f0;
 }
 
-/* ✅ Updated: Consultant Info Section */
 .consultantInfo {
     flex: 1;
     display: flex;
     flex-direction: column;
 }
 
-/* ✅ Updated: Avatar Section */
 .avatar {
     position: relative;
     align-self: center;
@@ -57,7 +62,6 @@
     border: 3px solid #3b82f6;
 }
 
-/* ✅ Updated: Details Section */
 .details {
     flex: 1;
     text-align: center;
@@ -99,7 +103,86 @@
     margin-bottom: 4px;
 }
 
-/* ✅ Updated: Availability Status */
+.bio {
+    margin-bottom: 16px;
+    color: #64748b;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    transition: all 0.3s ease;
+}
+
+.bio .label {
+    font-weight: 600;
+    color: #475569;
+    display: block;
+    margin-bottom: 4px;
+}
+
+/* Content display styles */
+.truncatedContent {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-height: 2.8em;
+    transition: all 0.3s ease;
+}
+
+.fullContent {
+    display: block;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    transition: all 0.3s ease;
+}
+
+/* Bio visibility states */
+.bio.visible {
+    opacity: 1;
+    max-height: 500px;
+    transform: translateY(0);
+}
+
+.bio.hidden {
+    opacity: 0;
+    max-height: 0;
+    margin-bottom: 0;
+    overflow: hidden;
+    transform: translateY(-10px);
+}
+
+/* Toggle button styles */
+.toggleButton {
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 20px;
+    margin: 8px 0 12px 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.toggleButton:hover {
+    background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+    border-color: #94a3b8;
+    color: #334155;
+    transform: translateY(-1px);
+}
+
+.noInfo {
+    font-style: italic;
+    color: #94a3b8;
+    font-size: 0.8rem;
+}
+
 .availability {
     display: flex;
     align-items: center;
@@ -129,7 +212,6 @@
     }
 }
 
-/* ✅ Updated: Actions Section */
 .actions {
     margin-top: auto;
     padding-top: 16px;
@@ -169,195 +251,7 @@
     height: 16px;
 }
 
-/* Loading State */
-.cardLoading {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.9);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 12px;
-    backdrop-filter: blur(2px);
-}
-
-.loadingSpinner {
-    width: 32px;
-    height: 32px;
-    border: 3px solid #f3f4f6;
-    border-top: 3px solid #3b82f6;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* Animation cho card xuất hiện */
-@keyframes cardAppear {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.consultantCard {
-    animation: cardAppear 0.3s ease;
-}
-
-/* Skeleton loading state */
-.consultantCard.loading {
-    pointer-events: none;
-}
-
-.consultantCard.loading .name,
-.consultantCard.loading .qualifications,
-.consultantCard.loading .experience {
-    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    color: transparent;
-    border-radius: 4px;
-    min-height: 1em;
-}
-
-@keyframes shimmer {
-    0% {
-        background-position: -200% 0;
-    }
-    100% {
-        background-position: 200% 0;
-    }
-}
-
-/* Hover effect cho avatar */
-.avatar:hover img,
-.avatar:hover .avatarPlaceholder {
-    transform: scale(1.05);
-    transition: transform 0.2s ease;
-}
-
-/* Focus states cho accessibility */
-.bookButton:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
-}
-
-/* Premium/Featured Consultant */
-.consultantCard.premium {
-    background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
-    border-color: #fbbf24;
-}
-
-.consultantCard.premium::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 0;
-    height: 0;
-    border-style: solid;
-    border-width: 0 40px 40px 0;
-    border-color: transparent #fbbf24 transparent transparent;
-}
-
-.consultantCard.premium::after {
-    content: '★';
-    position: absolute;
-    top: 8px;
-    right: 12px;
-    color: white;
-    font-size: 12px;
-    font-weight: bold;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .consultantCard {
-        padding: 16px;
-    }
-    
-    .avatar {
-        width: 70px;
-        height: 70px;
-    }
-    
-    .avatarPlaceholder {
-        font-size: 20px;
-    }
-    
-    .name {
-        font-size: 1rem;
-    }
-    
-    .qualifications,
-    .experience {
-        font-size: 0.8rem;
-        margin-bottom: 10px;
-    }
-    
-    .bookButton {
-        padding: 10px 14px;
-        font-size: 0.85rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .consultantCard {
-        padding: 12px;
-    }
-    
-    .avatar {
-        width: 60px;
-        height: 60px;
-    }
-    
-    .avatarPlaceholder {
-        font-size: 18px;
-    }
-    
-    .name {
-        font-size: 0.95rem;
-        margin-bottom: 12px;
-    }
-    
-    .qualifications,
-    .experience {
-        font-size: 0.75rem;
-        margin-bottom: 8px;
-    }
-    
-    .availability {
-        font-size: 0.8rem;
-        padding: 6px 10px;
-        margin-bottom: 16px;
-    }
-    
-    .bookButton {
-        padding: 10px 12px;
-        font-size: 0.8rem;
-    }
-    
-    .bookButton svg {
-        width: 14px;
-        height: 14px;
-    }
-}
-
-/* Grid layout support */
-.consultantCard {
-    min-height: 280px;
-}
-
+/* Responsive */
 @media (max-width: 768px) {
     .consultantCard {
         min-height: 260px;
@@ -367,5 +261,31 @@
 @media (max-width: 480px) {
     .consultantCard {
         min-height: 240px;
+        padding: 16px;
+    }
+    
+    .name {
+        font-size: 1rem;
+    }
+    
+    .qualifications,
+    .experience,
+    .bio {
+        font-size: 0.8rem;
+    }
+    
+    .bookButton {
+        font-size: 0.85rem;
+        padding: 10px 12px;
+    }
+    
+    .bookButton svg {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .toggleButton {
+        font-size: 0.75rem;
+        padding: 4px 8px;
     }
 }

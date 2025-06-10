@@ -1,11 +1,14 @@
 import { authService } from './authService';
+
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 export const consultationService = {
     // Lấy danh sách consultant
     getAllConsultants: async (onAuthRequired = null) => {
         try {
-            const response = await authService.apiCall(`${API_BASE_URL}/consultations/consultants`, { method: 'GET' });
+            const response = await authService.apiCall(`${API_BASE_URL}/consultations/consultants`, {
+                method: 'GET'
+            });
 
             if (response.status === 401) {
                 authService.logout();
@@ -16,10 +19,8 @@ export const consultationService = {
                 return { success: false, message: 'Phiên đăng nhập hết hạn' };
             }
 
-            const data = await response.json();
-            return data;
+            return response.json();
         } catch (error) {
-            console.error('Error fetching consultants:', error);
             return {
                 success: false,
                 message: 'Không thể tải danh sách consultant'
@@ -43,18 +44,14 @@ export const consultationService = {
             }
 
             if (!response.ok) {
-                const errorText = await response.text();
                 return {
                     success: false,
                     message: `Server error: ${response.status}`
                 };
             }
 
-            const data = await response.json();
-
-            return data;
+            return response.json();
         } catch (error) {
-            console.error('❌ Network error fetching available slots:', error);
             return {
                 success: false,
                 message: 'Không thể kết nối đến server'
@@ -65,7 +62,9 @@ export const consultationService = {
     // Lấy thông tin profile consultant
     getConsultantProfile: async (consultantId, onAuthRequired = null) => {
         try {
-            const response = await authService.apiCall(`${API_BASE_URL}/consultations/consultant/${consultantId}/profile`, { method: 'GET' });
+            const response = await authService.apiCall(`${API_BASE_URL}/consultations/consultant/${consultantId}/profile`, {
+                method: 'GET'
+            });
 
             if (response.status === 401) {
                 authService.logout();
@@ -76,10 +75,8 @@ export const consultationService = {
                 return { success: false, message: 'Phiên đăng nhập hết hạn' };
             }
 
-            const data = await response.json();
-            return data;
+            return response.json();
         } catch (error) {
-            console.error('Error fetching consultant profile:', error);
             return {
                 success: false,
                 message: 'Không thể tải thông tin consultant'
@@ -90,7 +87,10 @@ export const consultationService = {
     // Đặt lịch tư vấn
     createConsultation: async (consultationData, onAuthRequired = null) => {
         try {
-            const response = await authService.apiCall(`${API_BASE_URL}/consultations`, { method: 'POST', body: JSON.stringify(consultationData) });
+            const response = await authService.apiCall(`${API_BASE_URL}/consultations`, {
+                method: 'POST',
+                body: JSON.stringify(consultationData)
+            });
 
             if (response.status === 401) {
                 authService.logout();
@@ -100,10 +100,8 @@ export const consultationService = {
                 return { success: false, message: 'Phiên đăng nhập hết hạn' };
             }
 
-            const data = await response.json();
-            return data;
+            return response.json();
         } catch (error) {
-            console.error('Error creating consultation:', error);
             return {
                 success: false,
                 message: 'Không thể đặt lịch tư vấn'
@@ -114,7 +112,9 @@ export const consultationService = {
     // Lấy lịch tư vấn của user
     getMyConsultations: async (onAuthRequired = null) => {
         try {
-            const response = await authService.apiCall(`${API_BASE_URL}/consultations/my-consultations`, { method: 'GET' });
+            const response = await authService.apiCall(`${API_BASE_URL}/consultations/my-consultations`, {
+                method: 'GET'
+            });
 
             if (response.status === 401) {
                 authService.logout();
@@ -124,10 +124,8 @@ export const consultationService = {
                 return { success: false, message: 'Phiên đăng nhập hết hạn' };
             }
 
-            const data = await response.json();
-            return data;
+            return response.json();
         } catch (error) {
-            console.error('Error fetching my consultations:', error);
             return {
                 success: false,
                 message: 'Không thể tải lịch tư vấn'
@@ -138,7 +136,10 @@ export const consultationService = {
     // Cập nhật trạng thái lịch tư vấn
     updateConsultationStatus: async (consultationId, status, onAuthRequired = null) => {
         try {
-            const response = await authService.apiCall(`${API_BASE_URL}/consultations/${consultationId}/status`, { method: 'PUT', body: JSON.stringify({ status }) });
+            const response = await authService.apiCall(`${API_BASE_URL}/consultations/${consultationId}/status`, {
+                method: 'PUT',
+                body: JSON.stringify({ status })
+            });
 
             if (response.status === 401) {
                 authService.logout();
@@ -148,13 +149,127 @@ export const consultationService = {
                 return { success: false, message: 'Phiên đăng nhập hết hạn' };
             }
 
-            const data = await response.json();
-            return data;
+            return response.json();
         } catch (error) {
-            console.error('Error updating consultation status:', error);
             return {
                 success: false,
                 message: 'Không thể cập nhật trạng thái'
+            };
+        }
+    },
+
+    // Hủy lịch tư vấn
+    cancelConsultation: async (consultationId, onAuthRequired = null) => {
+        try {
+            const response = await authService.apiCall(`${API_BASE_URL}/consultations/${consultationId}/cancel`, {
+                method: 'PUT'
+            });
+
+            if (response.status === 401) {
+                authService.logout();
+                if (onAuthRequired) {
+                    onAuthRequired();
+                }
+                return { success: false, message: 'Phiên đăng nhập hết hạn' };
+            }
+
+            return response.json();
+        } catch (error) {
+            return {
+                success: false,
+                message: 'Không thể hủy lịch tư vấn'
+            };
+        }
+    },
+
+    // Lấy chi tiết lịch tư vấn
+    getConsultationDetails: async (consultationId, onAuthRequired = null) => {
+        try {
+            const response = await authService.apiCall(`${API_BASE_URL}/consultations/${consultationId}`, {
+                method: 'GET'
+            });
+
+            if (response.status === 401) {
+                authService.logout();
+                if (onAuthRequired) {
+                    onAuthRequired();
+                }
+                return { success: false, message: 'Phiên đăng nhập hết hạn' };
+            }
+
+            return response.json();        } catch (error) {
+            return {
+                success: false,
+                message: 'Không thể tải chi tiết lịch tư vấn'
+            };
+        }
+    },    // Lấy profile của consultant hiện tại
+    getCurrentConsultantProfile: async (userFromContext = null, onAuthRequired = null) => {
+        try {
+            // Ưu tiên sử dụng user từ context, fallback về authService
+            let user = userFromContext;
+            if (!user) {
+                user = await authService.getCurrentUser();
+            }
+            
+            console.log('🔍 Current user:', user);
+            console.log('🔍 User role:', user?.role);
+            
+            if (!user) {
+                return { success: false, message: 'Chưa đăng nhập' };
+            }
+            
+            if (user.role !== 'CONSULTANT') {
+                return { success: false, message: `Người dùng có role ${user.role}, cần role CONSULTANT` };
+            }
+
+            const response = await authService.apiCall(`${API_BASE_URL}/consultants/profile`, {
+                method: 'GET'
+            });
+
+            if (response.status === 401) {
+                authService.logout();
+                if (onAuthRequired) {
+                    onAuthRequired();
+                    return { success: false, message: 'Yêu cầu đăng nhập' };
+                }
+                return { success: false, message: 'Phiên đăng nhập hết hạn' };
+            }
+
+            return response.json();
+        } catch (error) {
+            return {
+                success: false,
+                message: 'Không thể tải thông tin hồ sơ'
+            };
+        }
+    },
+
+    // Cập nhật profile của consultant hiện tại
+    updateConsultantProfile: async (profileData, onAuthRequired = null) => {
+        try {
+            const response = await authService.apiCall(`${API_BASE_URL}/consultants/profile`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(profileData)
+            });
+
+            if (response.status === 401) {
+                authService.logout();
+                if (onAuthRequired) {
+                    onAuthRequired();
+                    return { success: false, message: 'Yêu cầu đăng nhập' };
+                }
+                return { success: false, message: 'Phiên đăng nhập hết hạn' };
+            }
+
+            return response.json();
+        } catch (error) {
+            return {
+                success: false,
+                message: 'Không thể cập nhật thông tin hồ sơ'
             };
         }
     }
