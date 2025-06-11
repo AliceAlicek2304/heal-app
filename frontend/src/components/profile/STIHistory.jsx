@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { stiService } from '../../services/stiService';
+import { formatDateTime, parseDate } from '../../utils/dateUtils';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
 import styles from './STIHistory.module.css';
 
@@ -394,32 +395,6 @@ const STIHistory = () => {
         }
 
         return resultLower === normalLower;
-    };
-
-    const formatDateTime = (dateTimeString) => {
-        if (!dateTimeString) return 'Chưa xác định';
-
-        try {
-            //  Fix date format - handle array format from API
-            let date;
-            if (Array.isArray(dateTimeString)) {
-                // Format: [2025, 6, 6, 10, 47, 20, 645941000]
-                const [year, month, day, hour, minute, second] = dateTimeString;
-                date = new Date(year, month - 1, day, hour, minute, second); // month is 0-indexed
-            } else {
-                date = new Date(dateTimeString);
-            }
-
-            return date.toLocaleString('vi-VN', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        } catch (error) {
-            return 'Ngày không hợp lệ';
-        }
     };
 
     const formatPrice = (price) => {

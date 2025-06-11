@@ -197,7 +197,8 @@ export const consultationService = {
                 return { success: false, message: 'Phiên đăng nhập hết hạn' };
             }
 
-            return response.json();        } catch (error) {
+            return response.json();
+        } catch (error) {
             return {
                 success: false,
                 message: 'Không thể tải chi tiết lịch tư vấn'
@@ -215,11 +216,11 @@ export const consultationService = {
                 }
                 user = userResult.data;
             }
-            
+
             if (!user) {
                 return { success: false, message: 'Chưa đăng nhập' };
             }
-            
+
             if (user.role !== 'CONSULTANT') {
                 return { success: false, message: `Người dùng có role ${user.role}, cần role CONSULTANT` };
             }
@@ -254,12 +255,12 @@ export const consultationService = {
             return data;
         } catch (error) {
             console.error('Error in getCurrentConsultantProfile:', error);
-            
+
             // Re-throw specific errors for better handling
             if (error.message.includes('401') || error.message.includes('403')) {
                 throw error;
             }
-            
+
             return {
                 success: false,
                 message: error.message || 'Không thể tải thông tin hồ sơ'
@@ -292,6 +293,78 @@ export const consultationService = {
             return {
                 success: false,
                 message: 'Không thể cập nhật thông tin hồ sơ'
+            };
+        }
+    },
+
+    // Lấy lịch tư vấn được phân công cho consultant
+    getConsultantSchedule: async (onAuthRequired = null) => {
+        try {
+            const response = await authService.apiCall(`${API_BASE_URL}/consultations/assigned`, {
+                method: 'GET'
+            });
+
+            if (response.status === 401) {
+                authService.logout();
+                if (onAuthRequired) {
+                    onAuthRequired();
+                }
+                return { success: false, message: 'Phiên đăng nhập hết hạn' };
+            }
+
+            if (response.status === 403) {
+                return { success: false, message: 'Không có quyền truy cập' };
+            }
+
+            if (!response.ok) {
+                return {
+                    success: false,
+                    message: `Server error: ${response.status}`
+                };
+            }
+
+            return response.json();
+        } catch (error) {
+            return {
+                success: false,
+                message: 'Không thể tải lịch tư vấn'
+            };
+        }
+    },    // Cập nhật trạng thái consultation
+    updateConsultationStatus: async (consultationId, status, onAuthRequired = null) => {
+        try {
+            const response = await authService.apiCall(`${API_BASE_URL}/consultations/${consultationId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status })
+            });
+
+            if (response.status === 401) {
+                authService.logout();
+                if (onAuthRequired) {
+                    onAuthRequired();
+                }
+                return { success: false, message: 'Phiên đăng nhập hết hạn' };
+            }
+
+            if (response.status === 403) {
+                return { success: false, message: 'Không có quyền thực hiện thao tác này' };
+            }
+
+            if (!response.ok) {
+                return {
+                    success: false,
+                    message: `Server error: ${response.status}`
+                };
+            }
+
+            return response.json();
+        } catch (error) {
+            return {
+                success: false,
+                message: 'Không thể cập nhật trạng thái lịch tư vấn'
             };
         }
     }

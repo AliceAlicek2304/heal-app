@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useToast } from '../../contexts/ToastContext';
+import { formatDate } from '../../utils/dateUtils';
 import Navbar from '../../components/layout/Navbar/Navbar';
 import Footer from '../../components/layout/Footer/Footer';
 import { authService } from '../../services/authService';
@@ -16,7 +17,7 @@ const BlogDetail = () => {
 
     useEffect(() => {
         fetchBlogPost();
-    }, [id]);    const fetchBlogPost = async () => {
+    }, [id]); const fetchBlogPost = async () => {
         try {
             setLoading(true);
 
@@ -33,16 +34,6 @@ const BlogDetail = () => {
         } finally {
             setLoading(false);
         }
-    };
-
-    const formatDate = (dateString) => {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('vi-VN', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
     };
 
     if (loading) {
@@ -88,10 +79,10 @@ const BlogDetail = () => {
             <div className={styles.container}>
                 {/* Breadcrumb */}
                 <div className={styles.breadcrumb}>
-                    <Link to="/">Trang chủ</Link> 
-                    <span className={styles.separator}>/</span> 
-                    <Link to="/blog">Blog</Link> 
-                    <span className={styles.separator}>/</span> 
+                    <Link to="/">Trang chủ</Link>
+                    <span className={styles.separator}>/</span>
+                    <Link to="/blog">Blog</Link>
+                    <span className={styles.separator}>/</span>
                     <span className={styles.currentPage}>{blogPost.title}</span>
                 </div>
 
@@ -108,11 +99,18 @@ const BlogDetail = () => {
                                 <line x1="16" y1="2" x2="16" y2="6"></line>
                                 <line x1="8" y1="2" x2="8" y2="6"></line>
                                 <line x1="3" y1="10" x2="21" y2="10"></line>
-                            </svg>
-                            <span>{formatDate(blogPost.createdAt)}</span>
+                            </svg>                            <span>{formatDate(blogPost.createdAt, {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                            })}</span>
                             {blogPost.updatedAt && blogPost.updatedAt !== blogPost.createdAt && (
                                 <span className={styles.updateText}>
-                                    (Cập nhật: {formatDate(blogPost.updatedAt)})
+                                    (Cập nhật: {formatDate(blogPost.updatedAt, {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric'
+                                    })})
                                 </span>
                             )}
                         </div>
@@ -141,9 +139,9 @@ const BlogDetail = () => {
 
                 {/* Main Content */}
                 <div className={styles.blogDetailContent}>
-                    <div 
-                        className={styles.blogMainContent} 
-                        dangerouslySetInnerHTML={{ __html: blogPost.content }} 
+                    <div
+                        className={styles.blogMainContent}
+                        dangerouslySetInnerHTML={{ __html: blogPost.content }}
                     />
                 </div>
 

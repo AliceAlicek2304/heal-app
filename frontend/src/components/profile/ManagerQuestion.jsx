@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
+import { formatDateTime, formatDate } from '../../utils/dateUtils';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
 import { questionService } from '../../services/questionService';
 import styles from './ManagerQuestion.module.css';
@@ -173,25 +174,6 @@ const ManagerQuestion = () => {
         setSelectedQuestion(question);
         setAnswerText('');
         setShowAnswerModal(true);
-    };
-
-    const formatDateTime = (dateTimeString) => {
-        if (!dateTimeString) return 'Chưa xác định';
-        try {
-            const date = new Date(dateTimeString);
-            return date.toLocaleString('vi-VN');
-        } catch (error) {
-            return 'Ngày không hợp lệ';
-        }
-    };
-
-    const formatDate = (dateString) => {
-        if (!dateString) return '';
-        return new Date(dateString).toLocaleDateString('vi-VN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        });
     };
 
     const getStatusConfig = (status) => {

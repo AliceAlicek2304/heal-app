@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { blogService } from '../../services/blogService';
+import { formatDate } from '../../utils/dateUtils';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
 import { useToast } from '../../contexts/ToastContext';
 import styles from './BlogHistory.module.css';
@@ -44,14 +45,6 @@ const BlogHistory = () => {
             default:
                 return { text: status, className: styles.statusDefault };
         }
-    };
-
-    const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString('vi-VN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        });
     };
 
     const handleViewPost = (postId) => {

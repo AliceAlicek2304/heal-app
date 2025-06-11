@@ -9,6 +9,7 @@ import LoginForm from '../../components/auth/Login/LoginForm';
 import RegisterForm from '../../components/auth/Register/RegisterForm';
 import { questionService } from '../../services/questionService';
 import { useAuthModal } from '../../hooks/useAuthModal';
+import { formatDate } from '../../utils/dateUtils';
 import styles from './Questions.module.css';
 
 const Questions = () => {
@@ -81,16 +82,10 @@ const Questions = () => {
         // Nếu người dùng vừa đăng nhập, có thể refresh dữ liệu nếu cần
         fetchAnsweredQuestions();
         toast.success('Đăng nhập thành công!');
-    };
-
-    const truncateContent = (content, maxLength = 200) => {
+    }; const truncateContent = (content, maxLength = 200) => {
         if (!content) return '';
         if (content.length <= maxLength) return content;
         return content.substring(0, maxLength).trim() + '...';
-    };
-
-    const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString('vi-VN');
     };
 
     // Handle modal
@@ -200,7 +195,7 @@ const Questions = () => {
                                     </div>
                                     <h3>Chưa có câu hỏi nào được trả lời</h3>
                                     <p>Hãy đặt câu hỏi đầu tiên để nhận tư vấn từ chuyên gia!</p>
-                                    <button 
+                                    <button
                                         className={styles.btnPrimary}
                                         onClick={handleCreateQuestion}
                                     >

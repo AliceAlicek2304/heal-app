@@ -3,6 +3,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { consultationService } from '../../../services/consultationService';
 import { authService } from '../../../services/authService';
 import LoadingSpinner from '../../common/LoadingSpinner/LoadingSpinner';
+import { formatDate } from '../../../utils/dateUtils';
 import styles from './BookingModal.module.css';
 
 const BookingModal = ({
@@ -143,15 +144,6 @@ const BookingModal = ({
         } finally {
             setLoading(false);
         }
-    };
-
-    const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString('vi-VN', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
     };
 
     const getTimeSlotLabel = (value) => {

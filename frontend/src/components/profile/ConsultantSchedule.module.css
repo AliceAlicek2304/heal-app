@@ -1,0 +1,235 @@
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.header h2 {
+    margin: 0;
+    color: #333;
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.refreshButton {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.refreshButton:hover {
+    background-color: #0056b3;
+}
+
+.refreshButton:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+.loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+    font-size: 18px;
+}
+
+.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    border: 1px solid #f5c6cb;
+}
+
+.emptyState {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+    font-size: 16px;
+}
+
+.consultationsList {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.consultationCard {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e9ecef;
+    transition: box-shadow 0.2s;
+}
+
+.consultationCard:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.consultationHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.patientInfo h3 {
+    margin: 0 0 8px 0;
+    color: #333;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.contactInfo {
+    margin: 4px 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.statusBadge {
+    flex-shrink: 0;
+}
+
+.status {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.consultationDetails {
+    margin-bottom: 20px;
+}
+
+.detailRow {
+    margin-bottom: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.detailRow strong {
+    color: #333;
+    font-weight: 600;
+    margin-right: 8px;
+}
+
+.description {
+    margin: 8px 0 0 0;
+    padding: 12px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid #007bff;
+    color: #495057;
+    line-height: 1.6;
+}
+
+.consultationActions {
+    border-top: 1px solid #e9ecef;
+    padding-top: 20px;
+}
+
+.actionButtons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.actionButton {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+    min-width: 120px;
+}
+
+.actionButton:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.confirmButton {
+    background-color: #28a745;
+    color: white;
+}
+
+.confirmButton:hover:not(:disabled) {
+    background-color: #218838;
+}
+
+.completeButton {
+    background-color: #007bff;
+    color: white;
+}
+
+.completeButton:hover:not(:disabled) {
+    background-color: #0056b3;
+}
+
+.cancelButton {
+    background-color: #dc3545;
+    color: white;
+}
+
+.cancelButton:hover:not(:disabled) {
+    background-color: #c82333;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .header h2 {
+        font-size: 24px;
+    }
+    
+    .consultationCard {
+        padding: 20px;
+    }
+    
+    .consultationHeader {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .patientInfo h3 {
+        font-size: 18px;
+    }
+    
+    .actionButtons {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .actionButton {
+        width: 100%;
+    }
+}

@@ -11,6 +11,7 @@ import ConsultationHistory from '../../components/profile/ConsultationHistory';
 import STIHistory from '../../components/profile/STIHistory';
 import ManagerQuestion from '../../components/profile/ManagerQuestion';
 import ConsultantProfile from '../../components/profile/ConsultantProfile';
+import ConsultantSchedule from '../../components/profile/ConsultantSchedule';
 import Navbar from '../../components/layout/Navbar/Navbar';
 import Footer from '../../components/layout/Footer/Footer';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
@@ -91,11 +92,16 @@ const ProfilePage = () => {
                     <div className={styles.contentSection}>
                         <ManagerQuestion />
                     </div>
-                );
-            case 'consultant-profile':
+                ); case 'consultant-profile':
                 return (
                     <div className={styles.contentSection}>
                         <ConsultantProfile />
+                    </div>
+                );
+            case 'consultant-schedule':
+                return (
+                    <div className={styles.contentSection}>
+                        <ConsultantSchedule />
                     </div>
                 );
             default:

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
+import { formatDate } from '../../utils/dateUtils';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
 import { questionService } from '../../services/questionService';
 import styles from './MyQuestions.module.css';
@@ -54,19 +55,9 @@ const MyQuestions = () => {
 
     const handleCreateNew = () => {
         navigate('/questions/create');
-    };
-
-    const handleRefresh = () => {
+    }; const handleRefresh = () => {
         toast.info('Đang tải lại dữ liệu...');
         fetchMyQuestions();
-    };
-
-    const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString('vi-VN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        });
     };
 
     const getStatusText = (status) => {

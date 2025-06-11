@@ -3,7 +3,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { menstrualCycleService } from '../../services/menstrualCycleService';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
-import styles from './MenstrualHistoryComponent.module.css';                                                
+import { formatDate } from '../../utils/dateUtils';
+import styles from './MenstrualHistoryComponent.module.css';
 
 const MenstrualHistoryComponent = () => {
     const { user } = useAuth();
@@ -16,10 +17,10 @@ const MenstrualHistoryComponent = () => {
             fetchCycles();
         } else {
             console.log(' MenstrualHistory - No user or user ID available');
-        }       
+        }
     }, [user]);
 
-    const fetchCycles = async () => {                   
+    const fetchCycles = async () => {
         try {
             setLoading(true);
 
@@ -32,13 +33,13 @@ const MenstrualHistoryComponent = () => {
             // Sử dụng userId hoặc id
             const userId = user.userId || user.id;
             if (!userId) {
-                console.error("❌ Không thể xác định userId từ user object:", user);
                 toast.error("Không thể xác định thông tin người dùng");
                 setLoading(false);
                 return;
-            }            // Sử dụng userId thay vì id
+            }
+            // Sử dụng userId thay vì id
             const response = await menstrualCycleService.getCyclesByUserId(userId);
-            
+
             if (response.success) {
                 // Sắp xếp chu kỳ theo thời gian bắt đầu giảm dần (mới nhất lên đầu)
                 const sortedCycles = (response.data || []).sort((a, b) => {
@@ -46,7 +47,7 @@ const MenstrualHistoryComponent = () => {
                 });
 
                 setCycles(sortedCycles);
-                
+
                 // Chỉ log, không hiển thị lỗi cho trường hợp dữ liệu rỗng
                 if (sortedCycles.length === 0) {
                     console.log('No menstrual cycles found for this user');
@@ -140,15 +141,12 @@ const MenstrualHistoryComponent = () => {
         }
     };
 
-    // Hàm format ngày tháng
-    const formatDate = (dateString) => {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('vi-VN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        });
+    // Hàm tính màu sắc dựa trên tỷ lệ mang thai
+    const getPregnancyProbabilityColor = (probability) => {
+        if (probability >= 20) return '#e74c3c'; // Đỏ - rất cao
+        if (probability >= 10) return '#f39c12'; // Cam - cao
+        if (probability >= 5) return '#f1c40f';  // Vàng - trung bình
+        return '#27ae60'; // Xanh - thấp
     };
 
     // Hàm tải lại dữ liệu
@@ -267,8 +265,7 @@ const MenstrualHistoryComponent = () => {
                                             </span>
                                         )}
                                     </div>
-                                </div>
-                                <div className={styles.cycleInfo}>
+                                </div>                                <div className={styles.cycleInfo}>
                                     <div className={styles.infoItem}>
                                         <span className={styles.infoLabel}>Số ngày hành kinh:</span>
                                         <span className={styles.infoValue}>{cycle.numberOfDays} ngày</span>
@@ -276,6 +273,20 @@ const MenstrualHistoryComponent = () => {
                                     <div className={styles.infoItem}>
                                         <span className={styles.infoLabel}>Chu kỳ:</span>
                                         <span className={styles.infoValue}>{cycle.cycleLength} ngày</span>
+                                    </div>
+                                    <div className={styles.infoItem}>
+                                        <span className={styles.infoLabel}>Xác suất mang thai hôm nay:</span>
+                                        <span
+                                            className={styles.infoValue}
+                                            style={{
+                                                color: getPregnancyProbabilityColor(
+                                                    menstrualCycleService.calculateCurrentPregnancyProbability(cycle.ovulationDate)
+                                                ),
+                                                fontWeight: 'bold'
+                                            }}
+                                        >
+                                            {menstrualCycleService.calculateCurrentPregnancyProbability(cycle.ovulationDate).toFixed(1)}%
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -323,10 +334,19 @@ const MenstrualHistoryComponent = () => {
                                                         </span>
                                                     )}
                                                 </div>
-                                            </div>
-                                            <div className={styles.itemInfo}>
+                                            </div>                                            <div className={styles.itemInfo}>
                                                 <span>{cycle.numberOfDays} ngày hành kinh</span>
                                                 <span>Chu kỳ {cycle.cycleLength} ngày</span>
+                                                <span
+                                                    style={{
+                                                        color: getPregnancyProbabilityColor(
+                                                            menstrualCycleService.calculateCurrentPregnancyProbability(cycle.ovulationDate)
+                                                        ),
+                                                        fontWeight: 'bold'
+                                                    }}
+                                                >
+                                                    Xác suất: {menstrualCycleService.calculateCurrentPregnancyProbability(cycle.ovulationDate).toFixed(1)}%
+                                                </span>
                                             </div>
                                         </div>
                                     ))}
@@ -398,8 +418,21 @@ const MenstrualHistoryComponent = () => {
                                                             <span className={styles.detailValue}>
                                                                 {formatDate(selectedCycle.nextCycleDate)}
                                                             </span>
-                                                        </div>
-                                                    )}
+                                                        </div>)}
+                                                    <div className={styles.detailItem}>
+                                                        <span className={styles.detailLabel}>Xác suất mang thai hôm nay:</span>
+                                                        <span
+                                                            className={styles.detailValue}
+                                                            style={{
+                                                                color: getPregnancyProbabilityColor(
+                                                                    menstrualCycleService.calculateCurrentPregnancyProbability(selectedCycle.ovulationDate)
+                                                                ),
+                                                                fontWeight: 'bold'
+                                                            }}
+                                                        >
+                                                            {menstrualCycleService.calculateCurrentPregnancyProbability(selectedCycle.ovulationDate).toFixed(1)}%
+                                                        </span>
+                                                    </div>
                                                     {selectedCycle.pregnancyProbability !== undefined && (
                                                         <div className={styles.detailItem}>
                                                             <span className={styles.detailLabel}>Xác suất mang thai:</span>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { consultationService } from '../../services/consultationService';
 import { useToast } from '../../contexts/ToastContext';
+import { formatDateTime, formatDate, formatTime, parseDate } from '../../utils/dateUtils';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
 import styles from './ConsultationHistory.module.css';
 
@@ -33,12 +34,13 @@ const ConsultationHistory = () => {
     const fetchConsultations = async () => {
         try {
             setLoading(true);
-            const response = await consultationService.getMyConsultations();
-
-            if (response.success && response.data) {
-                const sortedConsultations = response.data.sort((a, b) =>
-                    new Date(b.createdAt) - new Date(a.createdAt)
-                );
+            const response = await consultationService.getMyConsultations(); if (response.success && response.data) {
+                const sortedConsultations = response.data.sort((a, b) => {
+                    const dateA = parseDate(b.createdAt);
+                    const dateB = parseDate(a.createdAt);
+                    if (!dateA || !dateB) return 0;
+                    return dateB.getTime() - dateA.getTime();
+                });
                 setConsultations(sortedConsultations);
             } else {
                 const errorMsg = response.message || 'Không thể tải lịch sử tư vấn';
@@ -50,28 +52,6 @@ const ConsultationHistory = () => {
         } finally {
             setLoading(false);
         }
-    };
-
-    const formatDate = (dateString) => {
-        if (!dateString) return '';
-        return new Date(dateString).toLocaleDateString('vi-VN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        });
-    };
-
-    const formatTime = (dateString) => {
-        if (!dateString) return '';
-        return new Date(dateString).toLocaleTimeString('vi-VN', {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
-
-    const formatDateTime = (dateString) => {
-        if (!dateString) return '';
-        return new Date(dateString).toLocaleString('vi-VN');
     };
 
     const getStatusText = (status) => {

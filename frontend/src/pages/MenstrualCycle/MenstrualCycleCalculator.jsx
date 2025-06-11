@@ -7,6 +7,7 @@ import { vi } from 'date-fns/locale';
 import Navbar from '../../components/layout/Navbar/Navbar';
 import Footer from '../../components/layout/Footer/Footer';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
+import { formatDate } from '../../utils/dateUtils';
 import styles from './MenstrualCycleCalculator.module.css';
 
 const MenstrualCycleCalculator = () => {
@@ -199,33 +200,6 @@ const MenstrualCycleCalculator = () => {
             } finally {
                 setLoading(false);
             }
-        }
-    };
-
-    const formatDate = (dateString) => {
-        try {
-            if (!dateString) return 'N/A';
-
-            let date;
-            if (Array.isArray(dateString)) {
-                // Backend trả về LocalDate dạng [year, month, day]
-                const [year, month, day] = dateString;
-                date = new Date(year, month - 1, day); // month - 1 vì JS Date tháng bắt đầu từ 0
-            } else if (typeof dateString === 'string') {
-                date = parseISO(dateString);
-            } else {
-                date = new Date(dateString);
-            }
-
-            if (!isValid(date)) {
-                console.warn('Invalid date:', dateString);
-                return 'N/A';
-            }
-
-            return format(date, 'dd/MM/yyyy', { locale: vi });
-        } catch (error) {
-            console.error('Error formatting date:', error, dateString);
-            return 'N/A';
         }
     };
 
