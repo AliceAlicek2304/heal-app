@@ -157,6 +157,106 @@ export const blogService = {
         } catch (error) {
             return { success: false, message: 'Không thể tải bài viết' };
         }
+    },    // Lấy tất cả bài viết để quản lý (STAFF/ADMIN)
+    getAllBlogs: async (params = {}) => {
+        try {
+            const {
+                page = 0,
+                size = 10,
+                sort = 'createdAt',
+                direction = 'DESC'
+            } = params;
+
+            const queryParams = new URLSearchParams({
+                page: page.toString(),
+                size: size.toString(),
+                sortBy: sort,
+                sortDir: direction.toLowerCase()
+            });
+
+            const response = await authService.apiCall(`${API_BASE_URL}/blog?${queryParams}`, {
+                method: 'GET'
+            });
+
+            if (response.status === 401) {
+                authService.logout();
+                return { success: false, message: 'Chưa đăng nhập' };
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Trả về toàn bộ response data bao gồm pagination info
+                return { success: true, data: data.data };
+            } else {
+                return { success: false, message: data.message || 'Không thể tải danh sách blog' };
+            }
+        } catch (error) {
+            console.error('Error in getAllBlogs:', error);
+            return { success: false, message: 'Không thể tải danh sách blog' };
+        }
+    },
+
+    // Cập nhật trạng thái blog (STAFF/ADMIN)
+    updateBlogStatus: async (blogId, statusData) => {
+        try {
+            const response = await authService.apiCall(`${API_BASE_URL}/blog/${blogId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(statusData)
+            });
+
+            if (response.status === 401) {
+                authService.logout();
+                return { success: false, message: 'Chưa đăng nhập' };
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                return { success: true, data: data.data };
+            } else {
+                return { success: false, message: data.message || 'Không thể cập nhật trạng thái blog' };
+            }
+        } catch (error) {
+            return { success: false, message: 'Không thể cập nhật trạng thái blog' };
+        }
+    },
+
+    // Xóa blog (STAFF/ADMIN)
+    deleteBlog: async (blogId) => {
+        try {
+            const response = await authService.apiCall(`${API_BASE_URL}/blog/${blogId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.status === 401) {
+                authService.logout();
+                return { success: false, message: 'Chưa đăng nhập' };
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                return { success: true, message: data.message || 'Xóa blog thành công' };
+            } else {
+                return { success: false, message: data.message || 'Không thể xóa blog' };
+            }
+        } catch (error) {
+            return { success: false, message: 'Không thể xóa blog' };
+        }
     },
 
     // Tạo URL cho ảnh blog

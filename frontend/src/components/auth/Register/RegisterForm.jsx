@@ -253,9 +253,8 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
             setIsLoading(false);
         }
     };
-
     const handleClose = () => {
-        toast.hideAllToasts();
+        toast.clearAllToasts();
         onClose();
     };
 

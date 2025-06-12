@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { blogService } from '../../services/blogService';
 import { formatDate } from '../../utils/dateUtils';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
+import AdvancedFilter from '../common/AdvancedFilter/AdvancedFilter';
 import { useToast } from '../../contexts/ToastContext';
 import styles from './BlogHistory.module.css';
 
@@ -11,6 +12,8 @@ const BlogHistory = () => {
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [filters, setFilters] = useState({});
+    const [filteredPosts, setFilteredPosts] = useState([]);
     const toast = useToast();
 
     const fetchMyPosts = async () => {
@@ -32,9 +35,7 @@ const BlogHistory = () => {
 
     useEffect(() => {
         fetchMyPosts();
-    }, [page]);
-
-    const getStatusInfo = (status) => {
+    }, [page]); const getStatusInfo = (status) => {
         switch (status) {
             case 'PROCESSING':
                 return { text: 'Đang xử lý', className: styles.statusProcessing };
@@ -55,6 +56,70 @@ const BlogHistory = () => {
     const handleRetry = () => {
         toast.info('Đang tải lại dữ liệu...');
         fetchMyPosts();
+    };    // Filter posts based on selected filters
+    const applyFilters = (postsToFilter, currentFilters) => {
+        let filtered = [...postsToFilter];
+
+        // Text search filter
+        if (currentFilters.searchText) {
+            const searchLower = currentFilters.searchText.toLowerCase();
+            filtered = filtered.filter(post => {
+                return (
+                    post.title?.toLowerCase().includes(searchLower) ||
+                    post.content?.toLowerCase().includes(searchLower) ||
+                    post.summary?.toLowerCase().includes(searchLower)
+                );
+            });
+        }
+
+        // Status filter
+        if (currentFilters.status) {
+            filtered = filtered.filter(post => post.status === currentFilters.status);
+        }
+
+        // Date range filter
+        if (currentFilters.dateFrom || currentFilters.dateTo) {
+            filtered = filtered.filter(post => {
+                let postDate;
+
+                // Handle different date formats from backend
+                const rawDate = post.publishedAt || post.createdAt;
+                if (Array.isArray(rawDate)) {
+                    // Array format: [year, month, day, hour, minute, second, nanosecond]
+                    // Note: month is 1-based in array, but Date constructor expects 0-based
+                    postDate = new Date(rawDate[0], rawDate[1] - 1, rawDate[2]);
+                } else if (typeof rawDate === 'string' || rawDate instanceof Date) {
+                    postDate = new Date(rawDate);
+                } else {
+                    console.warn('Unknown date format:', rawDate);
+                    return false;
+                }
+
+                if (currentFilters.dateFrom) {
+                    const fromDate = new Date(currentFilters.dateFrom);
+                    if (postDate < fromDate) return false;
+                }
+
+                if (currentFilters.dateTo) {
+                    const toDate = new Date(currentFilters.dateTo);
+                    toDate.setHours(23, 59, 59, 999);
+                    if (postDate > toDate) return false;
+                }
+
+                return true;
+            });
+        }
+        return filtered;
+    };
+
+    // Effect to apply filters when posts or filters change
+    useEffect(() => {
+        const filtered = applyFilters(posts, filters);
+        setFilteredPosts(filtered);
+    }, [posts, filters]);
+
+    const handleFilterChange = (newFilters) => {
+        setFilters(newFilters);
     };
 
     if (loading) {
@@ -89,34 +154,64 @@ const BlogHistory = () => {
                         <polyline points="1,20 1,14 7,14"></polyline>
                         <path d="M20.49,9A9,9,0,0,0,5.64,5.64L1,10m22,4a9,9,0,0,1-14.85,4.36L23,14"></path>
                     </svg>
-                </button>
-            </div>
+                </button>            </div>            {/* Advanced Filter Component */}            <AdvancedFilter
+                onFilterChange={handleFilterChange}
+                statusOptions={[
+                    { value: 'PROCESSING', label: 'Đang xử lý' },
+                    { value: 'CONFIRMED', label: 'Đã duyệt' },
+                    { value: 'CANCELED', label: 'Đã hủy' }
+                ]}
+                placeholder="Tìm kiếm theo tiêu đề, nội dung bài viết..."
+                showDateFilter={true}
+                showStatusFilter={true}
+            />
 
-            {posts.length === 0 ? (
-                <div className={styles.emptyState}>
-                    <div className={styles.emptyIcon}>
-                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14,2 14,8 20,8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                        </svg>
-                    </div>
-                    <h3>Chưa có bài viết nào</h3>
-                    <p>Bạn chưa tạo bài viết nào. Hãy bắt đầu chia sẻ kiến thức của mình!</p>
-                    <Link to="/blog/create" className={styles.createBtn}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        Tạo bài viết đầu tiên
-                    </Link>
+            {posts.length > 0 && (
+                <div className={styles.statsInfo}>
+                    Hiển thị: {filteredPosts.length}/{posts.length} bài viết
                 </div>
+            )}
+
+            {filteredPosts.length === 0 ? (
+                posts.length > 0 ? (
+                    <div className={styles.emptyState}>
+                        <div className={styles.emptyIcon}>
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14,2 14,8 20,8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                        </div>
+                        <h3>Không tìm thấy kết quả</h3>
+                        <p>Không có bài viết nào phù hợp với bộ lọc hiện tại. Hãy thử điều chỉnh tiêu chí tìm kiếm.</p>
+                    </div>
+                ) : (
+                    <div className={styles.emptyState}>
+                        <div className={styles.emptyIcon}>
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14,2 14,8 20,8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                        </div>
+                        <h3>Chưa có bài viết nào</h3>
+                        <p>Bạn chưa tạo bài viết nào. Hãy bắt đầu chia sẻ kiến thức của mình!</p>
+                        <Link to="/blog/create" className={styles.createBtn}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Tạo bài viết đầu tiên
+                        </Link>
+                    </div>
+                )
             ) : (
                 <>
                     {/* Mobile Card View */}
                     <div className={styles.mobileView}>
-                        {posts.map(post => {
+                        {filteredPosts.map(post => {
                             const statusInfo = getStatusInfo(post.status);
                             return (
                                 <div key={post.id} className={styles.postCard}>
@@ -168,7 +263,7 @@ const BlogHistory = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {posts.map(post => {
+                                    {filteredPosts.map(post => {
                                         const statusInfo = getStatusInfo(post.status);
                                         return (
                                             <tr key={post.id}>

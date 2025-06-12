@@ -412,6 +412,245 @@ export const stiService = {
 
             if (!response.ok) {
                 return { success: false, message: data.message || 'Failed to check payment status' };
+            } return data;
+        } catch (error) {
+            return { success: false, message: 'Network error occurred' };
+        }
+    },
+
+    // ========== STAFF FUNCTIONS ==========
+
+    // Lấy danh sách xét nghiệm chờ xác nhận
+    getPendingTests: async (onAuthRequired) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            if (!token && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            const response = await fetch(`${API_BASE_URL}/sti-services/staff/pending-tests`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+            });
+
+            if (response.status === 401 && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                return { success: false, message: data.message || 'Failed to fetch pending tests' };
+            }
+
+            return data;
+        } catch (error) {
+            return { success: false, message: 'Network error occurred' };
+        }
+    },
+
+    // Lấy danh sách xét nghiệm đã xác nhận
+    getConfirmedTests: async (onAuthRequired) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            if (!token && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            const response = await fetch(`${API_BASE_URL}/sti-services/staff/confirmed-tests`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+            });
+
+            if (response.status === 401 && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                return { success: false, message: data.message || 'Failed to fetch confirmed tests' };
+            }
+
+            return data;
+        } catch (error) {
+            return { success: false, message: 'Network error occurred' };
+        }
+    },
+
+    // Lấy danh sách xét nghiệm của staff
+    getStaffTests: async (onAuthRequired) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            if (!token && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            const response = await fetch(`${API_BASE_URL}/sti-services/staff/my-tests`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+            });
+
+            if (response.status === 401 && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                return { success: false, message: data.message || 'Failed to fetch staff tests' };
+            }
+
+            return data;
+        } catch (error) {
+            return { success: false, message: 'Network error occurred' };
+        }
+    },
+
+    // Xác nhận xét nghiệm
+    confirmTest: async (testId, onAuthRequired) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            if (!token && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            const response = await fetch(`${API_BASE_URL}/sti-services/staff/tests/${testId}/confirm`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+            });
+
+            if (response.status === 401 && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                return { success: false, message: data.message || 'Failed to confirm test' };
+            }
+
+            return data;
+        } catch (error) {
+            return { success: false, message: 'Network error occurred' };
+        }
+    },
+
+    // Lấy mẫu xét nghiệm
+    sampleTest: async (testId, onAuthRequired) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            if (!token && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            const response = await fetch(`${API_BASE_URL}/sti-services/staff/tests/${testId}/sample`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+            });
+
+            if (response.status === 401 && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                return { success: false, message: data.message || 'Failed to sample test' };
+            }
+
+            return data;
+        } catch (error) {
+            return { success: false, message: 'Network error occurred' };
+        }
+    },
+
+    // Nhập kết quả xét nghiệm
+    addTestResults: async (testId, resultData, onAuthRequired) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            if (!token && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            const response = await fetch(`${API_BASE_URL}/sti-services/staff/tests/${testId}/result`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(resultData)
+            });
+
+            if (response.status === 401 && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                return { success: false, message: data.message || 'Failed to add test results' };
+            }
+
+            return data;
+        } catch (error) {
+            return { success: false, message: 'Network error occurred' };
+        }
+    },
+
+    // Hoàn thành xét nghiệm
+    completeTest: async (testId, onAuthRequired) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            if (!token && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            const response = await fetch(`${API_BASE_URL}/sti-services/staff/tests/${testId}/complete`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+            });
+
+            if (response.status === 401 && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                return { success: false, message: data.message || 'Failed to complete test' };
             }
 
             return data;

@@ -83,9 +83,8 @@ const LoginForm = ({ onClose, onSwitchToRegister, onLoginSuccess, onSwitchToForg
             setIsLoading(false);
         }
     };
-
     const handleClose = () => {
-        toast.hideAllToasts();
+        toast.clearAllToasts();
         onClose();
     };
 

@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { formatDate } from '../../utils/dateUtils';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
+import AdvancedFilter from '../common/AdvancedFilter/AdvancedFilter';
 import { questionService } from '../../services/questionService';
 import styles from './MyQuestions.module.css';
 
@@ -22,6 +23,8 @@ const MyQuestions = () => {
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
+    const [filters, setFilters] = useState({});
+    const [filteredQuestions, setFilteredQuestions] = useState([]);
 
     // Modal state
     const [modalOpen, setModalOpen] = useState(false);
@@ -94,6 +97,72 @@ const MyQuestions = () => {
         }
     };
 
+    // Filter questions based on selected filters
+    const applyFilters = (questionsToFilter, currentFilters) => {
+        let filtered = [...questionsToFilter];
+
+        // Text search filter
+        if (currentFilters.searchText) {
+            const searchLower = currentFilters.searchText.toLowerCase();
+            filtered = filtered.filter(question => {
+                return (
+                    question.questionId?.toString().includes(searchLower) ||
+                    question.title?.toLowerCase().includes(searchLower) ||
+                    question.content?.toLowerCase().includes(searchLower) ||
+                    question.answer?.toLowerCase().includes(searchLower)
+                );
+            });
+        }
+
+        // Status filter
+        if (currentFilters.status) {
+            filtered = filtered.filter(question => question.status === currentFilters.status);
+        }        // Date range filter
+        if (currentFilters.dateFrom || currentFilters.dateTo) {
+            filtered = filtered.filter(question => {
+                let questionDate;
+
+                // Handle different date formats from backend
+                const rawDate = question.createdAt;
+                if (Array.isArray(rawDate)) {
+                    // Array format: [year, month, day, hour, minute, second, nanosecond]
+                    // Note: month is 1-based in array, but Date constructor expects 0-based
+                    questionDate = new Date(rawDate[0], rawDate[1] - 1, rawDate[2]);
+                } else if (typeof rawDate === 'string' || rawDate instanceof Date) {
+                    questionDate = new Date(rawDate);
+                } else {
+                    console.warn('Unknown date format:', rawDate);
+                    return false;
+                }
+
+                if (currentFilters.dateFrom) {
+                    const fromDate = new Date(currentFilters.dateFrom);
+                    if (questionDate < fromDate) return false;
+                }
+
+                if (currentFilters.dateTo) {
+                    const toDate = new Date(currentFilters.dateTo);
+                    toDate.setHours(23, 59, 59, 999);
+                    if (questionDate > toDate) return false;
+                }
+
+                return true;
+            });
+        }
+
+        return filtered;
+    };
+
+    // Effect to apply filters when questions or filters change
+    useEffect(() => {
+        const filtered = applyFilters(questions, filters);
+        setFilteredQuestions(filtered);
+    }, [questions, filters]);
+
+    const handleFilterChange = (newFilters) => {
+        setFilters(newFilters);
+    };
+
     if (loading) {
         return (
             <div className={styles.loadingContainer}>
@@ -142,36 +211,69 @@ const MyQuestions = () => {
                         </svg>
                         Đặt câu hỏi mới
                     </button>
-                </div>
-            </div>
+                </div>            </div>
 
-            {questions.length === 0 ? (
-                <div className={styles.emptyState}>
-                    <div className={styles.emptyIcon}>
-                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                        </svg>
-                    </div>
-                    <h3>Chưa có câu hỏi nào</h3>
-                    <p>Bạn chưa tạo câu hỏi nào. Hãy bắt đầu đặt câu hỏi để nhận tư vấn từ các chuyên gia!</p>
-                    <button
-                        className={styles.createBtn}
-                        onClick={handleCreateNew}
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        Đặt câu hỏi đầu tiên
-                    </button>
+            {/* Advanced Filter Component */}
+            <AdvancedFilter
+                onFilterChange={handleFilterChange}
+                statusOptions={[
+                    { value: 'PROCESSING', label: 'Đang xử lý' },
+                    { value: 'CONFIRMED', label: 'Đã xác nhận' },
+                    { value: 'ANSWERED', label: 'Đã trả lời' },
+                    { value: 'CANCELED', label: 'Đã hủy' }
+                ]}
+                placeholder="Tìm kiếm theo tiêu đề, nội dung câu hỏi..."
+                showDateFilter={true}
+                showStatusFilter={true}
+            />
+
+            {questions.length > 0 && (
+                <div className={styles.statsInfo}>
+                    Hiển thị: {filteredQuestions.length}/{questions.length} câu hỏi
                 </div>
+            )}
+
+            {filteredQuestions.length === 0 ? (
+                questions.length > 0 ? (
+                    <div className={styles.emptyState}>
+                        <div className={styles.emptyIcon}>
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                        </div>
+                        <h3>Không tìm thấy kết quả</h3>
+                        <p>Không có câu hỏi nào phù hợp với bộ lọc hiện tại. Hãy thử điều chỉnh tiêu chí tìm kiếm.</p>
+                    </div>
+                ) : (
+                    <div className={styles.emptyState}>
+                        <div className={styles.emptyIcon}>
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                        </div>
+                        <h3>Chưa có câu hỏi nào</h3>
+                        <p>Bạn chưa tạo câu hỏi nào. Hãy bắt đầu đặt câu hỏi để nhận tư vấn từ các chuyên gia!</p>
+                        <button
+                            className={styles.createBtn}
+                            onClick={handleCreateNew}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Đặt câu hỏi đầu tiên
+                        </button>
+                    </div>
+                )
             ) : (
                 <>
                     {/* Mobile Card View */}
                     <div className={styles.mobileView}>
-                        {questions.map(question => (
+                        {filteredQuestions.map(question => (
                             <div
                                 key={question.id}
                                 className={styles.questionCard}
@@ -238,7 +340,7 @@ const MyQuestions = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {questions.map(question => (
+                                    {filteredQuestions.map(question => (
                                         <tr key={question.id}>
                                             <td>
                                                 <div className={styles.questionContentCell}>

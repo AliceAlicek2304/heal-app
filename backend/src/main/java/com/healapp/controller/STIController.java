@@ -181,6 +181,24 @@ public class STIController {
         return getResponseEntity(response);
     }
 
+    // ========== CONSULTANT ENDPOINTS ==========
+
+    @GetMapping("/consultant/pending-notes-tests")
+    @PreAuthorize("hasRole('ROLE_CONSULTANT')")
+    public ResponseEntity<ApiResponse<List<STITestResponse>>> getTestsPendingNotes() {
+        Long consultantId = getCurrentUserId();
+        ApiResponse<List<STITestResponse>> response = stiTestService.getTestsPendingConsultantNotes();
+        return getResponseEntity(response);
+    }
+
+    @GetMapping("/consultant/all-tests")
+    @PreAuthorize("hasRole('ROLE_CONSULTANT')")
+    public ResponseEntity<ApiResponse<List<STITestResponse>>> getAllConsultantTests() {
+        Long consultantId = getCurrentUserId();
+        ApiResponse<List<STITestResponse>> response = stiTestService.getAllConsultantTests();
+        return getResponseEntity(response);
+    }
+
     private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();

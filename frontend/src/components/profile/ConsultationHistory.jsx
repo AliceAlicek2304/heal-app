@@ -3,15 +3,14 @@ import { consultationService } from '../../services/consultationService';
 import { useToast } from '../../contexts/ToastContext';
 import { formatDateTime, formatDate, formatTime, parseDate } from '../../utils/dateUtils';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
+import AdvancedFilter from '../common/AdvancedFilter/AdvancedFilter';
 import styles from './ConsultationHistory.module.css';
 
 const STATUS_CLASS = {
     PENDING: styles.badgePending,
     CONFIRMED: styles.badgeConfirmed,
     CANCELED: styles.badgeCanceled,
-    COMPLETED: styles.badgeCompleted,
-    PAYMENT_PENDING: styles.badgePaymentPending,
-    PAYMENT_FAILED: styles.badgePaymentFailed
+    COMPLETED: styles.badgeCompleted
 };
 
 const PAYMENT_METHOD_TEXT = {
@@ -26,6 +25,8 @@ const ConsultationHistory = () => {
     const [loading, setLoading] = useState(true);
     const [selectedConsultation, setSelectedConsultation] = useState(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
+    const [filters, setFilters] = useState({});
+    const [filteredConsultations, setFilteredConsultations] = useState([]);
 
     useEffect(() => {
         fetchConsultations();
@@ -52,16 +53,12 @@ const ConsultationHistory = () => {
         } finally {
             setLoading(false);
         }
-    };
-
-    const getStatusText = (status) => {
+    }; const getStatusText = (status) => {
         switch (status) {
             case 'PENDING': return 'Chờ xác nhận';
             case 'CONFIRMED': return 'Đã xác nhận';
             case 'CANCELED': return 'Đã hủy';
             case 'COMPLETED': return 'Đã hoàn thành';
-            case 'PAYMENT_PENDING': return 'Chờ thanh toán';
-            case 'PAYMENT_FAILED': return 'Thanh toán thất bại';
             default: return status || 'Không xác định';
         }
     };
@@ -90,6 +87,63 @@ const ConsultationHistory = () => {
     const handleRetry = () => {
         toast.info('Đang tải lại dữ liệu...');
         fetchConsultations();
+    };
+
+    // Filter consultations based on selected filters
+    const applyFilters = (consultationsToFilter, currentFilters) => {
+        let filtered = [...consultationsToFilter];
+
+        // Text search filter
+        if (currentFilters.searchText) {
+            const searchLower = currentFilters.searchText.toLowerCase();
+            filtered = filtered.filter(consultation => {
+                return (
+                    consultation.consultationId?.toString().includes(searchLower) ||
+                    consultation.consultantName?.toLowerCase().includes(searchLower) ||
+                    consultation.customerName?.toLowerCase().includes(searchLower) ||
+                    consultation.customerNotes?.toLowerCase().includes(searchLower) ||
+                    consultation.consultantNotes?.toLowerCase().includes(searchLower)
+                );
+            });
+        }
+
+        // Status filter
+        if (currentFilters.status) {
+            filtered = filtered.filter(consultation => consultation.status === currentFilters.status);
+        }
+
+        // Date range filter
+        if (currentFilters.dateFrom || currentFilters.dateTo) {
+            filtered = filtered.filter(consultation => {
+                const consultationDate = parseDate(consultation.consultationTime || consultation.createdAt);
+                if (!consultationDate) return false;
+
+                if (currentFilters.dateFrom) {
+                    const fromDate = new Date(currentFilters.dateFrom);
+                    if (consultationDate < fromDate) return false;
+                }
+
+                if (currentFilters.dateTo) {
+                    const toDate = new Date(currentFilters.dateTo);
+                    toDate.setHours(23, 59, 59, 999);
+                    if (consultationDate > toDate) return false;
+                }
+
+                return true;
+            });
+        }
+
+        return filtered;
+    };
+
+    // Effect to apply filters when consultations or filters change
+    useEffect(() => {
+        const filtered = applyFilters(consultations, filters);
+        setFilteredConsultations(filtered);
+    }, [consultations, filters]);
+
+    const handleFilterChange = (newFilters) => {
+        setFilters(newFilters);
     };
 
     if (loading) {
@@ -127,32 +181,62 @@ const ConsultationHistory = () => {
                         <polyline points="1,20 1,14 7,14"></polyline>
                         <path d="M20.49,9A9,9,0,0,0,5.64,5.64L1,10m22,4a9,9,0,0,1-14.85,4.36L23,14"></path>
                     </svg>
-                </button>
-            </div>
+                </button>            </div>            {/* Advanced Filter Component */}
+            <AdvancedFilter
+                onFilterChange={handleFilterChange}
+                statusOptions={[
+                    { value: 'PENDING', label: 'Chờ xác nhận' },
+                    { value: 'CONFIRMED', label: 'Đã xác nhận' },
+                    { value: 'COMPLETED', label: 'Hoàn thành' },
+                    { value: 'CANCELED', label: 'Đã hủy' }
+                ]}
+                placeholder="Tìm kiếm theo mã tư vấn, bác sĩ, ghi chú..."
+                showDateFilter={true}
+                showStatusFilter={true}
+            />
 
-            {consultations.length === 0 ? (
-                <div className={styles.emptyState}>
-                    <div className={styles.emptyIcon}>
-                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
-                    </div>
-                    <h3>Chưa có lịch tư vấn nào</h3>
-                    <p>Bạn chưa đặt lịch tư vấn nào. Hãy bắt đầu đặt lịch để nhận tư vấn từ chuyên gia!</p>
-                    <a href="/consultation" className={styles.createBtn}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        Đặt lịch tư vấn ngay
-                    </a>
+            {consultations.length > 0 && (
+                <div className={styles.statsInfo}>
+                    Hiển thị: {filteredConsultations.length}/{consultations.length} cuộc tư vấn
                 </div>
+            )}
+
+            {filteredConsultations.length === 0 ? (
+                consultations.length > 0 ? (
+                    <div className={styles.emptyState}>
+                        <div className={styles.emptyIcon}>
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <h3>Không tìm thấy kết quả</h3>
+                        <p>Không có cuộc tư vấn nào phù hợp với bộ lọc hiện tại. Hãy thử điều chỉnh tiêu chí tìm kiếm.</p>
+                    </div>
+                ) : (
+                    <div className={styles.emptyState}>
+                        <div className={styles.emptyIcon}>
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <h3>Chưa có lịch tư vấn nào</h3>
+                        <p>Bạn chưa đặt lịch tư vấn nào. Hãy bắt đầu đặt lịch để nhận tư vấn từ chuyên gia!</p>
+                        <a href="/consultation" className={styles.createBtn}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Đặt lịch tư vấn ngay
+                        </a>
+                    </div>
+                )
             ) : (
                 <>
                     {/* Mobile Card View */}
                     <div className={styles.mobileView}>
-                        {consultations.map(consultation => (
+                        {filteredConsultations.map(consultation => (
                             <div key={consultation.consultationId} className={styles.consultationCard}>
                                 <div className={styles.cardHeader}>
                                     <div className={styles.consultantInfo}>
@@ -243,7 +327,7 @@ const ConsultationHistory = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {consultations.map(consultation => (
+                                    {filteredConsultations.map(consultation => (
                                         <tr key={consultation.consultationId}>
                                             <td>
                                                 <div className={styles.consultantCell}>

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { consultationService } from '../../services/consultationService';
-import { formatDateTime } from '../../utils/dateUtils';
+import { formatDateTime, parseDate } from '../../utils/dateUtils';
+import AdvancedFilter from '../common/AdvancedFilter/AdvancedFilter';
 import styles from './ConsultantSchedule.module.css';
 
 const ConsultantSchedule = () => {
@@ -12,6 +13,8 @@ const ConsultantSchedule = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [actionLoading, setActionLoading] = useState({});
+    const [filters, setFilters] = useState({});
+    const [filteredConsultations, setFilteredConsultations] = useState([]);
 
     const statusLabels = {
         'PENDING': 'Chờ xác nhận',
@@ -89,15 +92,82 @@ const ConsultantSchedule = () => {
         } finally {
             setActionLoading(prev => ({ ...prev, [consultationId]: false }));
         }
-    };
-
-    const getActionText = (status) => {
+    }; const getActionText = (status) => {
         switch (status) {
             case 'CONFIRMED': return 'xác nhận';
             case 'COMPLETED': return 'hoàn thành';
             case 'CANCELED': return 'hủy';
             default: return 'cập nhật';
         }
+    };
+
+    // Filter consultations based on selected filters
+    const applyFilters = (consultationsToFilter, currentFilters) => {
+        let filtered = [...consultationsToFilter];
+
+        // Text search filter
+        if (currentFilters.searchText) {
+            const searchLower = currentFilters.searchText.toLowerCase();
+            filtered = filtered.filter(consultation => {
+                return (
+                    consultation.consultationId?.toString().includes(searchLower) ||
+                    consultation.customerName?.toLowerCase().includes(searchLower) ||
+                    consultation.customerId?.toString().includes(searchLower) ||
+                    consultation.consultationType?.toLowerCase().includes(searchLower) ||
+                    consultation.description?.toLowerCase().includes(searchLower)
+                );
+            });
+        }
+
+        // Status filter
+        if (currentFilters.status) {
+            filtered = filtered.filter(consultation => consultation.status === currentFilters.status);
+        }
+
+        // Date range filter
+        if (currentFilters.dateFrom || currentFilters.dateTo) {
+            filtered = filtered.filter(consultation => {
+                let consultationDate;
+
+                // Handle different date formats from backend
+                const rawDate = consultation.startTime || consultation.createdAt;
+                if (Array.isArray(rawDate)) {
+                    // Array format: [year, month, day, hour, minute, second, nanosecond]
+                    // Note: month is 1-based in array, but Date constructor expects 0-based
+                    consultationDate = new Date(rawDate[0], rawDate[1] - 1, rawDate[2]);
+                } else if (typeof rawDate === 'string' || rawDate instanceof Date) {
+                    consultationDate = new Date(rawDate);
+                } else {
+                    console.warn('Unknown date format:', rawDate);
+                    return false;
+                }
+
+                if (currentFilters.dateFrom) {
+                    const fromDate = new Date(currentFilters.dateFrom);
+                    if (consultationDate < fromDate) return false;
+                }
+
+                if (currentFilters.dateTo) {
+                    const toDate = new Date(currentFilters.dateTo);
+                    toDate.setHours(23, 59, 59, 999);
+                    if (consultationDate > toDate) return false;
+                }
+
+                return true;
+            });
+        }
+
+        return filtered;
+    };
+
+    // Effect to apply filters when consultations or filters change
+    useEffect(() => {
+        const filtered = applyFilters(consultations, filters);
+        setFilteredConsultations(filtered);
+    }, [consultations, filters]);
+
+    const handleFilterChange = (newFilters) => {
+        setFilters(newFilters);
     };
 
     const renderActionButtons = (consultation) => {
@@ -158,99 +228,124 @@ const ConsultantSchedule = () => {
         );
     }
 
-    return (
-        <div className={styles.container}>
-            <div className={styles.header}>
-                <h2>Lịch tư vấn của tôi</h2>
-                <button
-                    onClick={loadConsultations}
-                    className={styles.refreshButton}
-                    disabled={loading}
-                >
-                    Làm mới
-                </button>
+    return (<div className={styles.container}>
+        <div className={styles.header}>
+            <h2>Lịch tư vấn của tôi</h2>
+            <button
+                onClick={loadConsultations}
+                className={styles.refreshButton}
+                disabled={loading}
+            >
+                Làm mới
+            </button>
+        </div>
+
+        {error && (
+            <div className={styles.error}>
+                {error}
             </div>
+        )}
 
-            {error && (
-                <div className={styles.error}>
-                    {error}
+        {/* Advanced Filter Component */}
+        <AdvancedFilter
+            onFilterChange={handleFilterChange}
+            statusOptions={[
+                { value: 'PENDING', label: 'Chờ xác nhận' },
+                { value: 'CONFIRMED', label: 'Đã xác nhận' },
+                { value: 'COMPLETED', label: 'Đã hoàn thành' },
+                { value: 'CANCELED', label: 'Đã hủy' }
+            ]}
+            placeholder="Tìm kiếm theo ID, tên khách hàng, loại tư vấn, mô tả..."
+            showDateFilter={true}
+            showStatusFilter={true}
+        />
+
+        {consultations.length > 0 && (
+            <div className={styles.statsInfo}>
+                Hiển thị: {filteredConsultations.length}/{consultations.length} cuộc tư vấn
+            </div>
+        )}
+
+        {filteredConsultations.length === 0 ? (
+            consultations.length > 0 ? (
+                <div className={styles.emptyState}>
+                    <p>Không có cuộc tư vấn nào phù hợp với bộ lọc</p>
                 </div>
-            )}
-
-            {consultations.length === 0 ? (
+            ) : (
                 <div className={styles.emptyState}>
                     <p>Chưa có lịch tư vấn nào được phân công</p>
                 </div>
-            ) : (
-                <div className={styles.consultationsList}>
-                    {consultations.map((consultation) => (
-                        <div key={consultation.consultationId} className={styles.consultationCard}>
-                            <div className={styles.consultationHeader}>
-                                <div className={styles.patientInfo}>
-                                    <h3>{consultation.customerName || 'Khách hàng'}</h3>
-                                    <p className={styles.contactInfo}>
-                                        ID khách hàng: {consultation.customerId}
-                                    </p>
-                                </div>
-
-                                <div className={styles.statusBadge}>
-                                    <span
-                                        className={styles.status}
-                                        style={{
-                                            backgroundColor: statusColors[consultation.status],
-                                            color: 'white'
-                                        }}
-                                    >
-                                        {statusLabels[consultation.status]}
-                                    </span>
-                                </div>
+            )
+        ) : (
+            <div className={styles.consultationsList}>
+                {filteredConsultations.map((consultation) => (
+                    <div key={consultation.consultationId} className={styles.consultationCard}>
+                        <div className={styles.consultationHeader}>
+                            <div className={styles.patientInfo}>
+                                <h3>{consultation.customerName || 'Khách hàng'}</h3>
+                                <p className={styles.contactInfo}>
+                                    ID khách hàng: {consultation.customerId}
+                                </p>
                             </div>
 
-                            <div className={styles.consultationDetails}>
-                                <div className={styles.detailRow}>
-                                    <strong>Thời gian:</strong> {formatDateTime(consultation.startTime)}
-                                </div>
-
-                                {consultation.endTime && (
-                                    <div className={styles.detailRow}>
-                                        <strong>Kết thúc:</strong> {formatDateTime(consultation.endTime)}
-                                    </div>
-                                )}
-
-                                {consultation.consultationType && (
-                                    <div className={styles.detailRow}>
-                                        <strong>Loại tư vấn:</strong> {consultation.consultationType}
-                                    </div>
-                                )}
-
-                                {consultation.description && (
-                                    <div className={styles.detailRow}>
-                                        <strong>Mô tả:</strong>
-                                        <p className={styles.description}>{consultation.description}</p>
-                                    </div>
-                                )}
-
-                                {consultation.createdAt && (
-                                    <div className={styles.detailRow}>
-                                        <strong>Đặt lịch lúc:</strong> {formatDateTime(consultation.createdAt)}
-                                    </div>
-                                )}
-
-                                {consultation.consultantName && (
-                                    <div className={styles.detailRow}>
-                                        <strong>Chuyên gia:</strong> {consultation.consultantName}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className={styles.consultationActions}>
-                                {renderActionButtons(consultation)}
+                            <div className={styles.statusBadge}>
+                                <span
+                                    className={styles.status}
+                                    style={{
+                                        backgroundColor: statusColors[consultation.status],
+                                        color: 'white'
+                                    }}
+                                >
+                                    {statusLabels[consultation.status]}
+                                </span>
                             </div>
                         </div>
-                    ))}
-                </div>
-            )}
-        </div>
+
+                        <div className={styles.consultationDetails}>
+                            <div className={styles.detailRow}>
+                                <strong>Thời gian:</strong> {formatDateTime(consultation.startTime)}
+                            </div>
+
+                            {consultation.endTime && (
+                                <div className={styles.detailRow}>
+                                    <strong>Kết thúc:</strong> {formatDateTime(consultation.endTime)}
+                                </div>
+                            )}
+
+                            {consultation.consultationType && (
+                                <div className={styles.detailRow}>
+                                    <strong>Loại tư vấn:</strong> {consultation.consultationType}
+                                </div>
+                            )}
+
+                            {consultation.description && (
+                                <div className={styles.detailRow}>
+                                    <strong>Mô tả:</strong>
+                                    <p className={styles.description}>{consultation.description}</p>
+                                </div>
+                            )}
+
+                            {consultation.createdAt && (
+                                <div className={styles.detailRow}>
+                                    <strong>Đặt lịch lúc:</strong> {formatDateTime(consultation.createdAt)}
+                                </div>
+                            )}
+
+                            {consultation.consultantName && (
+                                <div className={styles.detailRow}>
+                                    <strong>Chuyên gia:</strong> {consultation.consultantName}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className={styles.consultationActions}>
+                            {renderActionButtons(consultation)}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        )}
+    </div>
     );
 };
 

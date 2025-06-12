@@ -60,70 +60,70 @@ public class STITestService {
 
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<STITestResponse> bookTest(STITestRequest request, Long customerId) {
-            log.info("User {} booking STI test for service {}", customerId, request.getServiceId());
+        log.info("User {} booking STI test for service {}", customerId, request.getServiceId());
 
-            Optional<UserDtls> customerOpt = userRepository.findById(customerId);
-            if (customerOpt.isEmpty()) {
-                return ApiResponse.error("Customer not found");
-            }
-            UserDtls customer = customerOpt.get();
+        Optional<UserDtls> customerOpt = userRepository.findById(customerId);
+        if (customerOpt.isEmpty()) {
+            return ApiResponse.error("Customer not found");
+        }
+        UserDtls customer = customerOpt.get();
 
-            Optional<STIService> serviceOpt = stiServiceRepository.findById(request.getServiceId());
-            if (serviceOpt.isEmpty()) {
-                return ApiResponse.error("STI service not found");
-            }
-            STIService stiService = serviceOpt.get();
+        Optional<STIService> serviceOpt = stiServiceRepository.findById(request.getServiceId());
+        if (serviceOpt.isEmpty()) {
+            return ApiResponse.error("STI service not found");
+        }
+        STIService stiService = serviceOpt.get();
 
-            if (!stiService.getIsActive()) {
-                return ApiResponse.error("STI service is not available");
-            }
+        if (!stiService.getIsActive()) {
+            return ApiResponse.error("STI service is not available");
+        }
 
-            if (request.getAppointmentDate().isBefore(LocalDateTime.now().plusHours(2))) {
-                return ApiResponse.error("Appointment must be at least 2 hours from now");
-            }
+        if (request.getAppointmentDate().isBefore(LocalDateTime.now().plusHours(2))) {
+            return ApiResponse.error("Appointment must be at least 2 hours from now");
+        }
 
-            PaymentMethod paymentMethod;
-            try {
-                paymentMethod = PaymentMethod.valueOf(request.getPaymentMethod().toUpperCase());
-            } catch (IllegalArgumentException e) {
-                return ApiResponse.error("Invalid payment method: " + request.getPaymentMethod());
-            }
+        PaymentMethod paymentMethod;
+        try {
+            paymentMethod = PaymentMethod.valueOf(request.getPaymentMethod().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.error("Invalid payment method: " + request.getPaymentMethod());
+        }
 
-            STITest stiTest = STITest.builder()
-                    .customer(customer)
-                    .stiService(stiService)
-                    .appointmentDate(request.getAppointmentDate())
-                    .customerNotes(request.getCustomerNotes())
-                    .totalPrice(BigDecimal.valueOf(stiService.getPrice())) // BigDecimal
-                    .status(TestStatus.PENDING)
-                    .build();
+        STITest stiTest = STITest.builder()
+                .customer(customer)
+                .stiService(stiService)
+                .appointmentDate(request.getAppointmentDate())
+                .customerNotes(request.getCustomerNotes())
+                .totalPrice(BigDecimal.valueOf(stiService.getPrice())) // BigDecimal
+                .status(TestStatus.PENDING)
+                .build();
 
-            STITest savedTest = stiTestRepository.save(stiTest);
-            log.info("Created STI Test ID: {} for user: {}", savedTest.getTestId(), customerId);
+        STITest savedTest = stiTestRepository.save(stiTest);
+        log.info("Created STI Test ID: {} for user: {}", savedTest.getTestId(), customerId);
 
-            ApiResponse<Payment> paymentResult = processPaymentForTest(savedTest, paymentMethod, request);
+        ApiResponse<Payment> paymentResult = processPaymentForTest(savedTest, paymentMethod, request);
 
-            if (!paymentResult.isSuccess()) {
-                log.warn("Payment failed for user {}: {}", customerId, paymentResult.getMessage());
-                throw new PaymentException("Payment failed: " + paymentResult.getMessage());
-            }
+        if (!paymentResult.isSuccess()) {
+            log.warn("Payment failed for user {}: {}", customerId, paymentResult.getMessage());
+            throw new PaymentException("Payment failed: " + paymentResult.getMessage());
+        }
 
-            Payment payment = paymentResult.getData();
-            log.info("Payment successful - Test ID: {}, Payment ID: {}, Status: {}",
-                    savedTest.getTestId(), payment.getPaymentId(), payment.getPaymentStatus());
+        Payment payment = paymentResult.getData();
+        log.info("Payment successful - Test ID: {}, Payment ID: {}, Status: {}",
+                savedTest.getTestId(), payment.getPaymentId(), payment.getPaymentStatus());
 
-            STITestResponse response = convertToResponse(savedTest);
+        STITestResponse response = convertToResponse(savedTest);
 
-            String message = "STI test scheduled successfully";
-            if (paymentMethod == PaymentMethod.COD) {
-                message += " - Payment on delivery";
-            } else if (payment.getPaymentStatus() == PaymentStatus.COMPLETED) {
-                message += " - Payment processed";
-            } else if (paymentMethod == PaymentMethod.QR_CODE && payment.getPaymentStatus() == PaymentStatus.PENDING) {
-                message += " - QR code generated, awaiting payment";
-            }
+        String message = "STI test scheduled successfully";
+        if (paymentMethod == PaymentMethod.COD) {
+            message += " - Payment on delivery";
+        } else if (payment.getPaymentStatus() == PaymentStatus.COMPLETED) {
+            message += " - Payment processed";
+        } else if (paymentMethod == PaymentMethod.QR_CODE && payment.getPaymentStatus() == PaymentStatus.PENDING) {
+            message += " - QR code generated, awaiting payment";
+        }
 
-            return ApiResponse.success(message, response);
+        return ApiResponse.success(message, response);
     }
 
     private ApiResponse<Payment> processPaymentForTest(STITest stiTest, PaymentMethod paymentMethod,
@@ -276,6 +276,41 @@ public class STITestService {
             return ApiResponse.success("Retrieved " + responseList.size() + " tests for staff", responseList);
         } catch (Exception e) {
             return ApiResponse.error("Error retrieving staff tests: " + e.getMessage());
+        }
+    }
+
+    // ========== CONSULTANT METHODS ==========
+
+    public ApiResponse<List<STITestResponse>> getTestsPendingConsultantNotes() {
+        try {
+            // Lấy các test có trạng thái SAMPLED, RESULTED, hoặc COMPLETED
+            // và chưa có consultantNotes (null hoặc empty)
+            List<STITest> tests = stiTestRepository.findTestsPendingConsultantNotes();
+
+            List<STITestResponse> responses = tests.stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+
+            return ApiResponse.success("Retrieved " + responses.size() + " tests pending consultant notes", responses);
+        } catch (Exception e) {
+            log.error("Error retrieving tests pending consultant notes: {}", e.getMessage(), e);
+            return ApiResponse.error("Error retrieving tests: " + e.getMessage());
+        }
+    }
+
+    public ApiResponse<List<STITestResponse>> getAllConsultantTests() {
+        try {
+            // Lấy tất cả tests có trạng thái từ SAMPLED trở đi (có thể consultant xem được)
+            List<STITest> tests = stiTestRepository.findAllConsultantAccessibleTests();
+
+            List<STITestResponse> responses = tests.stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+
+            return ApiResponse.success("Retrieved " + responses.size() + " consultant accessible tests", responses);
+        } catch (Exception e) {
+            log.error("Error retrieving consultant tests: {}", e.getMessage(), e);
+            return ApiResponse.error("Error retrieving tests: " + e.getMessage());
         }
     }
 
@@ -510,7 +545,6 @@ public class STITestService {
             }
 
             STITest stiTest = testOpt.get();
-
             boolean hasAccess = false;
             if (stiTest.getCustomer().getId().equals(userId)) {
                 hasAccess = true;
@@ -520,7 +554,7 @@ public class STITestService {
                 Optional<UserDtls> userOpt = userRepository.findById(userId);
                 if (userOpt.isPresent()) {
                     String userRole = userOpt.get().getRole() != null ? userOpt.get().getRole().getRoleName() : null;
-                    if ("STAFF".equals(userRole) || "ADMIN".equals(userRole)) {
+                    if ("STAFF".equals(userRole) || "ADMIN".equals(userRole) || "CONSULTANT".equals(userRole)) {
                         hasAccess = true;
                     }
                 }
@@ -670,9 +704,11 @@ public class STITestService {
 
     private String generateQRCodeUrl(Payment payment) {
         try {
+            // Use VietQR format but with MB Bank info (keep original working format)
             String baseUrl = "https://img.vietqr.io/image";
-            String bankId = "970415"; // Vietinbank
-            String accountNo = "1234567890";
+            String bankId = "970422"; // MB Bank code
+            String accountNo = "0349079940"; // MB Bank account
+            String accountName = "NGUYEN VAN CUONG"; // MB Bank account name
 
             String url = String.format("%s/%s-%s-compact.png?amount=%s&addInfo=%s&accountName=%s",
                     baseUrl,
@@ -681,7 +717,7 @@ public class STITestService {
                     payment.getAmount().toString(),
                     java.net.URLEncoder.encode(payment.getQrPaymentReference(),
                             java.nio.charset.StandardCharsets.UTF_8),
-                    java.net.URLEncoder.encode("HEAL APP SERVICE", java.nio.charset.StandardCharsets.UTF_8));
+                    java.net.URLEncoder.encode(accountName, java.nio.charset.StandardCharsets.UTF_8));
 
             return url;
         } catch (Exception e) {

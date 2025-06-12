@@ -130,10 +130,8 @@ const ForgotPassword = ({ onClose, onSwitchToLogin }) => {
         setStep(1);
         setVerificationCode('');
         setNewPassword('');
-    };
-
-    const handleClose = () => {
-        toast.hideAllToasts();
+    }; const handleClose = () => {
+        toast.clearAllToasts();
         onClose();
     };
 

@@ -4,6 +4,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { stiService } from '../../services/stiService';
 import { formatDateTime, parseDate } from '../../utils/dateUtils';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
+import AdvancedFilter from '../common/AdvancedFilter/AdvancedFilter';
 import styles from './STIHistory.module.css';
 
 // Status configuration
@@ -37,12 +38,6 @@ const STATUS_CONFIG = {
         color: 'success',
         icon: 'check-double',
         description: 'Xét nghiệm hoàn thành'
-    },
-    CANCELLED: {
-        label: 'Đã hủy',
-        color: 'danger',
-        icon: 'times-circle',
-        description: 'Đã hủy cuộc hẹn'
     },
     CANCELED: {
         label: 'Đã hủy',
@@ -82,8 +77,7 @@ const PAYMENT_STATUS_CONFIG = {
 const PAYMENT_METHOD_LABELS = {
     COD: 'Thanh toán khi nhận dịch vụ',
     QR_CODE: 'Thanh toán QR Code',
-    VISA: 'Thanh toán bằng thẻ VISA',
-    BANK_TRANSFER: 'Chuyển khoản ngân hàng'
+    VISA: 'Thanh toán bằng thẻ VISA'
 };
 
 const STIHistory = () => {
@@ -106,6 +100,8 @@ const STIHistory = () => {
     const [regeneratingQR, setRegeneratingQR] = useState(false);
     const [qrExpired, setQrExpired] = useState(false); // Track QR expiry state
     const [forceUpdate, setForceUpdate] = useState(0); // Force re-render
+    const [filters, setFilters] = useState({}); // State for filters
+    const [filteredTests, setFilteredTests] = useState([]); // Filtered tests state
 
     useEffect(() => {
         fetchAllServices();
@@ -500,10 +496,9 @@ const STIHistory = () => {
 
         if (STATUS_CONFIG[normalizedStatus]) {
             return STATUS_CONFIG[normalizedStatus];
-        }
-
-        const statusVariants = {
-            'CANCEL': 'CANCELLED',
+        } const statusVariants = {
+            'CANCEL': 'CANCELED',
+            'CANCELLED': 'CANCELED',
             'DONE': 'COMPLETED',
             'FINISH': 'COMPLETED',
             'FINISHED': 'COMPLETED',
@@ -512,8 +507,8 @@ const STIHistory = () => {
             'APPROVED': 'CONFIRMED',
             'ACCEPT': 'CONFIRMED',
             'ACCEPTED': 'CONFIRMED',
-            'REJECT': 'CANCELLED',
-            'REJECTED': 'CANCELLED',
+            'REJECT': 'CANCELED',
+            'REJECTED': 'CANCELED',
             'WAITING': 'PENDING',
             'WAIT': 'PENDING'
         };
@@ -536,23 +531,13 @@ const STIHistory = () => {
             color: 'secondary',
             icon: 'question-circle'
         };
-    };
-
-    const generateQRCodeUrl = (qrData, amount = 500000) => {
+    }; const generateQRCodeUrl = (qrData, amount = 500000) => {
         if (!qrData) return null;
-        const providers = [
-            // VietQR với proper encoding
-            `https://api.vietqr.io/v2/generate/970422-0349079940-compact.jpg?amount=${amount}&addInfo=${encodeURIComponent(qrData)}&accountName=${encodeURIComponent('NGUYEN VAN CUONG')}`,
 
-            // QR Server với banking info
-            `https://api.qrserver.com/v1/create-qr-code/?size=320x320&format=png&margin=10&data=${encodeURIComponent(`Bank: MB Bank\nAccount: 0349079940\nName: NGUYEN VAN CUONG\nAmount: ${amount}\nContent: ${qrData}`)}`,
-
-            // Simple text QR
-            `https://quickchart.io/qr?size=320&text=${encodeURIComponent(qrData)}`
-        ];
-
-        return providers[0];
-    }; const handleRegenerateQR = async (test = null) => {
+        // Use VietQR format that matches backend STITestService (working format)
+        return `https://img.vietqr.io/image/970422-0349079940-compact.png?amount=${amount}&addInfo=${encodeURIComponent(qrData)}&accountName=${encodeURIComponent('NGUYEN VAN CUONG')}`;
+    };
+    const handleRegenerateQR = async (test = null) => {
         const targetTest = test || selectedTest;
 
         if (!targetTest) {
@@ -655,11 +640,8 @@ const STIHistory = () => {
             console.error('Error checking QR expiry:', error);
             return false;
         }
-    };
-
-
-    const generateFallbackQR = (qrData, amount = 500000) => {
-        return `https://api.qrserver.com/v1/create-qr-code/?size=320x320&format=png&margin=10&data=${encodeURIComponent(`STK: 0349079940\nTen: NGUYEN VAN CUONG\nNH: MB Bank\nST: ${amount.toLocaleString()}\nND: ${qrData}`)}`;
+    }; const generateFallbackQR = (qrData, amount = 500000) => {
+        return `https://img.vietqr.io/image/970422-0349079940-compact.png?amount=${amount}&addInfo=${encodeURIComponent(qrData)}&accountName=${encodeURIComponent('NGUYEN VAN CUONG')}`;
     };
 
     const renderSVGIcon = (iconName) => {
@@ -812,6 +794,71 @@ const STIHistory = () => {
             )
         };
         return icons[iconName] || icons['question-circle'];
+    };    // Filter tests based on selected filters
+    const applyFilters = (testsToFilter, currentFilters) => {
+        let filtered = [...testsToFilter];
+
+        // Text search filter
+        if (currentFilters.searchText) {
+            const searchLower = currentFilters.searchText.toLowerCase();
+            filtered = filtered.filter(test => {
+                const serviceInfo = getServiceInfoById(test.serviceId);
+                return (
+                    test.testId?.toString().includes(searchLower) ||
+                    serviceInfo.name?.toLowerCase().includes(searchLower) ||
+                    test.customerNotes?.toLowerCase().includes(searchLower) ||
+                    test.consultantNotes?.toLowerCase().includes(searchLower)
+                );
+            });
+        }
+
+        // Status filter
+        if (currentFilters.status) {
+            filtered = filtered.filter(test => test.status === currentFilters.status);
+        }
+
+        // Date range filter
+        if (currentFilters.dateFrom || currentFilters.dateTo) {
+            filtered = filtered.filter(test => {
+                // Sử dụng parseDate để xử lý format ngày đúng
+                let testDate;
+
+                // Thử appointmentDate trước, sau đó createdAt
+                if (test.appointmentDate) {
+                    testDate = parseDate(test.appointmentDate);
+                } else if (test.createdAt) {
+                    testDate = parseDate(test.createdAt);
+                } else {
+                    return false; // Không có ngày để so sánh
+                }
+
+                if (!testDate || isNaN(testDate.getTime())) {
+                    return false; // Ngày không hợp lệ
+                }
+
+                if (currentFilters.dateFrom) {
+                    const fromDate = new Date(currentFilters.dateFrom);
+                    fromDate.setHours(0, 0, 0, 0); // Bắt đầu từ 00:00:00
+                    if (testDate < fromDate) return false;
+                }
+
+                if (currentFilters.dateTo) {
+                    const toDate = new Date(currentFilters.dateTo);
+                    toDate.setHours(23, 59, 59, 999); // Kết thúc lúc 23:59:59
+                    if (testDate > toDate) return false;
+                }
+
+                return true;
+            });
+        }
+
+        return filtered;
+    };    // Effect to apply filters when tests or filters change
+    useEffect(() => {
+        const filtered = applyFilters(tests, filters);
+        setFilteredTests(filtered);
+    }, [tests, filters]); const handleFilterChange = (newFilters) => {
+        setFilters(newFilters);
     };
 
     if (loading) {
@@ -824,23 +871,36 @@ const STIHistory = () => {
     }
 
     return (
-        <div className={styles.stiHistory}>
-            <div className={styles.stiHistoryHeader}>
-                <h2 className={styles.title}>
-                    {renderSVGIcon('vial')}
-                    Lịch sử xét nghiệm STI
-                </h2>
-                <p className={styles.subtitle}>Quản lý và theo dõi các cuộc hẹn xét nghiệm của bạn</p>
-                {tests.length > 0 && (
-                    <div className={styles.historyStats}>
-                        <span className={styles.totalCount}>Tổng số: {tests.length} lần xét nghiệm</span>
-                    </div>
-                )}
-            </div>
+        <div className={styles.stiHistory}>            <div className={styles.stiHistoryHeader}>
+            <h2 className={styles.title}>
+                {renderSVGIcon('vial')}
+                Lịch sử xét nghiệm STI
+            </h2>
+            <p className={styles.subtitle}>Quản lý và theo dõi các cuộc hẹn xét nghiệm của bạn</p>
+            {tests.length > 0 && (
+                <div className={styles.historyStats}>
+                    <span className={styles.totalCount}>
+                        Hiển thị: {filteredTests.length}/{tests.length} lần xét nghiệm
+                    </span>
+                </div>
+            )}
+        </div>
 
-            {tests.length > 0 ? (
+            {/* Advanced Filter Component */}
+            <AdvancedFilter
+                onFilterChange={handleFilterChange}
+                statusOptions={Object.keys(STATUS_CONFIG).map(key => ({
+                    value: key,
+                    label: STATUS_CONFIG[key].label
+                }))}
+                placeholder="Tìm kiếm theo mã xét nghiệm, dịch vụ, ghi chú..."
+                showDateFilter={true}
+                showStatusFilter={true}
+            />
+
+            {filteredTests.length > 0 ? (
                 <div className={styles.testsList}>
-                    {tests.map(test => {
+                    {filteredTests.map(test => {
                         const statusConfig = getStatusConfig(test.status);
                         const serviceInfo = getServiceInfoById(test.serviceId);
                         const paymentStatusConfig = getPaymentStatusConfig(test.paymentStatus);
@@ -941,8 +1001,15 @@ const STIHistory = () => {
                             </div>
                         );
                     })}
-                </div>
-            ) : (
+                </div>) : tests.length > 0 ? (
+                    <div className={styles.emptyState}>
+                        <div className={styles.emptyIcon}>
+                            {renderSVGIcon('vial')}
+                        </div>
+                        <h3>Không tìm thấy kết quả</h3>
+                        <p>Không có cuộc hẹn nào phù hợp với bộ lọc hiện tại. Hãy thử điều chỉnh tiêu chí tìm kiếm.</p>
+                    </div>
+                ) : (
                 <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}>
                         {renderSVGIcon('vial')}

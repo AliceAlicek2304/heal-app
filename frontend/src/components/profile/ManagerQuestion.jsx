@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { formatDateTime, formatDate } from '../../utils/dateUtils';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
+import AdvancedFilter from '../common/AdvancedFilter/AdvancedFilter';
 import { questionService } from '../../services/questionService';
 import styles from './ManagerQuestion.module.css';
 
@@ -56,8 +57,7 @@ const ManagerQuestion = () => {
     const [loading, setLoading] = useState(true);
     const [selectedQuestion, setSelectedQuestion] = useState(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
-    const [showAnswerModal, setShowAnswerModal] = useState(false);
-    const [answerText, setAnswerText] = useState('');
+    const [showAnswerModal, setShowAnswerModal] = useState(false); const [answerText, setAnswerText] = useState('');
     const [answerLoading, setAnswerLoading] = useState(false);
 
     // Filter states
@@ -71,25 +71,56 @@ const ManagerQuestion = () => {
     const pageSize = 10;
 
     const isStaff = user?.role === 'STAFF';
-    const isConsultant = user?.role === 'CONSULTANT';
-
-    useEffect(() => {
+    const isConsultant = user?.role === 'CONSULTANT'; useEffect(() => {
         if (isConsultant && statusFilter === 'ALL') {
-            setStatusFilter('CONFIRMED');
+            // Keep ALL as default for consultants now that it's available
+            setStatusFilter('ALL');
         }
     }, [isConsultant]);
 
     useEffect(() => {
         fetchQuestions();
-    }, [currentPage, statusFilter]);
-
-    const fetchQuestions = async () => {
+    }, [currentPage, statusFilter]); const fetchQuestions = async () => {
         try {
             setLoading(true);
             const params = { page: currentPage, size: pageSize, sort: 'createdAt', direction: 'DESC' };
-            let response = isStaff && statusFilter === 'ALL'
-                ? await questionService.getAllQuestionsForStaff(params)
-                : await questionService.getQuestionsByStatus({ ...params, status: statusFilter });
+            let response;
+
+            if ((isStaff && statusFilter === 'ALL') || (isConsultant && statusFilter === 'ALL')) {
+                if (isStaff) {
+                    response = await questionService.getAllQuestionsForStaff(params);
+                } else if (isConsultant) {
+                    // For consultants with "ALL" filter, get both CONFIRMED and ANSWERED
+                    const confirmedResponse = await questionService.getQuestionsByStatus({ ...params, status: 'CONFIRMED' });
+                    const answeredResponse = await questionService.getQuestionsByStatus({ ...params, status: 'ANSWERED' });
+
+                    if (confirmedResponse.success && answeredResponse.success) {
+                        const confirmedQuestions = confirmedResponse.data.content || [];
+                        const answeredQuestions = answeredResponse.data.content || [];
+                        const allQuestions = [...confirmedQuestions, ...answeredQuestions];
+
+                        // Sort by createdAt descending
+                        allQuestions.sort((a, b) => {
+                            const dateA = new Date(a.createdAt);
+                            const dateB = new Date(b.createdAt);
+                            return dateB.getTime() - dateA.getTime();
+                        });
+
+                        response = {
+                            success: true,
+                            data: {
+                                content: allQuestions,
+                                totalPages: Math.max(confirmedResponse.data.totalPages || 0, answeredResponse.data.totalPages || 0),
+                                totalElements: (confirmedResponse.data.totalElements || 0) + (answeredResponse.data.totalElements || 0)
+                            }
+                        };
+                    } else {
+                        response = confirmedResponse.success ? confirmedResponse : answeredResponse;
+                    }
+                }
+            } else {
+                response = await questionService.getQuestionsByStatus({ ...params, status: statusFilter });
+            }
 
             if (response.success && response.data) {
                 const normalized = (response.data.content || []).map(q => ({
@@ -195,9 +226,7 @@ const ManagerQuestion = () => {
             question.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
             question.customerName?.toLowerCase().includes(searchTerm.toLowerCase());
         return matchesSearch;
-    });
-
-    const getFilterOptions = () => {
+    }); const getFilterOptions = () => {
         if (isStaff) {
             return [
                 { value: 'ALL', label: 'Tất cả' },
@@ -207,6 +236,7 @@ const ManagerQuestion = () => {
             ];
         } else if (isConsultant) {
             return [
+                { value: 'ALL', label: 'Tất cả' },
                 { value: 'CONFIRMED', label: 'Đã xác nhận' },
                 { value: 'ANSWERED', label: 'Đã trả lời' }
             ];

@@ -90,7 +90,7 @@ public class BankingService {
             } catch (Exception apiException) {
                 log.warn("⚠️ MB Bank API call failed: {}", apiException.getMessage());
 
-                //  CHỈ SIMULATE KHI ĐƯỢC BẬT
+                // CHỈ SIMULATE KHI ĐƯỢC BẬT
                 if (simulationEnabled) {
                     log.info("🎭 Simulation ENABLED - Using fallback simulation");
                     return simulateTransactionCheck(qrReference, expectedAmount);
@@ -103,7 +103,7 @@ public class BankingService {
         } catch (Exception e) {
             log.error(" Error checking MB Bank transaction for QR {}: {}", qrReference, e.getMessage(), e);
 
-            //  CHỈ SIMULATE KHI ĐƯỢC BẬT
+            // CHỈ SIMULATE KHI ĐƯỢC BẬT
             if (simulationEnabled) {
                 log.info("🎭 Simulation ENABLED - Using fallback for error");
                 return simulateTransactionCheck(qrReference, expectedAmount);
@@ -179,13 +179,13 @@ public class BankingService {
      */
     public String generateMBBankQRUrl(String qrReference, BigDecimal amount) {
         try {
-            // MB Bank QR URL format
-            String baseUrl = "https://api.vietqr.io/v2/generate";
+            // Use VietQR format that matches STITestService (working format)
+            String baseUrl = "https://img.vietqr.io/image";
             String bankCode = "970422"; // MB Bank code
 
             // Format:
-            // https://api.vietqr.io/v2/generate/970422-0349079940-compact.jpg?amount=500000&addInfo=HEALSTI...
-            String qrUrl = String.format("%s/%s-%s-compact.jpg?amount=%s&addInfo=%s&accountName=%s",
+            // https://img.vietqr.io/image/970422-0349079940-compact.png?amount=500000&addInfo=HEALSTI...
+            String qrUrl = String.format("%s/%s-%s-compact.png?amount=%s&addInfo=%s&accountName=%s",
                     baseUrl,
                     bankCode,
                     mbAccountNumber,

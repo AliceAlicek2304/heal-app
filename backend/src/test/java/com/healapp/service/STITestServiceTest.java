@@ -579,11 +579,64 @@ class STITestServiceTest {
 
         // Act
         ApiResponse<STITestResponse> response = stiTestService.updateConsultantNotes(
-                savedTest.getTestId(), notes, consultant.getId());
-
-        // Assert
+                savedTest.getTestId(), notes, consultant.getId());        // Assert
         assertTrue(response.isSuccess());
         assertTrue(response.getMessage().contains("Consultant notes updated successfully"));
         verify(stiTestRepository).save(any(STITest.class));
+    }
+
+    // ========== QR CODE GENERATION TESTS ==========
+
+    @Test
+    @DisplayName("Lấy chi tiết test với QR Code - Kiểm tra URL generation")
+    void getTestDetails_QRCode_URLGeneration() {
+        // Arrange
+        payment.setPaymentMethod(PaymentMethod.QR_CODE);
+        payment.setQrPaymentReference("HEALSTI112025061298765");
+
+        when(stiTestRepository.findById(savedTest.getTestId())).thenReturn(Optional.of(savedTest));
+        when(paymentService.getPaymentByService("STI", savedTest.getTestId())).thenReturn(Optional.of(payment));
+
+        // Act
+        ApiResponse<STITestResponse> response = stiTestService.getTestDetails(savedTest.getTestId(), customer.getId());
+
+        // Assert
+        assertTrue(response.isSuccess());
+        assertNotNull(response.getData());
+        
+        STITestResponse testResponse = response.getData();
+        assertEquals("QR_CODE", testResponse.getPaymentMethod());
+        assertEquals("HEALSTI112025061298765", testResponse.getQrPaymentReference());
+        
+        // Verify QR URL contains MB Bank info (970422) not VietinBank (970415)
+        assertNotNull(testResponse.getQrCodeUrl());
+        assertTrue(testResponse.getQrCodeUrl().contains("970422")); // MB Bank code
+        assertTrue(testResponse.getQrCodeUrl().contains("0349079940")); // MB Bank account
+        assertTrue(testResponse.getQrCodeUrl().contains("NGUYEN%20VAN%20CUONG")); // Account name encoded
+        assertFalse(testResponse.getQrCodeUrl().contains("970415")); // Should NOT contain VietinBank code
+        assertFalse(testResponse.getQrCodeUrl().contains("1234567890")); // Should NOT contain old account
+    }
+
+    @Test
+    @DisplayName("Lấy chi tiết test với QR Code - Null reference")
+    void getTestDetails_QRCode_NullReference() {
+        // Arrange
+        payment.setPaymentMethod(PaymentMethod.QR_CODE);
+        payment.setQrPaymentReference(null); // No QR reference
+
+        when(stiTestRepository.findById(savedTest.getTestId())).thenReturn(Optional.of(savedTest));
+        when(paymentService.getPaymentByService("STI", savedTest.getTestId())).thenReturn(Optional.of(payment));
+
+        // Act
+        ApiResponse<STITestResponse> response = stiTestService.getTestDetails(savedTest.getTestId(), customer.getId());
+
+        // Assert
+        assertTrue(response.isSuccess());
+        assertNotNull(response.getData());
+        
+        STITestResponse testResponse = response.getData();
+        assertEquals("QR_CODE", testResponse.getPaymentMethod());
+        assertNull(testResponse.getQrPaymentReference());
+        assertNull(testResponse.getQrCodeUrl()); // Should be null when no QR reference
     }
 }

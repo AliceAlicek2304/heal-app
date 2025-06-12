@@ -10,8 +10,11 @@ import MyQuestions from '../../components/profile/MyQuestions';
 import ConsultationHistory from '../../components/profile/ConsultationHistory';
 import STIHistory from '../../components/profile/STIHistory';
 import ManagerQuestion from '../../components/profile/ManagerQuestion';
+import ManageSTITests from '../../components/profile/ManageSTITests';
 import ConsultantProfile from '../../components/profile/ConsultantProfile';
 import ConsultantSchedule from '../../components/profile/ConsultantSchedule';
+import ConsultantSTITests from '../../components/profile/ConsultantSTITests';
+import ManageBlogs from '../../components/profile/ManageBlogs';
 import Navbar from '../../components/layout/Navbar/Navbar';
 import Footer from '../../components/layout/Footer/Footer';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
@@ -86,13 +89,19 @@ const ProfilePage = () => {
                     <div className={styles.contentSection}>
                         <MyQuestions />
                     </div>
-                );
-            case 'manage-questions':
+                ); case 'manage-questions':
                 return (
                     <div className={styles.contentSection}>
                         <ManagerQuestion />
                     </div>
-                ); case 'consultant-profile':
+                );
+            case 'manage-sti-tests':
+                return (
+                    <div className={styles.contentSection}>
+                        <ManageSTITests />
+                    </div>
+                );
+            case 'consultant-profile':
                 return (
                     <div className={styles.contentSection}>
                         <ConsultantProfile />
@@ -102,6 +111,17 @@ const ProfilePage = () => {
                 return (
                     <div className={styles.contentSection}>
                         <ConsultantSchedule />
+                    </div>
+                );            case 'consultant-sti-tests':
+                return (
+                    <div className={styles.contentSection}>
+                        <ConsultantSTITests />
+                    </div>
+                );
+            case 'manage-blogs':
+                return (
+                    <div className={styles.contentSection}>
+                        <ManageBlogs />
                     </div>
                 );
             default:

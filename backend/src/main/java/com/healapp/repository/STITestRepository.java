@@ -93,4 +93,27 @@ public interface STITestRepository extends JpaRepository<STITest, Long> {
             "FROM STITest t WHERE YEAR(t.createdAt) = :year " +
             "GROUP BY MONTH(t.createdAt) ORDER BY MONTH(t.createdAt)")
     List<Object[]> getMonthlyStatistics(@Param("year") int year);
+
+    // ========== CONSULTANT QUERIES ==========
+    
+    // Tìm các test chưa có ghi chú từ consultant
+    @Query("SELECT t FROM STITest t " +
+            "LEFT JOIN FETCH t.customer " +
+            "LEFT JOIN FETCH t.stiService " +
+            "LEFT JOIN FETCH t.staff " +
+            "LEFT JOIN FETCH t.consultant " +
+            "WHERE t.status IN ('SAMPLED', 'RESULTED', 'COMPLETED') " +
+            "AND (t.consultantNotes IS NULL OR t.consultantNotes = '') " +
+            "ORDER BY t.updatedAt DESC")
+    List<STITest> findTestsPendingConsultantNotes();
+
+    // Tìm tất cả tests mà consultant có thể truy cập
+    @Query("SELECT t FROM STITest t " +
+            "LEFT JOIN FETCH t.customer " +
+            "LEFT JOIN FETCH t.stiService " +
+            "LEFT JOIN FETCH t.staff " +
+            "LEFT JOIN FETCH t.consultant " +
+            "WHERE t.status IN ('SAMPLED', 'RESULTED', 'COMPLETED') " +
+            "ORDER BY t.updatedAt DESC")
+    List<STITest> findAllConsultantAccessibleTests();
 }
