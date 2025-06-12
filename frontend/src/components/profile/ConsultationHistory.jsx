@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { consultationService } from '../../services/consultationService';
 import { useToast } from '../../contexts/ToastContext';
 import { formatDateTime, formatDate, formatTime, parseDate } from '../../utils/dateUtils';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
 import AdvancedFilter from '../common/AdvancedFilter/AdvancedFilter';
+import Pagination from '../common/Pagination/Pagination';
 import styles from './ConsultationHistory.module.css';
 
 const STATUS_CLASS = {
@@ -23,10 +24,26 @@ const ConsultationHistory = () => {
     const toast = useToast();
     const [consultations, setConsultations] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [selectedConsultation, setSelectedConsultation] = useState(null);
-    const [showDetailModal, setShowDetailModal] = useState(false);
+    const [selectedConsultation, setSelectedConsultation] = useState(null); const [showDetailModal, setShowDetailModal] = useState(false);
     const [filters, setFilters] = useState({});
     const [filteredConsultations, setFilteredConsultations] = useState([]);
+
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(0);
+    const consultationsListRef = useRef(null);
+
+    // Handle page change with smooth scroll
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+        if (consultationsListRef.current) {
+            consultationsListRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
 
     useEffect(() => {
         fetchConsultations();
@@ -134,13 +151,19 @@ const ConsultationHistory = () => {
         }
 
         return filtered;
-    };
-
-    // Effect to apply filters when consultations or filters change
+    };    // Effect to apply filters when consultations or filters change
     useEffect(() => {
         const filtered = applyFilters(consultations, filters);
         setFilteredConsultations(filtered);
+        setCurrentPage(0); // Reset to first page when filters change
     }, [consultations, filters]);
+
+    // Calculate client-side pagination for filtered results
+    const itemsPerPage = 10;
+    const totalFilteredPages = Math.ceil(filteredConsultations.length / itemsPerPage);
+    const startIndex = currentPage * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentItems = filteredConsultations.slice(startIndex, endIndex);
 
     const handleFilterChange = (newFilters) => {
         setFilters(newFilters);
@@ -231,12 +254,11 @@ const ConsultationHistory = () => {
                             Đặt lịch tư vấn ngay
                         </a>
                     </div>
-                )
-            ) : (
+                )) : (
                 <>
                     {/* Mobile Card View */}
-                    <div className={styles.mobileView}>
-                        {filteredConsultations.map(consultation => (
+                    <div ref={consultationsListRef} className={styles.mobileView}>
+                        {currentItems.map(consultation => (
                             <div key={consultation.consultationId} className={styles.consultationCard}>
                                 <div className={styles.cardHeader}>
                                     <div className={styles.consultantInfo}>
@@ -325,9 +347,8 @@ const ConsultationHistory = () => {
                                         <th>Ngày tạo</th>
                                         <th>Hành động</th>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredConsultations.map(consultation => (
+                                </thead>                                <tbody>
+                                    {currentItems.map(consultation => (
                                         <tr key={consultation.consultationId}>
                                             <td>
                                                 <div className={styles.consultantCell}>
@@ -398,9 +419,17 @@ const ConsultationHistory = () => {
                                         </tr>
                                     ))}
                                 </tbody>
-                            </table>
-                        </div>
+                            </table>                        </div>
                     </div>
+
+                    {/* Pagination */}
+                    {totalFilteredPages > 1 && (
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalFilteredPages}
+                            onPageChange={handlePageChange}
+                        />
+                    )}
                 </>
             )}
 

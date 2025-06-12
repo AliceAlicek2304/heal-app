@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { formatDateTime, formatDate } from '../../utils/dateUtils';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
 import AdvancedFilter from '../common/AdvancedFilter/AdvancedFilter';
+import Pagination from '../common/Pagination/Pagination';
 import styles from './ConsultantSTITests.module.css';
 
 const ConsultantSTITests = () => {
@@ -17,10 +18,16 @@ const ConsultantSTITests = () => {
     const [showModal, setShowModal] = useState(false);
     const [showResultModal, setShowResultModal] = useState(false);
     const [testResults, setTestResults] = useState([]);
-    const [consultantNote, setConsultantNote] = useState('');
-    const [updating, setUpdating] = useState(false);
+    const [consultantNote, setConsultantNote] = useState(''); const [updating, setUpdating] = useState(false);
     const [filters, setFilters] = useState({});
     const [filteredTests, setFilteredTests] = useState([]);
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(12); // Items per page (constant)
+
+    // Ref for scrolling to tests list
+    const testsListRef = useRef(null);
 
     useEffect(() => {
         loadTests();
@@ -274,16 +281,39 @@ const ConsultantSTITests = () => {
         }
 
         return filtered;
-    };
-
-    // Effect to apply filters when tests or filters change
+    };    // Effect to apply filters when tests or filters change
     useEffect(() => {
         const filtered = applyFilters(tests, filters);
         setFilteredTests(filtered);
+        // Reset to first page when filters change
+        setCurrentPage(1);
     }, [tests, filters]);
+
+    // Reset to first page when tab changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [activeTab]);
 
     const handleFilterChange = (newFilters) => {
         setFilters(newFilters);
+    };
+
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+
+        // Scroll to tests list when changing pages
+        if (testsListRef.current) {
+            testsListRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        } else {
+            // Fallback: scroll to top of page
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
     };
 
     if (loading && tests.length === 0) {
@@ -331,34 +361,55 @@ const ConsultantSTITests = () => {
                 placeholder="Tìm kiếm theo mã test, khách hàng, dịch vụ..."
                 showDateFilter={true}
                 showStatusFilter={true}
-            />
-
-            {tests.length > 0 && (
+            />            {tests.length > 0 && (
                 <div className={styles.statsInfo}>
                     Hiển thị: {filteredTests.length}/{tests.length} xét nghiệm
                 </div>
             )}
 
             <div className={styles.content}>
-                {filteredTests.length === 0 ? (
-                    tests.length > 0 ? (
-                        <div className={styles.emptyState}>
-                            <p>Không tìm thấy kết quả phù hợp với bộ lọc hiện tại.</p>
-                        </div>
-                    ) : (
-                        <div className={styles.emptyState}>
-                            <p>
-                                {activeTab === 'pending-notes'
-                                    ? 'Không có test nào cần thêm ghi chú'
-                                    : 'Không có test nào'
-                                }
-                            </p>
-                        </div>
-                    )) : (
-                    <div className={styles.testsGrid}>
-                        {filteredTests.map(renderTestCard)}
-                    </div>
-                )}
+                {(() => {
+                    const indexOfLastItem = currentPage * itemsPerPage;
+                    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+                    const currentItems = filteredTests.slice(indexOfFirstItem, indexOfLastItem);
+                    const totalPages = Math.ceil(filteredTests.length / itemsPerPage);
+
+                    return (
+                        <>
+                            {filteredTests.length === 0 ? (
+                                tests.length > 0 ? (
+                                    <div className={styles.emptyState}>
+                                        <p>Không tìm thấy kết quả phù hợp với bộ lọc hiện tại.</p>
+                                    </div>
+                                ) : (
+                                    <div className={styles.emptyState}>
+                                        <p>
+                                            {activeTab === 'pending-notes'
+                                                ? 'Không có test nào cần thêm ghi chú'
+                                                : 'Không có test nào'
+                                            }
+                                        </p>
+                                    </div>
+                                )
+                            ) : (
+                                <>
+                                    <div ref={testsListRef} className={styles.testsGrid}>
+                                        {currentItems.map(renderTestCard)}
+                                    </div>
+
+                                    {/* Pagination Component */}
+                                    {totalPages > 1 && (
+                                        <Pagination
+                                            currentPage={currentPage}
+                                            totalPages={totalPages}
+                                            onPageChange={handlePageChange}
+                                        />
+                                    )}
+                                </>
+                            )}
+                        </>
+                    );
+                })()}
             </div>
 
             {/* Note Modal */}

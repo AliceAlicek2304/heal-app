@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { stiService } from '../../services/stiService';
 import { formatDateTime, parseDate } from '../../utils/dateUtils';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
 import AdvancedFilter from '../common/AdvancedFilter/AdvancedFilter';
+import Pagination from '../common/Pagination/Pagination';
 import styles from './STIHistory.module.css';
 
 // Status configuration
@@ -17,7 +18,7 @@ const STATUS_CONFIG = {
     },
     CONFIRMED: {
         label: 'Đã xác nhận',
-        color: 'info',
+        color: 'info',  
         icon: 'check-circle',
         description: 'Đã xác nhận cuộc hẹn'
     },
@@ -101,7 +102,12 @@ const STIHistory = () => {
     const [qrExpired, setQrExpired] = useState(false); // Track QR expiry state
     const [forceUpdate, setForceUpdate] = useState(0); // Force re-render
     const [filters, setFilters] = useState({}); // State for filters
-    const [filteredTests, setFilteredTests] = useState([]); // Filtered tests state
+    const [filteredTests, setFilteredTests] = useState([]); // Filtered tests state    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(10); // Items per page (constant)
+
+    // Ref for scrolling to tests list
+    const testsListRef = useRef(null);
 
     useEffect(() => {
         fetchAllServices();
@@ -374,26 +380,7 @@ const STIHistory = () => {
             console.error('Error cancelling test:', error);
             toast.error('Có lỗi xảy ra khi hủy cuộc hẹn');
         }
-    };
-
-    const isResultNormal = (result) => {
-        if (!result.resultValue || !result.normalRange) return true;
-
-        const resultLower = result.resultValue.toLowerCase();
-        const normalLower = result.normalRange.toLowerCase();
-
-        if (normalLower.includes('negative')) {
-            return resultLower.includes('negative');
-        }
-
-        if (normalLower.includes('positive')) {
-            return resultLower.includes('positive');
-        }
-
-        return resultLower === normalLower;
-    };
-
-    const formatPrice = (price) => {
+    }; const formatPrice = (price) => {
         if (!price) return 'Liên hệ';
         return `${price.toLocaleString('vi-VN')} VNĐ`;
     };
@@ -861,6 +848,29 @@ const STIHistory = () => {
         setFilters(newFilters);
     };
 
+    // Pagination logic    // Pagination calculations (1-based indexing)
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = filteredTests.slice(indexOfFirstItem, indexOfLastItem);
+
+    const totalPages = Math.ceil(filteredTests.length / itemsPerPage); const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+
+        // Scroll to tests list when changing pages
+        if (testsListRef.current) {
+            testsListRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        } else {
+            // Fallback: scroll to top of page
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+    };
+
     if (loading) {
         return (
             <div className={styles.loadingContainer}>
@@ -896,11 +906,9 @@ const STIHistory = () => {
                 placeholder="Tìm kiếm theo mã xét nghiệm, dịch vụ, ghi chú..."
                 showDateFilter={true}
                 showStatusFilter={true}
-            />
-
-            {filteredTests.length > 0 ? (
-                <div className={styles.testsList}>
-                    {filteredTests.map(test => {
+            />            {filteredTests.length > 0 ? (
+                <div ref={testsListRef} className={styles.testsList}>
+                    {currentItems.map(test => {
                         const statusConfig = getStatusConfig(test.status);
                         const serviceInfo = getServiceInfoById(test.serviceId);
                         const paymentStatusConfig = getPaymentStatusConfig(test.paymentStatus);
@@ -1023,6 +1031,17 @@ const STIHistory = () => {
                         {renderSVGIcon('plus')}
                         Đặt lịch xét nghiệm
                     </button>
+                </div>
+            )}            {/* Simple Pagination */}
+            {filteredTests.length > itemsPerPage && (
+                <div className={styles.paginationContainer}>
+                    <div className={styles.paginationInfo}>
+                        Hiển thị từ {indexOfFirstItem + 1} đến {Math.min(indexOfLastItem, filteredTests.length)} của {filteredTests.length} kết quả
+                    </div>                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                    />
                 </div>
             )}
 
@@ -1521,7 +1540,6 @@ const STIHistory = () => {
                                                     <th>Chỉ số</th>
                                                     <th>Kết quả</th>
                                                     <th>Giá trị tham chiếu</th>
-                                                    <th>Trạng thái</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -1533,12 +1551,6 @@ const STIHistory = () => {
                                                             {result.unit && <span className={styles.unit}> {result.unit}</span>}
                                                         </td>
                                                         <td>{result.normalRange || 'N/A'}</td>
-                                                        <td>
-                                                            <span className={`${styles.resultStatus} ${isResultNormal(result) ? styles.normal : styles.abnormal}`}>
-                                                                {renderSVGIcon(isResultNormal(result) ? 'check-circle' : 'exclamation-triangle')}
-                                                                {isResultNormal(result) ? 'Bình thường' : 'Bất thường'}
-                                                            </span>
-                                                        </td>
                                                     </tr>
                                                 ))}
                                             </tbody>

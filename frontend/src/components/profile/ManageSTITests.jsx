@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { formatDateTime, formatDate } from '../../utils/dateUtils';
 import { stiService } from '../../services/stiService';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
 import AdvancedFilter from '../common/AdvancedFilter/AdvancedFilter';
+import Pagination from '../common/Pagination/Pagination';
 import styles from './ManageSTITests.module.css';
 
 const ManageSTITests = () => {
@@ -19,10 +20,16 @@ const ManageSTITests = () => {
     const [updating, setUpdating] = useState(false);
     const [testResults, setTestResults] = useState([]);
     const [showResultModal, setShowResultModal] = useState(false);
-    const [showViewResultModal, setShowViewResultModal] = useState(false);
-    const [selectedTestResults, setSelectedTestResults] = useState(null);
+    const [showViewResultModal, setShowViewResultModal] = useState(false); const [selectedTestResults, setSelectedTestResults] = useState(null);
     const [filters, setFilters] = useState({});
     const [filteredTests, setFilteredTests] = useState([]);
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(12); // Items per page (constant)
+
+    // Ref for scrolling to tests list
+    const testsListRef = useRef(null);
 
     useEffect(() => {
         loadTests();
@@ -481,16 +488,39 @@ const ManageSTITests = () => {
         }
 
         return filtered;
-    };
-
-    // Effect to apply filters when tests or filters change
+    };    // Effect to apply filters when tests or filters change
     useEffect(() => {
         const filtered = applyFilters(tests, filters);
         setFilteredTests(filtered);
+        // Reset to first page when filters change
+        setCurrentPage(1);
     }, [tests, filters]);
+
+    // Reset to first page when tab changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [activeTab]);
 
     const handleFilterChange = (newFilters) => {
         setFilters(newFilters);
+    };
+
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+
+        // Scroll to tests list when changing pages
+        if (testsListRef.current) {
+            testsListRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        } else {
+            // Fallback: scroll to top of page
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
     };
 
     return (
@@ -545,95 +575,119 @@ const ManageSTITests = () => {
                 placeholder="Tìm kiếm theo mã test, tên khách hàng, email, SĐT..."
                 showDateFilter={true}
                 showStatusFilter={true}
-            />
+            />            {/* Calculate pagination data */}
+            {(() => {
+                const indexOfLastItem = currentPage * itemsPerPage;
+                const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+                const currentItems = filteredTests.slice(indexOfFirstItem, indexOfLastItem);
+                const totalPages = Math.ceil(filteredTests.length / itemsPerPage);
 
-            {tests.length > 0 && (
-                <div className={styles.statsInfo}>
-                    Hiển thị: {filteredTests.length}/{tests.length} xét nghiệm
-                </div>
-            )}
-
-            {loading ? (
-                <div className={styles.loadingContainer}>
-                    <LoadingSpinner />
-                    <p>Đang tải danh sách xét nghiệm...</p>
-                </div>
-            ) : filteredTests.length === 0 ? (
-                tests.length > 0 ? (
-                    <div className={styles.emptyState}>
-                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <path d="M9 11H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-2"></path>
-                            <rect x="9" y="7" width="6" height="6" rx="1"></rect>
-                            <path d="M12 1v6"></path>
-                        </svg>
-                        <h3>Không tìm thấy kết quả</h3>
-                        <p>Không có xét nghiệm nào phù hợp với bộ lọc hiện tại.</p>
-                    </div>
-                ) : (
-                    <div className={styles.emptyState}>
-                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <path d="M9 11H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-2"></path>
-                            <rect x="9" y="7" width="6" height="6" rx="1"></rect>
-                            <path d="M12 1v6"></path>
-                        </svg>
-                        <h3>Không có xét nghiệm nào</h3>
-                        <p>Hiện tại không có xét nghiệm nào trong danh mục này.</p>
-                    </div>
-                )
-            ) : (
-                <div className={styles.testsGrid}>
-                    {filteredTests.map((test) => (
-                        <div key={test.testId} className={styles.testCard}>
-                            <div className={styles.cardHeader}>
-                                <div className={styles.testInfo}>
-                                    <h3>#{test.testId}</h3>
-                                    <p className={styles.serviceName}>{test.serviceName}</p>
-                                </div>
-                                <div
-                                    className={styles.statusBadge}
-                                    style={{ backgroundColor: getStatusColor(test.status) }}
-                                >
-                                    {getStatusText(test.status)}
-                                </div>
+                return (
+                    <>
+                        {tests.length > 0 && (
+                            <div className={styles.statsInfo}>
+                                Hiển thị: {Math.min(indexOfFirstItem + 1, filteredTests.length)}-{Math.min(indexOfLastItem, filteredTests.length)}
+                                trong tổng số {filteredTests.length}/{tests.length} xét nghiệm
                             </div>
+                        )}
 
-                            <div className={styles.cardBody}>
-                                <div className={styles.customerInfo}>
-                                    <p><strong>Khách hàng:</strong> {test.customerName}</p>
-                                    <p><strong>Email:</strong> {test.customerEmail}</p>
-                                    <p><strong>SĐT:</strong> {test.customerPhone}</p>
-                                </div>                                <div className={styles.appointmentInfo}>
-                                    <p><strong>Ngày hẹn:</strong> {formatDateTime(test.appointmentDate)}</p>
-                                    <p><strong>Giá:</strong> {test.totalPrice?.toLocaleString()} VNĐ</p>
-                                    <p><strong>Ngày tạo:</strong> {formatDateTime(test.createdAt)}</p>
-                                    <p>
-                                        <strong>Thanh toán:</strong>
-                                        <span className={styles.inlinePaymentMethod}>
-                                            {getPaymentMethodText(test.paymentMethod)}
-                                        </span>
-                                        <span
-                                            className={styles.inlinePaymentStatus}
-                                            style={{ color: getPaymentStatusColor(test.paymentStatus) }}
-                                        >
-                                            ({getPaymentStatusText(test.paymentStatus)})
-                                        </span>
-                                    </p>
+                        {loading ? (
+                            <div className={styles.loadingContainer}>
+                                <LoadingSpinner />
+                                <p>Đang tải danh sách xét nghiệm...</p>
+                            </div>
+                        ) : filteredTests.length === 0 ? (
+                            tests.length > 0 ? (
+                                <div className={styles.emptyState}>
+                                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                        <path d="M9 11H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-2"></path>
+                                        <rect x="9" y="7" width="6" height="6" rx="1"></rect>
+                                        <path d="M12 1v6"></path>
+                                    </svg>
+                                    <h3>Không tìm thấy kết quả</h3>
+                                    <p>Không có xét nghiệm nào phù hợp với bộ lọc hiện tại.</p>
+                                </div>
+                            ) : (
+                                <div className={styles.emptyState}>
+                                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                        <path d="M9 11H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-2"></path>
+                                        <rect x="9" y="7" width="6" height="6" rx="1"></rect>
+                                        <path d="M12 1v6"></path>
+                                    </svg>
+                                    <h3>Không có xét nghiệm nào</h3>
+                                    <p>Hiện tại không có xét nghiệm nào trong danh mục này.</p>
+                                </div>
+                            )
+                        ) : (
+                            <>
+                                <div ref={testsListRef} className={styles.testsGrid}>
+                                    {currentItems.map((test) => (
+                                        <div key={test.testId} className={styles.testCard}>
+                                            <div className={styles.cardHeader}>
+                                                <div className={styles.testInfo}>
+                                                    <h3>#{test.testId}</h3>
+                                                    <p className={styles.serviceName}>{test.serviceName}</p>
+                                                </div>
+                                                <div
+                                                    className={styles.statusBadge}
+                                                    style={{ backgroundColor: getStatusColor(test.status) }}
+                                                >
+                                                    {getStatusText(test.status)}
+                                                </div>
+                                            </div>
+
+                                            <div className={styles.cardBody}>
+                                                <div className={styles.customerInfo}>
+                                                    <p><strong>Khách hàng:</strong> {test.customerName}</p>
+                                                    <p><strong>Email:</strong> {test.customerEmail}</p>
+                                                    <p><strong>SĐT:</strong> {test.customerPhone}</p>
+                                                </div>
+
+                                                <div className={styles.appointmentInfo}>
+                                                    <p><strong>Ngày hẹn:</strong> {formatDateTime(test.appointmentDate)}</p>
+                                                    <p><strong>Giá:</strong> {test.totalPrice?.toLocaleString()} VNĐ</p>
+                                                    <p><strong>Ngày tạo:</strong> {formatDateTime(test.createdAt)}</p>
+                                                    <p>
+                                                        <strong>Thanh toán:</strong>
+                                                        <span className={styles.inlinePaymentMethod}>
+                                                            {getPaymentMethodText(test.paymentMethod)}
+                                                        </span>
+                                                        <span
+                                                            className={styles.inlinePaymentStatus}
+                                                            style={{ color: getPaymentStatusColor(test.paymentStatus) }}
+                                                        >
+                                                            ({getPaymentStatusText(test.paymentStatus)})
+                                                        </span>
+                                                    </p>
+                                                </div>
+
+                                                {test.customerNotes && (
+                                                    <div className={styles.notes}>
+                                                        <p><strong>Ghi chú:</strong> {test.customerNotes}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className={styles.cardFooter}>
+                                                {renderActionButtons(test)}
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
 
-                                {test.customerNotes && (
-                                    <div className={styles.notes}>
-                                        <p><strong>Ghi chú:</strong> {test.customerNotes}</p>
-                                    </div>
+                                {/* Pagination Component */}
+                                {totalPages > 1 && (
+                                    <Pagination
+                                        currentPage={currentPage}
+                                        totalPages={totalPages}
+                                        onPageChange={handlePageChange}
+                                    />
                                 )}
-                            </div>
-
-                            <div className={styles.cardFooter}>
-                                {renderActionButtons(test)}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
+                            </>
+                        )}
+                    </>
+                );
+            })()}
 
             {/* Detail Modal */}
             {showModal && selectedTest && (

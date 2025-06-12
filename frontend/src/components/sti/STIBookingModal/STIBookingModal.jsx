@@ -77,8 +77,8 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
     const generateQRCodeUrl = (qrData, amount = 500000) => {
         if (!qrData) return null;
 
-        // Use VietQR format that matches backend STITestService (working format)
-        const fallbackQR = `https://img.vietqr.io/image/970422-0349079940-compact.png?amount=${amount}&addInfo=${encodeURIComponent(qrData)}&accountName=${encodeURIComponent('NGUYEN VAN CUONG')}`;
+        // Fallback QR generators
+        const fallbackQR = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&format=png&margin=10&data=${encodeURIComponent(`STK: 0349079940\nTen: NGUYEN VAN CUONG\nNH: MB Bank\nST: ${amount.toLocaleString()}\nND: ${qrData}`)}`;
 
         return qrPaymentData?.qrCodeUrl || fallbackQR;
     };

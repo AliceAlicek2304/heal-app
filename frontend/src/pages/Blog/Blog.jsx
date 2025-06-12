@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -17,16 +17,18 @@ const Blog = () => {
     const [blogPosts, setBlogPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(0);
-    const [totalPages, setTotalPages] = useState(0);
-    const [totalElements, setTotalElements] = useState(0);
+    const [totalPages, setTotalPages] = useState(0); const [totalElements, setTotalElements] = useState(0);
     const [pageSize] = useState(12);
+
+    // Ref for smooth scroll targeting
+    const blogGridRef = useRef(null);
 
     useEffect(() => {
         fetchBlogPosts();
-    }, [currentPage]);    const fetchBlogPosts = async () => {
+    }, [currentPage]); const fetchBlogPosts = async () => {
         try {
             setLoading(true);
-            
+
             // Use blogService.getBlogPosts for public blog listing
             const response = await blogService.getBlogPosts(currentPage, pageSize);
 
@@ -45,11 +47,19 @@ const Blog = () => {
         } finally {
             setLoading(false);
         }
-    };
-
-    const handlePageChange = (page) => {
+    }; const handlePageChange = (page) => {
         setCurrentPage(page);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Smooth scroll to blog grid with fallback
+        if (blogGridRef.current) {
+            blogGridRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        } else {
+            // Fallback to scroll to top if ref is not available
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
     };
 
     const handleCreateBlog = () => {
@@ -108,11 +118,9 @@ const Blog = () => {
                     <div className={styles.blogStats}>
                         <p>Hiển thị {blogPosts.length} trong tổng số {totalElements} bài viết</p>
                     </div>
-                )}
-
-                {/* Blog Grid */}
+                )}                {/* Blog Grid */}
                 {blogPosts.length > 0 ? (
-                    <div className={styles.blogGrid}>
+                    <div ref={blogGridRef} className={styles.blogGrid}>
                         {blogPosts.map((post) => (
                             <BlogCard
                                 key={post.id}

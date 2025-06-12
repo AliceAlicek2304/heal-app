@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { formatDateTime, formatDate } from '../../utils/dateUtils';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
 import AdvancedFilter from '../common/AdvancedFilter/AdvancedFilter';
+import Pagination from '../common/Pagination/Pagination';
 import { questionService } from '../../services/questionService';
 import styles from './ManagerQuestion.module.css';
 
@@ -62,16 +63,28 @@ const ManagerQuestion = () => {
 
     // Filter states
     const [statusFilter, setStatusFilter] = useState('ALL');
-    const [searchTerm, setSearchTerm] = useState('');
-
-    // Pagination
+    const [searchTerm, setSearchTerm] = useState('');    // Pagination
     const [currentPage, setCurrentPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [totalElements, setTotalElements] = useState(0);
     const pageSize = 10;
+    const questionsListRef = useRef(null);
 
     const isStaff = user?.role === 'STAFF';
-    const isConsultant = user?.role === 'CONSULTANT'; useEffect(() => {
+    const isConsultant = user?.role === 'CONSULTANT';
+
+    // Handle page change with smooth scroll
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+        if (questionsListRef.current) {
+            questionsListRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }; useEffect(() => {
         if (isConsultant && statusFilter === 'ALL') {
             // Keep ALL as default for consultants now that it's available
             setStatusFilter('ALL');
@@ -99,7 +112,7 @@ const ManagerQuestion = () => {
                         const answeredQuestions = answeredResponse.data.content || [];
                         const allQuestions = [...confirmedQuestions, ...answeredQuestions];
 
-                        // Sort by createdAt descending
+                        // Sort by createdAt descending                                                                                                                                             
                         allQuestions.sort((a, b) => {
                             const dateA = new Date(a.createdAt);
                             const dateB = new Date(b.createdAt);
@@ -219,14 +232,19 @@ const ManagerQuestion = () => {
                 </svg>
             )
         };
-    };
-
-    const filteredQuestions = questions.filter(question => {
+    }; const filteredQuestions = questions.filter(question => {
         const matchesSearch = searchTerm === '' ||
             question.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
             question.customerName?.toLowerCase().includes(searchTerm.toLowerCase());
         return matchesSearch;
-    }); const getFilterOptions = () => {
+    });
+
+    // Calculate client-side pagination for filtered results
+    const itemsPerPage = 10;
+    const totalFilteredPages = Math.ceil(filteredQuestions.length / itemsPerPage);
+    const startIndex = currentPage * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentItems = filteredQuestions.slice(startIndex, endIndex); const getFilterOptions = () => {
         if (isStaff) {
             return [
                 { value: 'ALL', label: 'Tất cả' },
@@ -297,10 +315,12 @@ const ManagerQuestion = () => {
             {/* Filters */}
             <div className={styles.filters}>
                 <div className={styles.filterGroup}>
-                    <label>Trạng thái:</label>
-                    <select
+                    <label>Trạng thái:</label>                    <select
                         value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
+                        onChange={(e) => {
+                            setStatusFilter(e.target.value);
+                            setCurrentPage(0); // Reset to first page when filter changes
+                        }}
                         className={styles.filterSelect}
                     >
                         {getFilterOptions().map(option => (
@@ -317,29 +337,27 @@ const ManagerQuestion = () => {
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <circle cx="11" cy="11" r="8"></circle>
                             <path d="M21 21l-4.35-4.35"></path>
-                        </svg>
-                        <input
+                        </svg>                        <input
                             type="text"
                             placeholder="Tìm theo nội dung hoặc tên người hỏi..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                setCurrentPage(0); // Reset to first page when search changes
+                            }}
                             className={styles.searchInput}
                         />
                     </div>
+                </div>                <div className={styles.filterStats}>
+                    <span className={styles.totalCount}>Tổng số: {filteredQuestions.length} câu hỏi</span>
                 </div>
-
-                <div className={styles.filterStats}>
-                    <span className={styles.totalCount}>Tổng số: {totalElements} câu hỏi</span>
-                </div>
-            </div>
-
-            {/* Content */}
+            </div>            {/* Content */}
             <div className={styles.content}>
                 {filteredQuestions.length > 0 ? (
                     <>
                         {/* Mobile Card View */}
-                        <div className={styles.mobileView}>
-                            {filteredQuestions.map(question => {
+                        <div ref={questionsListRef} className={styles.mobileView}>
+                            {currentItems.map(question => {
                                 const statusConfig = getStatusConfig(question.status);
                                 return (
                                     <div key={question.id} className={styles.questionCard}>
@@ -443,9 +461,8 @@ const ManagerQuestion = () => {
                                             <th>Ngày tạo</th>
                                             <th>Thao tác</th>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        {filteredQuestions.map(question => {
+                                    </thead>                                    <tbody>
+                                        {currentItems.map(question => {
                                             const statusConfig = getStatusConfig(question.status);
                                             return (
                                                 <tr key={question.id}>
@@ -529,91 +546,15 @@ const ManagerQuestion = () => {
                                     </tbody>
                                 </table>
                             </div>
-                        </div>
-
-                        {/* Pagination */}
-                        {totalPages > 1 && (
-                            <div className={styles.pagination}>
-                                <div className={styles.paginationInfo}>
-                                    Hiển thị {currentPage * pageSize + 1} - {Math.min((currentPage + 1) * pageSize, totalElements)} trong tổng số {totalElements} câu hỏi
-                                </div>
-
-                                <div className={styles.paginationButtons}>
-                                    <button
-                                        className={styles.pageBtn}
-                                        onClick={() => setCurrentPage(0)}
-                                        disabled={currentPage === 0}
-                                        title="Trang đầu"
-                                    >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <polyline points="11,17 6,12 11,7"></polyline>
-                                            <polyline points="18,17 13,12 18,7"></polyline>
-                                        </svg>
-                                    </button>
-
-                                    <button
-                                        className={styles.pageBtn}
-                                        onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
-                                        disabled={currentPage === 0}
-                                        title="Trang trước"
-                                    >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <polyline points="15,18 9,12 15,6"></polyline>
-                                        </svg>
-                                    </button>
-
-                                    <div className={styles.pageNumbers}>
-                                        {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
-                                            let pageNum;
-                                            if (totalPages <= 5) {
-                                                pageNum = i;
-                                            } else if (currentPage < 3) {
-                                                pageNum = i;
-                                            } else if (currentPage >= totalPages - 3) {
-                                                pageNum = totalPages - 5 + i;
-                                            } else {
-                                                pageNum = currentPage - 2 + i;
-                                            }
-
-                                            return (
-                                                <button
-                                                    key={pageNum}
-                                                    className={`${styles.pageNum} ${pageNum === currentPage ? styles.active : ''}`}
-                                                    onClick={() => setCurrentPage(pageNum)}
-                                                >
-                                                    {pageNum + 1}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-
-                                    <button
-                                        className={styles.pageBtn}
-                                        onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
-                                        disabled={currentPage === totalPages - 1}
-                                        title="Trang sau"
-                                    >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <polyline points="9,18 15,12 9,6"></polyline>
-                                        </svg>
-                                    </button>
-
-                                    <button
-                                        className={styles.pageBtn}
-                                        onClick={() => setCurrentPage(totalPages - 1)}
-                                        disabled={currentPage === totalPages - 1}
-                                        title="Trang cuối"
-                                    >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <polyline points="13,17 18,12 13,7"></polyline>
-                                            <polyline points="6,17 11,12 6,7"></polyline>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
+                        </div>                        {/* Pagination */}
+                        {totalFilteredPages > 1 && (
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalFilteredPages}
+                                onPageChange={handlePageChange}
+                            />
                         )}
-                    </>
-                ) : (
+                    </>) : (
                     <div className={styles.emptyState}>
                         <div className={styles.emptyIcon}>
                             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">

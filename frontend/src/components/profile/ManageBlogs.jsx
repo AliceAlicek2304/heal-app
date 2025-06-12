@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { formatDateTime, formatDate } from '../../utils/dateUtils';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
 import AdvancedFilter from '../common/AdvancedFilter/AdvancedFilter';
+import Pagination from '../common/Pagination/Pagination';
 import Modal from '../ui/Modal';
 import { blogService } from '../../services/blogService';
 import styles from './ManageBlogs.module.css';
@@ -54,16 +55,28 @@ const ManageBlogs = () => {
     const [rejectionReason, setRejectionReason] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
     const [filters, setFilters] = useState({});
-    const [filteredBlogs, setFilteredBlogs] = useState([]);
-
-    // Pagination
+    const [filteredBlogs, setFilteredBlogs] = useState([]);    // Pagination
     const [currentPage, setCurrentPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [totalElements, setTotalElements] = useState(0);
     const pageSize = 10;
+    const blogsListRef = useRef(null);
 
     const isStaff = user?.role === 'STAFF';
     const isAdmin = user?.role === 'ADMIN';
+
+    // Handle page change with smooth scroll
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+        if (blogsListRef.current) {
+            blogsListRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
 
     useEffect(() => {
         if (isStaff || isAdmin) {
@@ -74,11 +87,11 @@ const ManageBlogs = () => {
     const fetchBlogs = async () => {
         try {
             setLoading(true);
-            const params = { 
-                page: currentPage, 
-                size: pageSize, 
-                sort: 'createdAt', 
-                direction: 'DESC' 
+            const params = {
+                page: currentPage,
+                size: pageSize,
+                sort: 'createdAt',
+                direction: 'DESC'
             };
 
             const response = await blogService.getAllBlogs(params);
@@ -162,13 +175,19 @@ const ManageBlogs = () => {
         }
 
         return filtered;
-    };
-
-    // Effect to apply filters when blogs or filters change
+    };    // Effect to apply filters when blogs or filters change
     useEffect(() => {
         const filtered = applyFilters(blogs, filters);
         setFilteredBlogs(filtered);
+        setCurrentPage(0); // Reset to first page when filters change
     }, [blogs, filters]);
+
+    // Calculate client-side pagination for filtered results
+    const itemsPerPage = 10;
+    const totalFilteredPages = Math.ceil(filteredBlogs.length / itemsPerPage);
+    const startIndex = currentPage * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentItems = filteredBlogs.slice(startIndex, endIndex);
 
     const handleFilterChange = (newFilters) => {
         setFilters(newFilters);
@@ -338,15 +357,13 @@ const ManageBlogs = () => {
                 <div className={styles.statsInfo}>
                     Hiển thị: {filteredBlogs.length}/{blogs.length} blog
                 </div>
-            )}
-
-            {/* Content */}
+            )}            {/* Content */}
             <div className={styles.content}>
                 {filteredBlogs.length > 0 ? (
                     <>
                         {/* Mobile Card View */}
-                        <div className={styles.mobileView}>
-                            {filteredBlogs.map(blog => {
+                        <div ref={blogsListRef} className={styles.mobileView}>
+                            {currentItems.map(blog => {
                                 const statusConfig = getStatusConfig(blog.status);
                                 return (
                                     <div key={blog.id} className={styles.blogCard}>
@@ -447,9 +464,8 @@ const ManageBlogs = () => {
                                             <th>Ngày tạo</th>
                                             <th>Thao tác</th>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        {filteredBlogs.map(blog => {
+                                    </thead>                                    <tbody>
+                                        {currentItems.map(blog => {
                                             const statusConfig = getStatusConfig(blog.status);
                                             return (
                                                 <tr key={blog.id}>
@@ -530,88 +546,13 @@ const ManageBlogs = () => {
                                     </tbody>
                                 </table>
                             </div>
-                        </div>
-
-                        {/* Pagination */}
-                        {totalPages > 1 && (
-                            <div className={styles.pagination}>
-                                <div className={styles.paginationInfo}>
-                                    Hiển thị {currentPage * pageSize + 1} - {Math.min((currentPage + 1) * pageSize, totalElements)} trong tổng số {totalElements} blog
-                                </div>
-
-                                <div className={styles.paginationButtons}>
-                                    <button
-                                        className={styles.pageBtn}
-                                        onClick={() => setCurrentPage(0)}
-                                        disabled={currentPage === 0}
-                                        title="Trang đầu"
-                                    >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <polyline points="11,17 6,12 11,7"></polyline>
-                                            <polyline points="18,17 13,12 18,7"></polyline>
-                                        </svg>
-                                    </button>
-
-                                    <button
-                                        className={styles.pageBtn}
-                                        onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
-                                        disabled={currentPage === 0}
-                                        title="Trang trước"
-                                    >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <polyline points="15,18 9,12 15,6"></polyline>
-                                        </svg>
-                                    </button>
-
-                                    <div className={styles.pageNumbers}>
-                                        {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
-                                            let pageNum;
-                                            if (totalPages <= 5) {
-                                                pageNum = i;
-                                            } else if (currentPage < 3) {
-                                                pageNum = i;
-                                            } else if (currentPage >= totalPages - 3) {
-                                                pageNum = totalPages - 5 + i;
-                                            } else {
-                                                pageNum = currentPage - 2 + i;
-                                            }
-
-                                            return (
-                                                <button
-                                                    key={pageNum}
-                                                    className={`${styles.pageNum} ${pageNum === currentPage ? styles.active : ''}`}
-                                                    onClick={() => setCurrentPage(pageNum)}
-                                                >
-                                                    {pageNum + 1}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-
-                                    <button
-                                        className={styles.pageBtn}
-                                        onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
-                                        disabled={currentPage === totalPages - 1}
-                                        title="Trang sau"
-                                    >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <polyline points="9,18 15,12 9,6"></polyline>
-                                        </svg>
-                                    </button>
-
-                                    <button
-                                        className={styles.pageBtn}
-                                        onClick={() => setCurrentPage(totalPages - 1)}
-                                        disabled={currentPage === totalPages - 1}
-                                        title="Trang cuối"
-                                    >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <polyline points="13,17 18,12 13,7"></polyline>
-                                            <polyline points="6,17 11,12 6,7"></polyline>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
+                        </div>                        {/* Pagination */}
+                        {totalFilteredPages > 1 && (
+                            <Pagination
+                                currentPage={currentPage}
+                                totalPages={totalFilteredPages}
+                                onPageChange={handlePageChange}
+                            />
                         )}
                     </>
                 ) : (
@@ -627,8 +568,8 @@ const ManageBlogs = () => {
                         </div>
                         <h3>Không có blog nào</h3>
                         <p>
-                            {blogs.length === 0 
-                                ? 'Chưa có blog nào được tạo.' 
+                            {blogs.length === 0
+                                ? 'Chưa có blog nào được tạo.'
                                 : 'Không có blog nào phù hợp với bộ lọc hiện tại.'
                             }
                         </p>
@@ -693,7 +634,7 @@ const ManageBlogs = () => {
                             <div className={styles.contentSection}>
                                 <h4>Nội dung blog</h4>
                                 <div className={styles.blogContent}>
-                                    {selectedBlog.content.length > 500 
+                                    {selectedBlog.content.length > 500
                                         ? selectedBlog.content.substring(0, 500) + '...'
                                         : selectedBlog.content
                                     }
@@ -876,7 +817,7 @@ const ManageBlogs = () => {
                                 </svg>
                                 <h4>Bạn có chắc chắn muốn xóa blog này?</h4>
                                 <p>
-                                    <strong>"{selectedBlog.title}"</strong><br/>
+                                    <strong>"{selectedBlog.title}"</strong><br />
                                     Hành động này không thể hoàn tác.
                                 </p>
                             </div>

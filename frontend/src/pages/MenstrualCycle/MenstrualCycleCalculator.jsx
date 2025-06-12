@@ -8,16 +8,30 @@ import Navbar from '../../components/layout/Navbar/Navbar';
 import Footer from '../../components/layout/Footer/Footer';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
 import { formatDate } from '../../utils/dateUtils';
+import { useAuthModal } from '../../hooks/useAuthModal';
+import LoginForm from '../../components/auth/Login/LoginForm';
+import RegisterForm from '../../components/auth/Register/RegisterForm';
 import styles from './MenstrualCycleCalculator.module.css';
 
 const MenstrualCycleCalculator = () => {
     const { user, isAuthenticated } = useAuth();
     const toast = useToast();
+    
+    // Auth modals
+    const {
+        showLoginModal,
+        showRegisterModal,
+        openLoginModal,
+        closeModals,        
+        switchToLogin,
+        switchToRegister
+    } = useAuthModal();
+    
     const [formData, setFormData] = useState({
         startDate: new Date().toISOString().split('T')[0],
         numberOfDays: 5,
         cycleLength: 28,
-    }); const [cycles, setCycles] = useState([]);
+    });const [cycles, setCycles] = useState([]);
     const [selectedCycle, setSelectedCycle] = useState(null);
     const [loading, setLoading] = useState(false);
     const [calculationResult, setCalculationResult] = useState(null);
@@ -208,7 +222,7 @@ const MenstrualCycleCalculator = () => {
             if (!dateTimeString) return 'N/A';
 
             let date;
-            if (Array.isArray(dateTimeString)) {
+            if (Array.isArray(dateTimeString)) {                                                                                                                                      
                 // Backend trả về LocalDateTime dạng [year, month, day, hour, minute, second]
                 const [year, month, day, hour = 0, minute = 0, second = 0] = dateTimeString;
                 date = new Date(year, month - 1, day, hour, minute, second);
@@ -278,9 +292,7 @@ const MenstrualCycleCalculator = () => {
             ...prev,
             [name]: value
         }));
-    };
-
-    if (!isAuthenticated) {
+    };    if (!isAuthenticated) {
         return (
             <div className={styles.authRequired}>
                 <Navbar />
@@ -289,11 +301,39 @@ const MenstrualCycleCalculator = () => {
                     <p>Vui lòng đăng nhập để theo dõi chu kỳ kinh nguyệt của bạn.</p>
                     <button
                         className={styles.loginBtn}
-                        onClick={() => window.location.href = '/login'}
+                        onClick={openLoginModal}
                     >
                         Đăng nhập
                     </button>
                 </div>
+                
+                {/* Login Modal */}
+                {showLoginModal && (
+                    <div className={styles.modalOverlay} onClick={closeModals}>
+                        <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+                            <LoginForm
+                                onClose={closeModals}
+                                onSwitchToRegister={switchToRegister}
+                                onLoginSuccess={() => {
+                                    closeModals();
+                                    toast.success('Đăng nhập thành công!');
+                                }}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {/* Register Modal */}
+                {showRegisterModal && (
+                    <div className={styles.modalOverlay} onClick={closeModals}>
+                        <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+                            <RegisterForm
+                                onClose={closeModals}
+                                onSwitchToLogin={switchToLogin}
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }

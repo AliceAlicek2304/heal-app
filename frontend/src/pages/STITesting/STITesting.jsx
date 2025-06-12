@@ -137,7 +137,7 @@ const STITesting = () => {
     if (loading) return <LoadingSpinner />;
 
     return (
-        <div className={styles.stiTestingPage}>
+        <div className={styles.stiTestingPage}>             
             <Navbar />
             <div className={styles.container}>
                 <div className={styles.stiHeader}>

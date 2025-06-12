@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { consultationService } from '../../services/consultationService';
 import { formatDateTime, parseDate } from '../../utils/dateUtils';
 import AdvancedFilter from '../common/AdvancedFilter/AdvancedFilter';
+import Pagination from '../common/Pagination/Pagination';
 import styles from './ConsultantSchedule.module.css';
 
 const ConsultantSchedule = () => {
@@ -11,10 +12,26 @@ const ConsultantSchedule = () => {
     const navigate = useNavigate();
     const [consultations, setConsultations] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [actionLoading, setActionLoading] = useState({});
+    const [error, setError] = useState(''); const [actionLoading, setActionLoading] = useState({});
     const [filters, setFilters] = useState({});
     const [filteredConsultations, setFilteredConsultations] = useState([]);
+
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(0);
+    const consultationsListRef = useRef(null);
+
+    // Handle page change with smooth scroll
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+        if (consultationsListRef.current) {
+            consultationsListRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
 
     const statusLabels = {
         'PENDING': 'Chờ xác nhận',
@@ -158,13 +175,19 @@ const ConsultantSchedule = () => {
         }
 
         return filtered;
-    };
-
-    // Effect to apply filters when consultations or filters change
+    };    // Effect to apply filters when consultations or filters change
     useEffect(() => {
         const filtered = applyFilters(consultations, filters);
         setFilteredConsultations(filtered);
+        setCurrentPage(0); // Reset to first page when filters change
     }, [consultations, filters]);
+
+    // Calculate client-side pagination for filtered results
+    const itemsPerPage = 10;
+    const totalFilteredPages = Math.ceil(filteredConsultations.length / itemsPerPage);
+    const startIndex = currentPage * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentItems = filteredConsultations.slice(startIndex, endIndex);
 
     const handleFilterChange = (newFilters) => {
         setFilters(newFilters);
@@ -264,9 +287,7 @@ const ConsultantSchedule = () => {
             <div className={styles.statsInfo}>
                 Hiển thị: {filteredConsultations.length}/{consultations.length} cuộc tư vấn
             </div>
-        )}
-
-        {filteredConsultations.length === 0 ? (
+        )}        {filteredConsultations.length === 0 ? (
             consultations.length > 0 ? (
                 <div className={styles.emptyState}>
                     <p>Không có cuộc tư vấn nào phù hợp với bộ lọc</p>
@@ -277,73 +298,82 @@ const ConsultantSchedule = () => {
                 </div>
             )
         ) : (
-            <div className={styles.consultationsList}>
-                {filteredConsultations.map((consultation) => (
-                    <div key={consultation.consultationId} className={styles.consultationCard}>
-                        <div className={styles.consultationHeader}>
-                            <div className={styles.patientInfo}>
-                                <h3>{consultation.customerName || 'Khách hàng'}</h3>
-                                <p className={styles.contactInfo}>
-                                    ID khách hàng: {consultation.customerId}
-                                </p>
+            <>
+                <div ref={consultationsListRef} className={styles.consultationsList}>
+                    {currentItems.map((consultation) => (
+                        <div key={consultation.consultationId} className={styles.consultationCard}>
+                            <div className={styles.consultationHeader}>
+                                <div className={styles.patientInfo}>
+                                    <h3>{consultation.customerName || 'Khách hàng'}</h3>
+                                    <p className={styles.contactInfo}>
+                                        ID khách hàng: {consultation.customerId}
+                                    </p>
+                                </div>
+
+                                <div className={styles.statusBadge}>
+                                    <span
+                                        className={styles.status}
+                                        style={{
+                                            backgroundColor: statusColors[consultation.status],
+                                            color: 'white'
+                                        }}
+                                    >
+                                        {statusLabels[consultation.status]}
+                                    </span>
+                                </div>
                             </div>
 
-                            <div className={styles.statusBadge}>
-                                <span
-                                    className={styles.status}
-                                    style={{
-                                        backgroundColor: statusColors[consultation.status],
-                                        color: 'white'
-                                    }}
-                                >
-                                    {statusLabels[consultation.status]}
-                                </span>
+                            <div className={styles.consultationDetails}>
+                                <div className={styles.detailRow}>
+                                    <strong>Thời gian:</strong> {formatDateTime(consultation.startTime)}
+                                </div>
+
+                                {consultation.endTime && (
+                                    <div className={styles.detailRow}>
+                                        <strong>Kết thúc:</strong> {formatDateTime(consultation.endTime)}
+                                    </div>
+                                )}
+
+                                {consultation.consultationType && (
+                                    <div className={styles.detailRow}>
+                                        <strong>Loại tư vấn:</strong> {consultation.consultationType}
+                                    </div>
+                                )}
+
+                                {consultation.description && (
+                                    <div className={styles.detailRow}>
+                                        <strong>Mô tả:</strong>
+                                        <p className={styles.description}>{consultation.description}</p>
+                                    </div>
+                                )}
+
+                                {consultation.createdAt && (
+                                    <div className={styles.detailRow}>
+                                        <strong>Đặt lịch lúc:</strong> {formatDateTime(consultation.createdAt)}
+                                    </div>
+                                )}                            {consultation.consultantName && (
+                                    <div className={styles.detailRow}>
+                                        <strong>Chuyên gia:</strong> {consultation.consultantName}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className={styles.consultationActions}>
+                                {renderActionButtons(consultation)}
                             </div>
                         </div>
+                    ))}
+                </div>
 
-                        <div className={styles.consultationDetails}>
-                            <div className={styles.detailRow}>
-                                <strong>Thời gian:</strong> {formatDateTime(consultation.startTime)}
-                            </div>
-
-                            {consultation.endTime && (
-                                <div className={styles.detailRow}>
-                                    <strong>Kết thúc:</strong> {formatDateTime(consultation.endTime)}
-                                </div>
-                            )}
-
-                            {consultation.consultationType && (
-                                <div className={styles.detailRow}>
-                                    <strong>Loại tư vấn:</strong> {consultation.consultationType}
-                                </div>
-                            )}
-
-                            {consultation.description && (
-                                <div className={styles.detailRow}>
-                                    <strong>Mô tả:</strong>
-                                    <p className={styles.description}>{consultation.description}</p>
-                                </div>
-                            )}
-
-                            {consultation.createdAt && (
-                                <div className={styles.detailRow}>
-                                    <strong>Đặt lịch lúc:</strong> {formatDateTime(consultation.createdAt)}
-                                </div>
-                            )}
-
-                            {consultation.consultantName && (
-                                <div className={styles.detailRow}>
-                                    <strong>Chuyên gia:</strong> {consultation.consultantName}
-                                </div>
-                            )}
-                        </div>
-
-                        <div className={styles.consultationActions}>
-                            {renderActionButtons(consultation)}
-                        </div>
-                    </div>
-                ))}
-            </div>
+                {/* Pagination */}
+                {totalFilteredPages > 1 && (
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalFilteredPages}
+                        onPageChange={handlePageChange}
+                    />
+                )}
+            </>
         )}
     </div>
     );

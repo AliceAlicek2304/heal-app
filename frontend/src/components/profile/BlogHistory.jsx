@@ -1,20 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { blogService } from '../../services/blogService';
 import { formatDate } from '../../utils/dateUtils';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
 import AdvancedFilter from '../common/AdvancedFilter/AdvancedFilter';
+import Pagination from '../common/Pagination/Pagination';
 import { useToast } from '../../contexts/ToastContext';
 import styles from './BlogHistory.module.css';
 
 const BlogHistory = () => {
     const [posts, setPosts] = useState([]);
     const [page, setPage] = useState(0);
-    const [totalPages, setTotalPages] = useState(0);
-    const [loading, setLoading] = useState(true);
+    const [totalPages, setTotalPages] = useState(0);    const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({});
     const [filteredPosts, setFilteredPosts] = useState([]);
+    
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(0);
+    const postsListRef = useRef(null);
+    
     const toast = useToast();
+
+    // Handle page change with smooth scroll
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+        if (postsListRef.current) {
+            postsListRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
 
     const fetchMyPosts = async () => {
         setLoading(true);
@@ -68,7 +86,7 @@ const BlogHistory = () => {
                     post.title?.toLowerCase().includes(searchLower) ||
                     post.content?.toLowerCase().includes(searchLower) ||
                     post.summary?.toLowerCase().includes(searchLower)
-                );
+                );  
             });
         }
 
@@ -110,13 +128,19 @@ const BlogHistory = () => {
             });
         }
         return filtered;
-    };
-
-    // Effect to apply filters when posts or filters change
+    };    // Effect to apply filters when posts or filters change
     useEffect(() => {
         const filtered = applyFilters(posts, filters);
         setFilteredPosts(filtered);
+        setCurrentPage(0); // Reset to first page when filters change
     }, [posts, filters]);
+
+    // Calculate client-side pagination for filtered results
+    const itemsPerPage = 10;
+    const totalFilteredPages = Math.ceil(filteredPosts.length / itemsPerPage);
+    const startIndex = currentPage * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentItems = filteredPosts.slice(startIndex, endIndex);
 
     const handleFilterChange = (newFilters) => {
         setFilters(newFilters);
@@ -206,12 +230,11 @@ const BlogHistory = () => {
                             Tạo bài viết đầu tiên
                         </Link>
                     </div>
-                )
-            ) : (
+                )            ) : (
                 <>
                     {/* Mobile Card View */}
-                    <div className={styles.mobileView}>
-                        {filteredPosts.map(post => {
+                    <div ref={postsListRef} className={styles.mobileView}>
+                        {currentItems.map(post => {
                             const statusInfo = getStatusInfo(post.status);
                             return (
                                 <div key={post.id} className={styles.postCard}>
@@ -261,9 +284,8 @@ const BlogHistory = () => {
                                         <th>Trạng thái</th>
                                         <th>Hành động</th>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredPosts.map(post => {
+                                </thead>                                <tbody>
+                                    {currentItems.map(post => {
                                         const statusInfo = getStatusInfo(post.status);
                                         return (
                                             <tr key={post.id}>
@@ -301,82 +323,13 @@ const BlogHistory = () => {
                                 </tbody>
                             </table>
                         </div>
-                    </div>
-
-                    {/* Pagination */}
-                    {totalPages > 1 && (
-                        <div className={styles.pagination}>
-                            <button
-                                className={styles.pageBtn}
-                                onClick={() => setPage(0)}
-                                disabled={page === 0}
-                                title="Trang đầu"
-                            >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <polyline points="11,17 6,12 11,7"></polyline>
-                                    <polyline points="18,17 13,12 18,7"></polyline>
-                                </svg>
-                            </button>
-
-                            <button
-                                className={styles.pageBtn}
-                                onClick={() => setPage(Math.max(0, page - 1))}
-                                disabled={page === 0}
-                                title="Trang trước"
-                            >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <polyline points="15,18 9,12 15,6"></polyline>
-                                </svg>
-                            </button>
-
-                            <div className={styles.pageNumbers}>
-                                {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
-                                    let pageNum;
-                                    if (totalPages <= 5) {
-                                        pageNum = i;
-                                    } else if (page < 3) {
-                                        pageNum = i;
-                                    } else if (page >= totalPages - 3) {
-                                        pageNum = totalPages - 5 + i;
-                                    } else {
-                                        pageNum = page - 2 + i;
-                                    }
-
-                                    return (
-                                        <button
-                                            key={pageNum}
-                                            className={`${styles.pageNum} ${pageNum === page ? styles.active : ''}`}
-                                            onClick={() => setPage(pageNum)}
-                                        >
-                                            {pageNum + 1}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-
-                            <button
-                                className={styles.pageBtn}
-                                onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
-                                disabled={page === totalPages - 1}
-                                title="Trang sau"
-                            >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <polyline points="9,18 15,12 9,6"></polyline>
-                                </svg>
-                            </button>
-
-                            <button
-                                className={styles.pageBtn}
-                                onClick={() => setPage(totalPages - 1)}
-                                disabled={page === totalPages - 1}
-                                title="Trang cuối"
-                            >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <polyline points="13,17 18,12 13,7"></polyline>
-                                    <polyline points="6,17 11,12 6,7"></polyline>
-                                </svg>
-                            </button>
-                        </div>
+                    </div>                    {/* Pagination */}
+                    {totalFilteredPages > 1 && (
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalFilteredPages}
+                            onPageChange={handlePageChange}
+                        />
                     )}
                 </>
             )}
