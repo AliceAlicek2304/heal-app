@@ -165,9 +165,7 @@ public class SecurityConfig {
                         // API Questions (Staff actions)
                         .requestMatchers(HttpMethod.PUT, "/questions/{questionId}/status").hasRole("STAFF")
                         .requestMatchers(HttpMethod.GET, "/questions/status/{status}").hasAnyRole("STAFF", "CONSULTANT")
-                        .requestMatchers(HttpMethod.DELETE, "/questions/{questionId}").hasRole("STAFF")
-
-                        // API STI Services (Staff actions)
+                        .requestMatchers(HttpMethod.DELETE, "/questions/{questionId}").hasRole("STAFF")                        // API STI Services (Staff actions)
                         .requestMatchers(HttpMethod.GET, "/sti-services/staff/pending-tests")
                         .hasAnyRole("STAFF", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/sti-services/staff/tests/{testId}/confirm")
@@ -182,6 +180,9 @@ public class SecurityConfig {
                         .hasRole("STAFF")
                         .requestMatchers(HttpMethod.PUT, "/sti-services/staff/tests/{testId}/complete")
                         .hasRole("STAFF")
+
+                        // API Staff Management (Staff endpoints)
+                        .requestMatchers("/staff/**").hasRole("STAFF")
 
                         // ========= ADMIN ENDPOINTS =========
                         // API Category Management (Admin only)
@@ -201,9 +202,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/admin/users/roles").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/admin/users/count").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/admin/users/{userId}").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/admin/users/{userId}").hasRole("ADMIN")
-
-                        // API App Config Management (Admin only)
+                        .requestMatchers(HttpMethod.PUT, "/admin/users/{userId}").hasRole("ADMIN")                        // API App Config Management (Admin only)
                         .requestMatchers(HttpMethod.GET, "/admin/config").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/admin/config").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/admin/config").hasRole("ADMIN")
@@ -212,11 +211,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/admin/config/{key}/inactive").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/admin/config/{key}/active").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/admin/config/{key}/upload").hasRole("ADMIN")
-
-                        // API STI Services Management (Admin only)
-                        .requestMatchers(HttpMethod.POST, "/admin/sti-services").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/admin/sti-services/{serviceId}").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/admin/sti-services/{serviceId}").hasRole("ADMIN")
 
                         // All other admin endpoints
                         .requestMatchers("/admin/**").hasRole("ADMIN")                        // Default rule: all other endpoints require authentication

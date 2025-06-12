@@ -4,15 +4,12 @@ import com.healapp.dto.ApiResponse;
 import com.healapp.dto.ConsultantProfileRequest;
 import com.healapp.dto.ConsultantProfileResponse;
 import com.healapp.dto.CreateConsultantAccountRequest;
-import com.healapp.dto.STIServiceRequest;
-import com.healapp.dto.STIServiceResponse;
 import com.healapp.dto.UserResponse;
 import com.healapp.dto.UserUpdateRequest;
 import com.healapp.model.Payment;
 import com.healapp.service.AppConfigService;
 import com.healapp.service.ConsultantService;
 import com.healapp.service.PaymentService;
-import com.healapp.service.STIServiceService;
 import com.healapp.service.UserService;
 
 import jakarta.validation.Valid;
@@ -30,9 +27,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/admin")
 @PreAuthorize("hasRole('ROLE_ADMIN')")
-public class AdminController {
-
-    @Autowired
+public class AdminController {    @Autowired
     private ConsultantService consultantService;
 
     @Autowired
@@ -40,9 +35,6 @@ public class AdminController {
 
     @Autowired
     private AppConfigService appConfigService;
-
-    @Autowired
-    private STIServiceService stiServiceService;
 
     @Autowired
     private PaymentService paymentService;
@@ -149,40 +141,6 @@ public class AdminController {
         return getResponseEntity(response);
     }
 
-    // ========= STI SERVICES WITH COMPONENTS MANAGEMENT =========
-
-    @PostMapping("/sti-services")
-    public ResponseEntity<ApiResponse<STIServiceResponse>> createSTIServiceWithComponents(
-            @Valid @RequestBody STIServiceRequest request) {
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        Long adminUserId = userService.getUserIdFromUsername(username);
-
-        ApiResponse<STIServiceResponse> response = stiServiceService.createServiceWithComponents(request, adminUserId);
-        return getResponseEntity(response);
-    }
-
-    @PutMapping("/sti-services/{serviceId}")
-    public ResponseEntity<ApiResponse<STIServiceResponse>> updateSTIServiceWithComponents(
-            @PathVariable Long serviceId,
-            @Valid @RequestBody STIServiceRequest request) {
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        Long adminUserId = userService.getUserIdFromUsername(username);
-
-        ApiResponse<STIServiceResponse> response = stiServiceService.updateServiceWithComponents(serviceId, request,
-                adminUserId);
-        return getResponseEntity(response);
-    }
-
-    @GetMapping("/sti-services/{serviceId}")
-    public ResponseEntity<ApiResponse<STIServiceResponse>> getSTIServiceWithComponents(@PathVariable Long serviceId) {
-        ApiResponse<STIServiceResponse> response = stiServiceService.getServiceWithComponents(serviceId);
-        return getResponseEntity(response);
-    }
-
     // ========== PAYMENT MANAGEMENT ==========
 
     @GetMapping("/payments")
@@ -199,14 +157,10 @@ public class AdminController {
 
         ApiResponse<Payment> response = paymentService.getPaymentByIdAdmin(paymentId);
         return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/payments/{paymentId}/refund")
+    }    @PostMapping("/payments/{paymentId}/refund")
     public ResponseEntity<ApiResponse<Payment>> processRefund(
             @PathVariable Long paymentId,
             @RequestBody Map<String, String> request) {
-
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
         String reason = request.get("reason");
 

@@ -42,8 +42,8 @@ public class STIServiceServiceTest {
 
     @InjectMocks
     private STIServiceService stiServiceService;
-
     private UserDtls adminUser;
+    private UserDtls staffUser;
     private UserDtls regularUser;
     private STIService stiService;
     private STIServiceRequest validRequest;
@@ -51,6 +51,7 @@ public class STIServiceServiceTest {
 
     // Cập nhật: Thêm Role entities
     private Role adminRole;
+    private Role staffRole;
     private Role userRole;
 
     @BeforeEach
@@ -61,8 +62,13 @@ public class STIServiceServiceTest {
         adminRole.setRoleName("ADMIN");
         adminRole.setDescription("Administrator role");
 
+        staffRole = new Role();
+        staffRole.setRoleId(2L);
+        staffRole.setRoleName("STAFF");
+        staffRole.setDescription("Staff role");
+
         userRole = new Role();
-        userRole.setRoleId(2L);
+        userRole.setRoleId(3L);
         userRole.setRoleName("USER");
         userRole.setDescription("Regular user role");
 
@@ -73,9 +79,16 @@ public class STIServiceServiceTest {
         adminUser.setFullName("Admin User");
         adminUser.setRole(adminRole);
 
+        // Cập nhật: Khởi tạo user staff với Role entity
+        staffUser = new UserDtls();
+        staffUser.setId(2L);
+        staffUser.setUsername("staff");
+        staffUser.setFullName("Staff User");
+        staffUser.setRole(staffRole);
+
         // Cập nhật: Khởi tạo user thường với Role entity
         regularUser = new UserDtls();
-        regularUser.setId(2L);
+        regularUser.setId(3L);
         regularUser.setUsername("user");
         regularUser.setFullName("Regular User");
         regularUser.setRole(userRole);
@@ -128,8 +141,8 @@ public class STIServiceServiceTest {
     }
 
     @Test
-    @DisplayName("Tạo dịch vụ STI với các thành phần xét nghiệm - Thành công")
-    void createServiceWithComponents_Success() {
+    @DisplayName("Tạo dịch vụ STI với các thành phần xét nghiệm - Thành công (Admin)")
+    void createServiceWithComponents_Success_Admin() {
         // Chuẩn bị dữ liệu
         when(userRepository.findById(adminUser.getId())).thenReturn(Optional.of(adminUser));
         when(stiServiceRepository.existsByNameIgnoreCase(anyString())).thenReturn(false);
@@ -152,8 +165,32 @@ public class STIServiceServiceTest {
     }
 
     @Test
-    @DisplayName("Tạo dịch vụ STI - Thất bại do người dùng không phải Admin")
-    void createServiceWithComponents_NotAdmin() {
+    @DisplayName("Tạo dịch vụ STI với các thành phần xét nghiệm - Thành công (Staff)")
+    void createServiceWithComponents_Success_Staff() {
+        // Chuẩn bị dữ liệu
+        when(userRepository.findById(staffUser.getId())).thenReturn(Optional.of(staffUser));
+        when(stiServiceRepository.existsByNameIgnoreCase(anyString())).thenReturn(false);
+        when(stiServiceRepository.save(any(STIService.class))).thenReturn(stiService);
+        when(stiServiceRepository.findByIdWithComponents(anyLong())).thenReturn(Optional.of(stiService));
+        when(serviceTestComponentRepository.save(any(ServiceTestComponent.class))).thenReturn(testComponents.get(0));
+
+        // Thực hiện hành động
+        ApiResponse<STIServiceResponse> response = stiServiceService.createServiceWithComponents(validRequest,
+                staffUser.getId());
+
+        // Kiểm tra kết quả
+        assertTrue(response.isSuccess());
+        assertEquals("STI service with components created successfully", response.getMessage());
+        assertNotNull(response.getData());
+        assertEquals(stiService.getName(), response.getData().getName());
+        assertEquals(2, response.getData().getComponentCount());
+        verify(stiServiceRepository, times(1)).save(any(STIService.class));
+        verify(serviceTestComponentRepository, times(2)).save(any(ServiceTestComponent.class));
+    }
+
+    @Test
+    @DisplayName("Tạo dịch vụ STI - Thất bại do người dùng không có quyền")
+    void createServiceWithComponents_NotAuthorized() {
         // Chuẩn bị dữ liệu
         when(userRepository.findById(regularUser.getId())).thenReturn(Optional.of(regularUser));
 
@@ -163,7 +200,7 @@ public class STIServiceServiceTest {
 
         // Kiểm tra kết quả
         assertFalse(response.isSuccess());
-        assertEquals("Only ADMIN can create STI services", response.getMessage());
+        assertEquals("Only ADMIN and STAFF can create STI services", response.getMessage());
         verify(stiServiceRepository, never()).save(any(STIService.class));
     }
 
@@ -185,8 +222,8 @@ public class STIServiceServiceTest {
     }
 
     @Test
-    @DisplayName("Cập nhật dịch vụ STI với các thành phần - Thành công")
-    void updateServiceWithComponents_Success() {
+    @DisplayName("Cập nhật dịch vụ STI với các thành phần - Thành công (Admin)")
+    void updateServiceWithComponents_Success_Admin() {
         // Chuẩn bị dữ liệu
         when(userRepository.findById(adminUser.getId())).thenReturn(Optional.of(adminUser));
         when(stiServiceRepository.findById(anyLong())).thenReturn(Optional.of(stiService));
@@ -197,6 +234,29 @@ public class STIServiceServiceTest {
         // Thực hiện hành động
         ApiResponse<STIServiceResponse> response = stiServiceService.updateServiceWithComponents(
                 stiService.getServiceId(), validRequest, adminUser.getId());
+
+        // Kiểm tra kết quả
+        assertTrue(response.isSuccess());
+        assertEquals("STI service updated successfully", response.getMessage());
+        assertNotNull(response.getData());
+        assertEquals(stiService.getName(), response.getData().getName());
+        verify(stiServiceRepository, times(1)).save(any(STIService.class));
+        verify(serviceTestComponentRepository, times(1)).deleteByStiServiceServiceId(anyLong());
+    }
+
+    @Test
+    @DisplayName("Cập nhật dịch vụ STI với các thành phần - Thành công (Staff)")
+    void updateServiceWithComponents_Success_Staff() {
+        // Chuẩn bị dữ liệu
+        when(userRepository.findById(staffUser.getId())).thenReturn(Optional.of(staffUser));
+        when(stiServiceRepository.findById(anyLong())).thenReturn(Optional.of(stiService));
+        when(stiServiceRepository.findByNameIgnoreCase(anyString())).thenReturn(Optional.of(stiService));
+        when(stiServiceRepository.save(any(STIService.class))).thenReturn(stiService);
+        when(stiServiceRepository.findByIdWithComponents(anyLong())).thenReturn(Optional.of(stiService));
+
+        // Thực hiện hành động
+        ApiResponse<STIServiceResponse> response = stiServiceService.updateServiceWithComponents(
+                stiService.getServiceId(), validRequest, staffUser.getId());
 
         // Kiểm tra kết quả
         assertTrue(response.isSuccess());
@@ -297,8 +357,8 @@ public class STIServiceServiceTest {
     }
 
     @Test
-    @DisplayName("Tạo dịch vụ STI - Thất bại do không tìm thấy Admin")
-    void createServiceWithComponents_AdminNotFound() {
+    @DisplayName("Tạo dịch vụ STI - Thất bại do không tìm thấy User")
+    void createServiceWithComponents_UserNotFound() {
         // Chuẩn bị dữ liệu
         when(userRepository.findById(anyLong())).thenReturn(Optional.empty());
 
@@ -307,7 +367,7 @@ public class STIServiceServiceTest {
 
         // Kiểm tra kết quả
         assertFalse(response.isSuccess());
-        assertEquals("Admin user not found", response.getMessage());
+        assertEquals("User not found", response.getMessage());
     }
 
     @Test
@@ -348,8 +408,8 @@ public class STIServiceServiceTest {
     }
 
     @Test
-    @DisplayName("Cập nhật dịch vụ STI - Thất bại do người dùng không phải Admin")
-    void updateServiceWithComponents_NotAdmin() {
+    @DisplayName("Cập nhật dịch vụ STI - Thất bại do người dùng không có quyền")
+    void updateServiceWithComponents_NotAuthorized() {
         // Chuẩn bị dữ liệu
         when(userRepository.findById(regularUser.getId())).thenReturn(Optional.of(regularUser));
 
@@ -359,7 +419,7 @@ public class STIServiceServiceTest {
 
         // Kiểm tra kết quả
         assertFalse(response.isSuccess());
-        assertEquals("Only ADMIN can update STI services", response.getMessage());
+        assertEquals("Only ADMIN and STAFF can update STI services", response.getMessage());
         verify(stiServiceRepository, never()).save(any(STIService.class));
     }
 
@@ -375,7 +435,7 @@ public class STIServiceServiceTest {
 
         // Kiểm tra kết quả
         assertFalse(response.isSuccess());
-        assertEquals("Admin user not found", response.getMessage());
+        assertEquals("User not found", response.getMessage());
         verify(stiServiceRepository, never()).save(any(STIService.class));
     }
 
@@ -445,5 +505,49 @@ public class STIServiceServiceTest {
         assertFalse(response.isSuccess());
         assertTrue(response.getMessage().contains("Failed to retrieve STI service"));
         assertNull(response.getData());
+    }
+
+    @Test
+    @DisplayName("Tạo dịch vụ STI - Thất bại do người dùng không có role")
+    void createServiceWithComponents_UserWithoutRole() {
+        // Chuẩn bị dữ liệu - user không có role
+        UserDtls userWithoutRole = new UserDtls();
+        userWithoutRole.setId(4L);
+        userWithoutRole.setUsername("noRole");
+        userWithoutRole.setFullName("User Without Role");
+        userWithoutRole.setRole(null);
+
+        when(userRepository.findById(userWithoutRole.getId())).thenReturn(Optional.of(userWithoutRole));
+
+        // Thực hiện hành động
+        ApiResponse<STIServiceResponse> response = stiServiceService.createServiceWithComponents(validRequest,
+                userWithoutRole.getId());
+
+        // Kiểm tra kết quả
+        assertFalse(response.isSuccess());
+        assertEquals("Only ADMIN and STAFF can create STI services", response.getMessage());
+        verify(stiServiceRepository, never()).save(any(STIService.class));
+    }
+
+    @Test
+    @DisplayName("Cập nhật dịch vụ STI - Thất bại do người dùng không có role")
+    void updateServiceWithComponents_UserWithoutRole() {
+        // Chuẩn bị dữ liệu - user không có role
+        UserDtls userWithoutRole = new UserDtls();
+        userWithoutRole.setId(4L);
+        userWithoutRole.setUsername("noRole");
+        userWithoutRole.setFullName("User Without Role");
+        userWithoutRole.setRole(null);
+
+        when(userRepository.findById(userWithoutRole.getId())).thenReturn(Optional.of(userWithoutRole));
+
+        // Thực hiện hành động
+        ApiResponse<STIServiceResponse> response = stiServiceService.updateServiceWithComponents(
+                stiService.getServiceId(), validRequest, userWithoutRole.getId());
+
+        // Kiểm tra kết quả
+        assertFalse(response.isSuccess());
+        assertEquals("Only ADMIN and STAFF can update STI services", response.getMessage());
+        verify(stiServiceRepository, never()).save(any(STIService.class));
     }
 }

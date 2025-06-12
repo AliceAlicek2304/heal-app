@@ -11,12 +11,9 @@ import com.healapp.repository.ServiceTestComponentRepository;
 import com.healapp.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,30 +29,30 @@ public class STIServiceService {
 
     @Autowired
     private UserRepository userRepository;
-
+    
     /**
-     * Tạo dịch vụ xét nghiệm mới với các components (ADMIN only)
+     * Tạo dịch vụ xét nghiệm mới với các components (ADMIN and STAFF only)
      */
     @Transactional
-    public ApiResponse<STIServiceResponse> createServiceWithComponents(STIServiceRequest request, Long adminUserId) {
-        try {
-            log.info("Creating STI service: {} by user: {}", request.getName(), adminUserId);
+    public ApiResponse<STIServiceResponse> createServiceWithComponents(STIServiceRequest request, Long userId) {
+        try {                                                                                                                           
+            log.info("Creating STI service: {} by user: {}", request.getName(), userId);
 
-            // Kiểm tra admin user
-            Optional<UserDtls> adminOpt = userRepository.findById(adminUserId);
-            if (adminOpt.isEmpty()) {
-                log.error("Admin user not found: {}", adminUserId);
-                return ApiResponse.error("Admin user not found");
+            // Kiểm tra user có quyền
+            Optional<UserDtls> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) {
+                log.error("User not found: {}", userId);
+                return ApiResponse.error("User not found");
             }
 
-            UserDtls admin = adminOpt.get();
+            UserDtls user = userOpt.get();
             // Cập nhật: Kiểm tra role thông qua Role entity
-            String roleName = admin.getRole() != null ? admin.getRole().getRoleName() : null;
-            log.info("Admin found: {} with role: {}", admin.getUsername(), roleName);
+            String roleName = user.getRole() != null ? user.getRole().getRoleName() : null;
+            log.info("User found: {} with role: {}", user.getUsername(), roleName);
 
-            if (!"ADMIN".equals(roleName)) {
-                log.error("User {} is not ADMIN, role: {}", admin.getUsername(), roleName);
-                return ApiResponse.error("Only ADMIN can create STI services");
+            if (!"ADMIN".equals(roleName) && !"STAFF".equals(roleName)) {
+                log.error("User {} does not have permission, role: {}", user.getUsername(), roleName);
+                return ApiResponse.error("Only ADMIN and STAFF can create STI services");
             }
 
             // Kiểm tra tên dịch vụ đã tồn tại
@@ -102,9 +99,8 @@ public class STIServiceService {
                     .orElse(savedService);
 
             STIServiceResponse response = convertToResponseWithComponents(serviceWithComponents);
-
-            log.info("STI Service with components created successfully by admin: {} - Service ID: {}",
-                    admin.getUsername(), savedService.getServiceId());
+            log.info("STI Service with components created successfully by user: {} - Service ID: {}",
+                    user.getUsername(), savedService.getServiceId());
 
             return ApiResponse.success("STI service with components created successfully", response);
 
@@ -115,23 +111,23 @@ public class STIServiceService {
     }
 
     /**
-     * Cập nhật dịch vụ và components (ADMIN only)
+     * Cập nhật dịch vụ và components (ADMIN and STAFF only)
      */
     @Transactional
     public ApiResponse<STIServiceResponse> updateServiceWithComponents(Long serviceId, STIServiceRequest request,
-            Long adminUserId) {
+            Long userId) {
         try {
-            // Kiểm tra admin user
-            Optional<UserDtls> adminOpt = userRepository.findById(adminUserId);
-            if (adminOpt.isEmpty()) {
-                return ApiResponse.error("Admin user not found");
+            // Kiểm tra user có quyền
+            Optional<UserDtls> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ApiResponse.error("User not found");
             }
 
-            UserDtls admin = adminOpt.get();
+            UserDtls user = userOpt.get();
             // Cập nhật: Kiểm tra role thông qua Role entity
-            String roleName = admin.getRole() != null ? admin.getRole().getRoleName() : null;
-            if (!"ADMIN".equals(roleName)) {
-                return ApiResponse.error("Only ADMIN can update STI services");
+            String roleName = user.getRole() != null ? user.getRole().getRoleName() : null;
+            if (!"ADMIN".equals(roleName) && !"STAFF".equals(roleName)) {
+                return ApiResponse.error("Only ADMIN and STAFF can update STI services");
             }
 
             // Tìm dịch vụ cần cập nhật
@@ -177,9 +173,8 @@ public class STIServiceService {
                     .orElse(updatedService);
 
             STIServiceResponse response = convertToResponse(serviceWithComponents);
-
-            log.info("STI Service updated successfully by admin: {} - Service ID: {}",
-                    admin.getUsername(), serviceId);
+            log.info("STI Service updated successfully by user: {} - Service ID: {}",
+                    user.getUsername(), serviceId);
 
             return ApiResponse.success("STI service updated successfully", response);
 
