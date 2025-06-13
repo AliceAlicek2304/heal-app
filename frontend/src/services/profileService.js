@@ -130,5 +130,43 @@ export const profileService = {
         } catch (error) {
             return { success: false, message: 'Không thể kết nối đến server' };
         }
-    }
+    },
+
+    // Phone verification services
+    sendPhoneVerification: async (phoneData) => {
+        try {
+            const response = await authService.apiCall(`${API_BASE_URL}/users/profile/phone/send-verification`, {
+                method: 'POST',
+                body: JSON.stringify({ phone: phoneData.phone })
+            });
+
+            if (response.status === 401) {
+                authService.logout();
+                return { success: false, message: 'Chưa đăng nhập' };
+            }
+
+            return response.json();
+        } catch (error) {
+            return { success: false, message: 'Không thể kết nối đến server' };
+        }
+    },    verifyPhone: async (verificationData) => {
+        try {
+            const response = await authService.apiCall(`${API_BASE_URL}/users/profile/phone/verify`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    phone: verificationData.phone, // Send clean phone number
+                    verificationCode: verificationData.otp // Use correct field name
+                })
+            });
+
+            if (response.status === 401) {
+                authService.logout();
+                return { success: false, message: 'Chưa đăng nhập' };
+            }
+
+            return response.json();
+        } catch (error) {
+            return { success: false, message: 'Không thể kết nối đến server' };
+        }
+    },
 };

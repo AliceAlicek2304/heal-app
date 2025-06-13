@@ -14,12 +14,6 @@ const STATUS_CLASS = {
     COMPLETED: styles.badgeCompleted
 };
 
-const PAYMENT_METHOD_TEXT = {
-    COD: 'Thanh toán trực tiếp',
-    VISA: 'Thẻ Visa/MasterCard',
-    BANK_TRANSFER: 'Chuyển khoản ngân hàng'
-};
-
 const ConsultationHistory = () => {
     const toast = useToast();
     const [consultations, setConsultations] = useState([]);
@@ -94,11 +88,6 @@ const ConsultationHistory = () => {
         if (e.target.classList.contains(styles.modalBackdrop)) {
             handleCloseModal();
         }
-    };
-
-    const formatPrice = (price) => {
-        if (!price) return 'Chưa xác định';
-        return new Intl.NumberFormat('vi-VN').format(price) + ' VNĐ';
     };
 
     const handleRetry = () => {
@@ -272,9 +261,7 @@ const ConsultationHistory = () => {
                                     <span className={`${styles.statusBadge} ${STATUS_CLASS[consultation.status] || ''}`}>
                                         {getStatusText(consultation.status)}
                                     </span>
-                                </div>
-
-                                <div className={styles.cardContent}>
+                                </div>                                <div className={styles.cardContent}>
                                     <div className={styles.timeInfo}>
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -287,21 +274,6 @@ const ConsultationHistory = () => {
                                             <div className={styles.time}>
                                                 {formatTime(consultation.startTime)} - {formatTime(consultation.endTime)}
                                             </div>
-                                        </div>
-                                    </div>
-
-                                    <div className={styles.priceInfo}>
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <line x1="12" y1="1" x2="12" y2="23"></line>
-                                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                                        </svg>
-                                        <div>
-                                            <div className={styles.price}>{formatPrice(consultation.price)}</div>
-                                            {consultation.paymentMethod && (
-                                                <div className={styles.paymentMethod}>
-                                                    {PAYMENT_METHOD_TEXT[consultation.paymentMethod] || consultation.paymentMethod}
-                                                </div>
-                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -343,11 +315,11 @@ const ConsultationHistory = () => {
                                         <th>Chuyên gia tư vấn</th>
                                         <th>Thời gian</th>
                                         <th>Trạng thái</th>
-                                        <th>Giá</th>
                                         <th>Ngày tạo</th>
                                         <th>Hành động</th>
                                     </tr>
-                                </thead>                                <tbody>
+                                </thead>
+                                <tbody>
                                     {currentItems.map(consultation => (
                                         <tr key={consultation.consultationId}>
                                             <td>
@@ -369,21 +341,10 @@ const ConsultationHistory = () => {
                                                         {formatTime(consultation.startTime)} - {formatTime(consultation.endTime)}
                                                     </div>
                                                 </div>
-                                            </td>
-                                            <td>
+                                            </td>                                            <td>
                                                 <span className={`${styles.statusBadge} ${STATUS_CLASS[consultation.status] || ''}`}>
                                                     {getStatusText(consultation.status)}
                                                 </span>
-                                            </td>
-                                            <td>
-                                                <div className={styles.priceCell}>
-                                                    <strong className={styles.priceTable}>{formatPrice(consultation.price)}</strong>
-                                                    {consultation.paymentMethod && (
-                                                        <div className={styles.paymentMethodTable}>
-                                                            {PAYMENT_METHOD_TEXT[consultation.paymentMethod] || consultation.paymentMethod}
-                                                        </div>
-                                                    )}
-                                                </div>
                                             </td>
                                             <td>
                                                 <span className={styles.dateCell}>{formatDate(consultation.createdAt)}</span>
@@ -496,30 +457,8 @@ const ConsultationHistory = () => {
                                         <a href={selectedConsultation.meetUrl} target="_blank" rel="noopener noreferrer" className={styles.meetLink}>
                                             {selectedConsultation.meetUrl}
                                         </a>
-                                    </div>
-                                )}
+                                    </div>)}
                             </div>
-
-                            <div className={styles.detailSection}>
-                                <h4>Thông tin thanh toán</h4>
-                                <div className={styles.detailRow}>
-                                    <strong>Giá:</strong>
-                                    <span>{formatPrice(selectedConsultation.price)}</span>
-                                </div>
-                                {selectedConsultation.paymentMethod && (
-                                    <div className={styles.detailRow}>
-                                        <strong>Phương thức thanh toán:</strong>
-                                        <span>{PAYMENT_METHOD_TEXT[selectedConsultation.paymentMethod] || selectedConsultation.paymentMethod}</span>
-                                    </div>
-                                )}
-                                {selectedConsultation.paymentDate && (
-                                    <div className={styles.detailRow}>
-                                        <strong>Ngày thanh toán:</strong>
-                                        <span>{formatDateTime(selectedConsultation.paymentDate)}</span>
-                                    </div>
-                                )}
-                            </div>
-
                             <div className={styles.detailSection}>
                                 <h4>Thông tin khác</h4>
                                 <div className={styles.detailRow}>

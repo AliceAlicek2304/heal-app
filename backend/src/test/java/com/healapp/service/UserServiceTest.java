@@ -68,6 +68,12 @@ class UserServiceTest {
     @Mock
     private RoleService roleService;
 
+    @Mock
+    private PhoneVerificationService phoneVerificationService;
+
+    @Mock
+    private FirebaseSMSService firebaseSMSService;
+
     @InjectMocks
     private UserService userService;
 
@@ -740,20 +746,20 @@ class UserServiceTest {
         verify(userRepository).count();
     }
 
-    // Profile update tests
-    @Test
+    // Profile update tests    @Test
     @DisplayName("Cập nhật thông tin cơ bản thành công")
     void updateBasicProfile_Success() {
         UpdateProfileRequest request = new UpdateProfileRequest();
         request.setFullName("Updated Name");
-        request.setPhone("0987654321");
         request.setBirthDay(LocalDate.of(1991, 2, 20));
+        request.setGender("Nữ");
 
         UserDtls updatedUser = new UserDtls();
         updatedUser.setId(1L);
         updatedUser.setFullName("Updated Name");
-        updatedUser.setPhone("0987654321");
+        updatedUser.setPhone("0123456789"); // Phone không thay đổi từ update basic profile
         updatedUser.setBirthDay(LocalDate.of(1991, 2, 20));
+        updatedUser.setGender(Gender.FEMALE);
         updatedUser.setRole(userRole);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
@@ -762,6 +768,9 @@ class UserServiceTest {
         ApiResponse<UserResponse> response = userService.updateBasicProfile(1L, request);
 
         assertTrue(response.isSuccess());
+        assertEquals("Updated Name", response.getData().getFullName());
+        // Phone không được thay đổi từ basic profile update
+        assertEquals("0123456789", response.getData().getPhone());
         assertEquals("Basic profile updated successfully", response.getMessage());
         assertNotNull(response.getData());
         assertEquals("Updated Name", response.getData().getFullName());
@@ -1173,9 +1182,7 @@ class UserServiceTest {
         user.setIsActive(true);
         user.setCreatedDate(LocalDateTime.now());
         return user;
-    }
-
-    // Additional helper method for UserResponse mapping
+    }    // Additional helper method for UserResponse mapping
     private UserResponse createUserResponse(UserDtls user) {
         UserResponse response = new UserResponse();
         response.setId(user.getId());
@@ -1183,11 +1190,154 @@ class UserServiceTest {
         response.setFullName(user.getFullName());
         response.setEmail(user.getEmail());
         response.setPhone(user.getPhone());
+        response.setIsPhoneVerified(false); // Default to false for test
         response.setBirthDay(user.getBirthDay());
         response.setAvatar(user.getAvatar());
         response.setIsActive(user.getIsActive());
         response.setRole(user.getRole() != null ? user.getRole().getRoleName() : null);
         response.setCreatedDate(user.getCreatedDate());
         return response;
+    }
+
+    // ===================== PHONE VERIFICATION TESTS =====================
+
+    @Test
+    @DisplayName("Gửi mã xác thực số điện thoại thành công")
+    void sendPhoneVerificationCode_Success() throws Exception {
+        PhoneVerificationRequest request = new PhoneVerificationRequest();
+        request.setPhone("0987654321");
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
+        when(phoneVerificationService.normalizePhone("0987654321")).thenReturn("0987654321");
+        when(phoneVerificationService.getOriginalPhone("0123456789")).thenReturn("0123456789");
+        when(phoneVerificationService.isSamePhone("0123456789", "0987654321")).thenReturn(false);
+        when(phoneVerificationService.generateVerificationCode("0987654321")).thenReturn("123456");
+        when(firebaseSMSService.sendVerificationCode("0987654321", "123456")).thenReturn(true);
+        when(phoneVerificationService.getOriginalPhone("0987654321")).thenReturn("0987654321");
+
+        ApiResponse<String> response = userService.sendPhoneVerificationCode(1L, request);
+
+        assertTrue(response.isSuccess());
+        assertEquals("0987654321", response.getData());
+        verify(phoneVerificationService).generateVerificationCode("0987654321");
+        verify(firebaseSMSService).sendVerificationCode("0987654321", "123456");
+    }
+
+    @Test
+    @DisplayName("Gửi mã xác thực số điện thoại thất bại - số điện thoại giống số hiện tại")
+    void sendPhoneVerificationCode_SameAsCurrentPhone() throws Exception {
+        PhoneVerificationRequest request = new PhoneVerificationRequest();
+        request.setPhone("0123456789");
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
+        when(phoneVerificationService.normalizePhone("0123456789")).thenReturn("0123456789");
+        when(phoneVerificationService.getOriginalPhone("0123456789")).thenReturn("0123456789");
+        when(phoneVerificationService.isSamePhone("0123456789", "0123456789")).thenReturn(true);
+
+        ApiResponse<String> response = userService.sendPhoneVerificationCode(1L, request);
+
+        assertFalse(response.isSuccess());
+        assertEquals("New phone number cannot be the same as current phone", response.getMessage());
+    }    @Test
+    @DisplayName("Xác thực và cập nhật số điện thoại thành công")
+    void verifyAndUpdatePhone_Success() {
+        VerifyPhoneRequest request = new VerifyPhoneRequest();
+        request.setPhone("0987654321");
+        request.setVerificationCode("123456");
+
+        UserDtls updatedUser = new UserDtls();
+        updatedUser.setId(1L);
+        updatedUser.setFullName("Test User");
+        updatedUser.setPhone("0987654321_V"); // Phone với suffix xác thực
+        updatedUser.setRole(userRole);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
+        when(phoneVerificationService.normalizePhone("0987654321")).thenReturn("0987654321");
+        when(phoneVerificationService.verifyCode("0987654321", "123456")).thenReturn(true);
+        when(phoneVerificationService.markPhoneAsVerified("0987654321")).thenReturn("0987654321_V");
+        when(userRepository.save(any(UserDtls.class))).thenReturn(updatedUser);
+        
+        // Mock cho mapUserToResponse - cover tất cả các case
+        when(phoneVerificationService.getOriginalPhone(anyString())).thenReturn("0987654321");
+        when(phoneVerificationService.isPhoneVerified(anyString())).thenReturn(true);
+
+        ApiResponse<UserResponse> response = userService.verifyAndUpdatePhone(1L, request);
+
+        assertTrue(response.isSuccess());
+        assertEquals("0987654321", response.getData().getPhone());
+        assertTrue(response.getData().getIsPhoneVerified());
+        verify(phoneVerificationService).verifyCode("0987654321", "123456");
+        verify(phoneVerificationService).markPhoneAsVerified("0987654321");
+    }
+
+    @Test
+    @DisplayName("Xác thực số điện thoại thất bại - mã không hợp lệ")
+    void verifyAndUpdatePhone_InvalidCode() {
+        VerifyPhoneRequest request = new VerifyPhoneRequest();
+        request.setPhone("0987654321");
+        request.setVerificationCode("999999");
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
+        when(phoneVerificationService.normalizePhone("0987654321")).thenReturn("0987654321");
+        when(phoneVerificationService.verifyCode("0987654321", "999999")).thenReturn(false);
+
+        ApiResponse<UserResponse> response = userService.verifyAndUpdatePhone(1L, request);
+
+        assertFalse(response.isSuccess());
+        assertEquals("Invalid or expired verification code", response.getMessage());
+    }
+
+    @Test
+    @DisplayName("Lấy trạng thái xác thực số điện thoại thành công")
+    void getPhoneVerificationStatus_Success() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
+        when(phoneVerificationService.isPhoneVerified("0123456789")).thenReturn(false);
+        when(phoneVerificationService.getOriginalPhone("0123456789")).thenReturn("0123456789");
+
+        ApiResponse<Map<String, Object>> response = userService.getPhoneVerificationStatus(1L);
+
+        assertTrue(response.isSuccess());
+        Map<String, Object> data = response.getData();
+        assertEquals(true, data.get("hasPhone"));
+        assertEquals("0123456789", data.get("phone"));
+        assertEquals(false, data.get("isVerified"));
+    }
+
+    @Test
+    @DisplayName("Lấy trạng thái xác thực số điện thoại - không có số điện thoại")
+    void getPhoneVerificationStatus_NoPhone() {
+        UserDtls userWithoutPhone = new UserDtls();
+        userWithoutPhone.setId(1L);
+        userWithoutPhone.setPhone(null);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(userWithoutPhone));
+
+        ApiResponse<Map<String, Object>> response = userService.getPhoneVerificationStatus(1L);
+
+        assertTrue(response.isSuccess());
+        Map<String, Object> data = response.getData();
+        assertEquals(false, data.get("hasPhone"));
+        assertEquals(null, data.get("phone"));
+        assertEquals(false, data.get("isVerified"));
+    }
+
+    @Test
+    @DisplayName("getUserIdByUsername thành công")
+    void getUserIdByUsername_Success() {
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(sampleUser));
+
+        Long userId = userService.getUserIdByUsername("testuser");
+
+        assertEquals(1L, userId);
+    }
+
+    @Test
+    @DisplayName("getUserIdByUsername - user không tồn tại")
+    void getUserIdByUsername_UserNotFound() {
+        when(userRepository.findByUsername("nonexistent")).thenReturn(Optional.empty());
+
+        Long userId = userService.getUserIdByUsername("nonexistent");
+
+        assertNull(userId);
     }
 }

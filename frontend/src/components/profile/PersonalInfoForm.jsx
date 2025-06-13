@@ -8,11 +8,9 @@ import styles from './PersonalInfoForm.module.css';
 
 const PersonalInfoForm = () => {
     const { user, updateUser, isLoading } = useAuth();
-    const toast = useToast();
-    const [formData, setFormData] = useState({
+    const toast = useToast(); const [formData, setFormData] = useState({
         fullName: '',
         birthDay: '',
-        phone: '',
         gender: '',
     });
     const [loading, setLoading] = useState(false);
@@ -33,12 +31,9 @@ const PersonalInfoForm = () => {
                     formattedBirthDay = '';
                 }
             }
-        }
-
-        const newFormData = {
+        } const newFormData = {
             fullName: userData.fullName || '',
             birthDay: formattedBirthDay,
-            phone: userData.phone || '',
             gender: userData.gender || '',
         };
 
@@ -56,7 +51,7 @@ const PersonalInfoForm = () => {
     useEffect(() => {
         if (!isLoading && user) {
             setUserDataToForm(user);
-            
+
             // Check if user data is incomplete (missing fullName, avatar, etc.)
             if (!user.fullName && !user.avatar && user.username && user.email) {
                 handleRefreshUserData();
@@ -135,14 +130,7 @@ const PersonalInfoForm = () => {
         if (!formData.fullName.trim()) {
             toast.error('Vui lòng nhập họ và tên');
             return;
-        }
-
-        if (formData.phone && !/^[0-9+\-\s()]+$/.test(formData.phone)) {
-            toast.error('Số điện thoại không hợp lệ');
-            return;
-        }
-
-        if (formData.gender && !['Nam', 'Nữ', 'Khác'].includes(formData.gender)) {
+        } if (formData.gender && !['Nam', 'Nữ', 'Khác'].includes(formData.gender)) {
             toast.error('Giới tính không hợp lệ');
             return;
         }
@@ -158,7 +146,6 @@ const PersonalInfoForm = () => {
                         ...user,
                         fullName: response.data.fullName,
                         birthDay: response.data.birthDay,
-                        phone: response.data.phone,
                         gender: response.data.gender
                     };
                     updateUser(newUser);
@@ -310,24 +297,7 @@ const PersonalInfoForm = () => {
                                     max={new Date().toISOString().split('T')[0]}
                                     className={styles.input}
                                 />
-                            </div>
-
-                            <div className={styles.formGroup}>
-                                <label htmlFor="phone" className={styles.label}>
-                                    Số điện thoại
-                                </label>
-                                <input
-                                    type="tel"
-                                    id="phone"
-                                    name="phone"
-                                    value={formData.phone}
-                                    onChange={handleInputChange}
-                                    placeholder="Nhập số điện thoại"
-                                    className={styles.input}
-                                />
-                            </div>
-
-                            <div className={styles.formGroup}>
+                            </div>                            <div className={styles.formGroup}>
                                 <label htmlFor="gender" className={styles.label}>
                                     Giới tính
                                 </label>

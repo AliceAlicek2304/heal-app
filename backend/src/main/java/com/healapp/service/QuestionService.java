@@ -243,6 +243,20 @@ public class QuestionService {
         } catch (Exception e) {
             return ApiResponse.error("Failed to delete question: " + e.getMessage());
         }
+    }    public ApiResponse<Page<QuestionResponse>> searchQuestions(String query, Pageable pageable) {
+        try {
+            if (query == null || query.trim().isEmpty()) {
+                return ApiResponse.error("Search query cannot be empty");
+            }
+            
+            // Search only in answered questions that are public
+            Page<Question> questions = questionRepository.searchAnsweredQuestions(query.trim(), pageable);
+            Page<QuestionResponse> questionResponses = questions.map(this::convertToResponse);
+            
+            return ApiResponse.success("Questions searched successfully", questionResponses);
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to search questions: " + e.getMessage());
+        }
     }
 
     private boolean isValidStatusTransition(QuestionStatus currentStatus, QuestionStatus newStatus) {
@@ -261,6 +275,37 @@ public class QuestionService {
     }
 
     private QuestionResponse mapToQuestionResponse(Question question) {
+        QuestionResponse response = new QuestionResponse();
+        response.setId(question.getQuestionId());
+        response.setCategoryId(question.getCategoryQuestion().getCategoryQuestionId());
+        response.setCategoryName(question.getCategoryQuestion().getName());
+        response.setContent(question.getContent());
+        response.setAnswer(question.getAnswer());
+        response.setStatus(question.getStatus());
+        response.setCreatedAt(question.getCreatedAt());
+        response.setUpdatedAt(question.getUpdatedAt());
+
+        // Set customer info
+        response.setCustomerId(question.getCustomer().getId());
+        response.setCustomerName(question.getCustomer().getFullName());
+        response.setCustomerEmail(question.getCustomer().getEmail());
+
+        // Set updater info if available
+        if (question.getUpdater() != null) {
+            response.setUpdaterId(question.getUpdater().getId());
+            response.setUpdaterName(question.getUpdater().getFullName());
+        }
+
+        // Set replier info if available
+        if (question.getReplier() != null) {
+            response.setReplierId(question.getReplier().getId());
+            response.setReplierName(question.getReplier().getFullName());
+        }
+
+        return response;
+    }
+
+    private QuestionResponse convertToResponse(Question question) {
         QuestionResponse response = new QuestionResponse();
         response.setId(question.getQuestionId());
         response.setCategoryId(question.getCategoryQuestion().getCategoryQuestionId());

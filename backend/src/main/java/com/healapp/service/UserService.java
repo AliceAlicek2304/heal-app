@@ -19,6 +19,8 @@ import com.healapp.dto.UpdateProfileRequest;
 import com.healapp.dto.UserResponse;
 import com.healapp.dto.UserUpdateRequest;
 import com.healapp.dto.VerificationCodeRequest;
+import com.healapp.dto.PhoneVerificationRequest;
+import com.healapp.dto.VerifyPhoneRequest;
 import com.healapp.service.EmailService;
 import com.healapp.service.PasswordResetService;
 import com.healapp.service.PasswordResetService.RateLimitException;
@@ -68,6 +70,12 @@ public class UserService {
 
     @Autowired
     private RoleService roleService;
+
+    @Autowired
+    private PhoneVerificationService phoneVerificationService;
+
+    @Autowired
+    private FirebaseSMSService firebaseSMSService;
 
     @Value("${app.avatar.url.pattern}default.jpg")
     private String defaultAvatarPath;
@@ -403,9 +411,8 @@ public class UserService {
 
             UserDtls user = userOpt.get();
 
-            // Cập nhật thông tin cơ bản
+            // Cập nhật thông tin cơ bản (không bao gồm phone)
             user.setFullName(request.getFullName());
-            user.setPhone(request.getPhone());
             user.setBirthDay(request.getBirthDay());
 
             if (request.getGender() != null && !request.getGender().trim().isEmpty()) {
@@ -589,13 +596,161 @@ public class UserService {
         }
     }
 
+    // ===================== PHONE VERIFICATION METHODS =====================
+
+    /**
+     * Gửi mã xác thực số điện thoại
+     */
+    public ApiResponse<String> sendPhoneVerificationCode(Long userId, PhoneVerificationRequest request) {
+        try {
+            Optional<UserDtls> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ApiResponse.error("User not found");
+            }
+
+            UserDtls user = userOpt.get();
+            String newPhone = phoneVerificationService.normalizePhone(request.getPhone());
+
+            // Kiểm tra số điện thoại mới có trùng với số hiện tại không
+            String currentOriginalPhone = phoneVerificationService.getOriginalPhone(user.getPhone());
+            if (currentOriginalPhone != null &&
+                    phoneVerificationService.isSamePhone(currentOriginalPhone, newPhone)) {
+
+                // Nếu số hiện tại đã được xác thực thì không cho phép xác thực lại
+                if (phoneVerificationService.isPhoneVerified(user.getPhone())) {
+                    return ApiResponse.error("Phone number is already verified");
+                }
+                // Nếu chưa xác thực thì cho phép xác thực số hiện tại
+            }
+
+            // Kiểm tra số điện thoại có được sử dụng bởi user khác không
+            if (isPhoneExistsForOtherUser(newPhone, userId)) {
+                return ApiResponse.error("Phone number already exists");
+            }
+
+            // Tạo mã xác thực
+            String verificationCode = phoneVerificationService.generateVerificationCode(newPhone);
+
+            // Gửi SMS xác thực
+            boolean smsSent = firebaseSMSService.sendVerificationCode(newPhone, verificationCode);
+            if (!smsSent) {
+                return ApiResponse.error("Failed to send SMS verification code");
+            }
+
+            return ApiResponse.success("Verification code has been sent to your phone",
+                    phoneVerificationService.getOriginalPhone(newPhone));
+
+        } catch (PhoneVerificationService.RateLimitException e) {
+            return ApiResponse.error(e.getMessage());
+        } catch (Exception e) {
+            return ApiResponse.error("Unable to send verification code: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Xác thực và cập nhật số điện thoại
+     */
+    public ApiResponse<UserResponse> verifyAndUpdatePhone(Long userId, VerifyPhoneRequest request) {
+        try {
+            Optional<UserDtls> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ApiResponse.error("User not found");
+            }
+
+            UserDtls user = userOpt.get();
+            String newPhone = phoneVerificationService.normalizePhone(request.getPhone());
+
+            // Kiểm tra số điện thoại có được sử dụng bởi user khác không
+            if (isPhoneExistsForOtherUser(newPhone, userId)) {
+                return ApiResponse.error("Phone number already exists");
+            }
+
+            // Xác thực mã verification code
+            boolean isVerified = phoneVerificationService.verifyCode(newPhone, request.getVerificationCode());
+            if (!isVerified) {
+                return ApiResponse.error("Invalid or expired verification code");
+            }
+
+            // Cập nhật số điện thoại với đánh dấu đã xác thực
+            String verifiedPhone = phoneVerificationService.markPhoneAsVerified(newPhone);
+            user.setPhone(verifiedPhone);
+
+            UserDtls savedUser = userRepository.save(user);
+            UserResponse userResponse = mapUserToResponse(savedUser);
+
+            return ApiResponse.success("Phone number verified and updated successfully", userResponse);
+
+        } catch (Exception e) {
+            return ApiResponse.error("Unable to verify and update phone: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Kiểm tra số điện thoại có tồn tại cho user khác không
+     */
+    private boolean isPhoneExistsForOtherUser(String phone, Long currentUserId) {
+        String originalPhone = phoneVerificationService.getOriginalPhone(phone);
+
+        List<UserDtls> usersWithPhone = userRepository.findAll().stream()
+                .filter(user -> !user.getId().equals(currentUserId))
+                .filter(user -> user.getPhone() != null)
+                .filter(user -> phoneVerificationService.isSamePhone(user.getPhone(), originalPhone))
+                .collect(Collectors.toList());
+
+        return !usersWithPhone.isEmpty();
+    }
+
+    /**
+     * Lấy thông tin trạng thái xác thực số điện thoại của user
+     */
+    public ApiResponse<Map<String, Object>> getPhoneVerificationStatus(Long userId) {
+        try {
+            Optional<UserDtls> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ApiResponse.error("User not found");
+            }
+
+            UserDtls user = userOpt.get();
+            Map<String, Object> status = new HashMap<>();
+
+            if (user.getPhone() != null) {
+                boolean isVerified = phoneVerificationService.isPhoneVerified(user.getPhone());
+                String originalPhone = phoneVerificationService.getOriginalPhone(user.getPhone());
+
+                status.put("hasPhone", true);
+                status.put("phone", originalPhone);
+                status.put("isVerified", isVerified);
+            } else {
+                status.put("hasPhone", false);
+                status.put("phone", null);
+                status.put("isVerified", false);
+            }
+
+            return ApiResponse.success("Phone verification status retrieved successfully", status);
+
+        } catch (Exception e) {
+            return ApiResponse.error("Unable to get phone verification status: " + e.getMessage());
+        }
+    }
+
     private UserResponse mapUserToResponse(UserDtls user) {
         UserResponse response = new UserResponse();
         response.setId(user.getId());
         response.setFullName(user.getFullName());
         response.setBirthDay(user.getBirthDay());
         response.setGender(user.getGenderDisplayName());
-        response.setPhone(user.getPhone());
+
+        // Xử lý phone với phone verification
+        if (user.getPhone() != null) {
+            String originalPhone = phoneVerificationService.getOriginalPhone(user.getPhone());
+            boolean isVerified = phoneVerificationService.isPhoneVerified(user.getPhone());
+            response.setPhone(originalPhone);
+            response.setIsPhoneVerified(isVerified);
+        } else {
+            response.setPhone(null);
+            response.setIsPhoneVerified(false);
+        }
+
         response.setEmail(user.getEmail());
         response.setUsername(user.getUsername());
         response.setAvatar(user.getAvatar());
@@ -608,6 +763,14 @@ public class UserService {
     // kiểm tra role
     private boolean isValidRole(String roleName) {
         return roleService.isValidRole(roleName);
+    }
+
+    /**
+     * Lấy user ID từ username
+     */
+    public Long getUserIdByUsername(String username) {
+        Optional<UserDtls> userOpt = userRepository.findByUsername(username);
+        return userOpt.map(UserDtls::getId).orElse(null);
     }
 
 }

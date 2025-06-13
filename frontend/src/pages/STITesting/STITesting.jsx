@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import Navbar from '../../components/layout/Navbar/Navbar';
@@ -15,12 +15,13 @@ import styles from './STITesting.module.css';
 
 const STITesting = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { user } = useAuth();
-    const toast = useToast();
-    const [services, setServices] = useState([]);
+    const toast = useToast(); const [services, setServices] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedService, setSelectedService] = useState(null);
     const [showBookingModal, setShowBookingModal] = useState(false);
+    const [selectedServiceIdForDetails, setSelectedServiceIdForDetails] = useState(null);
 
     // Auth modals
     const {
@@ -30,11 +31,23 @@ const STITesting = () => {
         closeModals,
         switchToLogin,
         switchToRegister
-    } = useAuthModal();
-
-    useEffect(() => {
+    } = useAuthModal(); useEffect(() => {
         fetchServices();
-    }, []);
+    }, []);    // Handle service selection from navigation state (e.g., from search results)
+    useEffect(() => {
+        if (location.state?.selectedServiceId && services.length > 0) {
+            const serviceId = location.state.selectedServiceId;
+            const foundService = services.find(service => service.serviceId === serviceId);
+
+            if (foundService) {
+                // Always show details modal when coming from search results
+                setSelectedServiceIdForDetails(serviceId);
+
+                // Clear the navigation state to prevent re-triggering
+                navigate(location.pathname, { replace: true });
+            }
+        }
+    }, [location.state, services, navigate, location.pathname]);
 
     const handleAuthRequired = () => {
         openLoginModal();
@@ -114,15 +127,18 @@ const STITesting = () => {
         }
 
         toast.error(errorMessage);
-    };
-
-    const handleViewMyTests = () => {
+    }; const handleViewMyTests = () => {
         if (!user) {
             openLoginModal();
             return;
         }
         navigate('/profile/sti-history');
-    };    const handleLoginSuccess = () => {
+    };
+
+    const handleDetailsOpened = () => {
+        // Clear the selected service ID to prevent re-triggering
+        setSelectedServiceIdForDetails(null);
+    }; const handleLoginSuccess = () => {
         closeModals();
         fetchServices();
         // Không cần toast ở đây vì LoginForm đã có toast
@@ -135,7 +151,7 @@ const STITesting = () => {
     if (loading) return <LoadingSpinner />;
 
     return (
-        <div className={styles.stiTestingPage}>             
+        <div className={styles.stiTestingPage}>
             <Navbar />
             <div className={styles.container}>
                 <div className={styles.stiHeader}>
@@ -198,17 +214,18 @@ const STITesting = () => {
                 <div className={styles.servicesSection}>
                     <h2>Chọn dịch vụ xét nghiệm</h2>
 
-                    {services.length > 0 ? (
-                        <div className={styles.servicesGrid}>
-                            {services.map(service => (
-                                <STIServiceCard
-                                    key={service.serviceId}
-                                    service={service}
-                                    onBookTest={handleBookTest}
-                                    onAuthRequired={handleAuthRequired}
-                                />
-                            ))}
-                        </div>
+                    {services.length > 0 ? (<div className={styles.servicesGrid}>
+                        {services.map(service => (
+                            <STIServiceCard
+                                key={service.serviceId}
+                                service={service}
+                                onBookTest={handleBookTest}
+                                onAuthRequired={handleAuthRequired}
+                                autoOpenDetails={selectedServiceIdForDetails === service.serviceId}
+                                onDetailsOpened={handleDetailsOpened}
+                            />
+                        ))}
+                    </div>
                     ) : (
                         <div className={styles.emptyState}>
                             <div className={styles.emptyIcon}>

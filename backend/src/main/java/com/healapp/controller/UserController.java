@@ -12,6 +12,8 @@ import com.healapp.dto.UpdateEmailRequest;
 import com.healapp.dto.UpdateProfileRequest;
 import com.healapp.dto.UserResponse;
 import com.healapp.dto.VerificationCodeRequest;
+import com.healapp.dto.PhoneVerificationRequest;
+import com.healapp.dto.VerifyPhoneRequest;
 
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/users")
@@ -59,7 +63,9 @@ public class UserController {
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(errorResponse);
         }
-    }    @PostMapping("/send-verification")
+    }
+
+    @PostMapping("/send-verification")
     public ResponseEntity<ApiResponse<String>> sendVerificationCode(
             @Valid @RequestBody VerificationCodeRequest request) {
 
@@ -282,6 +288,101 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Error updating avatar: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/profile/phone/send-verification")
+    public ResponseEntity<ApiResponse<String>> sendPhoneVerification(
+            @Valid @RequestBody PhoneVerificationRequest request) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponse.error("User not authenticated"));
+            }
+
+            String username = authentication.getName();
+            Long userId = userService.getUserIdFromUsername(username);
+
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.error("User not found"));
+            }
+
+            ApiResponse<String> response = userService.sendPhoneVerificationCode(userId, request);
+
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Error sending phone verification: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/profile/phone/verify")
+    public ResponseEntity<ApiResponse<UserResponse>> verifyPhone(
+            @Valid @RequestBody VerifyPhoneRequest request) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponse.error("User not authenticated"));
+            }
+
+            String username = authentication.getName();
+            Long userId = userService.getUserIdFromUsername(username);
+
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.error("User not found"));
+            }
+
+            ApiResponse<UserResponse> response = userService.verifyAndUpdatePhone(userId, request);
+
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Error verifying phone: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/profile/phone/status")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getPhoneVerificationStatus() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponse.error("User not authenticated"));
+            }
+
+            String username = authentication.getName();
+            Long userId = userService.getUserIdFromUsername(username);
+
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.error("User not found"));
+            }
+
+            ApiResponse<Map<String, Object>> response = userService.getPhoneVerificationStatus(userId);
+
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Error getting phone status: " + e.getMessage()));
         }
     }
 }

@@ -2,15 +2,13 @@ import React, { useState } from 'react';
 import { authService } from '../../../services/authService';
 import styles from './ConsultantCard.module.css';
 
-const ConsultantCard = ({ consultant, onBookConsultation, onAuthRequired }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
-
+const ConsultantCard = ({ consultant, onBookConsultation, onViewDetails, onAuthRequired }) => {
     const handleBooking = () => {
         onBookConsultation(consultant);
     };
 
-    const toggleExpanded = () => {
-        setIsExpanded(!isExpanded);
+    const handleViewDetails = () => {
+        onViewDetails(consultant);
     };
 
     const getAvatarUrl = (avatar) => {
@@ -21,8 +19,14 @@ const ConsultantCard = ({ consultant, onBookConsultation, onAuthRequired }) => {
         }
         return authService.getAvatarUrl(avatar);
     };
+
     const handleAvatarError = (e) => {
         e.target.src = '/img/avatar/default.jpg';
+    };    // Function to truncate text to 2 lines
+    const truncateText = (text, maxLength = 80) => {
+        if (!text) return '';
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
     };
 
     return (
@@ -48,7 +52,9 @@ const ConsultantCard = ({ consultant, onBookConsultation, onAuthRequired }) => {
                     {consultant.qualifications && (
                         <p className={styles.qualifications}>
                             <span className={styles.label}>Chuyên môn:</span>
-                            {consultant.qualifications}
+                            <span className={styles.truncatedText}>
+                                {truncateText(consultant.qualifications)}
+                            </span>
                         </p>
                     )}
 
@@ -68,6 +74,18 @@ const ConsultantCard = ({ consultant, onBookConsultation, onAuthRequired }) => {
 
             <div className={styles.actions}>
                 <button
+                    className={styles.detailButton}
+                    onClick={handleViewDetails}
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    Chi tiết
+                </button>
+
+                <button
                     className={styles.bookButton}
                     onClick={handleBooking}
                 >
@@ -76,11 +94,9 @@ const ConsultantCard = ({ consultant, onBookConsultation, onAuthRequired }) => {
                         <line x1="16" y1="2" x2="16" y2="6"></line>
                         <line x1="8" y1="2" x2="8" y2="6"></line>
                         <line x1="3" y1="10" x2="21" y2="10"></line>
-                    </svg>
-                    Đặt lịch tư vấn
+                    </svg>                    Đặt lịch
                 </button>
-            </div>
-        </div>
+            </div>        </div>
     );
 };
 

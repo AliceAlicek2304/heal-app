@@ -6,6 +6,7 @@ import Navbar from '../../components/layout/Navbar/Navbar';
 import Footer from '../../components/layout/Footer/Footer';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
 import ConsultantCard from '../../components/consultation/ConsultantCard/ConsultantCard';
+import ConsultantDetailModal from '../../components/consultation/ConsultantDetailModal/ConsultantDetailModal';
 import BookingModal from '../../components/consultation/BookingModal/BookingModal';
 import LoginForm from '../../components/auth/Login/LoginForm';
 import RegisterForm from '../../components/auth/Register/RegisterForm';
@@ -16,11 +17,11 @@ import styles from './Consultation.module.css';
 const Consultation = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
-    const toast = useToast();
-    const [consultants, setConsultants] = useState([]);
+    const toast = useToast(); const [consultants, setConsultants] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedConsultant, setSelectedConsultant] = useState(null);
     const [showBookingModal, setShowBookingModal] = useState(false);
+    const [showDetailModal, setShowDetailModal] = useState(false);
 
     // Auth modals
     const {
@@ -59,9 +60,7 @@ const Consultation = () => {
         } finally {
             setLoading(false);
         }
-    };
-
-    const handleBookConsultation = (consultant) => {
+    }; const handleBookConsultation = (consultant) => {
         if (!user) {
             openLoginModal();
             return;
@@ -69,6 +68,16 @@ const Consultation = () => {
 
         setSelectedConsultant(consultant);
         setShowBookingModal(true);
+    };
+
+    const handleViewDetails = (consultant) => {
+        setSelectedConsultant(consultant);
+        setShowDetailModal(true);
+    };
+
+    const handleCloseDetailModal = () => {
+        setShowDetailModal(false);
+        setSelectedConsultant(null);
     };
 
     const handleCloseBookingModal = () => {
@@ -115,7 +124,7 @@ const Consultation = () => {
             return;
         }
         navigate('/profile/consultation-history');
-    };    const handleLoginSuccess = () => {
+    }; const handleLoginSuccess = () => {
         closeModals();
         // Refresh data after login
         fetchData();
@@ -197,15 +206,15 @@ const Consultation = () => {
 
                 <div className={styles.consultantsSection}>
                     <h2>Chọn chuyên gia tư vấn</h2>                    {consultants.length > 0 ? (
-                        <div className={styles.consultantsGrid}>
-                            {consultants.map(consultant => (
-                                <ConsultantCard
-                                    key={consultant.userId || consultant.profileId || consultant.id}
-                                    consultant={consultant}
-                                    onBookConsultation={handleBookConsultation}
-                                    onAuthRequired={handleAuthRequired}
-                                />
-                            ))}
+                        <div className={styles.consultantsGrid}>                            {consultants.map(consultant => (
+                            <ConsultantCard
+                                key={consultant.userId || consultant.profileId || consultant.id}
+                                consultant={consultant}
+                                onBookConsultation={handleBookConsultation}
+                                onViewDetails={handleViewDetails}
+                                onAuthRequired={handleAuthRequired}
+                            />
+                        ))}
                         </div>
                     ) : (
                         <div className={styles.emptyState}>
@@ -229,7 +238,14 @@ const Consultation = () => {
                         </div>
                     )}
                 </div>
-            </div>
+            </div>            {/* Detail Modal */}
+            {showDetailModal && selectedConsultant && (
+                <ConsultantDetailModal
+                    consultant={selectedConsultant}
+                    onClose={handleCloseDetailModal}
+                    onBookConsultation={handleBookConsultation}
+                />
+            )}
 
             {/* Booking Modal */}
             {showBookingModal && selectedConsultant && (

@@ -46,6 +46,13 @@ public class STIController {
         ApiResponse<STIServiceResponse> response = stiServiceService.getServiceWithComponents(serviceId);
         return ResponseEntity.ok(response);
     }
+    
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<STIServiceResponse>>> searchSTIServices(
+            @RequestParam String keyword) {
+        ApiResponse<List<STIServiceResponse>> response = stiServiceService.searchActiveServices(keyword);
+        return ResponseEntity.ok(response);
+    }
 
     @PostMapping("/book-test")
     @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")

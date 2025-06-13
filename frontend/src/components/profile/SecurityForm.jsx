@@ -3,14 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { profileService } from '../../services/profileService';
+import { authService } from '../../services/authService';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
 import styles from './SecurityForm.module.css';
 
 const SecurityForm = () => {
     const { user, updateUser, logout } = useAuth();
     const navigate = useNavigate();
-    const toast = useToast();
-    const [activeTab, setActiveTab] = useState('email');
+    const toast = useToast(); const [activeTab, setActiveTab] = useState('email');
 
     // State cho thay đổi email
     const [emailData, setEmailData] = useState({
@@ -24,7 +24,13 @@ const SecurityForm = () => {
         currentPassword: '',
         newPassword: '',
         confirmPassword: '',
+    });    // State cho xác thực phone
+    const [phoneData, setPhoneData] = useState({
+        phone: '',
+        otp: '',
     });
+    const [phoneStage, setPhoneStage] = useState('input'); // 'input' hoặc 'verify'
+    const [countdown, setCountdown] = useState(0);
 
     // State chung
     const [loading, setLoading] = useState(false);
@@ -74,7 +80,6 @@ const SecurityForm = () => {
             }
         } catch (err) {
             toast.error('Đã xảy ra lỗi khi gửi mã xác thực');
-            console.error('Send verification error:', err);
         } finally {
             setLoading(false);
         }
@@ -122,7 +127,6 @@ const SecurityForm = () => {
             } else {
                 toast.error('Đã xảy ra lỗi khi cập nhật email');
             }
-            console.error('Update email error:', err);
         } finally {
             setLoading(false);
         }
@@ -194,7 +198,6 @@ const SecurityForm = () => {
             } else {
                 toast.error('Đã xảy ra lỗi khi thay đổi mật khẩu');
             }
-            console.error('Change password error:', err);
         } finally {
             setLoading(false);
         }
@@ -223,14 +226,175 @@ const SecurityForm = () => {
         if (score < 4) return { level: 'medium', color: '#f59e0b', text: 'Trung bình' };
         if (score < 5) return { level: 'good', color: '#10b981', text: 'Tốt' };
         return { level: 'strong', color: '#059669', text: 'Mạnh' };
-    };
-
-    // Kiểm tra nếu user không tồn tại, redirect về home
+    };    // Kiểm tra nếu user không tồn tại, redirect về home
     useEffect(() => {
         if (!user) {
             navigate('/', { replace: true });
         }
     }, [user, navigate]);
+
+    // Force refresh user data from backend on mount for cache consistency
+    useEffect(() => {
+        const refreshUserData = async () => {
+            try {
+                const refreshResult = await authService.refreshUserProfile();
+                if (refreshResult.success && refreshResult.data) {
+                    updateUser(refreshResult.data);
+                }
+            } catch (err) {
+                // Silently fail - user data will remain as is
+            }
+        };
+
+        if (user) {
+            refreshUserData();
+        }
+    }, []); // Only run on mount
+
+    // Countdown timer cho phone OTP
+    useEffect(() => {
+        let timer;
+        if (countdown > 0) {
+            timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+        }
+        return () => clearTimeout(timer);
+    }, [countdown]);    // Set initial phone data from user
+    useEffect(() => {
+        if (user?.phone) {
+            setPhoneData(prev => ({
+                ...prev,
+                phone: getDisplayPhone(user.phone) // Display clean phone number from backend
+            }));
+        }
+    }, [user]);
+
+    const handlePhoneInputChange = (e) => {
+        const { name, value } = e.target;
+        setPhoneData({
+            ...phoneData,
+            [name]: value,
+        });
+    };
+
+    const validatePhone = (phoneNumber) => {
+        const phoneRegex = /^0[3|5|7|8|9][0-9]{8}$/;
+        return phoneRegex.test(phoneNumber);
+    }; const handleSendPhoneOTP = async (e) => {
+        e.preventDefault();
+
+        if (!phoneData.phone) {
+            toast.error('Vui lòng nhập số điện thoại');
+            return;
+        }
+
+        if (!validatePhone(phoneData.phone)) {
+            toast.error('Số điện thoại không hợp lệ (VD: 0987654321)');
+            return;
+        }        // Kiểm tra nếu đang xác thực phone hiện tại (đã có trong profile nhưng chưa verified)
+        const currentDisplayPhone = user?.phone ? getDisplayPhone(user.phone) : '';
+        const isVerifyingCurrentPhone = currentDisplayPhone === phoneData.phone;
+        const isCurrentPhoneVerified = isPhoneVerified();
+
+        // Nếu phone hiện tại đã verified và user đang nhập lại cùng số
+        if (isVerifyingCurrentPhone && isCurrentPhoneVerified) {
+            toast.error('Số điện thoại này đã được xác thực');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const response = await profileService.sendPhoneVerification({
+                phone: phoneData.phone
+            });
+
+            if (response.success) {
+                toast.success('Mã OTP đã được gửi đến số điện thoại của bạn');
+                setPhoneStage('verify');
+                setCountdown(60);
+            } else {
+                toast.error(response.message || 'Không thể gửi mã OTP');
+            }
+        } catch (err) {
+            toast.error('Đã xảy ra lỗi khi gửi mã OTP');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerifyPhone = async (e) => {
+        e.preventDefault();
+
+        if (!phoneData.otp) {
+            toast.error('Vui lòng nhập mã OTP');
+            return;
+        }
+
+        if (phoneData.otp.length !== 6) {
+            toast.error('Mã OTP phải có 6 chữ số');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const response = await profileService.verifyPhone({
+                phone: phoneData.phone,
+                otp: phoneData.otp
+            }); if (response.success) {
+                toast.success('Xác thực số điện thoại thành công! 🎉');
+                setPhoneStage('input');
+                setPhoneData({ phone: phoneData.phone, otp: '' });                // Refresh user profile to get updated verification status
+                try {
+                    const refreshResult = await authService.refreshUserProfile();
+
+                    if (refreshResult.success && refreshResult.data) {
+                        updateUser(refreshResult.data);
+                    } else {
+                        // Fallback: manual update with isPhoneVerified flag
+                        const newUser = {
+                            ...user,
+                            phone: phoneData.phone,
+                            isPhoneVerified: true
+                        };
+                        updateUser(newUser);
+                    }
+                } catch (err) {
+                    // Fallback: manual update with isPhoneVerified flag
+                    const newUser = {
+                        ...user,
+                        phone: phoneData.phone,
+                        isPhoneVerified: true
+                    };
+                    updateUser(newUser);
+                }
+            } else {
+                toast.error(response.message || 'Mã OTP không chính xác');
+            }
+        } catch (err) {
+            toast.error('Đã xảy ra lỗi khi xác thực');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResendPhoneOTP = () => {
+        setPhoneStage('input');
+        setPhoneData({ ...phoneData, otp: '' });
+        setCountdown(0);
+    };    // Phone verification helpers - Use backend fields
+    const isPhoneVerified = () => {
+        // Backend provides isPhoneVerified field directly
+        return user?.isPhoneVerified === true;
+    };
+
+    const getDisplayPhone = (phone) => {
+        // Backend already returns clean phone number
+        return phone || '';
+    };
+
+    const getVerifiedPhone = (phone) => {
+        // Not needed - backend handles verification status separately
+        return phone || '';
+    };
 
     if (!user) {
         return (
@@ -253,36 +417,43 @@ const SecurityForm = () => {
                         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                     </svg>
                     Bảo mật tài khoản
-                </h2>
-                <p className={styles.subtitle}>
-                    Thay đổi email và mật khẩu để bảo vệ tài khoản của bạn
+                </h2>                <p className={styles.subtitle}>
+                    Quản lý email, mật khẩu và số điện thoại để bảo vệ tài khoản của bạn
                 </p>
             </div>
 
-            <div className={styles.tabContainer}>
-                <div className={styles.tabList}>
-                    <button
-                        className={`${styles.tabBtn} ${activeTab === 'email' ? styles.active : ''}`}
-                        onClick={() => setActiveTab('email')}
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                            <polyline points="22,6 12,13 2,6"></polyline>
-                        </svg>
-                        Thay đổi Email
-                    </button>
-                    <button
-                        className={`${styles.tabBtn} ${activeTab === 'password' ? styles.active : ''}`}
-                        onClick={() => setActiveTab('password')}
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                            <circle cx="12" cy="16" r="1"></circle>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                        </svg>
-                        Thay đổi Mật khẩu
-                    </button>
-                </div>
+            <div className={styles.tabContainer}>                <div className={styles.tabList}>
+                <button
+                    className={`${styles.tabBtn} ${activeTab === 'email' ? styles.active : ''}`}
+                    onClick={() => setActiveTab('email')}
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                    Thay đổi Email
+                </button>
+                <button
+                    className={`${styles.tabBtn} ${activeTab === 'phone' ? styles.active : ''}`}
+                    onClick={() => setActiveTab('phone')}
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                    </svg>
+                    Xác thực Điện thoại
+                </button>
+                <button
+                    className={`${styles.tabBtn} ${activeTab === 'password' ? styles.active : ''}`}
+                    onClick={() => setActiveTab('password')}
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <circle cx="12" cy="16" r="1"></circle>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    Thay đổi Mật khẩu
+                </button>
+            </div>
 
                 <div className={styles.tabContent}>
                     {activeTab === 'email' && (
@@ -418,6 +589,161 @@ const SecurityForm = () => {
                         </div>
                     )}
 
+                    {activeTab === 'phone' && (
+                        <div className={styles.phoneTab}>
+                            <div className={styles.tabHeader}>
+                                <h3>Xác thực Số điện thoại</h3>                                <div className={styles.currentPhoneInfo}>
+                                    {user?.phone ? (
+                                        <div className={styles.phoneStatus}>
+                                            <span className={styles.phoneNumber}>
+                                                📱 {getDisplayPhone(user.phone)}
+                                            </span>                                            {isPhoneVerified() ? (
+                                                <span className={styles.verifiedBadge}>
+                                                    ✅ Đã xác thực
+                                                </span>
+                                            ) : (
+                                                <span className={styles.unverifiedBadge}>
+                                                    ⚠️ Chưa xác thực
+                                                </span>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <p className={styles.noPhone}>
+                                            Chưa có số điện thoại. Xác thực số điện thoại giúp bảo mật tài khoản tốt hơn.
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {phoneStage === 'input' ? (
+                                <form onSubmit={handleSendPhoneOTP} className={styles.form}>
+                                    <div className={styles.formGroup}>
+                                        <label htmlFor="phone" className={styles.label}>
+                                            Số điện thoại <span className={styles.required}>*</span>
+                                        </label>
+                                        <input
+                                            type="tel"
+                                            id="phone"
+                                            name="phone"
+                                            value={phoneData.phone}
+                                            onChange={handlePhoneInputChange}
+                                            placeholder="VD: 0987654321"
+                                            className={styles.input}
+                                            maxLength={10}
+                                            required
+                                            disabled={loading}
+                                        />
+                                        <div className={styles.inputHelp}>
+                                            📱 Nhập số điện thoại Việt Nam (10 số, bắt đầu bằng 0)
+                                        </div>
+                                    </div>
+
+                                    <div className={styles.formActions}>
+                                        <button
+                                            type="submit"
+                                            className={`${styles.btn} ${styles.primaryBtn}`}
+                                            disabled={loading || !phoneData.phone}
+                                        >
+                                            {loading ? (
+                                                <>
+                                                    <svg className={styles.spinner} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <path d="M21 12a9 9 0 11-6.219-8.56"></path>
+                                                    </svg>
+                                                    Đang gửi...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                                    </svg>
+                                                    Gửi mã OTP
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </form>
+                            ) : (
+                                <form onSubmit={handleVerifyPhone} className={styles.form}>
+                                    <div className={styles.otpSection}>
+                                        <div className={styles.otpInfo}>
+                                            <p>Mã OTP đã được gửi đến số điện thoại:</p>                                            <div className={styles.phoneDisplay}>
+                                                📱 {getDisplayPhone(phoneData.phone)}
+                                            </div>
+                                        </div>
+
+                                        <div className={styles.formGroup}>
+                                            <label htmlFor="otp" className={styles.label}>
+                                                Mã OTP <span className={styles.required}>*</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                id="otp"
+                                                name="otp"
+                                                value={phoneData.otp}
+                                                onChange={handlePhoneInputChange}
+                                                placeholder="Nhập mã 6 số"
+                                                className={`${styles.input} ${styles.otpInput}`}
+                                                maxLength={6}
+                                                required
+                                                disabled={loading}
+                                            />
+                                        </div>
+
+                                        <div className={styles.otpActions}>
+                                            <div className={styles.resendSection}>
+                                                {countdown > 0 ? (
+                                                    <span className={styles.countdown}>
+                                                        Gửi lại mã sau {countdown}s
+                                                    </span>
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        className={styles.resendBtn}
+                                                        onClick={handleResendPhoneOTP}
+                                                        disabled={loading}
+                                                    >
+                                                        Gửi lại mã OTP
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className={styles.formActions}>
+                                            <button
+                                                type="button"
+                                                className={`${styles.btn} ${styles.secondaryBtn}`}
+                                                onClick={handleResendPhoneOTP}
+                                                disabled={loading}
+                                            >
+                                                Quay lại
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                className={`${styles.btn} ${styles.primaryBtn}`}
+                                                disabled={loading || phoneData.otp.length !== 6}
+                                            >
+                                                {loading ? (
+                                                    <>
+                                                        <svg className={styles.spinner} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <path d="M21 12a9 9 0 11-6.219-8.56"></path>
+                                                        </svg>
+                                                        Đang xác thực...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <polyline points="20,6 9,17 4,12"></polyline>
+                                                        </svg>
+                                                        Xác thực
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>)}
+                        </div>
+                    )}
+
                     {activeTab === 'password' && (
                         <div className={styles.passwordTab}>
                             <div className={styles.tabHeader}>
@@ -511,7 +837,7 @@ const SecurityForm = () => {
                                         onChange={handlePasswordInputChange}
                                         placeholder="Nhập lại mật khẩu mới"
                                         className={`${styles.input} ${passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword
-                                                ? styles.inputError : ''
+                                            ? styles.inputError : ''
                                             }`}
                                         required
                                         disabled={loading}

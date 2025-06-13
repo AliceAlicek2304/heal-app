@@ -1,39 +1,93 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import RegisterForm from "../../auth/Register/RegisterForm";
 import LoginForm from "../../auth/Login/LoginForm";
 import { useAuth } from "../../../contexts/AuthContext";
 import { authService } from "../../../services/authService";
+import { searchService } from "../../../services/searchService";
 import ForgotPassword from "../../auth/ForgotPassword/ForgotPassword";
 import styles from "./Navbar.module.css";
 
 const Navbar = () => {
     const [searchQuery, setSearchQuery] = useState("");
+    const [searchSuggestions, setSearchSuggestions] = useState([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
     const [showRegisterModal, setShowRegisterModal] = useState(false);
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [showUserDropdown, setShowUserDropdown] = useState(false);
     const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
     const dropdownRef = useRef(null);
+    const searchRef = useRef(null);
+    const suggestionsTimeoutRef = useRef(null);
 
     const { user, logout, isAuthenticated } = useAuth();
-
-    useEffect(() => {
+    const navigate = useNavigate();    useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setShowUserDropdown(false);
+            }
+            if (searchRef.current && !searchRef.current.contains(event.target)) {
+                setShowSuggestions(false);
             }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
+            if (suggestionsTimeoutRef.current) {
+                clearTimeout(suggestionsTimeoutRef.current);
+            }
         };
-    }, []);
-
-    const handleSearch = (e) => {
+    }, []);    const handleSearch = (e) => {
         e.preventDefault();
-        console.log("Tìm kiếm:", searchQuery);
+        if (searchQuery.trim()) {
+            navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}&type=all`);
+            setShowSuggestions(false);
+            setShowMobileMenu(false);
+        }
+    };
+
+    const handleSearchInputChange = async (e) => {
+        const value = e.target.value;
+        setSearchQuery(value);
+
+        // Clear previous timeout
+        if (suggestionsTimeoutRef.current) {
+            clearTimeout(suggestionsTimeoutRef.current);
+        }
+
+        if (value.trim().length >= 2) {
+            // Debounce search suggestions
+            suggestionsTimeoutRef.current = setTimeout(async () => {
+                try {
+                    const response = await searchService.getSearchSuggestions(value.trim());
+                    if (response.success) {
+                        setSearchSuggestions(response.data);
+                        setShowSuggestions(true);
+                    }
+                } catch (error) {
+                    // Silently fail for suggestions
+                    setSearchSuggestions([]);
+                }
+            }, 300);
+        } else {
+            setSearchSuggestions([]);
+            setShowSuggestions(false);
+        }
+    };
+
+    const handleSuggestionClick = (suggestion) => {
+        setSearchQuery(suggestion);
+        navigate(`/search?q=${encodeURIComponent(suggestion)}&type=all`);
+        setShowSuggestions(false);
+        setShowMobileMenu(false);
+    };
+
+    const handleSearchFocus = () => {
+        if (searchSuggestions.length > 0) {
+            setShowSuggestions(true);
+        }
     };
 
     const handleLogin = () => {
@@ -109,16 +163,15 @@ const Navbar = () => {
                             <img src="/logo.png" alt="HealApp" className={styles.logoImg} />
                             <span className={styles.logoText}>HealApp</span>
                         </Link>
-                    </div>
-
-                    {/* Search Bar */}
-                    <div className={styles.navbarSearch}>
+                    </div>                    {/* Search Bar */}
+                    <div className={styles.navbarSearch} ref={searchRef}>
                         <form onSubmit={handleSearch} className={styles.searchForm}>
                             <input
                                 type="text"
                                 placeholder="Tìm kiếm dịch vụ, bài viết..."
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onChange={handleSearchInputChange}
+                                onFocus={handleSearchFocus}
                                 className={styles.searchInput}
                             />
                             <button type="submit" className={styles.searchButton}>
@@ -128,6 +181,25 @@ const Navbar = () => {
                                 </svg>
                             </button>
                         </form>
+                        
+                        {/* Search Suggestions */}
+                        {showSuggestions && searchSuggestions.length > 0 && (
+                            <div className={styles.searchSuggestions}>
+                                {searchSuggestions.map((suggestion, index) => (
+                                    <div
+                                        key={index}
+                                        className={styles.suggestionItem}
+                                        onClick={() => handleSuggestionClick(suggestion)}
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <circle cx="11" cy="11" r="8"></circle>
+                                            <path d="M21 21l-4.35-4.35"></path>
+                                        </svg>
+                                        {suggestion}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Navigation Menu */}
@@ -182,8 +254,26 @@ const Navbar = () => {
                                     </svg>
                                     Đặt câu hỏi
                                 </Link>
-                            </li>
-                        </ul>
+                            </li>                        </ul>
+
+                        {/* Mobile Search */}
+                        <div className={styles.mobileSearch}>
+                            <form onSubmit={handleSearch} className={styles.mobileSearchForm}>
+                                <input
+                                    type="text"
+                                    placeholder="Tìm kiếm..."
+                                    value={searchQuery}
+                                    onChange={handleSearchInputChange}
+                                    className={styles.mobileSearchInput}
+                                />
+                                <button type="submit" className={styles.mobileSearchButton}>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                        <path d="M21 21l-4.35-4.35"></path>
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
 
                         {/* Mobile Auth Buttons */}
                         {!isAuthenticated && (

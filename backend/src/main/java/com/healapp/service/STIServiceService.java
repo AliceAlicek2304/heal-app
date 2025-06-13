@@ -302,6 +302,27 @@ public class STIServiceService {
             log.error("Error retrieving all STI services: {}", e.getMessage(), e);
             return ApiResponse.error("Failed to retrieve all STI services: " + e.getMessage());
         }
+    }    /**
+     * Search STI services by keyword
+     */
+    public ApiResponse<List<STIServiceResponse>> searchActiveServices(String keyword) {
+        try {
+            log.info("Searching STI services with keyword: {}", keyword);
+            
+            if (keyword == null || keyword.trim().isEmpty()) {
+                return ApiResponse.error("Search keyword cannot be empty");
+            }
+            
+            List<STIService> services = stiServiceRepository.searchActiveServices(keyword.trim());
+            List<STIServiceResponse> serviceResponses = services.stream()
+                    .map(this::convertToResponse)
+                    .toList();
+            
+            return ApiResponse.success("STI services searched successfully", serviceResponses);
+        } catch (Exception e) {
+            log.error("Error searching STI services: {}", e.getMessage());
+            return ApiResponse.error("Failed to search STI services: " + e.getMessage());
+        }
     }
 
     /**

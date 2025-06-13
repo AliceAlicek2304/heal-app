@@ -324,6 +324,144 @@
   }
 }
 
+/* Phone Tab Styles */
+.phoneTab {
+  padding: 24px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.currentPhoneInfo {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border-left: 4px solid #3b82f6;
+}
+
+.phoneStatus {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.phoneNumber {
+  font-weight: 600;
+  color: #374151;
+  font-size: 1rem;
+}
+
+.verifiedBadge {
+  background: #d1fae5;
+  color: #065f46;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid #a7f3d0;
+}
+
+.unverifiedBadge {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid #fbbf24;
+}
+
+.noPhone {
+  color: #6b7280;
+  font-style: italic;
+  margin: 0;
+}
+
+.otpSection {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.otpInfo {
+  text-align: center;
+  padding: 16px;
+  background: #f3f4f6;
+  border-radius: 8px;
+}
+
+.otpInfo p {
+  margin: 0 0 8px 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.phoneDisplay {
+  background: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  display: inline-block;
+}
+
+.otpInput {
+  text-align: center !important;
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 4px !important;
+  font-family: 'Courier New', monospace !important;
+}
+
+.otpActions {
+  display: flex;
+  justify-content: center;
+  margin: 12px 0;
+}
+
+.resendSection {
+  text-align: center;
+}
+
+.countdown {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.resendBtn {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.875rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.resendBtn:hover:not(:disabled) {
+  color: #2563eb;
+  background: #f3f4f6;
+}
+
+.resendBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.inputHelp {
+  margin-top: 6px;
+  font-size: 0.875rem;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* Media Queries */
 @media (max-width: 768px) {
   .tabBtn {

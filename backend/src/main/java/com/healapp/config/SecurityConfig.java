@@ -70,10 +70,15 @@ public class SecurityConfig {
 
                         // API Question Categories (Public GET endpoints)
                         .requestMatchers(HttpMethod.GET, "/question-categories").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/question-categories/{categoryId}").permitAll()
-
-                        // API Questions (Public endpoints)
+                        .requestMatchers(HttpMethod.GET, "/question-categories/{categoryId}").permitAll()                        // API Questions (Public endpoints)
                         .requestMatchers(HttpMethod.GET, "/questions/answered").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/questions/search").permitAll()
+                        
+                        // API STI Services (Public endpoints)
+                        .requestMatchers(HttpMethod.GET, "/sti-services").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/sti-services/{serviceId}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/sti-services/search").permitAll()
+                        
                         .requestMatchers(HttpMethod.GET, "/consultants").permitAll()
                         .requestMatchers(HttpMethod.GET, "/consultants/{userId}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/consultations/consultant/{consultantId}/profile").permitAll()
@@ -92,14 +97,18 @@ public class SecurityConfig {
                         .requestMatchers("/test/auth").authenticated()
                         .requestMatchers("/test/my-posts-debug").authenticated()
 
-                        // ========= AUTHENTICATED USER ENDPOINTS =========
-                        // USER PROFILE MANAGEMENT
+                        // ========= AUTHENTICATED USER ENDPOINTS =========                        // USER PROFILE MANAGEMENT
                         .requestMatchers(HttpMethod.GET, "/users/profile").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/users/profile/basic").authenticated()
                         .requestMatchers(HttpMethod.POST, "/users/profile/email/send-verification").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/users/profile/email").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/users/profile/password").authenticated()
                         .requestMatchers(HttpMethod.POST, "/users/profile/avatar").authenticated()
+
+                        // PHONE VERIFICATION MANAGEMENT
+                        .requestMatchers(HttpMethod.POST, "/users/profile/phone/send-verification").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/users/profile/phone/verify").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/users/profile/phone/status").authenticated()
 
                         // API Blog (Authenticated user endpoints)
                         .requestMatchers(HttpMethod.POST, "/blog").authenticated()

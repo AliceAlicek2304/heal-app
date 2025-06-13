@@ -487,6 +487,26 @@
     font-weight: 500;
 }
 
+.verifiedBadge {
+    background: #d1fae5;
+    color: #065f46;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid #a7f3d0;
+}
+
+.unverifiedBadge {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid #fbbf24;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .container {

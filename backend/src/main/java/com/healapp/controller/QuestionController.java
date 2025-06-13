@@ -155,4 +155,19 @@ public class QuestionController {
         ApiResponse<QuestionResponse> response = questionService.getQuestionById(questionId, userId);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<Page<QuestionResponse>>> searchQuestions(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sort,
+            @RequestParam(defaultValue = "DESC") String direction) {
+
+        Sort.Direction sortDirection = Sort.Direction.fromString(direction.toUpperCase());
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sort));
+
+        ApiResponse<Page<QuestionResponse>> response = questionService.searchQuestions(query, pageable);
+        return ResponseEntity.ok(response);
+    }
 }

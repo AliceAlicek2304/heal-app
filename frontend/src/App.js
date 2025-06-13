@@ -12,6 +12,7 @@ import Questions from './pages/Questions/Questions';
 import CreateQuestion from './pages/Questions/CreateQuestion/CreateQuestion';
 import Consultation from './pages/Consultation/Consultation';
 import STITesting from './pages/STITesting/STITesting';
+import SearchResults from './pages/SearchResults/SearchResults';
 import { AuthProvider } from "./contexts/AuthContext";
 import { ToastProvider } from './contexts/ToastContext';
 
@@ -29,10 +30,10 @@ function App() {
               <Route path="/menstrual-cycle" element={<MenstrualCycleCalculator />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/profile/:tab" element={<ProfilePage />} />
-              <Route path="/questions" element={<Questions />} />
-              <Route path="/questions/create" element={<CreateQuestion />} />
+              <Route path="/questions" element={<Questions />} />              <Route path="/questions/create" element={<CreateQuestion />} />
               <Route path="/consultation" element={<Consultation />} />
-              <Route path="/sti-testing" element={<STITesting />} />  
+              <Route path="/sti-testing" element={<STITesting />} />
+              <Route path="/search" element={<SearchResults />} />
             </Routes>
             <ChatBot />
           </div>

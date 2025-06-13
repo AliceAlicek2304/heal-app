@@ -16,6 +16,7 @@ public class UserResponse {
     private LocalDate birthDay;
     private String gender;
     private String phone;
+    private Boolean isPhoneVerified; // Thêm trường này để hiển thị trạng thái xác thực
     private String email;
     private String username;
     private String avatar;

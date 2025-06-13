@@ -1,13 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { stiService } from '../../../services/stiService';
 import LoadingSpinner from '../../../components/common/LoadingSpinner/LoadingSpinner';
 import styles from './STIServiceCard.module.css';
 
-const STIServiceCard = ({ service, onBookTest, onAuthRequired }) => {
+const STIServiceCard = ({ service, onBookTest, onAuthRequired, autoOpenDetails = false, onDetailsOpened }) => {
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [detailedService, setDetailedService] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+
+    // Auto-open details modal if requested
+    useEffect(() => {
+        if (autoOpenDetails && service) {
+            handleViewDetails();
+        }
+    }, [autoOpenDetails, service]);
 
     // Using the original simple booking approach
     const handleBookClick = () => {
@@ -78,13 +85,16 @@ const STIServiceCard = ({ service, onBookTest, onAuthRequired }) => {
         if (!text) return '';
         if (text.length <= maxLength) return text;
         return text.substring(0, maxLength) + '...';
-    };
-
-    const handleViewDetails = async () => {
+    }; const handleViewDetails = async () => {
         try {
             setShowDetailsModal(true);
             setLoading(true);
             setError(null);
+
+            // Notify parent that details modal was opened
+            if (onDetailsOpened) {
+                onDetailsOpened();
+            }
 
             // Fetch detailed service info
             const response = await stiService.getServiceDetails(service.serviceId);
@@ -310,8 +320,7 @@ const STIServiceCard = ({ service, onBookTest, onAuthRequired }) => {
                                                             <th>Giá trị tham chiếu</th>
                                                             <th>Giá lẻ</th>
                                                         </tr>
-                                                    </thead>
-                                                    <tbody>
+                                                    </thead>                                                    <tbody>
                                                         {detailedService.testComponents.map((component, index) => (
                                                             <tr key={component.componentId || index}>
                                                                 <td>{index + 1}</td>
@@ -322,7 +331,8 @@ const STIServiceCard = ({ service, onBookTest, onAuthRequired }) => {
                                                                     '-'}
                                                                 </td>
                                                             </tr>
-                                                        ))}                                                    </tbody>
+                                                        ))}
+                                                    </tbody>
                                                 </table>
 
                                                 {/* Hiển thị giá trị tiết kiệm nếu có thông tin giá component */}

@@ -125,7 +125,7 @@ const ConsultantSchedule = () => {
         if (meetingUrl) {
             window.open(meetingUrl, '_blank');
         }
-    };    const handleCopyLink = async (meetingUrl) => {
+    }; const handleCopyLink = async (meetingUrl) => {
         try {
             await navigator.clipboard.writeText(meetingUrl);
             // Hiển thị thông báo thành công
@@ -158,7 +158,7 @@ const ConsultantSchedule = () => {
                 textArea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
-                
+
                 // Show success message for fallback too
                 const successMsg = document.createElement('div');
                 successMsg.textContent = '✓ Đã sao chép link cuộc họp!';
@@ -341,6 +341,16 @@ const ConsultantSchedule = () => {
                     </div>
                 );
         }
+    };
+
+    // Phone verification helpers
+    const isPhoneVerified = (phone) => {
+        return phone && phone.endsWith('_V');
+    };
+
+    const getDisplayPhone = (phone) => {
+        if (!phone) return '';
+        return phone.endsWith('_V') ? phone.slice(0, -2) : phone;
     };
 
     if (loading) {
@@ -528,14 +538,20 @@ const ConsultantSchedule = () => {
                                             <span className={styles.unavailable}>Chưa cập nhật</span>
                                         )}
                                     </span>
-                                </div>
-                                <div className={styles.infoRow}>
+                                </div>                                <div className={styles.infoRow}>
                                     <span className={styles.label}>Số điện thoại:</span>
                                     <span className={styles.value}>
                                         {selectedConsultation.customerPhone ? (
-                                            <a href={`tel:${selectedConsultation.customerPhone}`} className={styles.contactLink}>
-                                                📞 {selectedConsultation.customerPhone}
-                                            </a>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <a href={`tel:${getDisplayPhone(selectedConsultation.customerPhone)}`} className={styles.contactLink}>
+                                                    📞 {getDisplayPhone(selectedConsultation.customerPhone)}
+                                                </a>
+                                                {isPhoneVerified(selectedConsultation.customerPhone) ? (
+                                                    <span className={styles.verifiedBadge}>✅ Đã xác thực</span>
+                                                ) : (
+                                                    <span className={styles.unverifiedBadge}>⚠️ Chưa xác thực</span>
+                                                )}
+                                            </div>
                                         ) : (
                                             <span className={styles.unavailable}>Chưa cập nhật</span>
                                         )}
