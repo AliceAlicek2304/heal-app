@@ -85,10 +85,10 @@ const STIServiceCard = ({ service, onBookTest, onAuthRequired }) => {
             setShowDetailsModal(true);
             setLoading(true);
             setError(null);
-            
+
             // Fetch detailed service info
             const response = await stiService.getServiceDetails(service.serviceId);
-            
+
             if (response.success) {
                 // Ensure we have all necessary data by combining with original service data
                 const combinedData = {
@@ -116,6 +116,14 @@ const STIServiceCard = ({ service, onBookTest, onAuthRequired }) => {
             setDetailedService(null);
             setError(null);
         }, 300);
+    };
+
+    const calculateTotalComponentPrice = (components) => {
+        if (!components || components.length === 0) return 0;
+        return components.reduce((total, component) => {
+            const componentPrice = parseFloat(component.price) || 0;
+            return total + componentPrice;
+        }, 0);
     };
 
     return (
@@ -274,8 +282,8 @@ const STIServiceCard = ({ service, onBookTest, onAuthRequired }) => {
                                             <div className={styles.infoItem}>
                                                 <span className={styles.infoLabel}>Số lượng xét nghiệm:</span>
                                                 <span className={styles.infoValue}>
-                                                    {detailedService.componentCount || 
-                                                    detailedService.testComponents?.length || 0} xét nghiệm
+                                                    {detailedService.componentCount ||
+                                                        detailedService.testComponents?.length || 0} xét nghiệm
                                                 </span>
                                             </div>
                                             <div className={styles.infoItem}>
@@ -293,14 +301,14 @@ const STIServiceCard = ({ service, onBookTest, onAuthRequired }) => {
                                         <div className={styles.modalSection}>
                                             <h4 className={styles.sectionTitle}>
                                                 Danh sách xét nghiệm ({detailedService.testComponents.length})
-                                            </h4>
-                                            <div className={styles.componentsList}>
+                                            </h4>                                            <div className={styles.componentsList}>
                                                 <table className={styles.componentsTable}>
                                                     <thead>
                                                         <tr>
                                                             <th>STT</th>
                                                             <th>Tên xét nghiệm</th>
                                                             <th>Giá trị tham chiếu</th>
+                                                            <th>Giá lẻ</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -309,10 +317,44 @@ const STIServiceCard = ({ service, onBookTest, onAuthRequired }) => {
                                                                 <td>{index + 1}</td>
                                                                 <td>{component.testName}</td>
                                                                 <td>{component.referenceRange || 'N/A'}</td>
+                                                                <td>{component.price ?
+                                                                    `${component.price.toLocaleString('vi-VN')} VNĐ` :
+                                                                    '-'}
+                                                                </td>
                                                             </tr>
-                                                        ))}
-                                                    </tbody>
+                                                        ))}                                                    </tbody>
                                                 </table>
+
+                                                {/* Hiển thị giá trị tiết kiệm nếu có thông tin giá component */}
+                                                {calculateTotalComponentPrice(detailedService.testComponents) > 0 && (
+                                                    <div className={styles.priceComparison}>
+                                                        <div className={styles.priceRow}>
+                                                            <strong>Tổng giá lẻ:</strong>
+                                                            <span className={styles.totalPrice}>
+                                                                {(calculateTotalComponentPrice(detailedService.testComponents)).toLocaleString('vi-VN')} VNĐ
+                                                            </span>
+                                                        </div>
+
+                                                        <div className={styles.priceRow}>
+                                                            <strong>Giá gói combo:</strong>
+                                                            <span className={styles.packagePrice}>
+                                                                {detailedService.price ? detailedService.price.toLocaleString('vi-VN') : 0} VNĐ
+                                                            </span>
+                                                        </div>
+
+                                                        {calculateTotalComponentPrice(detailedService.testComponents) > detailedService.price && (
+                                                            <div className={styles.savingsRow}>
+                                                                <strong>Tiết kiệm:</strong>
+                                                                <span className={styles.savingsAmount}>
+                                                                    {(calculateTotalComponentPrice(detailedService.testComponents) - detailedService.price).toLocaleString('vi-VN')} VNĐ
+                                                                    {' '}
+                                                                    ({Math.round(((calculateTotalComponentPrice(detailedService.testComponents) - detailedService.price) /
+                                                                        calculateTotalComponentPrice(detailedService.testComponents)) * 100)}%)
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     )}

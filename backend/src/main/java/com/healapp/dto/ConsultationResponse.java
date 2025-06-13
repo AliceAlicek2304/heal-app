@@ -12,9 +12,10 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class ConsultationResponse {
     private Long consultationId;
-
     private Long customerId;
     private String customerName;
+    private String customerEmail;
+    private String customerPhone;
 
     private Long consultantId;
     private String consultantName;

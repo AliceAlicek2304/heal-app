@@ -12,10 +12,17 @@ import java.util.List;
 
 @Repository
 public interface ConsultationRepository extends JpaRepository<Consultation, Long> {
-
         List<Consultation> findByCustomer(UserDtls customer);
 
         List<Consultation> findByConsultant(UserDtls consultant);
+
+        // Lấy consultation theo customer ID (cho consultation history)
+        @Query("SELECT c FROM Consultation c WHERE c.customer.id = :customerId ORDER BY c.createdAt DESC")
+        List<Consultation> findByCustomerId(Long customerId);
+
+        // Lấy consultation theo consultant ID (cho consultant schedule)
+        @Query("SELECT c FROM Consultation c WHERE c.consultant.id = :consultantId ORDER BY c.createdAt DESC")
+        List<Consultation> findByConsultantId(Long consultantId);
 
         List<Consultation> findByStatus(ConsultationStatus status);
 

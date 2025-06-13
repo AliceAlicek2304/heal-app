@@ -150,6 +150,23 @@ public class ConsultationController {
         }
     }
 
+    @GetMapping("/my-consultant-schedule")
+    @PreAuthorize("hasRole('ROLE_CONSULTANT')")
+    public ResponseEntity<ApiResponse<List<ConsultationResponse>>> getConsultantSchedule() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        Long consultantId = userService.getUserIdFromUsername(username);
+
+        ApiResponse<List<ConsultationResponse>> response = consultationService
+                .getConsultationsForConsultant(consultantId);
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
     @GetMapping("/consultant/{consultantId}/profile")
     public ResponseEntity<ApiResponse<ConsultantProfileResponse>> getConsultantProfileForConsultation(
             @PathVariable Long consultantId) {

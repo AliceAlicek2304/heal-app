@@ -205,6 +205,288 @@
     background-color: #c82333;
 }
 
+.detailButton {
+    background-color: #6c757d;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.detailButton:hover:not(:disabled) {
+    background-color: #5a6268;
+}
+
+/* Modal Styles */
+.modalBackdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.detailModal {
+    background: white;
+    border-radius: 12px;
+    max-width: 800px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 24px 16px 24px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.modalHeader h3 {
+    margin: 0;
+    color: #333;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.closeBtn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #6c757d;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.closeBtn:hover {
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+.modalBody {
+    padding: 24px;
+}
+
+.modalSection {
+    margin-bottom: 32px;
+}
+
+.modalSection:last-child {
+    margin-bottom: 0;
+}
+
+.modalSection h4 {
+    margin: 0 0 16px 0;
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #007bff;
+}
+
+.statusInfo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.statusBadge {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.customerInfo, .consultationInfo {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+}
+
+.infoRow {
+    display: flex;
+    margin-bottom: 12px;
+    align-items: flex-start;
+}
+
+.infoRow:last-child {
+    margin-bottom: 0;
+}
+
+.label {
+    font-weight: 600;
+    color: #495057;
+    min-width: 140px;
+    margin-right: 12px;
+}
+
+.value {
+    color: #333;
+    flex: 1;
+    word-break: break-word;
+}
+
+.contactLink {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.contactLink:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+.unavailable {
+    color: #6c757d;
+    font-style: italic;
+    font-size: 0.9em;
+}
+
+.meetingInfo {
+    background-color: #e8f4fd;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+}
+
+.meetingUrl {
+    margin-bottom: 16px;
+}
+
+.urlContainer {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.urlInput {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    background-color: white;
+    font-family: monospace;
+}
+
+.copyBtn {
+    padding: 12px 16px;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.copyBtn:hover {
+    background-color: #5a6268;
+}
+
+.joinMeetingBtn {
+    padding: 12px 24px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    justify-content: center;
+}
+
+.joinMeetingBtn:hover {
+    background-color: #218838;
+}
+
+.joinMeetingBtn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.joinMeetingBtn:disabled:hover {
+    background-color: #6c757d;
+}
+
+.modalFooter {
+    padding: 16px 24px 24px 24px;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.closeButton {
+    padding: 10px 24px;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.closeButton:hover {
+    background-color: #5a6268;
+}
+
+.noMeetingUrl {
+    padding: 1rem;
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.noMeetingUrl .unavailable {
+    color: #856404;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .container {

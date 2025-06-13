@@ -41,9 +41,10 @@ public interface STIServiceRepository extends JpaRepository<STIService, Long> {
     List<STIService> findByPriceRange(@Param("minPrice") Double minPrice, @Param("maxPrice") Double maxPrice);
 
     // Đếm số dịch vụ đang hoạt động
-    long countByIsActiveTrue();
-
-    // Tìm dịch vụ kèm theo thành phần xét nghiệm
+    long countByIsActiveTrue();    // Tìm dịch vụ kèm theo thành phần xét nghiệm
     @Query("SELECT DISTINCT s FROM STIService s LEFT JOIN FETCH s.testComponents WHERE s.serviceId = :serviceId")
     Optional<STIService> findByIdWithComponents(@Param("serviceId") Long serviceId);
+
+    // Tìm tất cả dịch vụ (bao gồm cả không hoạt động) sắp xếp theo ngày tạo giảm dần
+    List<STIService> findAllByOrderByCreatedAtDesc();
 }

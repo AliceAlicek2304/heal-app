@@ -26,6 +26,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import org.mockito.ArgumentCaptor;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Kiểm thử dịch vụ quản lý STI Service")
@@ -91,19 +92,19 @@ public class STIServiceServiceTest {
         regularUser.setId(3L);
         regularUser.setUsername("user");
         regularUser.setFullName("Regular User");
-        regularUser.setRole(userRole);
-
-        // Khởi tạo các thành phần xét nghiệm
+        regularUser.setRole(userRole); // Khởi tạo các thành phần xét nghiệm
         testComponents = new ArrayList<>();
         ServiceTestComponent component1 = new ServiceTestComponent();
         component1.setComponentId(1L);
         component1.setTestName("Xét nghiệm HIV");
         component1.setReferenceRange("Âm tính");
+        component1.setPrice(250000.0);
 
         ServiceTestComponent component2 = new ServiceTestComponent();
         component2.setComponentId(2L);
         component2.setTestName("Xét nghiệm viêm gan B");
         component2.setReferenceRange("Âm tính");
+        component2.setPrice(250000.0);
 
         testComponents.add(component1);
         testComponents.add(component2);
@@ -125,15 +126,16 @@ public class STIServiceServiceTest {
         validRequest.setDescription("Gói kiểm tra các bệnh lây qua đường tình dục");
         validRequest.setPrice(500000.0);
         validRequest.setIsActive(true);
-
         List<STIServiceRequest.TestComponentRequest> componentRequests = new ArrayList<>();
         STIServiceRequest.TestComponentRequest compReq1 = new STIServiceRequest.TestComponentRequest();
         compReq1.setTestName("Xét nghiệm HIV");
         compReq1.setReferenceRange("Âm tính");
+        compReq1.setPrice(250000.0);
 
         STIServiceRequest.TestComponentRequest compReq2 = new STIServiceRequest.TestComponentRequest();
         compReq2.setTestName("Xét nghiệm viêm gan B");
         compReq2.setReferenceRange("Âm tính");
+        compReq2.setPrice(250000.0);
 
         componentRequests.add(compReq1);
         componentRequests.add(compReq2);
@@ -549,5 +551,71 @@ public class STIServiceServiceTest {
         assertFalse(response.isSuccess());
         assertEquals("Only ADMIN and STAFF can update STI services", response.getMessage());
         verify(stiServiceRepository, never()).save(any(STIService.class));
+    }
+
+    @Test
+    @DisplayName("Kiểm tra giá của component được lưu và trả về đúng")
+    void componentPrice_SavedAndReturned_Correctly() {
+        // Chuẩn bị dữ liệu với giá cụ thể cho components
+        when(userRepository.findById(staffUser.getId())).thenReturn(Optional.of(staffUser));
+        when(stiServiceRepository.existsByNameIgnoreCase(anyString())).thenReturn(false);
+        when(stiServiceRepository.save(any(STIService.class))).thenReturn(stiService);
+
+        // Thiết lập component với giá
+        ServiceTestComponent componentWithPrice = new ServiceTestComponent();
+        componentWithPrice.setComponentId(1L);
+        componentWithPrice.setTestName("Xét nghiệm HIV");
+        componentWithPrice.setReferenceRange("Âm tính");
+        componentWithPrice.setPrice(350000.0); // Giá khác so với thiết lập chung
+
+        List<ServiceTestComponent> componentsWithPrice = new ArrayList<>();
+        componentsWithPrice.add(componentWithPrice);
+
+        STIService serviceWithPricedComponents = new STIService();
+        serviceWithPricedComponents.setServiceId(1L);
+        serviceWithPricedComponents.setName("Gói xét nghiệm STI toàn diện");
+        serviceWithPricedComponents.setPrice(500000.0);
+        serviceWithPricedComponents.setIsActive(true);
+        serviceWithPricedComponents.setTestComponents(componentsWithPrice);
+
+        when(stiServiceRepository.findByIdWithComponents(anyLong()))
+                .thenReturn(Optional.of(serviceWithPricedComponents));
+        when(serviceTestComponentRepository.save(any(ServiceTestComponent.class))).thenReturn(componentWithPrice);
+
+        // Thiết lập request với giá component
+        STIServiceRequest requestWithPrice = new STIServiceRequest();
+        requestWithPrice.setName("Gói xét nghiệm STI toàn diện");
+        requestWithPrice.setDescription("Gói kiểm tra các bệnh lây qua đường tình dục");
+        requestWithPrice.setPrice(500000.0);
+
+        List<STIServiceRequest.TestComponentRequest> componentRequestsWithPrice = new ArrayList<>();
+        STIServiceRequest.TestComponentRequest compReqWithPrice = new STIServiceRequest.TestComponentRequest();
+        compReqWithPrice.setTestName("Xét nghiệm HIV");
+        compReqWithPrice.setReferenceRange("Âm tính");
+        compReqWithPrice.setPrice(350000.0);
+        componentRequestsWithPrice.add(compReqWithPrice);
+
+        requestWithPrice.setTestComponents(componentRequestsWithPrice);
+
+        // Thực hiện hành động
+        ApiResponse<STIServiceResponse> response = stiServiceService.createServiceWithComponents(requestWithPrice,
+                staffUser.getId());
+
+        // Kiểm tra kết quả
+        assertTrue(response.isSuccess());
+        assertNotNull(response.getData());
+        assertNotNull(response.getData().getTestComponents());
+        assertEquals(1, response.getData().getTestComponents().size());
+
+        // Kiểm tra giá component được trả về đúng
+        STIServiceResponse.TestComponentResponse componentResponse = response.getData().getTestComponents().get(0);
+        assertEquals(350000.0, componentResponse.getPrice());
+        assertEquals("Xét nghiệm HIV", componentResponse.getTestName());
+
+        // Verify rằng serviceTestComponentRepository.save được gọi với component có giá
+        // đúng
+        ArgumentCaptor<ServiceTestComponent> componentCaptor = ArgumentCaptor.forClass(ServiceTestComponent.class);
+        verify(serviceTestComponentRepository).save(componentCaptor.capture());
+        assertEquals(350000.0, componentCaptor.getValue().getPrice());
     }
 }

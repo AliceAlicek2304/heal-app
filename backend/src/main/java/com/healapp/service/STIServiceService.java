@@ -29,13 +29,13 @@ public class STIServiceService {
 
     @Autowired
     private UserRepository userRepository;
-    
+
     /**
      * Tạo dịch vụ xét nghiệm mới với các components (ADMIN and STAFF only)
      */
     @Transactional
     public ApiResponse<STIServiceResponse> createServiceWithComponents(STIServiceRequest request, Long userId) {
-        try {                                                                                                                           
+        try {
             log.info("Creating STI service: {} by user: {}", request.getName(), userId);
 
             // Kiểm tra user có quyền
@@ -77,11 +77,11 @@ public class STIServiceService {
                 log.info("Creating {} test components", request.getTestComponents().size());
 
                 for (STIServiceRequest.TestComponentRequest componentReq : request.getTestComponents()) {
-                    try {
-                        ServiceTestComponent component = new ServiceTestComponent();
+                    try {                        ServiceTestComponent component = new ServiceTestComponent();
                         component.setStiService(savedService);
                         component.setTestName(componentReq.getTestName());
                         component.setReferenceRange(componentReq.getReferenceRange());
+                        component.setPrice(componentReq.getPrice());
 
                         ServiceTestComponent savedComponent = serviceTestComponentRepository.save(component);
                         log.info("Component saved: {} with ID: {}", savedComponent.getTestName(),
@@ -158,11 +158,11 @@ public class STIServiceService {
                 serviceTestComponentRepository.deleteByStiServiceServiceId(serviceId);
 
                 // Tạo components mới
-                for (STIServiceRequest.TestComponentRequest componentReq : request.getTestComponents()) {
-                    ServiceTestComponent component = new ServiceTestComponent();
+                for (STIServiceRequest.TestComponentRequest componentReq : request.getTestComponents()) {                    ServiceTestComponent component = new ServiceTestComponent();
                     component.setStiService(updatedService);
                     component.setTestName(componentReq.getTestName());
                     component.setReferenceRange(componentReq.getReferenceRange());
+                    component.setPrice(componentReq.getPrice());
 
                     serviceTestComponentRepository.save(component);
                 }
@@ -224,6 +224,87 @@ public class STIServiceService {
     }
 
     /**
+     * Toggle trạng thái hoạt động của dịch vụ (Soft Delete/Restore)
+     */
+    @Transactional
+    public ApiResponse<STIServiceResponse> toggleServiceStatus(Long serviceId, Long userId) {
+        try {
+            log.info("Toggling STI service status: {} by user: {}", serviceId, userId);
+
+            // Kiểm tra user có quyền
+            Optional<UserDtls> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) {
+                log.error("User not found: {}", userId);
+                return ApiResponse.error("User not found");
+            }
+
+            UserDtls user = userOpt.get();
+            String roleName = user.getRole() != null ? user.getRole().getRoleName() : null;
+
+            if (!"ADMIN".equals(roleName) && !"STAFF".equals(roleName)) {
+                log.error("User {} does not have permission, role: {}", user.getUsername(), roleName);
+                return ApiResponse.error("Only ADMIN and STAFF can toggle STI service status");
+            }
+
+            // Tìm dịch vụ cần toggle status
+            Optional<STIService> serviceOpt = stiServiceRepository.findById(serviceId);
+            if (serviceOpt.isEmpty()) {
+                log.error("STI service not found: {}", serviceId);
+                return ApiResponse.error("STI service not found");
+            }
+
+            STIService stiService = serviceOpt.get();
+            boolean newStatus = !stiService.getIsActive();
+            stiService.setIsActive(newStatus);
+
+            STIService updatedService = stiServiceRepository.save(stiService);
+            STIServiceResponse response = convertToResponse(updatedService);
+
+            String action = newStatus ? "activated" : "deactivated";
+            log.info("STI Service {} successfully by user: {} - Service ID: {}",
+                    action, user.getUsername(), serviceId);
+
+            return ApiResponse.success(
+                    String.format("STI service %s successfully", action), response);
+
+        } catch (Exception e) {
+            log.error("Error toggling STI service status: {}", e.getMessage(), e);
+            return ApiResponse.error("Failed to toggle STI service status: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Lấy tất cả dịch vụ (bao gồm cả inactive) - chỉ dành cho STAFF/ADMIN
+     */
+    public ApiResponse<List<STIServiceResponse>> getAllServicesForManagement(Long userId) {
+        try {
+            // Kiểm tra user có quyền
+            Optional<UserDtls> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ApiResponse.error("User not found");
+            }
+
+            UserDtls user = userOpt.get();
+            String roleName = user.getRole() != null ? user.getRole().getRoleName() : null;
+
+            if (!"ADMIN".equals(roleName) && !"STAFF".equals(roleName)) {
+                return ApiResponse.error("Only ADMIN and STAFF can view all services");
+            }
+
+            List<STIService> allServices = stiServiceRepository.findAllByOrderByCreatedAtDesc();
+            List<STIServiceResponse> responses = allServices.stream()
+                    .map(this::convertToResponse)
+                    .toList();
+
+            return ApiResponse.success("All STI services retrieved successfully", responses);
+
+        } catch (Exception e) {
+            log.error("Error retrieving all STI services: {}", e.getMessage(), e);
+            return ApiResponse.error("Failed to retrieve all STI services: " + e.getMessage());
+        }
+    }
+
+    /**
      * Convert STIService to Response
      */
     private STIServiceResponse convertToResponse(STIService stiService) {
@@ -253,13 +334,13 @@ public class STIServiceService {
         STIServiceResponse response = convertToResponse(stiService);
 
         // Thêm thông tin components
-        if (stiService.getTestComponents() != null) {
-            List<STIServiceResponse.TestComponentResponse> componentResponses = stiService.getTestComponents().stream()
+        if (stiService.getTestComponents() != null) {            List<STIServiceResponse.TestComponentResponse> componentResponses = stiService.getTestComponents().stream()
                     .map(component -> {
                         STIServiceResponse.TestComponentResponse compResp = new STIServiceResponse.TestComponentResponse();
                         compResp.setComponentId(component.getComponentId());
                         compResp.setTestName(component.getTestName());
                         compResp.setReferenceRange(component.getReferenceRange());
+                        compResp.setPrice(component.getPrice());
                         return compResp;
                     })
                     .toList();

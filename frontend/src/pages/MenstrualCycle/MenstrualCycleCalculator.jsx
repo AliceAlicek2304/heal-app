@@ -313,10 +313,9 @@ const MenstrualCycleCalculator = () => {
                         <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
                             <LoginForm
                                 onClose={closeModals}
-                                onSwitchToRegister={switchToRegister}
-                                onLoginSuccess={() => {
+                                onSwitchToRegister={switchToRegister}                                onLoginSuccess={() => {
                                     closeModals();
-                                    toast.success('Đăng nhập thành công!');
+                                    // Không cần toast ở đây vì LoginForm đã có toast
                                 }}
                             />
                         </div>

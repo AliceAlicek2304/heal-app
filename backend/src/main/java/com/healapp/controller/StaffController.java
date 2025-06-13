@@ -63,7 +63,21 @@ public class StaffController {
 
     @GetMapping("/sti-services")
     public ResponseEntity<ApiResponse<List<STIServiceResponse>>> getAllSTIServices() {
-        ApiResponse<List<STIServiceResponse>> response = stiServiceService.getActiveServices();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        Long staffUserId = userService.getUserIdFromUsername(username);
+
+        ApiResponse<List<STIServiceResponse>> response = stiServiceService.getAllServicesForManagement(staffUserId);
+        return getResponseEntity(response);
+    }
+
+    @PatchMapping("/sti-services/{serviceId}/toggle-status")
+    public ResponseEntity<ApiResponse<STIServiceResponse>> toggleSTIServiceStatus(@PathVariable Long serviceId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        Long staffUserId = userService.getUserIdFromUsername(username);
+
+        ApiResponse<STIServiceResponse> response = stiServiceService.toggleServiceStatus(serviceId, staffUserId);
         return getResponseEntity(response);
     }
 

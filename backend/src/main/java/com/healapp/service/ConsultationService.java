@@ -193,7 +193,7 @@ public class ConsultationService {
                 if (!consultation.getCustomer().getId().equals(userId) &&
                         !consultation.getConsultant().getId().equals(userId)) {
                     return ApiResponse.error("You don't have permission to cancel this consultation");
-                }                // No payment processing required for cancellation
+                } // No payment processing required for cancellation
             } else if (newStatus == ConsultationStatus.COMPLETED) {
                 if (!consultation.getConsultant().getId().equals(userId)) {
                     return ApiResponse.error("Only assigned consultant can mark the consultation as completed");
@@ -260,7 +260,9 @@ public class ConsultationService {
                 return ApiResponse.error("User not found");
             }
 
-            List<Consultation> consultations = consultationRepository.findByUserInvolved(userId);
+            // Chỉ lấy consultation mà user này là CUSTOMER (đã đặt lịch)
+            // Không bao gồm consultation mà user này là CONSULTANT (được đặt lịch)
+            List<Consultation> consultations = consultationRepository.findByCustomerId(userId);
 
             // Convert to response
             List<ConsultationResponse> responseList = consultations.stream()
@@ -271,6 +273,35 @@ public class ConsultationService {
 
         } catch (Exception e) {
             return ApiResponse.error("Failed to retrieve consultations: " + e.getMessage());
+        }
+    }
+
+    public ApiResponse<List<ConsultationResponse>> getConsultationsForConsultant(Long consultantId) {
+        try {
+            Optional<UserDtls> userOpt = userRepository.findById(consultantId);
+            if (userOpt.isEmpty()) {
+                return ApiResponse.error("Consultant not found");
+            }
+
+            UserDtls user = userOpt.get();
+            // Kiểm tra user có role CONSULTANT không
+            String roleName = user.getRole() != null ? user.getRole().getRoleName() : null;
+            if (!"CONSULTANT".equals(roleName)) {
+                return ApiResponse.error("Access denied. User is not a consultant");
+            }
+
+            // Lấy consultation mà user này là CONSULTANT (được đặt lịch)
+            List<Consultation> consultations = consultationRepository.findByConsultantId(consultantId);
+
+            // Convert to response
+            List<ConsultationResponse> responseList = consultations.stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+
+            return ApiResponse.success("Consultant schedule retrieved successfully", responseList);
+
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to retrieve consultant schedule: " + e.getMessage());
         }
     }
 
@@ -290,38 +321,13 @@ public class ConsultationService {
         }
     }
 
-    public ApiResponse<List<ConsultationResponse>> getConsultationsForConsultant(Long consultantId) {
-        try {
-            // Kiểm tra xem người dùng có vai trò CONSULTANT không
-            Optional<UserDtls> consultantOpt = userRepository.findById(consultantId);
-            if (consultantOpt.isEmpty()) {
-                return ApiResponse.error("User not found");
-            }
-
-            UserDtls consultant = consultantOpt.get();
-            // Cập nhật: Sử dụng getRoleName() thay vì getRole()
-            if (!"CONSULTANT".equals(consultant.getRoleName())) {
-                return ApiResponse.error("User is not a consultant");
-            }
-
-            // Lấy danh sách consultation của consultant
-            List<Consultation> consultations = consultationRepository.findByConsultant(consultant);
-
-            List<ConsultationResponse> consultationResponses = consultations.stream()
-                    .map(this::convertToResponse)
-                    .collect(Collectors.toList());
-
-            return ApiResponse.success("Consultations retrieved successfully", consultationResponses);
-        } catch (Exception e) {
-            return ApiResponse.error("Failed to retrieve consultations: " + e.getMessage());
-        }
-    }
-
     private ConsultationResponse convertToResponse(Consultation consultation) {
         ConsultationResponse response = new ConsultationResponse();
         response.setConsultationId(consultation.getConsultationId());
         response.setCustomerId(consultation.getCustomer().getId());
         response.setCustomerName(consultation.getCustomer().getFullName());
+        response.setCustomerEmail(consultation.getCustomer().getEmail());
+        response.setCustomerPhone(consultation.getCustomer().getPhone());
         response.setConsultantId(consultation.getConsultant().getId());
         response.setConsultantName(consultation.getConsultant().getFullName());
 

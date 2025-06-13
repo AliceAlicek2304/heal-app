@@ -21,7 +21,7 @@ public class AppConfig {
     @Column(name = "config_value", columnDefinition = "NVARCHAR(MAX)")
     private String configValue;
 
-    @Column(name = "description", length = 500)
+    @Column(name = "description", length = 500, columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
     @Column(name = "is_active", nullable = false)

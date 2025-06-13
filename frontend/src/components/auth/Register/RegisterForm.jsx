@@ -236,13 +236,11 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
                 verificationCode: formData.verificationCode,
             };
 
-            const response = await authService.registerUser(registerData);
-
-            if (response.success) {
-                toast.success('Đăng ký thành công! Chuyển sang đăng nhập...', 8000);
+            const response = await authService.registerUser(registerData);            if (response.success) {
+                toast.success('Đăng ký thành công! Chuyển sang đăng nhập...', 2000);
                 setTimeout(() => {
                     onSwitchToLogin();
-                }, 2000);
+                }, 500);
             } else {
                 toast.error(response.message || 'Đăng ký thất bại');
             }

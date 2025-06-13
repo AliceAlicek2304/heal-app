@@ -20,7 +20,7 @@ public class STIService {
     @Column(name = "service_id")
     private Long serviceId;
 
-    @Column(name = "name", nullable = false, length = 200)
+    @Column(name = "name", nullable = false, length = 200, columnDefinition = "NVARCHAR(MAX)")
     private String name;
 
     @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")

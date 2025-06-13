@@ -10,6 +10,7 @@ import MyQuestions from '../../components/profile/MyQuestions';
 import ConsultationHistory from '../../components/profile/ConsultationHistory';
 import STIHistory from '../../components/profile/STIHistory';
 import ManagerQuestion from '../../components/profile/ManagerQuestion';
+import ManageSTIServices from '../../components/profile/ManageSTIServices';
 import ManageSTITests from '../../components/profile/ManageSTITests';
 import ConsultantProfile from '../../components/profile/ConsultantProfile';
 import ConsultantSchedule from '../../components/profile/ConsultantSchedule';
@@ -95,6 +96,12 @@ const ProfilePage = () => {
                         <ManagerQuestion />
                     </div>
                 );
+            case 'manage-sti-services':
+                return (
+                    <div className={styles.contentSection}>
+                        <ManageSTIServices />
+                    </div>
+                );
             case 'manage-sti-tests':
                 return (
                     <div className={styles.contentSection}>
@@ -112,7 +119,7 @@ const ProfilePage = () => {
                     <div className={styles.contentSection}>
                         <ConsultantSchedule />
                     </div>
-                );            case 'consultant-sti-tests':
+                ); case 'consultant-sti-tests':
                 return (
                     <div className={styles.contentSection}>
                         <ConsultantSTITests />

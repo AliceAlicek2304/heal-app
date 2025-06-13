@@ -115,13 +115,11 @@ const Consultation = () => {
             return;
         }
         navigate('/profile/consultation-history');
-    };
-
-    const handleLoginSuccess = () => {
+    };    const handleLoginSuccess = () => {
         closeModals();
         // Refresh data after login
         fetchData();
-        toast.success('Đăng nhập thành công!');
+        // Không cần toast ở đây vì LoginForm đã có toast
     };
 
     const handleRetry = () => {

@@ -59,20 +59,21 @@ const LoginForm = ({ onClose, onSwitchToRegister, onLoginSuccess, onSwitchToForg
             const response = await login({
                 username: formData.username,
                 password: formData.password,
-            });
-
-            if (response.success) {
+            });            if (response.success) {
                 console.log("Đăng nhập thành công!");
 
-                toast.success('Đăng nhập thành công! Đang chuyển hướng...', 3000);
+                // Hiển thị toast và đóng modal cùng lúc
+                toast.success('Đăng nhập thành công!', 2000);
 
+                // Đóng modal ngay lập tức và gọi callback
                 if (onLoginSuccess) {
                     onLoginSuccess();
                 }
-
+                
+                // Đóng modal với delay ngắn để user thấy toast
                 setTimeout(() => {
                     onClose();
-                }, 1500);
+                }, 500);
             } else {
                 toast.error(response.message || 'Đăng nhập thất bại');
             }

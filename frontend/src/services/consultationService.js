@@ -300,7 +300,7 @@ export const consultationService = {
     // Lấy lịch tư vấn được phân công cho consultant
     getConsultantSchedule: async (onAuthRequired = null) => {
         try {
-            const response = await authService.apiCall(`${API_BASE_URL}/consultations/assigned`, {
+            const response = await authService.apiCall(`${API_BASE_URL}/consultations/my-consultant-schedule`, {
                 method: 'GET'
             });
 
@@ -312,25 +312,16 @@ export const consultationService = {
                 return { success: false, message: 'Phiên đăng nhập hết hạn' };
             }
 
-            if (response.status === 403) {
-                return { success: false, message: 'Không có quyền truy cập' };
-            }
-
-            if (!response.ok) {
-                return {
-                    success: false,
-                    message: `Server error: ${response.status}`
-                };
-            }
-
             return response.json();
         } catch (error) {
             return {
                 success: false,
-                message: 'Không thể tải lịch tư vấn'
+                message: 'Không thể tải lịch làm việc'
             };
         }
-    },    // Cập nhật trạng thái consultation
+    },
+
+    // Cập nhật trạng thái consultation
     updateConsultationStatus: async (consultationId, status, onAuthRequired = null) => {
         try {
             const response = await authService.apiCall(`${API_BASE_URL}/consultations/${consultationId}/status`, {

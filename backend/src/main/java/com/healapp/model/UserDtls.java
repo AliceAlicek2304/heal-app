@@ -21,7 +21,7 @@ public class UserDtls {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "full_name", nullable = false)
+    @Column(name = "full_name", nullable = false, columnDefinition = "nvarchar(255)")
     private String fullName;
 
     @Column(name = "birth_day")

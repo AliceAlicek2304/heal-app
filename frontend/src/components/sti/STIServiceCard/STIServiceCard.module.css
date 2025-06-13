@@ -236,6 +236,51 @@
     max-width: 60%;
 }
 
+/* Price Comparison Styles */
+.priceComparison {
+    margin-top: 1.5rem;
+    padding: 1.25rem;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.priceRow {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.priceRow strong {
+    color: #334155;
+}
+
+.totalPrice {
+    font-weight: 600;
+    color: #475569;
+}
+
+.packagePrice {
+    font-weight: 700;
+    color: #059669;
+}
+
+.savingsRow {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    margin-top: 0.5rem;
+    border-radius: 6px;
+    background: #ecfdf5;
+    padding: 0.75rem 1rem;
+}
+
+.savingsAmount {
+    font-weight: 700;
+    color: #059669;
+}
+
 /* Action Buttons */
 .serviceActions {
     margin-top: auto;
@@ -490,37 +535,30 @@
 .componentsTable {
     width: 100%;
     border-collapse: collapse;
+    border-radius: 8px;
+    overflow: hidden;
 }
 
 .componentsTable th,
 .componentsTable td {
-    padding: 12px 15px;
+    padding: 0.75rem 1rem;
     text-align: left;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #e2e8f0;
 }
 
 .componentsTable th {
-    background-color: #f8f9fa;
+    background: #f8fafc;
+    color: #334155;
     font-weight: 600;
-    color: #333;
-    position: sticky;
-    top: 0;
 }
 
-.componentsTable th:first-child {
-    width: 60px;
+.componentsTable th:last-child,
+.componentsTable td:last-child {
+    text-align: right;
 }
 
-.componentsTable th:last-child {
-    width: 40%;
-}
-
-.componentsTable tr:last-child td {
-    border-bottom: none;
-}
-
-.componentsTable tr:hover td {
-    background-color: #f8f9fa;
+.componentsTable tr:hover {
+    background: #f8fafc;
 }
 
 /* Loading and Error States */

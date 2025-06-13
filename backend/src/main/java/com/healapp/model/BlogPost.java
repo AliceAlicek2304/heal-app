@@ -21,10 +21,11 @@ public class BlogPost {
     @Column(name = "post_id")
     private Long postId;
 
-    @Column(nullable = false)
-    private String title;    @Column(columnDefinition = "nvarchar(MAX)", nullable = false)
+    @Column(nullable = false,columnDefinition = "nvarchar(255)")
+    private String title;
+    @Column(columnDefinition = "nvarchar(MAX)", nullable = false)
     private String content;
-    
+
     @Column(name = "thumbnail_image")
     private String thumbnailImage;
 
@@ -56,7 +57,7 @@ public class BlogPost {
     @Column(name = "reviewed_at")
     private LocalDateTime reviewedAt;
 
-    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    @Column(name = "rejection_reason", columnDefinition = "nvarchar(MAX)")
     private String rejectionReason;
 
     @PreUpdate

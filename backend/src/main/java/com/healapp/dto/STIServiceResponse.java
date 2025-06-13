@@ -22,14 +22,13 @@ public class STIServiceResponse {
 
     // Thông tin components
     private Integer componentCount;
-    private List<TestComponentResponse> testComponents;
-
-    @Data
+    private List<TestComponentResponse> testComponents;    @Data
     @NoArgsConstructor
     @AllArgsConstructor
     public static class TestComponentResponse {
         private Long componentId;
         private String testName;
         private String referenceRange;
+        private Double price;
     }
 }

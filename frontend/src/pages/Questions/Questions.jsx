@@ -75,14 +75,12 @@ const Questions = () => {
             return;
         }
         navigate('/profile/my-questions');
-    };
-
-    const handleLoginSuccess = () => {
+    };    const handleLoginSuccess = () => {
         closeModals();
         // Nếu người dùng vừa đăng nhập, có thể refresh dữ liệu nếu cần
         fetchAnsweredQuestions();
-        toast.success('Đăng nhập thành công!');
-    }; const truncateContent = (content, maxLength = 200) => {
+        // Không cần toast ở đây vì LoginForm đã có toast
+    };const truncateContent = (content, maxLength = 200) => {
         if (!content) return '';
         if (content.length <= maxLength) return content;
         return content.substring(0, maxLength).trim() + '...';
