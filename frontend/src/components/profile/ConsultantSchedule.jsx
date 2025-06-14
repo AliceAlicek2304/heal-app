@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../../contexts/ToastContext';
 import { consultationService } from '../../services/consultationService';
 import { formatDateTime, parseDate } from '../../utils/dateUtils';
 import AdvancedFilter from '../common/AdvancedFilter/AdvancedFilter';
@@ -10,6 +11,7 @@ import styles from './ConsultantSchedule.module.css';
 const ConsultantSchedule = () => {
     const { logout } = useAuth();
     const navigate = useNavigate();
+    const { success: showSuccess, error: showError } = useToast();
     const [consultations, setConsultations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(''); const [actionLoading, setActionLoading] = useState({});
@@ -94,21 +96,42 @@ const ConsultantSchedule = () => {
                 consultationId,
                 newStatus,
                 handleAuthRequired
-            );
-
-            if (response.success !== false) {
+            ); if (response.success !== false) {
                 // Cập nhật local state
                 setConsultations(prev => prev.map(consultation =>
                     consultation.consultationId === consultationId
                         ? { ...consultation, status: newStatus }
                         : consultation
                 ));
-                setError('');
+                setError(''); showSuccess(`${getActionText(newStatus)} lịch tư vấn thành công!`);
             } else {
-                setError(response.message || `Không thể ${getActionText(newStatus)} lịch tư vấn`);
+                const errorMessage = response.message || `Không thể ${getActionText(newStatus)} lịch tư vấn`;
+                setError(errorMessage);
+                showError(errorMessage);
+            }        } catch (error) {
+            let errorMessage = `Có lỗi xảy ra khi ${getActionText(newStatus)} lịch tư vấn`;
+
+            // Kiểm tra nếu là lỗi 400 từ server
+            if (error.response && error.response.status === 400) {
+                if (error.response.data && error.response.data.message) {
+                    const serverMessage = error.response.data.message;
+                    // Xử lý các message cụ thể từ server
+                    if (serverMessage.includes("cannot be marked as completed before its end time")) {
+                        errorMessage = 'Không thể hoàn thành lịch tư vấn trước thời gian kết thúc. Vui lòng đợi đến sau thời gian kết thúc buổi tư vấn.';
+                    } else if (serverMessage.includes("Only assigned consultant can")) {
+                        errorMessage = 'Chỉ có consultant được phân công mới có thể thực hiện hành động này.';
+                    } else if (serverMessage.includes("don't have permission")) {
+                        errorMessage = 'Bạn không có quyền thực hiện hành động này.';
+                    } else {
+                        errorMessage = serverMessage; // Sử dụng message gốc từ server
+                    }
+                } else if (newStatus === 'COMPLETED') {
+                    errorMessage = 'Không thể hoàn thành lịch tư vấn trước thời gian kết thúc. Vui lòng đợi đến sau thời gian kết thúc buổi tư vấn.';
+                }
             }
-        } catch (error) {
-            setError(`Có lỗi xảy ra khi ${getActionText(newStatus)} lịch tư vấn`);
+
+            setError(errorMessage);
+            showError(errorMessage);
         } finally {
             setActionLoading(prev => ({ ...prev, [consultationId]: false }));
         }
@@ -128,26 +151,7 @@ const ConsultantSchedule = () => {
     }; const handleCopyLink = async (meetingUrl) => {
         try {
             await navigator.clipboard.writeText(meetingUrl);
-            // Hiển thị thông báo thành công
-            setError(''); // Clear any existing errors
-            // Tạo temporary success message
-            const successMsg = document.createElement('div');
-            successMsg.textContent = '✓ Đã sao chép link cuộc họp!';
-            successMsg.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: #28a745;
-                color: white;
-                padding: 12px 20px;
-                border-radius: 6px;
-                z-index: 10000;
-                font-size: 14px;
-                font-weight: 500;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            `;
-            document.body.appendChild(successMsg);
-            setTimeout(() => document.body.removeChild(successMsg), 3000);
+            showSuccess('✓ Đã sao chép link cuộc họp!');
         } catch (err) {
             console.error('Không thể sao chép link:', err);
             // Fallback method for older browsers
@@ -158,27 +162,10 @@ const ConsultantSchedule = () => {
                 textArea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
-
-                // Show success message for fallback too
-                const successMsg = document.createElement('div');
-                successMsg.textContent = '✓ Đã sao chép link cuộc họp!';
-                successMsg.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    background: #28a745;
-                    color: white;
-                    padding: 12px 20px;
-                    border-radius: 6px;
-                    z-index: 10000;
-                    font-size: 14px;
-                    font-weight: 500;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                `;
-                document.body.appendChild(successMsg);
-                setTimeout(() => document.body.removeChild(successMsg), 3000);
+                showSuccess('✓ Đã sao chép link cuộc họp!');
             } catch (fallbackErr) {
-                setError('Không thể sao chép link. Vui lòng sao chép thủ công.');
+                console.error('Fallback copy failed:', fallbackErr);
+                showError('Không thể sao chép link. Vui lòng sao chép thủ công.');
             }
         }
     };
@@ -311,16 +298,18 @@ const ConsultantSchedule = () => {
                             {isLoading ? 'Đang xử lý...' : 'Hủy'}
                         </button>
                     </div>
-                );
-
-            case 'CONFIRMED':
+                );            case 'CONFIRMED':
+                const consultation = consultations.find(c => c.consultationId === consultationId);
+                const canComplete = consultation && new Date() >= new Date(consultation.endTime);
+                
                 return (
                     <div className={styles.actionButtons}>
                         {detailButton}
                         <button
                             onClick={() => handleUpdateStatus(consultationId, 'COMPLETED')}
-                            disabled={isLoading}
-                            className={`${styles.actionButton} ${styles.completeButton}`}
+                            disabled={isLoading || !canComplete}
+                            className={`${styles.actionButton} ${styles.completeButton} ${!canComplete ? styles.disabledButton : ''}`}
+                            title={!canComplete ? 'Chỉ có thể hoàn thành sau thời gian kết thúc buổi tư vấn' : 'Đánh dấu đã hoàn thành'}
                         >
                             {isLoading ? 'Đang xử lý...' : 'Hoàn thành'}
                         </button>

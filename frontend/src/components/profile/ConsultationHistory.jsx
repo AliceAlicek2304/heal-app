@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import { consultationService } from '../../services/consultationService';
+import { ratingService } from '../../services/ratingService';
 import { useToast } from '../../contexts/ToastContext';
 import { formatDateTime, formatDate, formatTime, parseDate } from '../../utils/dateUtils';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
 import AdvancedFilter from '../common/AdvancedFilter/AdvancedFilter';
 import Pagination from '../common/Pagination/Pagination';
+import RatingModal from '../common/RatingModal/RatingModal';
+import RatingDetailModal from '../common/RatingDetailModal/RatingDetailModal';
 import styles from './ConsultationHistory.module.css';
 
 const STATUS_CLASS = {
@@ -15,12 +19,17 @@ const STATUS_CLASS = {
 };
 
 const ConsultationHistory = () => {
-    const toast = useToast();
-    const [consultations, setConsultations] = useState([]);
+    const { user } = useAuth();
+    const toast = useToast(); const [consultations, setConsultations] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [selectedConsultation, setSelectedConsultation] = useState(null); const [showDetailModal, setShowDetailModal] = useState(false);
+    const [selectedConsultation, setSelectedConsultation] = useState(null);
+    const [showDetailModal, setShowDetailModal] = useState(false);
+    const [showRatingModal, setShowRatingModal] = useState(false);
+    const [currentRating, setCurrentRating] = useState(null);
+    const [showCurrentRating, setShowCurrentRating] = useState(false);
     const [filters, setFilters] = useState({});
     const [filteredConsultations, setFilteredConsultations] = useState([]);
+    const [consultationRatings, setConsultationRatings] = useState({}); // Track rating status for each consultation
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(0);
@@ -37,16 +46,20 @@ const ConsultationHistory = () => {
         } else {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-    };
+    }; useEffect(() => {
+        if (user) {
+            fetchConsultations();
+        }
+    }, [user]); const fetchConsultations = async () => {
+        if (!user) {
+            setLoading(false);
+            return;
+        }
 
-    useEffect(() => {
-        fetchConsultations();
-    }, []);
-
-    const fetchConsultations = async () => {
         try {
             setLoading(true);
-            const response = await consultationService.getMyConsultations(); if (response.success && response.data) {
+            const response = await consultationService.getMyConsultations();
+            if (response.success && response.data) {
                 const sortedConsultations = response.data.sort((a, b) => {
                     const dateA = parseDate(b.createdAt);
                     const dateB = parseDate(a.createdAt);
@@ -54,6 +67,9 @@ const ConsultationHistory = () => {
                     return dateB.getTime() - dateA.getTime();
                 });
                 setConsultations(sortedConsultations);
+
+                // Load rating status for completed consultations
+                await loadRatingStatuses(sortedConsultations);
             } else {
                 const errorMsg = response.message || 'Không thể tải lịch sử tư vấn';
                 toast.error(errorMsg);
@@ -64,6 +80,39 @@ const ConsultationHistory = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    // Load rating status for consultations
+    const loadRatingStatuses = async (consultations) => {
+        const ratingsMap = {};
+
+        // Only check rating status for completed consultations
+        const completedConsultations = consultations.filter(c => c.status === 'COMPLETED');
+
+        await Promise.all(
+            completedConsultations.map(async (consultation) => {
+                try {
+                    const response = await ratingService.checkEligibility('consultant', consultation.consultantId, consultation.consultationId);
+                    if (response.success) {
+                        ratingsMap[consultation.consultationId] = {
+                            canRate: response.data.canRate,
+                            hasRated: response.data.hasRated,
+                            existingRating: response.data.existingRating
+                        };
+                    }
+                } catch (error) {
+                    console.error(`Error checking rating eligibility for consultation ${consultation.consultationId}:`, error);
+                    // Default to allowing rating if there's an error
+                    ratingsMap[consultation.consultationId] = {
+                        canRate: true,
+                        hasRated: false,
+                        existingRating: null
+                    };
+                }
+            })
+        );
+
+        setConsultationRatings(ratingsMap);
     }; const getStatusText = (status) => {
         switch (status) {
             case 'PENDING': return 'Chờ xác nhận';
@@ -88,11 +137,128 @@ const ConsultationHistory = () => {
         if (e.target.classList.contains(styles.modalBackdrop)) {
             handleCloseModal();
         }
-    };
-
-    const handleRetry = () => {
+    }; const handleRetry = () => {
         toast.info('Đang tải lại dữ liệu...');
         fetchConsultations();
+    };    // Helper function để kiểm tra consultation có thể được đánh giá không
+    const canRateConsultation = (consultation) => {
+        return consultation.status === 'COMPLETED';
+    };
+
+    // Get rating button text and style
+    const getRatingButtonInfo = (consultation) => {
+        const ratingStatus = consultationRatings[consultation.consultationId];
+
+        if (!ratingStatus) {
+            return {
+                text: 'Đánh giá',
+                icon: 'star',
+                className: styles.rateBtn
+            };
+        }
+
+        if (ratingStatus.hasRated) {
+            return {
+                text: 'Xem đánh giá',
+                icon: 'star-filled',
+                className: styles.viewRatingBtn
+            };
+        }
+
+        return {
+            text: 'Đánh giá',
+            icon: 'star',
+            className: styles.rateBtn
+        };
+    };// Handler để mở rating modal hoặc hiển thị rating hiện có
+    const handleRateConsultant = async (consultation) => {
+        setSelectedConsultation(consultation);
+
+        try {
+            // Kiểm tra rating eligibility trước
+            const eligibilityResponse = await ratingService.checkEligibility('consultant', consultation.consultantId, consultation.consultationId);
+
+            if (!eligibilityResponse.success) {
+                toast.error(eligibilityResponse.message || 'Không thể kiểm tra điều kiện đánh giá');
+                return;
+            }
+
+            const { canRate, hasRated, existingRating } = eligibilityResponse.data;
+
+            if (hasRated && existingRating) {
+                // Đã có rating, hiển thị rating hiện có
+                setCurrentRating(existingRating);
+                setShowCurrentRating(true);
+                return;
+            } else if (!canRate) {
+                toast.warning('Bạn cần hoàn thành consultation trước khi đánh giá');
+                return;
+            }
+
+            // Chưa có rating và đủ điều kiện, hiển thị form rating
+            setShowRatingModal(true);
+        } catch (error) {
+            console.error('Lỗi khi kiểm tra rating:', error);
+            toast.error('Có lỗi xảy ra khi kiểm tra điều kiện đánh giá');
+        }
+    };// Handler để đóng rating modal
+    const handleCloseRatingModal = () => {
+        setShowRatingModal(false);
+        setSelectedConsultation(null);
+        setCurrentRating(null); // Clear current rating when closing
+    };
+
+    // Handler để đóng modal hiển thị rating hiện có
+    const handleCloseCurrentRating = () => {
+        setShowCurrentRating(false);
+        setCurrentRating(null);
+        setSelectedConsultation(null);
+    };    // Handler khi rating được submit thành công
+    const handleRatingSubmitted = async (updatedRating) => {
+        const isEdit = currentRating && currentRating.ratingId;
+        const message = isEdit ? 'Đã cập nhật đánh giá thành công!' : 'Cảm ơn bạn đã đánh giá consultant!';
+        toast.success(message);
+        handleCloseRatingModal();
+        
+        // Refresh rating status for this consultation  
+        if (selectedConsultation) {
+            await loadRatingStatuses([selectedConsultation]);
+        }
+    };
+
+    // Handler để chỉnh sửa rating
+    const handleEditRating = (rating) => {
+        setShowCurrentRating(false);
+        setCurrentRating(rating); // Keep the rating data for editing
+        // Open rating modal with existing data for editing
+        setShowRatingModal(true);
+    };
+
+    // Handler để xóa rating
+    const handleDeleteRating = async (rating) => {
+        if (!window.confirm('Bạn có chắc chắn muốn xóa đánh giá này không?')) {
+            return;
+        }
+
+        try {
+            const response = await ratingService.deleteRating(rating.ratingId);
+            if (response.success) {
+                toast.success('Đã xóa đánh giá thành công!');
+                setShowCurrentRating(false);
+                setCurrentRating(null);
+                
+                // Refresh rating status for this consultation
+                if (selectedConsultation) {
+                    await loadRatingStatuses([selectedConsultation]);
+                }
+                setSelectedConsultation(null);
+            } else {
+                toast.error(response.message || 'Không thể xóa đánh giá');
+            }
+        } catch (error) {
+            console.error('Lỗi khi xóa rating:', error);
+            toast.error('Có lỗi xảy ra khi xóa đánh giá');
+        }
     };
 
     // Filter consultations based on selected filters
@@ -276,9 +442,7 @@ const ConsultationHistory = () => {
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-
-                                <div className={styles.cardActions}>
+                                </div>                                <div className={styles.cardActions}>
                                     <button
                                         className={styles.detailBtn}
                                         onClick={() => handleViewDetails(consultation)}
@@ -299,6 +463,17 @@ const ConsultationHistory = () => {
                                                 <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
                                             </svg>
                                             Tham gia
+                                        </button>
+                                    )}                                    {canRateConsultation(consultation) && (
+                                        <button
+                                            className={getRatingButtonInfo(consultation).className}
+                                            onClick={() => handleRateConsultant(consultation)}
+                                            title={getRatingButtonInfo(consultation).text}
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26 12,2"></polygon>
+                                            </svg>
+                                            {getRatingButtonInfo(consultation).text}
                                         </button>
                                     )}
                                 </div>
@@ -341,7 +516,8 @@ const ConsultationHistory = () => {
                                                         {formatTime(consultation.startTime)} - {formatTime(consultation.endTime)}
                                                     </div>
                                                 </div>
-                                            </td>                                            <td>
+                                            </td>
+                                            <td>
                                                 <span className={`${styles.statusBadge} ${STATUS_CLASS[consultation.status] || ''}`}>
                                                     {getStatusText(consultation.status)}
                                                 </span>
@@ -374,13 +550,29 @@ const ConsultationHistory = () => {
                                                             </svg>
                                                             Tham gia
                                                         </button>
+                                                    )}                                                    {canRateConsultation(consultation) && (
+                                                        <button
+                                                            className={
+                                                                getRatingButtonInfo(consultation).className === styles.viewRatingBtn 
+                                                                    ? styles.viewRatingBtnTable 
+                                                                    : styles.rateBtnTable
+                                                            }
+                                                            onClick={() => handleRateConsultant(consultation)}
+                                                            title={getRatingButtonInfo(consultation).text}
+                                                        >
+                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26 12,2"></polygon>
+                                                            </svg>
+                                                            {getRatingButtonInfo(consultation).text}
+                                                        </button>
                                                     )}
                                                 </div>
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
-                            </table>                        </div>
+                            </table>
+                        </div>
                     </div>
 
                     {/* Pagination */}
@@ -495,7 +687,32 @@ const ConsultationHistory = () => {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>)}            {/* Rating Modal */}
+            {showRatingModal && selectedConsultation && (
+                <RatingModal
+                    isOpen={showRatingModal}
+                    onClose={handleCloseRatingModal}
+                    targetType="consultant"
+                    targetId={selectedConsultation.consultantId}
+                    targetName={selectedConsultation.consultantName}
+                    consultationId={selectedConsultation.consultationId}
+                    existingRating={currentRating}
+                    onSuccess={handleRatingSubmitted}
+                />
+            )}
+
+            {/* Rating Detail Modal */}
+            {showCurrentRating && currentRating && selectedConsultation && (
+                <RatingDetailModal
+                    isOpen={showCurrentRating}
+                    onClose={handleCloseCurrentRating}
+                    rating={currentRating}
+                    targetType="consultant"
+                    targetName={selectedConsultation.consultantName}
+                    currentUserId={user?.id}
+                    onEdit={handleEditRating}
+                    onDelete={handleDeleteRating}
+                />
             )}
         </div>
     );

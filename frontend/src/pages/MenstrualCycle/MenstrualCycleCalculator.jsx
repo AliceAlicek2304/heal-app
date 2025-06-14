@@ -16,22 +16,22 @@ import styles from './MenstrualCycleCalculator.module.css';
 const MenstrualCycleCalculator = () => {
     const { user, isAuthenticated } = useAuth();
     const toast = useToast();
-    
+
     // Auth modals
     const {
         showLoginModal,
         showRegisterModal,
         openLoginModal,
-        closeModals,        
+        closeModals,
         switchToLogin,
         switchToRegister
     } = useAuthModal();
-    
+
     const [formData, setFormData] = useState({
         startDate: new Date().toISOString().split('T')[0],
         numberOfDays: 5,
         cycleLength: 28,
-    });const [cycles, setCycles] = useState([]);
+    }); const [cycles, setCycles] = useState([]);
     const [selectedCycle, setSelectedCycle] = useState(null);
     const [loading, setLoading] = useState(false);
     const [calculationResult, setCalculationResult] = useState(null);
@@ -41,14 +41,7 @@ const MenstrualCycleCalculator = () => {
             setLoading(true);
             const userId = user?.userId || user?.id;
 
-            console.log('🔍 Fetching cycles for user:', {
-                userId,
-                username: user?.username,
-                userObject: user
-            });
-
             if (!userId) {
-                console.log("❌ Không có userId, sử dụng username-based endpoint");
                 // Fallback: sử dụng endpoint dựa trên authentication context
                 // Backend sẽ tự động lấy user từ JWT token
                 const response = await menstrualCycleService.getCurrentUserCycles();
@@ -58,17 +51,12 @@ const MenstrualCycleCalculator = () => {
                         const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
                         const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
                         return dateB - dateA;
-                    });
-
-                    setCycles(sortedCycles);
-                    console.log('✅ Loaded cycles via current user endpoint:', sortedCycles.length);
+                    }); setCycles(sortedCycles);
                 } else {
                     toast.error(response.message || "Không thể tải lịch sử chu kỳ kinh nguyệt");
                 }
                 return;
             }
-
-            console.log('🔍 Fetching cycles for userId:', userId);
 
             const response = await menstrualCycleService.getCyclesByUserId(userId);
             if (response.success && response.data) {
@@ -77,10 +65,7 @@ const MenstrualCycleCalculator = () => {
                     const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
                     const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
                     return dateB - dateA;
-                });
-
-                setCycles(sortedCycles);
-                console.log('✅ Loaded cycles:', sortedCycles.length);
+                }); setCycles(sortedCycles);
             } else {
                 toast.error(response.message || "Không thể tải lịch sử chu kỳ kinh nguyệt");
             }
@@ -90,10 +75,7 @@ const MenstrualCycleCalculator = () => {
         } finally {
             setLoading(false);
         }
-    }, [user, toast]);
-
-    useEffect(() => {
-        console.log('🔍 MenstrualCalculator useEffect - isAuthenticated:', isAuthenticated, 'user:', user);
+    }, [user, toast]); useEffect(() => {
         if (isAuthenticated && user) {
             fetchCycles();
         }
@@ -120,21 +102,16 @@ const MenstrualCycleCalculator = () => {
                 return;
             }
 
-            setLoading(true);
-
-            const cycleData = {
+            setLoading(true); const cycleData = {
                 startDate: formData.startDate,
                 numberOfDays: parseInt(formData.numberOfDays),
                 cycleLength: parseInt(formData.cycleLength)
             };
 
-            console.log('🔍 Sending cycle data:', cycleData);
-
             const response = await menstrualCycleService.addCycle(cycleData);
 
             if (response.success && response.data) {
                 const result = response.data;
-                console.log('✅ Calculation result:', result);
 
                 // Tính toán các ngày quan trọng
                 const calculatedDates = menstrualCycleService.calculateCycleDates(result);
@@ -222,7 +199,7 @@ const MenstrualCycleCalculator = () => {
             if (!dateTimeString) return 'N/A';
 
             let date;
-            if (Array.isArray(dateTimeString)) {                                                                                                                                      
+            if (Array.isArray(dateTimeString)) {
                 // Backend trả về LocalDateTime dạng [year, month, day, hour, minute, second]
                 const [year, month, day, hour = 0, minute = 0, second = 0] = dateTimeString;
                 date = new Date(year, month - 1, day, hour, minute, second);
@@ -292,7 +269,7 @@ const MenstrualCycleCalculator = () => {
             ...prev,
             [name]: value
         }));
-    };    if (!isAuthenticated) {
+    }; if (!isAuthenticated) {
         return (
             <div className={styles.authRequired}>
                 <Navbar />
@@ -306,14 +283,14 @@ const MenstrualCycleCalculator = () => {
                         Đăng nhập
                     </button>
                 </div>
-                
+
                 {/* Login Modal */}
                 {showLoginModal && (
                     <div className={styles.modalOverlay} onClick={closeModals}>
                         <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
                             <LoginForm
                                 onClose={closeModals}
-                                onSwitchToRegister={switchToRegister}                                onLoginSuccess={() => {
+                                onSwitchToRegister={switchToRegister} onLoginSuccess={() => {
                                     closeModals();
                                     // Không cần toast ở đây vì LoginForm đã có toast
                                 }}

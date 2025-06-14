@@ -46,7 +46,7 @@ public class STIController {
         ApiResponse<STIServiceResponse> response = stiServiceService.getServiceWithComponents(serviceId);
         return ResponseEntity.ok(response);
     }
-    
+
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<STIServiceResponse>>> searchSTIServices(
             @RequestParam String keyword) {

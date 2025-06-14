@@ -45,35 +45,42 @@ public class RatingService {
     private ConsultationRepository consultationRepository;
 
     @Autowired
-    private STITestRepository stiTestRepository;
-
-    // ===================== CUSTOMER METHODS =====================
+    private STITestRepository stiTestRepository; // ===================== CUSTOMER METHODS =====================
 
     /**
-     * Tạo rating mới
+     * Create new rating (one rating per user per target)
      */
     @Transactional
     public ApiResponse<RatingResponse> createRating(Long userId, Rating.RatingTargetType targetType,
             Long targetId, CreateRatingRequest request) {
         try {
-            // Kiểm tra user tồn tại
+            // Check if user exists
             Optional<UserDtls> userOpt = userRepository.findById(userId);
             if (userOpt.isEmpty()) {
                 return ApiResponse.error("User not found");
             }
+            UserDtls user = userOpt.get(); // Check if user has already rated this specific consultation/sti_test (only
+                                           // active ratings)
+            boolean hasRated = false;
+            if (targetType == Rating.RatingTargetType.CONSULTANT && request.getConsultationId() != null) {
+                hasRated = ratingRepository.existsByUserIdAndConsultationIdAndIsActiveTrue(userId,
+                        request.getConsultationId());
+            } else if (targetType == Rating.RatingTargetType.STI_SERVICE && request.getStiTestId() != null) {
+                hasRated = ratingRepository.existsByUserIdAndStiTestIdAndIsActiveTrue(userId, request.getStiTestId());
+            }
 
-            UserDtls user = userOpt.get();
-
-            // Kiểm tra đã đánh giá chưa
-            if (ratingRepository.existsByUserIdAndTargetTypeAndTargetId(userId, targetType, targetId)) {
+            if (hasRated) {
                 return ApiResponse.error("You have already rated this " + targetType.name().toLowerCase());
-            } // Kiểm tra điều kiện được phép đánh giá
-            if (!isEligibleToRate(userId, targetType, targetId)) {
+            }
+
+            // Check if user is eligible to rate
+            if (!isEligibleToRate(userId, targetType, targetId, request.getConsultationId(), request.getStiTestId())) {
                 return ApiResponse.error("You are not eligible to rate this " + targetType.name().toLowerCase());
             }
 
-            // Tạo rating mới
-            Rating rating = new Rating(user, targetType, targetId, request.getRating(), request.getComment());
+            // Create new rating with reference IDs
+            Rating rating = new Rating(user, targetType, targetId, request.getRating(), request.getComment(),
+                    request.getConsultationId(), request.getStiTestId());
             Rating savedRating = ratingRepository.save(rating);
 
             // Cập nhật rating summary (async)
@@ -131,7 +138,7 @@ public class RatingService {
     }
 
     /**
-     * Xóa rating (trong 24h)
+     * Xóa rating (user trong 24h hoặc staff/admin bất kỳ lúc nào)
      */
     @Transactional
     public ApiResponse<String> deleteRating(Long userId, Long ratingId) {
@@ -143,15 +150,30 @@ public class RatingService {
 
             Rating rating = ratingOpt.get();
 
-            // Kiểm tra quyền sở hữu
-            if (!rating.getUser().getId().equals(userId)) {
+            // Lấy thông tin user thực hiện hành động xóa
+            Optional<UserDtls> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ApiResponse.error("User not found");
+            }
+
+            UserDtls user = userOpt.get();
+            String userRole = user.getRoleName();
+
+            // Kiểm tra quyền xóa
+            boolean isOwner = rating.getUser().getId().equals(userId);
+            boolean isStaffOrAdmin = "STAFF".equals(userRole) || "ADMIN".equals(userRole);
+
+            if (!isOwner && !isStaffOrAdmin) {
                 return ApiResponse.error("You can only delete your own ratings");
             }
 
-            // Kiểm tra thời gian (24h)
-            if (rating.getCreatedAt().isBefore(LocalDateTime.now().minusHours(24))) {
-                return ApiResponse.error("You can only delete ratings within 24 hours of creation");
+            // Nếu là owner, kiểm tra thời gian (24h)
+            if (isOwner && !isStaffOrAdmin) {
+                if (rating.getCreatedAt().isBefore(LocalDateTime.now().minusHours(24))) {
+                    return ApiResponse.error("You can only delete ratings within 24 hours of creation");
+                }
             }
+            // Staff và Admin có thể xóa bất kỳ lúc nào
 
             // Soft delete
             rating.setIsActive(false);
@@ -270,19 +292,19 @@ public class RatingService {
     }
 
     /**
-     * Kiểm tra user có thể đánh giá không
+     * Check if user can rate (one rating per user per target)
      */
     public ApiResponse<Map<String, Object>> checkRatingEligibility(Long userId, Rating.RatingTargetType targetType,
             Long targetId) {
         try {
             Map<String, Object> result = new HashMap<>();
-
             boolean canRate = isEligibleToRate(userId, targetType, targetId);
-            boolean hasRated = ratingRepository.existsByUserIdAndTargetTypeAndTargetId(userId, targetType, targetId);
+            boolean hasRated = ratingRepository.existsByUserIdAndTargetTypeAndTargetIdAndIsActiveTrue(userId,
+                    targetType, targetId);
 
             result.put("canRate", canRate && !hasRated);
             result.put("hasRated", hasRated);
-            result.put("reason", canRate ? "Eligible to rate" : "Not eligible to rate");
+            result.put("reason", canRate ? (hasRated ? "Already rated" : "Eligible to rate") : "Not eligible to rate");
 
             return ApiResponse.success("Check completed", result);
 
@@ -459,20 +481,311 @@ public class RatingService {
         }
     }
 
+    /**
+     * Staff - Lấy tất cả ratings (cho quản lý)
+     */
+    public ApiResponse<Page<RatingResponse>> getAllRatings(int page, int size, String sort, Integer filterRating,
+            String keyword) {
+        try {
+            // Tạo sort
+            Sort sortOrder = createSort(sort);
+            Pageable pageable = PageRequest.of(page, size, sortOrder);
+
+            Page<Rating> ratings;
+
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                // Tìm kiếm trong comment
+                if (filterRating != null && filterRating >= 1 && filterRating <= 5) {
+                    ratings = ratingRepository.searchAllWithRatingFilter(keyword.trim(), filterRating, pageable);
+                } else {
+                    ratings = ratingRepository.searchAllInComments(keyword.trim(), pageable);
+                }
+            } else if (filterRating != null && filterRating >= 1 && filterRating <= 5) {
+                // Filter theo rating
+                ratings = ratingRepository.findByRatingAndIsActiveTrue(filterRating, pageable);
+            } else {
+                // Lấy tất cả
+                ratings = ratingRepository.findByIsActiveTrue(pageable);
+            }
+
+            Page<RatingResponse> response = ratings.map(this::mapRatingToResponse);
+            return ApiResponse.success("All ratings retrieved successfully", response);
+
+        } catch (Exception e) {
+            log.error("Error getting all ratings: {}", e.getMessage(), e);
+            return ApiResponse.error("Unable to get all ratings: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Staff - Lấy tất cả ratings của consultation
+     */
+    public ApiResponse<Page<RatingResponse>> getConsultationRatings(int page, int size, String sort,
+            Integer filterRating, String keyword) {
+        try {
+            // Tạo sort
+            Sort sortOrder = createSort(sort);
+            Pageable pageable = PageRequest.of(page, size, sortOrder);
+
+            Page<Rating> ratings;
+
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                // Tìm kiếm trong comment
+                if (filterRating != null && filterRating >= 1 && filterRating <= 5) {
+                    ratings = ratingRepository.searchConsultationWithRatingFilter(keyword.trim(), filterRating,
+                            pageable);
+                } else {
+                    ratings = ratingRepository.searchConsultationInComments(keyword.trim(), pageable);
+                }
+            } else if (filterRating != null && filterRating >= 1 && filterRating <= 5) { // Filter theo rating
+                ratings = ratingRepository.findByTargetTypeAndRatingAndIsActiveTrue(
+                        Rating.RatingTargetType.CONSULTANT, filterRating, pageable);
+            } else { // Lấy tất cả consultation ratings
+                ratings = ratingRepository.findByTargetTypeAndIsActiveTrue(
+                        Rating.RatingTargetType.CONSULTANT, pageable);
+            }
+
+            Page<RatingResponse> response = ratings.map(this::mapRatingToResponse);
+            return ApiResponse.success("Consultation ratings retrieved successfully", response);
+
+        } catch (Exception e) {
+            log.error("Error getting consultation ratings: {}", e.getMessage(), e);
+            return ApiResponse.error("Unable to get consultation ratings: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Staff - Lấy tất cả ratings của STI service
+     */
+    public ApiResponse<Page<RatingResponse>> getSTIServiceRatings(int page, int size, String sort, Integer filterRating,
+            String keyword) {
+        try {
+            // Tạo sort
+            Sort sortOrder = createSort(sort);
+            Pageable pageable = PageRequest.of(page, size, sortOrder);
+
+            Page<Rating> ratings;
+
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                // Tìm kiếm trong comment
+                if (filterRating != null && filterRating >= 1 && filterRating <= 5) {
+                    ratings = ratingRepository.searchSTIServiceWithRatingFilter(keyword.trim(), filterRating, pageable);
+                } else {
+                    ratings = ratingRepository.searchSTIServiceInComments(keyword.trim(), pageable);
+                }
+            } else if (filterRating != null && filterRating >= 1 && filterRating <= 5) { // Filter theo rating
+                ratings = ratingRepository.findByTargetTypeAndRatingAndIsActiveTrue(
+                        Rating.RatingTargetType.STI_SERVICE, filterRating, pageable);
+            } else { // Lấy tất cả STI service ratings
+                ratings = ratingRepository.findByTargetTypeAndIsActiveTrue(
+                        Rating.RatingTargetType.STI_SERVICE, pageable);
+            }
+
+            Page<RatingResponse> response = ratings.map(this::mapRatingToResponse);
+            return ApiResponse.success("STI service ratings retrieved successfully", response);
+
+        } catch (Exception e) {
+            log.error("Error getting STI service ratings: {}", e.getMessage(), e);
+            return ApiResponse.error("Unable to get STI service ratings: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Staff - Lấy tổng hợp tất cả ratings
+     */
+    public ApiResponse<Map<String, Object>> getAllRatingSummary() {
+        try {
+            // Lấy tất cả ratings active
+            List<Rating> allRatings = ratingRepository.findByIsActiveTrueOrderByCreatedAtDesc();
+
+            Map<String, Object> summary = new HashMap<>();
+
+            if (allRatings.isEmpty()) {
+                summary.put("totalRatings", 0);
+                summary.put("averageRating", BigDecimal.ZERO);
+                summary.put("fiveStarCount", 0);
+                summary.put("fourStarCount", 0);
+                summary.put("threeStarCount", 0);
+                summary.put("twoStarCount", 0);
+                summary.put("oneStarCount", 0);
+            } else {
+                // Tính điểm trung bình
+                double average = allRatings.stream()
+                        .mapToInt(Rating::getRating)
+                        .average()
+                        .orElse(0.0);
+
+                // Đếm phân bố sao
+                Map<Integer, Long> distribution = allRatings.stream()
+                        .collect(Collectors.groupingBy(Rating::getRating, Collectors.counting()));
+
+                summary.put("totalRatings", allRatings.size());
+                summary.put("averageRating", BigDecimal.valueOf(average).setScale(1, RoundingMode.HALF_UP));
+                summary.put("fiveStarCount", distribution.getOrDefault(5, 0L).intValue());
+                summary.put("fourStarCount", distribution.getOrDefault(4, 0L).intValue());
+                summary.put("threeStarCount", distribution.getOrDefault(3, 0L).intValue());
+                summary.put("twoStarCount", distribution.getOrDefault(2, 0L).intValue());
+                summary.put("oneStarCount", distribution.getOrDefault(1, 0L).intValue());
+            }
+
+            // Thêm thống kê theo loại
+            long consultationCount = allRatings.stream()
+                    .filter(r -> r.getTargetType() == Rating.RatingTargetType.CONSULTANT)
+                    .count();
+            long stiServiceCount = allRatings.stream()
+                    .filter(r -> r.getTargetType() == Rating.RatingTargetType.STI_SERVICE)
+                    .count();
+
+            summary.put("consultationRatingCount", consultationCount);
+            summary.put("stiServiceRatingCount", stiServiceCount);
+
+            return ApiResponse.success("All ratings summary retrieved successfully", summary);
+
+        } catch (Exception e) {
+            log.error("Error getting all ratings summary: {}", e.getMessage(), e);
+            return ApiResponse.error("Unable to get all ratings summary: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Staff - Lấy tổng hợp ratings của consultation
+     */
+    public ApiResponse<Map<String, Object>> getConsultationRatingSummary() {
+        try {
+            // Lấy tất cả consultation ratings active
+            List<Rating> consultationRatings = ratingRepository.findByTargetTypeAndIsActiveTrueOrderByCreatedAtDesc(
+                    Rating.RatingTargetType.CONSULTANT);
+
+            Map<String, Object> summary = new HashMap<>();
+
+            if (consultationRatings.isEmpty()) {
+                summary.put("totalRatings", 0);
+                summary.put("averageRating", BigDecimal.ZERO);
+                summary.put("fiveStarCount", 0);
+                summary.put("fourStarCount", 0);
+                summary.put("threeStarCount", 0);
+                summary.put("twoStarCount", 0);
+                summary.put("oneStarCount", 0);
+            } else {
+                // Tính điểm trung bình
+                double average = consultationRatings.stream()
+                        .mapToInt(Rating::getRating)
+                        .average()
+                        .orElse(0.0);
+
+                // Đếm phân bố sao
+                Map<Integer, Long> distribution = consultationRatings.stream()
+                        .collect(Collectors.groupingBy(Rating::getRating, Collectors.counting()));
+
+                summary.put("totalRatings", consultationRatings.size());
+                summary.put("averageRating", BigDecimal.valueOf(average).setScale(1, RoundingMode.HALF_UP));
+                summary.put("fiveStarCount", distribution.getOrDefault(5, 0L).intValue());
+                summary.put("fourStarCount", distribution.getOrDefault(4, 0L).intValue());
+                summary.put("threeStarCount", distribution.getOrDefault(3, 0L).intValue());
+                summary.put("twoStarCount", distribution.getOrDefault(2, 0L).intValue());
+                summary.put("oneStarCount", distribution.getOrDefault(1, 0L).intValue());
+            }
+
+            summary.put("targetType", "CONSULTANT");
+
+            return ApiResponse.success("Consultation ratings summary retrieved successfully", summary);
+
+        } catch (Exception e) {
+            log.error("Error getting consultation ratings summary: {}", e.getMessage(), e);
+            return ApiResponse.error("Unable to get consultation ratings summary: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Staff - Lấy tổng hợp ratings của STI service
+     */
+    public ApiResponse<Map<String, Object>> getSTIServiceRatingSummary() {
+        try {
+            // Lấy tất cả STI service ratings active
+            List<Rating> stiServiceRatings = ratingRepository.findByTargetTypeAndIsActiveTrueOrderByCreatedAtDesc(
+                    Rating.RatingTargetType.STI_SERVICE);
+
+            Map<String, Object> summary = new HashMap<>();
+
+            if (stiServiceRatings.isEmpty()) {
+                summary.put("totalRatings", 0);
+                summary.put("averageRating", BigDecimal.ZERO);
+                summary.put("fiveStarCount", 0);
+                summary.put("fourStarCount", 0);
+                summary.put("threeStarCount", 0);
+                summary.put("twoStarCount", 0);
+                summary.put("oneStarCount", 0);
+            } else {
+                // Tính điểm trung bình
+                double average = stiServiceRatings.stream()
+                        .mapToInt(Rating::getRating)
+                        .average()
+                        .orElse(0.0);
+
+                // Đếm phân bố sao
+                Map<Integer, Long> distribution = stiServiceRatings.stream()
+                        .collect(Collectors.groupingBy(Rating::getRating, Collectors.counting()));
+
+                summary.put("totalRatings", stiServiceRatings.size());
+                summary.put("averageRating", BigDecimal.valueOf(average).setScale(1, RoundingMode.HALF_UP));
+                summary.put("fiveStarCount", distribution.getOrDefault(5, 0L).intValue());
+                summary.put("fourStarCount", distribution.getOrDefault(4, 0L).intValue());
+                summary.put("threeStarCount", distribution.getOrDefault(3, 0L).intValue());
+                summary.put("twoStarCount", distribution.getOrDefault(2, 0L).intValue());
+                summary.put("oneStarCount", distribution.getOrDefault(1, 0L).intValue());
+            }
+
+            summary.put("targetType", "STI_SERVICE");
+
+            return ApiResponse.success("STI service ratings summary retrieved successfully", summary);
+
+        } catch (Exception e) {
+            log.error("Error getting STI service ratings summary: {}", e.getMessage(), e);
+            return ApiResponse.error("Unable to get STI service ratings summary: " + e.getMessage());
+        }
+    }
+
     // ===================== PRIVATE HELPER METHODS =====================
 
+    // Overloaded method for backward compatibility
     private boolean isEligibleToRate(Long userId, Rating.RatingTargetType targetType, Long targetId) {
-        // TODO: Implement business logic based on target type
         if (targetType == Rating.RatingTargetType.CONSULTANT) {
-            // Kiểm tra có consultation hoàn thành với consultant không
             return hasCompletedConsultation(userId, targetId);
         } else if (targetType == Rating.RatingTargetType.STI_SERVICE) {
-            // Kiểm tra có order STI service hoàn thành không
             return hasCompletedSTIOrder(userId, targetId);
         }
         return false;
     }
 
+    private boolean isEligibleToRate(Long userId, Rating.RatingTargetType targetType, Long targetId,
+            Long consultationId, Long stiTestId) {
+        if (targetType == Rating.RatingTargetType.CONSULTANT && consultationId != null) {
+            // Check if specific consultation is completed
+            return hasCompletedSpecificConsultation(userId, consultationId);
+        } else if (targetType == Rating.RatingTargetType.STI_SERVICE && stiTestId != null) {
+            // Check if specific STI test is completed
+            return hasCompletedSTITest(userId, stiTestId);
+        }
+        return false;
+    }
+
+    private boolean hasCompletedSpecificConsultation(Long userId, Long consultationId) {
+        // Check if specific consultation is completed
+        Optional<Consultation> consultation = consultationRepository.findById(consultationId);
+        return consultation.isPresent() &&
+                consultation.get().getCustomer().getId().equals(userId) &&
+                consultation.get().getStatus() == ConsultationStatus.COMPLETED;
+    }
+
+    private boolean hasCompletedSTITest(Long userId, Long stiTestId) {
+        // Check if specific STI test is completed
+        Optional<STITest> stiTest = stiTestRepository.findById(stiTestId);
+        return stiTest.isPresent() &&
+                stiTest.get().getCustomer().getId().equals(userId) &&
+                stiTest.get().getStatus() == TestStatus.COMPLETED;
+    }
+
+    // Keep old methods for backward compatibility
     private boolean hasCompletedConsultation(Long userId, Long consultantId) {
         // Kiểm tra xem user có consultation nào COMPLETED với consultant này không
         List<Consultation> consultations = consultationRepository.findByCustomerIdAndConsultantIdAndStatus(
@@ -573,6 +886,10 @@ public class RatingService {
             response.setRepliedByName(rating.getRepliedBy().getFullName());
         }
         response.setRepliedAt(rating.getRepliedAt());
+
+        // Reference fields
+        response.setConsultationId(rating.getConsultationId());
+        response.setStiTestId(rating.getStiTestId());
 
         response.setCreatedAt(rating.getCreatedAt());
         response.setUpdatedAt(rating.getUpdatedAt());

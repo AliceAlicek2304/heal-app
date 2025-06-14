@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { stiService } from '../../../services/stiService';
 import LoadingSpinner from '../../../components/common/LoadingSpinner/LoadingSpinner';
+import RatingBadge from '../../common/RatingBadge/RatingBadge';
+import RatingQuickView from '../../common/RatingQuickView/RatingQuickView';
 import styles from './STIServiceCard.module.css';
 
 const STIServiceCard = ({ service, onBookTest, onAuthRequired, autoOpenDetails = false, onDetailsOpened }) => {
     const [showDetailsModal, setShowDetailsModal] = useState(false);
+    const [showRatingModal, setShowRatingModal] = useState(false);
     const [detailedService, setDetailedService] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [refreshRating, setRefreshRating] = useState(0); // Add refresh trigger
 
     // Auto-open details modal if requested
     useEffect(() => {
@@ -19,12 +23,12 @@ const STIServiceCard = ({ service, onBookTest, onAuthRequired, autoOpenDetails =
     // Using the original simple booking approach
     const handleBookClick = () => {
         onBookTest(service);
-    };
-
-    // Book from modal using the same simple approach
+    };    // Book from modal using the same simple approach
     const handleBookFromModal = () => {
         handleCloseModal();
         onBookTest(detailedService || service);
+    }; const handleRatingClick = () => {
+        setShowRatingModal(true);
     };
 
     const getStatusColor = (status) => {
@@ -85,7 +89,9 @@ const STIServiceCard = ({ service, onBookTest, onAuthRequired, autoOpenDetails =
         if (!text) return '';
         if (text.length <= maxLength) return text;
         return text.substring(0, maxLength) + '...';
-    }; const handleViewDetails = async () => {
+    };
+
+    const handleViewDetails = async () => {
         try {
             setShowDetailsModal(true);
             setLoading(true);
@@ -134,6 +140,10 @@ const STIServiceCard = ({ service, onBookTest, onAuthRequired, autoOpenDetails =
             const componentPrice = parseFloat(component.price) || 0;
             return total + componentPrice;
         }, 0);
+    }; const handleRatingSuccess = () => {
+        setShowRatingModal(false);
+        // Trigger refresh of rating data
+        setRefreshRating(prev => prev + 1);
     };
 
     return (
@@ -194,7 +204,16 @@ const STIServiceCard = ({ service, onBookTest, onAuthRequired, autoOpenDetails =
                         <div className={styles.detailItem}>
                             <span className={styles.label}>Thời gian có kết quả:</span>
                             <span className={styles.value}>1-3 ngày làm việc</span>
-                        </div>
+                        </div>                    </div>                    {/* Rating Section */}
+                    <div className={styles.ratingSection}>
+                        <RatingBadge
+                            targetType="sti_service"
+                            targetId={service.serviceId}
+                            onClick={handleRatingClick}
+                            size="small"
+                            showCount={true}
+                            refreshTrigger={refreshRating}
+                        />
                     </div>
 
                     <div className={styles.servicePrice}>
@@ -311,29 +330,29 @@ const STIServiceCard = ({ service, onBookTest, onAuthRequired, autoOpenDetails =
                                         <div className={styles.modalSection}>
                                             <h4 className={styles.sectionTitle}>
                                                 Danh sách xét nghiệm ({detailedService.testComponents.length})
-                                            </h4>                                            <div className={styles.componentsList}>
-                                                <table className={styles.componentsTable}>
-                                                    <thead>
-                                                        <tr>
-                                                            <th>STT</th>
-                                                            <th>Tên xét nghiệm</th>
-                                                            <th>Giá trị tham chiếu</th>
-                                                            <th>Giá lẻ</th>
+                                            </h4>                                            <div className={styles.componentsList}>                                                <table className={styles.componentsTable}>
+                                                <thead>
+                                                    <tr>
+                                                        <th>STT</th>
+                                                        <th>Tên xét nghiệm</th>
+                                                        <th>Giá trị tham chiếu</th>
+                                                        <th>Giá lẻ</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {detailedService.testComponents.map((component, index) => (
+                                                        <tr key={component.componentId || index}>
+                                                            <td>{index + 1}</td>
+                                                            <td>{component.testName}</td>
+                                                            <td>{component.referenceRange || 'N/A'}</td>
+                                                            <td>{component.price ?
+                                                                `${component.price.toLocaleString('vi-VN')} VNĐ` :
+                                                                '-'}
+                                                            </td>
                                                         </tr>
-                                                    </thead>                                                    <tbody>
-                                                        {detailedService.testComponents.map((component, index) => (
-                                                            <tr key={component.componentId || index}>
-                                                                <td>{index + 1}</td>
-                                                                <td>{component.testName}</td>
-                                                                <td>{component.referenceRange || 'N/A'}</td>
-                                                                <td>{component.price ?
-                                                                    `${component.price.toLocaleString('vi-VN')} VNĐ` :
-                                                                    '-'}
-                                                                </td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
+                                                    ))}
+                                                </tbody>
+                                            </table>
 
                                                 {/* Hiển thị giá trị tiết kiệm nếu có thông tin giá component */}
                                                 {calculateTotalComponentPrice(detailedService.testComponents) > 0 && (
@@ -384,9 +403,18 @@ const STIServiceCard = ({ service, onBookTest, onAuthRequired, autoOpenDetails =
                                     Đặt lịch xét nghiệm
                                 </button>
                             )}
-                        </div>
-                    </div>
+                        </div>                    </div>
                 </div>
+            )}            {/* Rating Quick View Modal */}
+            {showRatingModal && (
+                <RatingQuickView
+                    targetType="sti_service"
+                    targetId={service.serviceId}
+                    targetName={service.name || service.serviceName}
+                    onClose={() => setShowRatingModal(false)}
+                    onRefresh={handleRatingSuccess}
+                    refreshTrigger={refreshRating}
+                />
             )}
         </>
     );

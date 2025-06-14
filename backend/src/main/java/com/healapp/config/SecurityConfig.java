@@ -168,11 +168,10 @@ public class SecurityConfig {
 
                         // API STI Services (Consultant actions)
                         .requestMatchers(HttpMethod.PUT, "/sti-services/consultant/tests/{testId}/notes")
-                        .hasRole("CONSULTANT")
-
-                        // ========= STAFF ENDPOINTS =========
+                        .hasRole("CONSULTANT")                        // ========= STAFF ENDPOINTS =========
                         // API Staff Ratings Management
                         .requestMatchers("/staff/ratings/**").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers("/ratings/staff/**").hasAnyRole("STAFF", "ADMIN")
 
                         // ========= STAFF ENDPOINTS =========
                         // API Blog Management (Staff)

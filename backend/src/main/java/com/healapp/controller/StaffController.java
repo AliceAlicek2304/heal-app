@@ -30,7 +30,8 @@ public class StaffController {
     private STIServiceService stiServiceService;
 
     @Autowired
-    private UserService userService;    @Autowired
+    private UserService userService;
+    @Autowired
     private RatingService ratingService;
 
     // ========= STI SERVICES WITH COMPONENTS MANAGEMENT =========
@@ -84,78 +85,6 @@ public class StaffController {
         Long staffUserId = userService.getUserIdFromUsername(username);
 
         ApiResponse<STIServiceResponse> response = stiServiceService.toggleServiceStatus(serviceId, staffUserId);
-        return getResponseEntity(response);
-    }
-
-    // ========= RATING MANAGEMENT =========
-
-    /**
-     * Staff reply to a rating
-     */
-    @PostMapping("/ratings/{ratingId}/reply")
-    public ResponseEntity<ApiResponse<RatingResponse>> replyToRating(
-            @PathVariable Long ratingId,
-            @Valid @RequestBody StaffReplyRequest request) {
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        Long staffUserId = userService.getUserIdFromUsername(username);
-
-        ApiResponse<RatingResponse> response = ratingService.replyToRating(staffUserId, ratingId, request);
-        return getResponseEntity(response);
-    }
-
-    /**
-     * Update staff reply
-     */
-    @PutMapping("/ratings/{ratingId}/reply")
-    public ResponseEntity<ApiResponse<RatingResponse>> updateReply(
-            @PathVariable Long ratingId,
-            @Valid @RequestBody StaffReplyRequest request) {
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        Long staffUserId = userService.getUserIdFromUsername(username);
-
-        ApiResponse<RatingResponse> response = ratingService.updateStaffReply(staffUserId, ratingId, request);
-        return getResponseEntity(response);
-    }
-
-    /**
-     * Delete staff reply
-     */
-    @DeleteMapping("/ratings/{ratingId}/reply")
-    public ResponseEntity<ApiResponse<String>> deleteReply(@PathVariable Long ratingId) {
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        Long staffUserId = userService.getUserIdFromUsername(username);
-
-        ApiResponse<String> response = ratingService.deleteStaffReply(staffUserId, ratingId);
-        return getResponseEntity(response);
-    }
-
-    /**
-     * Get ratings pending reply (for consultants)
-     */
-    @GetMapping("/ratings/consultant/{consultantId}/pending-reply")
-    public ResponseEntity<ApiResponse<Page<RatingResponse>>> getPendingReplyRatingsForConsultant(
-            @PathVariable Long consultantId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {        ApiResponse<Page<RatingResponse>> response = ratingService.getPendingReplyRatings(
-                Rating.RatingTargetType.CONSULTANT, consultantId, page, size);
-        return getResponseEntity(response);
-    }
-
-    /**
-     * Get ratings pending reply (for STI services)
-     */
-    @GetMapping("/ratings/sti-service/{serviceId}/pending-reply")
-    public ResponseEntity<ApiResponse<Page<RatingResponse>>> getPendingReplyRatingsForSTIService(
-            @PathVariable Long serviceId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {        ApiResponse<Page<RatingResponse>> response = ratingService.getPendingReplyRatings(
-                Rating.RatingTargetType.STI_SERVICE, serviceId, page, size);
         return getResponseEntity(response);
     }
 

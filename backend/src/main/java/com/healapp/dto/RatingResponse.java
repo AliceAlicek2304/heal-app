@@ -27,6 +27,10 @@ public class RatingResponse {
     private String repliedByName;
     private LocalDateTime repliedAt;
 
+    // Reference fields - link to specific service usage
+    private Long consultationId; // For CONSULTANT ratings
+    private Long stiTestId; // For STI_SERVICE ratings
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Boolean canEdit; // Có thể edit trong 24h

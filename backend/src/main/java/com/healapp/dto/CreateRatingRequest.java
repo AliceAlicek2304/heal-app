@@ -20,4 +20,8 @@ public class CreateRatingRequest {
 
     @Size(max = 500, message = "Comment must not exceed 500 characters")
     private String comment;
+
+    // Reference to specific service usage
+    private Long consultationId; // For CONSULTANT ratings
+    private Long stiTestId; // For STI_SERVICE ratings
 }

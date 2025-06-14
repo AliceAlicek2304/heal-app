@@ -271,6 +271,42 @@
   background-color: #3367d6;
 }
 
+.rateBtn, .rateBtnTable {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: #f59e0b;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rateBtn:hover, .rateBtnTable:hover {
+  background-color: #d97706;
+}
+
+.viewRatingBtn, .viewRatingBtnTable {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: #6366f1;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.viewRatingBtn:hover, .viewRatingBtnTable:hover {
+  background-color: #4f46e5;
+}
+
 /* Desktop Table View */
 .desktopView {
   margin-bottom: 1.5rem;

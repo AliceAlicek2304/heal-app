@@ -217,6 +217,17 @@
     background-color: #5a6268;
 }
 
+.disabledButton {
+    background-color: #6c757d !important;
+    color: #dee2e6 !important;
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+}
+
+.disabledButton:hover {
+    background-color: #6c757d !important;
+}
+
 /* Modal Styles */
 .modalBackdrop {
     position: fixed;

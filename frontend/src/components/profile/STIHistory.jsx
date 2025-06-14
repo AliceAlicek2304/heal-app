@@ -2,10 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { stiService } from '../../services/stiService';
+import { ratingService } from '../../services/ratingService';
 import { formatDateTime, parseDate } from '../../utils/dateUtils';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
 import AdvancedFilter from '../common/AdvancedFilter/AdvancedFilter';
 import Pagination from '../common/Pagination/Pagination';
+import RatingModal from '../common/RatingModal/RatingModal';
+import RatingDetailModal from '../common/RatingDetailModal/RatingDetailModal';
 import styles from './STIHistory.module.css';
 
 // Status configuration
@@ -18,7 +21,7 @@ const STATUS_CONFIG = {
     },
     CONFIRMED: {
         label: 'Đã xác nhận',
-        color: 'info',  
+        color: 'info',
         icon: 'check-circle',
         description: 'Đã xác nhận cuộc hẹn'
     },
@@ -83,15 +86,15 @@ const PAYMENT_METHOD_LABELS = {
 
 const STIHistory = () => {
     const { user } = useAuth();
-    const toast = useToast();
-
-    // State management
+    const toast = useToast();    // State management
     const [tests, setTests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedTest, setSelectedTest] = useState(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [showResultsModal, setShowResultsModal] = useState(false);
-    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [showPaymentModal, setShowPaymentModal] = useState(false); const [showRatingModal, setShowRatingModal] = useState(false);
+    const [currentRating, setCurrentRating] = useState(null);
+    const [showCurrentRating, setShowCurrentRating] = useState(false);
     const [testResults, setTestResults] = useState(null);
     const [loadingResults, setLoadingResults] = useState(false);
     const [allServices, setAllServices] = useState([]);
@@ -102,7 +105,7 @@ const STIHistory = () => {
     const [qrExpired, setQrExpired] = useState(false); // Track QR expiry state
     const [forceUpdate, setForceUpdate] = useState(0); // Force re-render
     const [filters, setFilters] = useState({}); // State for filters
-    const [filteredTests, setFilteredTests] = useState([]); // Filtered tests state    // Pagination state
+    const [filteredTests, setFilteredTests] = useState([]); // Filtered tests state// Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10); // Items per page (constant)
 
@@ -400,9 +403,106 @@ const STIHistory = () => {
         // Hiển thị nút thanh toán cho QR_CODE payment với status PENDING hoặc EXPIRED
         if (test.paymentMethod === 'QR_CODE') {
             return test.paymentStatus === 'PENDING' || test.paymentStatus === 'EXPIRED';
+        } return false;
+    };
+
+    // Helper function để kiểm tra test có thể được đánh giá không
+    const canRateTest = (test) => {
+        // Chỉ cho phép rating cho test đã hoàn thành
+        return test.status === 'COMPLETED';
+    };    // Handler để mở rating modal hoặc hiển thị rating hiện có
+    const handleRateService = async (test) => {
+        setSelectedTest(test); try {            // Lấy tất cả ratings cho service này
+            const response = await ratingService.getRatings('sti_service', test.serviceId, 0, 100);
+
+            // Xử lý cấu trúc response nested
+            let ratingsData = null;
+            if (response.success) {
+                if (response.data?.content) {
+                    ratingsData = response.data.content;
+                } else if (response.data?.data?.content) {
+                    ratingsData = response.data.data.content;
+                } else if (response.data?.data?.recentRatings) {
+                    ratingsData = response.data.data.recentRatings;
+                }
+            }
+
+            if (ratingsData && ratingsData.length > 0) {
+                // Tìm rating của user hiện tại cho STI test này
+                const existingRating = ratingsData.find(rating => {
+                    // Kiểm tra user ID (có thể là userId hoặc user.id)
+                    const ratingUserId = rating.userId || rating.user?.id;
+                    const isUserMatch = ratingUserId === user?.id;
+
+                    // Kiểm tra stiTestId (nếu có)
+                    const isStiTestMatch = rating.stiTestId === test.testId;
+
+                    return isUserMatch && isStiTestMatch;
+                });
+
+                if (existingRating) {
+                    // Đã có rating, hiển thị rating hiện có
+                    setCurrentRating(existingRating);
+                    setShowCurrentRating(true);
+                    return;
+                }
+            }            // Chưa có rating, hiển thị form rating
+            setShowRatingModal(true);
+        } catch (error) {
+            console.error('Lỗi khi kiểm tra rating:', error);
+            // Nếu có lỗi, vẫn cho phép rating
+            setShowRatingModal(true);
         }
-        return false;
-    };    // Helper function để kiểm tra QR có hết hạn từ frontend data không
+    };    // Handler để đóng rating modal
+    const handleCloseRatingModal = () => {
+        setShowRatingModal(false);
+        setSelectedTest(null);
+        setCurrentRating(null); // Clear current rating when closing
+    };
+
+    // Handler để đóng modal hiển thị rating hiện có
+    const handleCloseCurrentRating = () => {
+        setShowCurrentRating(false);
+        setCurrentRating(null);
+        setSelectedTest(null);
+    };    // Handler khi rating được submit thành công
+    const handleRatingSubmitted = (updatedRating) => {
+        toast.success('Cảm ơn bạn đã đánh giá dịch vụ!');
+        handleCloseRatingModal();
+        // Optionally refresh the data to show updated ratings
+        fetchUserTests();
+    };
+
+    // Handler để chỉnh sửa rating
+    const handleEditRating = (rating) => {
+        setShowCurrentRating(false);
+        setCurrentRating(rating); // Keep the rating data for editing
+        // Open rating modal with existing data for editing
+        setShowRatingModal(true);
+    };
+
+    // Handler để xóa rating
+    const handleDeleteRating = async (rating) => {
+        if (!window.confirm('Bạn có chắc chắn muốn xóa đánh giá này không?')) {
+            return;
+        }
+
+        try {
+            const response = await ratingService.deleteRating(rating.ratingId);
+            if (response.success) {
+                toast.success('Đã xóa đánh giá thành công!');
+                setShowCurrentRating(false);
+                setCurrentRating(null);                // Refresh data if needed
+                fetchUserTests();
+            } else {
+                toast.error(response.message || 'Không thể xóa đánh giá');
+            }
+        } catch (error) {
+            console.error('Error deleting rating:', error);
+            toast.error('Có lỗi xảy ra khi xóa đánh giá');
+        }
+    };
+    // Helper function để kiểm tra QR có hết hạn từ frontend data không
     const isQRExpiredFromTestData = (test) => {
         // Nếu không phải QR payment, không expired
         if (test.paymentMethod !== 'QR_CODE') {
@@ -771,12 +871,16 @@ const STIHistory = () => {
                     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
                     <line x1="12" y1="9" x2="12" y2="13"></line>
                     <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                </svg>
-            ),
+                </svg>),
             'money-bill-wave': (
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M12 1v6m0 6v6m-8-8h16M4 7h16"></path>
                     <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+            ),
+            'star': (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
                 </svg>
             )
         };
@@ -983,9 +1087,7 @@ const STIHistory = () => {
                                                 {isLoading && !buttonConfig.disabled ? (isExpired ? 'Đang tạo QR mới...' : 'Đang tải...') : buttonConfig.text}
                                             </button>
                                         );
-                                    })()}
-
-                                    {hasResults(test) && (
+                                    })()}                                    {hasResults(test) && (
                                         <button
                                             className={`${styles.btn} ${styles.btnSuccess}`}
                                             onClick={() => handleViewResults(test)}
@@ -993,6 +1095,16 @@ const STIHistory = () => {
                                         >
                                             {renderSVGIcon('file-medical')}
                                             {loadingResults ? 'Đang tải...' : 'Xem kết quả'}
+                                        </button>
+                                    )}
+
+                                    {canRateTest(test) && (
+                                        <button
+                                            className={`${styles.btn} ${styles.btnSecondary}`}
+                                            onClick={() => handleRateService(test)}
+                                        >
+                                            {renderSVGIcon('star')}
+                                            Đánh giá
                                         </button>
                                     )}
 
@@ -1207,11 +1319,9 @@ const STIHistory = () => {
                                             {renderSVGIcon(paymentInfo.paymentMethod === 'QR_CODE' ? 'qrcode' : 'credit-card')}
                                             {PAYMENT_METHOD_LABELS[paymentInfo.paymentMethod] || paymentInfo.paymentMethod}
                                         </span>
-                                    </div>
-
-                                    <div className={styles.detailItem}>
+                                    </div>                                    <div className={styles.detailItem}>
                                         <span className={styles.label}>Trạng thái:</span>
-                                        <span className={`${styles.value} ${styles.paymentBadge} ${styles[`payment${getPaymentStatusConfig(paymentInfo.status || paymentInfo.paymentStatus).color.charAt(0).toUpperCase() + getPaymentStatusConfig(paymentInfo.status || paymentInfo.paymentStatus).color.slice(1)}`]}`}>
+                                        <span className={`${styles.value} ${styles.paymentBadge}`}>
                                             {renderSVGIcon(getPaymentStatusConfig(paymentInfo.status || paymentInfo.paymentStatus).icon)}
                                             {getPaymentStatusConfig(paymentInfo.status || paymentInfo.paymentStatus).label}
                                         </span>
@@ -1575,9 +1685,30 @@ const STIHistory = () => {
                             <button className={`${styles.btn} ${styles.btnSecondary}`} onClick={handleCloseResults}>
                                 Đóng
                             </button>
-                        </div>
-                    </div>
+                        </div>                    </div>
                 </div>
+            )}            {/* Current Rating Detail Modal */}            {showCurrentRating && currentRating && selectedTest && (
+                <RatingDetailModal
+                    rating={currentRating}
+                    serviceName={getServiceInfoById(selectedTest.serviceId).name}
+                    serviceType="Dịch vụ xét nghiệm STI"
+                    onClose={handleCloseCurrentRating}
+                    onEdit={handleEditRating}
+                    onDelete={handleDeleteRating}
+                    currentUserId={user?.id}
+                />
+            )}
+
+            {/* Rating Modal */}            {showRatingModal && selectedTest && (
+                <RatingModal
+                    targetType="sti_service"
+                    targetId={selectedTest.serviceId}
+                    targetName={getServiceInfoById(selectedTest.serviceId).name}
+                    stiTestId={selectedTest.testId}
+                    existingRating={currentRating}
+                    onClose={handleCloseRatingModal}
+                    onSuccess={handleRatingSubmitted}
+                />
             )}
         </div>
     );

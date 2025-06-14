@@ -703,3 +703,29 @@
         padding: 0;
     }
 }
+
+/* Rating Section Styles */
+.ratingSection {
+    margin: 12px 0;
+    padding: 8px 0;
+    border-top: 1px solid #f1f5f9;
+}
+
+.ratingStars {
+    color: #f39c12;
+    font-size: 1rem;
+}
+
+.ratingValue {
+    font-size: 0.9rem;
+    color: #333;
+    font-weight: 500;
+    margin-left: 8px;
+}
+
+.ratingDescription {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 4px;
+    line-height: 1.4;
+}

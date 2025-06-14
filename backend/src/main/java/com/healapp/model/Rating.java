@@ -48,14 +48,12 @@ public class Rating {
     private UserDtls repliedBy; // Staff reply
 
     @Column(name = "replied_at")
-    private LocalDateTime repliedAt;
-
-    // Reference fields
+    private LocalDateTime repliedAt; // Reference fields - link to specific service usage
     @Column(name = "consultation_id")
-    private Long consultationId;
+    private Long consultationId; // For CONSULTANT ratings
 
-    @Column(name = "sti_order_id")
-    private Long stiOrderId;
+    @Column(name = "sti_test_id")
+    private Long stiTestId; // For STI_SERVICE ratings
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
@@ -69,15 +67,28 @@ public class Rating {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
-    }
+    } // Constructor convenience
 
-    // Constructor convenience
     public Rating(UserDtls user, RatingTargetType targetType, Long targetId, Integer rating, String comment) {
         this.user = user;
         this.targetType = targetType;
         this.targetId = targetId;
         this.rating = rating;
         this.comment = comment;
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // Constructor with reference IDs
+    public Rating(UserDtls user, RatingTargetType targetType, Long targetId, Integer rating, String comment,
+            Long consultationId, Long stiTestId) {
+        this.user = user;
+        this.targetType = targetType;
+        this.targetId = targetId;
+        this.rating = rating;
+        this.comment = comment;
+        this.consultationId = consultationId;
+        this.stiTestId = stiTestId;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }

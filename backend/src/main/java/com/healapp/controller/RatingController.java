@@ -339,4 +339,255 @@ public class RatingController {
                     .body(ApiResponse.error("Internal server error"));
         }
     }
+
+    // ===================== STAFF MANAGEMENT ENDPOINTS =====================
+
+    /**
+     * Staff - Lấy tất cả ratings (cho quản lý)
+     */
+    @GetMapping("/staff/all")
+    @PreAuthorize("hasAnyRole('ROLE_STAFF', 'ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<Page<RatingResponse>>> getAllRatings(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "newest") String sort,
+            @RequestParam(required = false) Integer filterRating,
+            @RequestParam(required = false) String keyword) {
+
+        try {
+            ApiResponse<Page<RatingResponse>> response = ratingService.getAllRatings(
+                    page, size, sort, filterRating, keyword);
+
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+
+        } catch (Exception e) {
+            log.error("Error getting all ratings: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("Internal server error"));
+        }
+    }
+
+    /**
+     * Staff - Lấy tất cả consultation ratings
+     */
+    @GetMapping("/staff/consultation")
+    @PreAuthorize("hasAnyRole('ROLE_STAFF', 'ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<Page<RatingResponse>>> getConsultationRatings(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "newest") String sort,
+            @RequestParam(required = false) Integer filterRating,
+            @RequestParam(required = false) String keyword) {
+
+        try {
+            ApiResponse<Page<RatingResponse>> response = ratingService.getConsultationRatings(
+                    page, size, sort, filterRating, keyword);
+
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+
+        } catch (Exception e) {
+            log.error("Error getting consultation ratings: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("Internal server error"));
+        }
+    }
+
+    /**
+     * Staff - Lấy tất cả STI service ratings
+     */
+    @GetMapping("/staff/sti-service")
+    @PreAuthorize("hasAnyRole('ROLE_STAFF', 'ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<Page<RatingResponse>>> getSTIServiceRatings(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "newest") String sort,
+            @RequestParam(required = false) Integer filterRating,
+            @RequestParam(required = false) String keyword) {
+
+        try {
+            ApiResponse<Page<RatingResponse>> response = ratingService.getSTIServiceRatings(
+                    page, size, sort, filterRating, keyword);
+
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+
+        } catch (Exception e) {
+            log.error("Error getting STI service ratings: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("Internal server error"));
+        }
+    }
+
+    /**
+     * Staff - Lấy tổng hợp tất cả ratings
+     */
+    @GetMapping("/staff/summary/all")
+    @PreAuthorize("hasAnyRole('ROLE_STAFF', 'ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getAllRatingSummary() {
+        try {
+            ApiResponse<Map<String, Object>> response = ratingService.getAllRatingSummary();
+
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+
+        } catch (Exception e) {
+            log.error("Error getting all ratings summary: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("Internal server error"));
+        }
+    }
+
+    /**
+     * Staff - Lấy tổng hợp consultation ratings
+     */
+    @GetMapping("/staff/summary/consultation")
+    @PreAuthorize("hasAnyRole('ROLE_STAFF', 'ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getConsultationRatingSummary() {
+        try {
+            ApiResponse<Map<String, Object>> response = ratingService.getConsultationRatingSummary();
+
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+
+        } catch (Exception e) {
+            log.error("Error getting consultation ratings summary: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("Internal server error"));
+        }
+    }
+
+    /**
+     * Staff - Lấy tổng hợp STI service ratings
+     */
+    @GetMapping("/staff/summary/sti-service")
+    @PreAuthorize("hasAnyRole('ROLE_STAFF', 'ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getSTIServiceRatingSummary() {
+        try {
+            ApiResponse<Map<String, Object>> response = ratingService.getSTIServiceRatingSummary();
+
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+
+        } catch (Exception e) {
+            log.error("Error getting STI service ratings summary: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("Internal server error"));
+        }
+    }
+
+    /**
+     * Staff - Reply to rating
+     */
+    @PostMapping("/staff/reply/{ratingId}")
+    @PreAuthorize("hasAnyRole('ROLE_STAFF', 'ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<RatingResponse>> replyToRating(
+            @PathVariable Long ratingId,
+            @Valid @RequestBody StaffReplyRequest request) {
+
+        try {
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            Long staffId = userService.getUserIdByUsername(username);
+
+            if (staffId == null) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("Staff not found"));
+            }
+
+            ApiResponse<RatingResponse> response = ratingService.replyToRating(staffId, ratingId, request);
+
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+
+        } catch (Exception e) {
+            log.error("Error replying to rating: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("Internal server error"));
+        }
+    }
+
+    /**
+     * Staff - Update reply
+     */
+    @PutMapping("/staff/reply/{ratingId}")
+    @PreAuthorize("hasAnyRole('ROLE_STAFF', 'ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<RatingResponse>> updateStaffReply(
+            @PathVariable Long ratingId,
+            @Valid @RequestBody StaffReplyRequest request) {
+
+        try {
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            Long staffId = userService.getUserIdByUsername(username);
+
+            if (staffId == null) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("Staff not found"));
+            }
+
+            ApiResponse<RatingResponse> response = ratingService.updateStaffReply(staffId, ratingId, request);
+
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+
+        } catch (Exception e) {
+            log.error("Error updating staff reply: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("Internal server error"));
+        }
+    }
+
+    /**
+     * Staff - Delete reply
+     */
+    @DeleteMapping("/staff/reply/{ratingId}")
+    @PreAuthorize("hasAnyRole('ROLE_STAFF', 'ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<String>> deleteStaffReply(@PathVariable Long ratingId) {
+        try {
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            Long staffId = userService.getUserIdByUsername(username);
+
+            if (staffId == null) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("Staff not found"));
+            }
+
+            ApiResponse<String> response = ratingService.deleteStaffReply(staffId, ratingId);
+
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+
+        } catch (Exception e) {
+            log.error("Error deleting staff reply: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("Internal server error"));
+        }
+    }
 }

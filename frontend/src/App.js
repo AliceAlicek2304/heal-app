@@ -13,6 +13,7 @@ import CreateQuestion from './pages/Questions/CreateQuestion/CreateQuestion';
 import Consultation from './pages/Consultation/Consultation';
 import STITesting from './pages/STITesting/STITesting';
 import SearchResults from './pages/SearchResults/SearchResults';
+import AllRatings from './pages/AllRatings/AllRatings';
 import { AuthProvider } from "./contexts/AuthContext";
 import { ToastProvider } from './contexts/ToastContext';
 
@@ -34,6 +35,7 @@ function App() {
               <Route path="/consultation" element={<Consultation />} />
               <Route path="/sti-testing" element={<STITesting />} />
               <Route path="/search" element={<SearchResults />} />
+              <Route path="/all-ratings/:targetType/:targetId" element={<AllRatings />} />
             </Routes>
             <ChatBot />
           </div>
