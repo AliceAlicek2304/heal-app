@@ -7,20 +7,27 @@ import Footer from '../../components/layout/Footer/Footer';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
 import STIServiceCard from '../../components/sti/STIServiceCard/STIServiceCard';
 import STIBookingModal from '../../components/sti/STIBookingModal/STIBookingModal';
+import STIPackageCard from '../../components/sti/STIPackageCard/STIPackageCard';
+import STIPackageBookingModal from '../../components/sti/STIPackageBookingModal/STIPackageBookingModal';
 import LoginForm from '../../components/auth/Login/LoginForm';
 import RegisterForm from '../../components/auth/Register/RegisterForm';
 import { stiService } from '../../services/stiService';
+import stiPackageService from '../../services/stiPackageService';
 import { useAuthModal } from '../../hooks/useAuthModal';
 import styles from './STITesting.module.css';
 
 const STITesting = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { user } = useAuth();
-    const toast = useToast(); const [services, setServices] = useState([]);
+    const { user } = useAuth(); const toast = useToast();
+
+    const [services, setServices] = useState([]);
+    const [packages, setPackages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedService, setSelectedService] = useState(null);
+    const [selectedPackage, setSelectedPackage] = useState(null);
     const [showBookingModal, setShowBookingModal] = useState(false);
+    const [showPackageBookingModal, setShowPackageBookingModal] = useState(false);
     const [selectedServiceIdForDetails, setSelectedServiceIdForDetails] = useState(null);
 
     // Auth modals
@@ -32,8 +39,8 @@ const STITesting = () => {
         switchToLogin,
         switchToRegister
     } = useAuthModal(); useEffect(() => {
-        fetchServices();
-    }, []);    // Handle service selection from navigation state (e.g., from search results)
+        fetchData();
+    }, []);// Handle service selection from navigation state (e.g., from search results)
     useEffect(() => {
         if (location.state?.selectedServiceId && services.length > 0) {
             const serviceId = location.state.selectedServiceId;
@@ -51,27 +58,32 @@ const STITesting = () => {
 
     const handleAuthRequired = () => {
         openLoginModal();
-    };
-
-    const fetchServices = async () => {
+    }; const fetchData = async () => {
         try {
             setLoading(true);
-            const response = await stiService.getActiveServices();
+            const [servicesResponse, packagesResponse] = await Promise.all([
+                stiService.getActiveServices(),
+                stiPackageService.getActivePackages()
+            ]);
 
-            if (response.success) {
-                setServices(response.data || []);
+            if (servicesResponse.success) {
+                setServices(servicesResponse.data || []);
             } else {
-                toast.error(response.message || 'Không thể tải danh sách dịch vụ');
+                toast.error(servicesResponse.message || 'Không thể tải danh sách dịch vụ');
+            }
+
+            if (packagesResponse.success) {
+                setPackages(packagesResponse.data || []);
+            } else {
+                console.error('Could not load packages:', packagesResponse.message);
             }
         } catch (error) {
-            console.error('Error fetching STI services:', error);
+            console.error('Error fetching data:', error);
             toast.error('Có lỗi xảy ra khi tải dữ liệu');
         } finally {
             setLoading(false);
         }
-    };
-
-    const handleBookTest = (service) => {
+    }; const handleBookTest = (service) => {
         if (!user) {
             openLoginModal();
             return;
@@ -81,9 +93,24 @@ const STITesting = () => {
         setShowBookingModal(true);
     };
 
+    const handleBookPackage = (pkg) => {
+        if (!user) {
+            openLoginModal();
+            return;
+        }
+
+        setSelectedPackage(pkg);
+        setShowPackageBookingModal(true);
+    };
+
     const handleCloseBookingModal = () => {
         setShowBookingModal(false);
         setSelectedService(null);
+    };
+
+    const handleClosePackageBookingModal = () => {
+        setShowPackageBookingModal(false);
+        setSelectedPackage(null);
     };
 
     const handleBookingSuccess = (bookingData) => {
@@ -140,12 +167,12 @@ const STITesting = () => {
         setSelectedServiceIdForDetails(null);
     }; const handleLoginSuccess = () => {
         closeModals();
-        fetchServices();
+        fetchData();
         // Không cần toast ở đây vì LoginForm đã có toast
     };
 
     const handleRetry = () => {
-        fetchServices();
+        fetchData();
     };
 
     if (loading) return <LoadingSpinner />;
@@ -208,11 +235,33 @@ const STITesting = () => {
                             </svg>
                             {user ? 'Lịch sử xét nghiệm' : 'Đăng nhập để xem lịch sử'}
                         </button>
+                    </div>                </div>
+
+                {/* Packages Section */}
+                {packages.length > 0 && (
+                    <div className={styles.packagesSection}>
+                        <div className={styles.sectionHeader}>
+                            <h2>Gói Combo Xét Nghiệm</h2>
+                            <p>Tiết kiệm chi phí với các gói combo xét nghiệm STI</p>
+                        </div>
+
+                        <div className={styles.packagesGrid}>
+                            {packages.map(pkg => (
+                                <STIPackageCard
+                                    key={pkg.packageId}
+                                    package={pkg}
+                                    onBooking={handleBookPackage}
+                                />
+                            ))}
+                        </div>
                     </div>
-                </div>
+                )}
 
                 <div className={styles.servicesSection}>
-                    <h2>Chọn dịch vụ xét nghiệm</h2>
+                    <div className={styles.sectionHeader}>
+                        <h2>Dịch Vụ Xét Nghiệm Lẻ</h2>
+                        <p>Chọn dịch vụ xét nghiệm theo nhu cầu cụ thể</p>
+                    </div>
 
                     {services.length > 0 ? (<div className={styles.servicesGrid}>
                         {services.map(service => (
@@ -256,6 +305,14 @@ const STITesting = () => {
                     onSuccess={handleBookingSuccess}
                     onError={handleBookingError}
                     onAuthRequired={handleAuthRequired}
+                />)}
+
+            {/* Package Booking Modal */}
+            {showPackageBookingModal && selectedPackage && (
+                <STIPackageBookingModal
+                    isOpen={showPackageBookingModal}
+                    package={selectedPackage}
+                    onClose={handleClosePackageBookingModal}
                 />
             )}
 

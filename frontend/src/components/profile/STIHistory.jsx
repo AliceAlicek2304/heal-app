@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { stiService } from '../../services/stiService';
+import stiPackageService from '../../services/stiPackageService';
 import { ratingService } from '../../services/ratingService';
 import { formatDateTime, parseDate } from '../../utils/dateUtils';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
@@ -94,10 +95,10 @@ const STIHistory = () => {
     const [showResultsModal, setShowResultsModal] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false); const [showRatingModal, setShowRatingModal] = useState(false);
     const [currentRating, setCurrentRating] = useState(null);
-    const [showCurrentRating, setShowCurrentRating] = useState(false);
-    const [testResults, setTestResults] = useState(null);
+    const [showCurrentRating, setShowCurrentRating] = useState(false); const [testResults, setTestResults] = useState(null);
     const [loadingResults, setLoadingResults] = useState(false);
     const [allServices, setAllServices] = useState([]);
+    const [allPackages, setAllPackages] = useState([]);
     const [paymentInfo, setPaymentInfo] = useState(null);
     const [loadingPayment, setLoadingPayment] = useState(false);
     const [checkingPayment, setCheckingPayment] = useState(false);
@@ -110,10 +111,9 @@ const STIHistory = () => {
     const [itemsPerPage] = useState(10); // Items per page (constant)
 
     // Ref for scrolling to tests list
-    const testsListRef = useRef(null);
-
-    useEffect(() => {
+    const testsListRef = useRef(null); useEffect(() => {
         fetchAllServices();
+        fetchAllPackages();
     }, []);
 
     useEffect(() => {
@@ -141,9 +141,7 @@ const STIHistory = () => {
                 return () => clearInterval(interval);
             }
         }
-    }, [paymentInfo, showPaymentModal, qrExpired]);
-
-    const fetchAllServices = async () => {
+    }, [paymentInfo, showPaymentModal, qrExpired]); const fetchAllServices = async () => {
         try {
             const response = await stiService.getActiveServices();
 
@@ -158,6 +156,18 @@ const STIHistory = () => {
             console.error(' Error fetching services:', error);
             setAllServices([]);
         }
+    }; const fetchAllPackages = async () => {
+        try {
+            const response = await stiPackageService.getActivePackages(); if (response.success && response.data) {
+                setAllPackages(response.data);
+            } else {
+                console.error('Failed to fetch packages:', response.message);
+                setAllPackages([]);
+            }
+        } catch (error) {
+            console.error('Error fetching packages:', error);
+            setAllPackages([]);
+        }
     };
 
     const fetchUserTests = async () => {
@@ -166,16 +176,13 @@ const STIHistory = () => {
 
             const response = await stiService.getMyTests(null, () => {
                 window.location.href = '/login';
-            });
-
-            if (response.success && response.data) {
+            }); if (response.success && response.data) {
                 if (Array.isArray(response.data)) {
                     setTests(response.data);
                 } else {
                     setTests([]);
                 }
             } else {
-                console.log('No tests found or error:', response.message);
                 setTests([]);
             }
         } catch (error) {
@@ -185,9 +192,7 @@ const STIHistory = () => {
         } finally {
             setLoading(false);
         }
-    };
-
-    //  FIX: Cải thiện getServiceInfoById để lấy đúng componentCount
+    };    //  FIX: Cải thiện getServiceInfoById để lấy đúng componentCount
     const getServiceInfoById = (serviceId) => {
         if (!serviceId || !allServices.length) {
             return {
@@ -217,6 +222,77 @@ const STIHistory = () => {
             //  FIX: Ưu tiên componentCount từ backend, fallback về testComponents.length
             componentCount: service.componentCount || service.testComponents?.length || 0
         };
+    };    // Hàm mới để lấy thông tin package
+    const getPackageInfoById = (packageId) => {
+        if (!packageId || !allPackages.length) {
+            return {
+                name: 'Gói xét nghiệm STI',
+                description: 'Gói xét nghiệm STI chuyên nghiệp',
+                price: null,
+                totalComponents: 0,
+                services: []
+            };
+        }
+
+        const stiPackage = allPackages.find(p => p.packageId === packageId);
+
+        if (!stiPackage) {
+            console.warn(`Package with ID ${packageId} not found in allPackages`);
+            return {
+                name: 'Gói không tìm thấy',
+                description: 'Gói xét nghiệm STI',
+                price: null,
+                totalComponents: 0,
+                services: []
+            };
+        }        // Tính tổng số component từ tất cả services trong package
+        const totalComponents = stiPackage.services?.reduce((total, service) => {
+            return total + (service.componentCount || service.testComponents?.length || 0);
+        }, 0) || 0;
+
+        return {
+            name: stiPackage.name || stiPackage.packageName || 'Gói xét nghiệm STI',
+            description: stiPackage.description || 'Gói xét nghiệm STI chuyên nghiệp',
+            price: stiPackage.price || stiPackage.packagePrice,
+            totalComponents: totalComponents,
+            services: stiPackage.services || []
+        };
+    };    // Hàm mới để lấy thông tin test (bao gồm cả test lẻ và package)
+    const getTestInfo = (test) => {
+        // Kiểm tra xem test có phải là package không
+        if (test.packageId) {
+            const packageInfo = getPackageInfoById(test.packageId);
+            return {
+                type: 'package',
+                name: packageInfo.name,
+                description: packageInfo.description,
+                price: packageInfo.price,
+                componentCount: packageInfo.totalComponents,
+                services: packageInfo.services,
+                isPackage: true
+            };
+        } else if (test.serviceId) {
+            const serviceInfo = getServiceInfoById(test.serviceId);
+            return {
+                type: 'service',
+                name: serviceInfo.name,
+                description: serviceInfo.description,
+                price: serviceInfo.price,
+                componentCount: serviceInfo.componentCount,
+                services: [],
+                isPackage: false
+            };
+        } else {
+            return {
+                type: 'unknown',
+                name: 'Xét nghiệm STI',
+                description: 'Xét nghiệm STI chuyên nghiệp',
+                price: null,
+                componentCount: 0,
+                services: [],
+                isPackage: false
+            };
+        }
     };
 
     const handleViewDetails = (test) => {
@@ -236,13 +312,11 @@ const STIHistory = () => {
 
             const response = await stiService.getTestResults(test.testId, () => {
                 window.location.href = '/login';
-            });
-
-            if (response.success && response.data) {
+            }); if (response.success && response.data) {
                 setTestResults({
                     results: response.data,
                     testId: test.testId,
-                    serviceName: getServiceInfoById(test.serviceId).name
+                    serviceName: getTestInfo(test).name
                 });
                 setShowResultsModal(true);
             } else {
@@ -887,16 +961,14 @@ const STIHistory = () => {
         return icons[iconName] || icons['question-circle'];
     };    // Filter tests based on selected filters
     const applyFilters = (testsToFilter, currentFilters) => {
-        let filtered = [...testsToFilter];
-
-        // Text search filter
+        let filtered = [...testsToFilter];        // Text search filter
         if (currentFilters.searchText) {
             const searchLower = currentFilters.searchText.toLowerCase();
             filtered = filtered.filter(test => {
-                const serviceInfo = getServiceInfoById(test.serviceId);
+                const testInfo = getTestInfo(test);
                 return (
                     test.testId?.toString().includes(searchLower) ||
-                    serviceInfo.name?.toLowerCase().includes(searchLower) ||
+                    testInfo.name?.toLowerCase().includes(searchLower) ||
                     test.customerNotes?.toLowerCase().includes(searchLower) ||
                     test.consultantNotes?.toLowerCase().includes(searchLower)
                 );
@@ -1010,126 +1082,145 @@ const STIHistory = () => {
                 placeholder="Tìm kiếm theo mã xét nghiệm, dịch vụ, ghi chú..."
                 showDateFilter={true}
                 showStatusFilter={true}
-            />            {filteredTests.length > 0 ? (
-                <div ref={testsListRef} className={styles.testsList}>
-                    {currentItems.map(test => {
-                        const statusConfig = getStatusConfig(test.status);
-                        const serviceInfo = getServiceInfoById(test.serviceId);
-                        const paymentStatusConfig = getPaymentStatusConfig(test.paymentStatus);
+            />            {filteredTests.length > 0 ? (<div ref={testsListRef} className={styles.testsList}>
+                {currentItems.map(test => {
+                    const statusConfig = getStatusConfig(test.status);
+                    const testInfo = getTestInfo(test);
+                    const paymentStatusConfig = getPaymentStatusConfig(test.paymentStatus);
 
-                        return (
-                            <div key={test.testId} className={`${styles.testCard} ${styles[`status${statusConfig.color.charAt(0).toUpperCase() + statusConfig.color.slice(1)}`]}`}>
-                                <div className={styles.testHeader}>
-                                    <div className={styles.testInfo}>
-                                        <h3>{serviceInfo.name}</h3>
-                                        <div className={styles.testMeta}>
-                                            <span className={styles.testId}>Mã: #{test.testId}</span>
-                                            <span className={styles.testDate}>{formatDateTime(test.createdAt)}</span>
-                                        </div>
-                                    </div>
-                                    <div className={styles.statusBadges}>
-                                        <span className={`${styles.statusBadge} ${styles[`status${statusConfig.color.charAt(0).toUpperCase() + statusConfig.color.slice(1)}`]}`}>
-                                            {renderSVGIcon(statusConfig.icon)}
-                                            {statusConfig.label}
-                                        </span>
-                                        {test.paymentStatus && (
-                                            <span className={`${styles.paymentBadge} ${styles[`payment${paymentStatusConfig.color.charAt(0).toUpperCase() + paymentStatusConfig.color.slice(1)}`]}`}>
-                                                {renderSVGIcon(paymentStatusConfig.icon)}
-                                                {paymentStatusConfig.label}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className={styles.testDetails}>
-                                    <div className={styles.detailRow}>
-                                        <span className={styles.label}>Thời gian hẹn:</span>
-                                        <span className={styles.value}>{formatDateTime(test.appointmentDate)}</span>
-                                    </div>
-                                    {/*  FIX: Hiển thị số lượng xét nghiệm từ componentCount */}
-                                    <div className={styles.detailRow}>
-                                        <span className={styles.label}>Số lượng xét nghiệm:</span>
-                                        <span className={styles.value}>
-                                            {serviceInfo.componentCount} xét nghiệm
+                    return (
+                        <div key={test.testId} className={`${styles.testCard} ${styles[`status${statusConfig.color.charAt(0).toUpperCase() + statusConfig.color.slice(1)}`]} ${testInfo.isPackage ? styles.packageCard : styles.serviceCard}`}>
+                            <div className={styles.testHeader}>
+                                <div className={styles.testInfo}>
+                                    <div className={styles.testTitle}>
+                                        <h3>{testInfo.name}</h3>
+                                        <span className={`${styles.testType} ${testInfo.isPackage ? styles.packageType : styles.serviceType}`}>
+                                            {testInfo.isPackage ? 'Gói xét nghiệm' : 'Dịch vụ lẻ'}
                                         </span>
                                     </div>
-                                    <div className={styles.detailRow}>
-                                        <span className={styles.label}>Giá dịch vụ:</span>
-                                        <span className={styles.value}>{formatPrice(serviceInfo.price)}</span>
+                                    <div className={styles.testMeta}>
+                                        <span className={styles.testId}>Mã: #{test.testId}</span>
+                                        <span className={styles.testDate}>{formatDateTime(test.createdAt)}</span>
                                     </div>
-                                    {test.paymentMethod && (
-                                        <div className={styles.detailRow}>
-                                            <span className={styles.label}>Phương thức thanh toán:</span>
-                                            <span className={styles.value}>{PAYMENT_METHOD_LABELS[test.paymentMethod] || test.paymentMethod}</span>
-                                        </div>
-                                    )}
                                 </div>
-
-                                <div className={styles.testActions}>
-                                    <button
-                                        className={`${styles.btn} ${styles.btnPrimary}`}
-                                        onClick={() => handleViewDetails(test)}
-                                    >
-                                        {renderSVGIcon('info-circle')}
-                                        Chi tiết
-                                    </button>                                    {needsPayment(test) && (() => {
-                                        const buttonConfig = getPaymentButtonConfig(test);
-                                        const isExpired = isQRExpiredFromTestData(test);
-                                        const isLoading = loadingPayment || regeneratingQR;
-
-                                        return (
-                                            <button
-                                                className={buttonConfig.className}
-                                                onClick={buttonConfig.disabled ? undefined : () => handlePayNow(test)}
-                                                disabled={isLoading || buttonConfig.disabled}
-                                            >
-                                                {renderSVGIcon((isLoading && !buttonConfig.disabled) ? 'spinner' : buttonConfig.icon)}
-                                                {isLoading && !buttonConfig.disabled ? (isExpired ? 'Đang tạo QR mới...' : 'Đang tải...') : buttonConfig.text}
-                                            </button>
-                                        );
-                                    })()}                                    {hasResults(test) && (
-                                        <button
-                                            className={`${styles.btn} ${styles.btnSuccess}`}
-                                            onClick={() => handleViewResults(test)}
-                                            disabled={loadingResults}
-                                        >
-                                            {renderSVGIcon('file-medical')}
-                                            {loadingResults ? 'Đang tải...' : 'Xem kết quả'}
-                                        </button>
-                                    )}
-
-                                    {canRateTest(test) && (
-                                        <button
-                                            className={`${styles.btn} ${styles.btnSecondary}`}
-                                            onClick={() => handleRateService(test)}
-                                        >
-                                            {renderSVGIcon('star')}
-                                            Đánh giá
-                                        </button>
-                                    )}
-
-                                    {canCancelTest(test) && (
-                                        <button
-                                            className={`${styles.btn} ${styles.btnOutlineDanger}`}
-                                            onClick={() => handleCancelTest(test.testId)}
-                                        >
-                                            {renderSVGIcon('times')}
-                                            Hủy hẹn
-                                        </button>
+                                <div className={styles.statusBadges}>
+                                    <span className={`${styles.statusBadge} ${styles[`status${statusConfig.color.charAt(0).toUpperCase() + statusConfig.color.slice(1)}`]}`}>
+                                        {renderSVGIcon(statusConfig.icon)}
+                                        {statusConfig.label}
+                                    </span>
+                                    {test.paymentStatus && (
+                                        <span className={`${styles.paymentBadge} ${styles[`payment${paymentStatusConfig.color.charAt(0).toUpperCase() + paymentStatusConfig.color.slice(1)}`]}`}>
+                                            {renderSVGIcon(paymentStatusConfig.icon)}
+                                            {paymentStatusConfig.label}
+                                        </span>
                                     )}
                                 </div>
                             </div>
-                        );
-                    })}
-                </div>) : tests.length > 0 ? (
-                    <div className={styles.emptyState}>
-                        <div className={styles.emptyIcon}>
-                            {renderSVGIcon('vial')}
+
+                            <div className={styles.testDetails}>
+                                <div className={styles.detailRow}>
+                                    <span className={styles.label}>Thời gian hẹn:</span>
+                                    <span className={styles.value}>{formatDateTime(test.appointmentDate)}</span>
+                                </div>
+                                <div className={styles.detailRow}>
+                                    <span className={styles.label}>Số lượng xét nghiệm:</span>
+                                    <span className={styles.value}>
+                                        {testInfo.componentCount} xét nghiệm
+                                    </span>
+                                </div>                                    {testInfo.isPackage && testInfo.services.length > 0 && (
+                                    <div className={styles.detailRow}>
+                                        <span className={styles.label}>Bao gồm dịch vụ:</span>
+                                        <div className={styles.servicesList}>
+                                            {testInfo.services.map((service, index) => (
+                                                <div key={service.serviceId || index} className={styles.serviceItem}>
+                                                    <span className={styles.serviceName}>
+                                                        {service.name || service.serviceName}
+                                                    </span>
+                                                    <span className={styles.serviceComponents}>
+                                                        {service.componentCount || service.testComponents?.length || 0} xét nghiệm
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                <div className={styles.detailRow}>
+                                    <span className={styles.label}>Giá {testInfo.isPackage ? 'gói' : 'dịch vụ'}:</span>
+                                    <span className={styles.value}>{formatPrice(testInfo.price)}</span>
+                                </div>
+                                {test.paymentMethod && (
+                                    <div className={styles.detailRow}>
+                                        <span className={styles.label}>Phương thức thanh toán:</span>
+                                        <span className={styles.value}>{PAYMENT_METHOD_LABELS[test.paymentMethod] || test.paymentMethod}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className={styles.testActions}>
+                                <button
+                                    className={`${styles.btn} ${styles.btnPrimary}`}
+                                    onClick={() => handleViewDetails(test)}
+                                >
+                                    {renderSVGIcon('info-circle')}
+                                    Chi tiết
+                                </button>                                    {needsPayment(test) && (() => {
+                                    const buttonConfig = getPaymentButtonConfig(test);
+                                    const isExpired = isQRExpiredFromTestData(test);
+                                    const isLoading = loadingPayment || regeneratingQR;
+
+                                    return (
+                                        <button
+                                            className={buttonConfig.className}
+                                            onClick={buttonConfig.disabled ? undefined : () => handlePayNow(test)}
+                                            disabled={isLoading || buttonConfig.disabled}
+                                        >
+                                            {renderSVGIcon((isLoading && !buttonConfig.disabled) ? 'spinner' : buttonConfig.icon)}
+                                            {isLoading && !buttonConfig.disabled ? (isExpired ? 'Đang tạo QR mới...' : 'Đang tải...') : buttonConfig.text}
+                                        </button>
+                                    );
+                                })()}                                    {hasResults(test) && (
+                                    <button
+                                        className={`${styles.btn} ${styles.btnSuccess}`}
+                                        onClick={() => handleViewResults(test)}
+                                        disabled={loadingResults}
+                                    >
+                                        {renderSVGIcon('file-medical')}
+                                        {loadingResults ? 'Đang tải...' : 'Xem kết quả'}
+                                    </button>
+                                )}
+
+                                {canRateTest(test) && (
+                                    <button
+                                        className={`${styles.btn} ${styles.btnSecondary}`}
+                                        onClick={() => handleRateService(test)}
+                                    >
+                                        {renderSVGIcon('star')}
+                                        Đánh giá
+                                    </button>
+                                )}
+
+                                {canCancelTest(test) && (
+                                    <button
+                                        className={`${styles.btn} ${styles.btnOutlineDanger}`}
+                                        onClick={() => handleCancelTest(test.testId)}
+                                    >
+                                        {renderSVGIcon('times')}
+                                        Hủy hẹn
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                        <h3>Không tìm thấy kết quả</h3>
-                        <p>Không có cuộc hẹn nào phù hợp với bộ lọc hiện tại. Hãy thử điều chỉnh tiêu chí tìm kiếm.</p>
+                    );
+                })}
+            </div>) : tests.length > 0 ? (
+                <div className={styles.emptyState}>
+                    <div className={styles.emptyIcon}>
+                        {renderSVGIcon('vial')}
                     </div>
-                ) : (
+                    <h3>Không tìm thấy kết quả</h3>
+                    <p>Không có cuộc hẹn nào phù hợp với bộ lọc hiện tại. Hãy thử điều chỉnh tiêu chí tìm kiếm.</p>
+                </div>
+            ) : (
                 <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}>
                         {renderSVGIcon('vial')}
@@ -1166,33 +1257,59 @@ const STIHistory = () => {
                             <button className={styles.modalCloseBtn} onClick={handleCloseDetails}>
                                 {renderSVGIcon('times')}
                             </button>
-                        </div>
-
-                        <div className={styles.modalBody}>
-                            {/* Service Information */}
+                        </div>                        <div className={styles.modalBody}>
+                            {/* Service/Package Information */}
                             <div className={styles.serviceInfo}>
-                                <h5>Thông tin dịch vụ</h5>
-                                <div className={styles.infoGrid}>
-                                    <div className={styles.infoItem}>
-                                        <span className={styles.infoLabel}>Tên dịch vụ:</span>
-                                        <span className={styles.infoValue}>{getServiceInfoById(selectedTest.serviceId).name}</span>
-                                    </div>
-                                    <div className={styles.infoItem}>
-                                        <span className={styles.infoLabel}>Mô tả:</span>
-                                        <span className={styles.infoValue}>{getServiceInfoById(selectedTest.serviceId).description}</span>
-                                    </div>
-                                    {/*  FIX: Sử dụng componentCount */}
-                                    <div className={styles.infoItem}>
-                                        <span className={styles.infoLabel}>Số lượng xét nghiệm:</span>
-                                        <span className={styles.infoValue}>
-                                            {getServiceInfoById(selectedTest.serviceId).componentCount} xét nghiệm
-                                        </span>
-                                    </div>
-                                    <div className={styles.infoItem}>
-                                        <span className={styles.infoLabel}>Giá dịch vụ:</span>
-                                        <span className={styles.infoValue}>{formatPrice(getServiceInfoById(selectedTest.serviceId).price)}</span>
-                                    </div>
-                                </div>
+                                {(() => {
+                                    const testInfo = getTestInfo(selectedTest);
+                                    return (
+                                        <>
+                                            <h5>Thông tin {testInfo.isPackage ? 'gói xét nghiệm' : 'dịch vụ'}</h5>
+                                            <div className={styles.infoGrid}>
+                                                <div className={styles.infoItem}>
+                                                    <span className={styles.infoLabel}>Tên {testInfo.isPackage ? 'gói' : 'dịch vụ'}:</span>
+                                                    <span className={styles.infoValue}>
+                                                        {testInfo.name}
+                                                        <span className={`${styles.testTypeTag} ${testInfo.isPackage ? styles.packageTag : styles.serviceTag}`}>
+                                                            {testInfo.isPackage ? 'Gói' : 'Lẻ'}
+                                                        </span>
+                                                    </span>
+                                                </div>
+                                                <div className={styles.infoItem}>
+                                                    <span className={styles.infoLabel}>Mô tả:</span>
+                                                    <span className={styles.infoValue}>{testInfo.description}</span>
+                                                </div>
+                                                <div className={styles.infoItem}>
+                                                    <span className={styles.infoLabel}>Tổng số xét nghiệm:</span>
+                                                    <span className={styles.infoValue}>
+                                                        {testInfo.componentCount} xét nghiệm
+                                                    </span>
+                                                </div>
+                                                {testInfo.isPackage && testInfo.services.length > 0 && (
+                                                    <div className={styles.infoItem}>
+                                                        <span className={styles.infoLabel}>Các dịch vụ bao gồm:</span>
+                                                        <div className={styles.servicesList}>
+                                                            {testInfo.services.map((service, index) => (
+                                                                <div key={service.serviceId || index} className={styles.serviceItem}>
+                                                                    <span className={styles.serviceName}>
+                                                                        {service.name || service.serviceName}
+                                                                    </span>
+                                                                    <span className={styles.serviceComponents}>
+                                                                        ({service.componentCount || service.testComponents?.length || 0} xét nghiệm)
+                                                                    </span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                <div className={styles.infoItem}>
+                                                    <span className={styles.infoLabel}>Giá {testInfo.isPackage ? 'gói' : 'dịch vụ'}:</span>
+                                                    <span className={styles.infoValue}>{formatPrice(testInfo.price)}</span>
+                                                </div>
+                                            </div>
+                                        </>
+                                    );
+                                })()}
                             </div>
 
                             {/* Appointment Details */}
@@ -1237,17 +1354,18 @@ const STIHistory = () => {
                                                 </span>
                                             </div>
                                         </div>
-                                    )}
-
-                                    {getServiceInfoById(selectedTest.serviceId).price && (
-                                        <div className={styles.detailItem}>
-                                            {renderSVGIcon('money-bill-wave')}
-                                            <div>
-                                                <span className={styles.label}>Giá dịch vụ</span>
-                                                <span className={`${styles.value} ${styles.price}`}>{formatPrice(getServiceInfoById(selectedTest.serviceId).price)}</span>
+                                    )}                                    {(() => {
+                                        const testInfo = getTestInfo(selectedTest);
+                                        return testInfo.price ? (
+                                            <div className={styles.detailItem}>
+                                                {renderSVGIcon('money-bill-wave')}
+                                                <div>
+                                                    <span className={styles.label}>Giá {testInfo.isPackage ? 'gói' : 'dịch vụ'}</span>
+                                                    <span className={`${styles.value} ${styles.price}`}>{formatPrice(testInfo.price)}</span>
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
+                                        ) : null;
+                                    })()}
                                 </div>
 
                                 {/* Customer Notes */}
@@ -1406,9 +1524,6 @@ const STIHistory = () => {
                                 `;
                                                             }
                                                         }}
-                                                        onLoad={() => {
-                                                            console.log(' QR Code loaded successfully');
-                                                        }}
                                                     />
                                                 ) : (paymentInfo.qrReference || paymentInfo.qrPaymentReference) ? (
                                                     <img
@@ -1443,9 +1558,6 @@ const STIHistory = () => {
                                     </div>
                                 `;
                                                             }
-                                                        }}
-                                                        onLoad={() => {
-                                                            console.log(' Generated QR Code loaded successfully');
                                                         }}
                                                     />
                                                 ) : (

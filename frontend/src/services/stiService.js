@@ -50,6 +50,15 @@ export const stiService = {
                 return { success: false, message: 'Authentication required' };
             }
 
+            // Validate booking data - phải có serviceId HOẶC packageId
+            if (!testData.serviceId && !testData.packageId) {
+                return { success: false, message: 'Must specify either serviceId or packageId' };
+            }
+
+            if (testData.serviceId && testData.packageId) {
+                return { success: false, message: 'Cannot specify both serviceId and packageId' };
+            }
+
             const response = await fetch(`${API_BASE_URL}/sti-services/book-test`, {
                 method: 'POST',
                 headers: {

@@ -27,6 +27,10 @@ public class TestResult {
     @JoinColumn(name = "component_id", nullable = false)
     private ServiceTestComponent testComponent;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "source_service_id") // Để biết component thuộc service nào trong package
+    private STIService sourceService;
+
     @Column(name = "result_value", length = 100)
     private String resultValue;
 

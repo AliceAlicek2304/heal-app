@@ -26,10 +26,13 @@ public class STITest {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", nullable = false)
     private UserDtls customer;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "service_id") // Nullable khi có package
+    private STIService stiService;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "service_id", nullable = false)
-    private STIService stiService;
+    @JoinColumn(name = "package_id") // Nullable - chỉ có khi book package
+    private STIPackage stiPackage;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "staff_id")

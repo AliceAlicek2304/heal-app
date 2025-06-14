@@ -29,14 +29,17 @@ public class STIServiceRequest {
 
     @Valid
     @NotEmpty(message = "At least one test component is required")
-    private List<TestComponentRequest> testComponents;    @Data
+    private List<TestComponentRequest> testComponents;
+
+    @Data
     @NoArgsConstructor
     @AllArgsConstructor
     public static class TestComponentRequest {
 
         @NotBlank(message = "Test name is required")
         @Size(max = 100, message = "Test name must not exceed 100 characters")
-        private String testName;        @Size(max = 100, message = "Reference range must not exceed 100 characters")
+        private String testName;
+        @Size(max = 100, message = "Reference range must not exceed 100 characters")
         private String referenceRange;
     }
 }

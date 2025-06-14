@@ -11,6 +11,7 @@ import ConsultationHistory from '../../components/profile/ConsultationHistory';
 import STIHistory from '../../components/profile/STIHistory';
 import ManagerQuestion from '../../components/profile/ManagerQuestion';
 import ManageSTIServices from '../../components/profile/ManageSTIServices';
+import ManageSTIPackages from '../../components/profile/ManageSTIPackages/ManageSTIPackages';
 import ManageSTITests from '../../components/profile/ManageSTITests';
 import ManagerRating from '../../components/profile/ManagerRating';
 import ConsultantProfile from '../../components/profile/ConsultantProfile';
@@ -101,6 +102,12 @@ const ProfilePage = () => {
                 return (
                     <div className={styles.contentSection}>
                         <ManageSTIServices />
+                    </div>
+                );
+            case 'manage-sti-packages':
+                return (
+                    <div className={styles.contentSection}>
+                        <ManageSTIPackages />
                     </div>
                 );
             case 'manage-sti-tests':

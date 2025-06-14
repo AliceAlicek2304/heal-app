@@ -17,8 +17,8 @@ public class STITestResponse {
     private String customerName;
     private String customerEmail;
     private String customerPhone;
-
     private Long serviceId;
+    private Long packageId;
     private String serviceName;
     private String serviceDescription;
     private BigDecimal totalPrice;

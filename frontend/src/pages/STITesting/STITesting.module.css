@@ -75,9 +75,34 @@
   transform: translateY(-1px);
 }
 
-/* Services Section */
+/* Packages and Services Section */
+.packagesSection,
 .servicesSection {
   margin-top: 3rem;
+}
+
+.sectionHeader {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.sectionHeader h2 {
+  font-size: 1.75rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.sectionHeader p {
+  color: #666;
+  font-size: 1rem;
+}
+
+.packagesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+  align-items: stretch;
 }
 
 .servicesSection h2 {
@@ -191,6 +216,18 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 20px;
   }
+
+  .packagesGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .packagesGrid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
 }
 
 @media (max-width: 768px) {
@@ -208,6 +245,11 @@
 
   .infoHighlights {
     gap: 1.5rem;
+  }
+
+  .packagesGrid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
   .servicesGrid {

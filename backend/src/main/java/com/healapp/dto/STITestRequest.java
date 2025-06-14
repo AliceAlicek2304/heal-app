@@ -12,8 +12,10 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class STITestRequest {
 
-    @NotNull(message = "Service ID is required")
+    // Có thể là serviceId HOẶC packageId (không thể cả hai)
     private Long serviceId;
+
+    private Long packageId; // Thêm để hỗ trợ booking package
 
     @NotNull(message = "Appointment date is required")
     @Future(message = "Appointment date must be in the future")
@@ -46,6 +48,20 @@ public class STITestRequest {
     // QR code
     @Size(max = 50, message = "QR payment reference cannot exceed 50 characters")
     private String qrPaymentReference;
+
+    // Validation methods
+    public boolean isValid() {
+        // Phải có serviceId HOẶC packageId, không được cả hai hoặc không có gì
+        return (serviceId != null && packageId == null) || (serviceId == null && packageId != null);
+    }
+
+    public boolean isServiceBooking() {
+        return serviceId != null && packageId == null;
+    }
+
+    public boolean isPackageBooking() {
+        return packageId != null && serviceId == null;
+    }
 
     public boolean isValidForPaymentMethod() {
         if (paymentMethod == null) {

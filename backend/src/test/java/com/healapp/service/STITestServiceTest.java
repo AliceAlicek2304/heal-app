@@ -38,6 +38,9 @@ class STITestServiceTest {
     private STIServiceRepository stiServiceRepository;
 
     @Mock
+    private STIPackageRepository stiPackageRepository;
+
+    @Mock
     private ServiceTestComponentRepository testComponentRepository;
 
     @Mock
@@ -70,6 +73,8 @@ class STITestServiceTest {
     private Role consultantRole;
     private Role adminRole;
     private List<ServiceTestComponent> testComponents;
+    private STIPackage stiPackage;
+    private STIService service2;
 
     @BeforeEach
     void setUp() {
@@ -140,6 +145,26 @@ class STITestServiceTest {
         stiService.setPrice(500000.0);
         stiService.setIsActive(true);
         stiService.setTestComponents(testComponents);
+
+        // Initialize STI Package
+        service2 = new STIService();
+        service2.setServiceId(2L);
+        service2.setName("STI Basic Test");
+        service2.setDescription("Basic STI screening");
+        service2.setPrice(300000.0);
+        service2.setIsActive(true);
+
+        List<STIService> packageServices = new ArrayList<>();
+        packageServices.add(stiService);
+        packageServices.add(service2);
+
+        stiPackage = new STIPackage();
+        stiPackage.setPackageId(1L);
+        stiPackage.setPackageName("STI Combo Package");
+        stiPackage.setDescription("Comprehensive STI testing package");
+        stiPackage.setPackagePrice(BigDecimal.valueOf(700000)); // Discount from 800000
+        stiPackage.setIsActive(true);
+        stiPackage.setServices(packageServices);
 
         // ✅ STI Test TRƯỚC khi save (testId = null)
         stiTest = STITest.builder()
@@ -579,13 +604,13 @@ class STITestServiceTest {
 
         // Act
         ApiResponse<STITestResponse> response = stiTestService.updateConsultantNotes(
-                savedTest.getTestId(), notes, consultant.getId());        // Assert
+                savedTest.getTestId(), notes, consultant.getId()); // Assert
         assertTrue(response.isSuccess());
         assertTrue(response.getMessage().contains("Consultant notes updated successfully"));
         verify(stiTestRepository).save(any(STITest.class));
     }
 
-    // ========== QR CODE GENERATION TESTS ==========    @Test
+    // ========== QR CODE GENERATION TESTS ========== @Test
     @DisplayName("Lấy chi tiết test với QR Code - Kiểm tra URL generation")
     void getTestDetails_QRCode_URLGeneration() {
         // Arrange
@@ -602,11 +627,11 @@ class STITestServiceTest {
         // Assert
         assertTrue(response.isSuccess());
         assertNotNull(response.getData());
-        
+
         STITestResponse testResponse = response.getData();
         assertEquals("QR_CODE", testResponse.getPaymentMethod());
         assertEquals("HEALSTI112025061298765", testResponse.getQrPaymentReference());
-        
+
         // Verify QR URL contains MB Bank info (970422) not VietinBank (970415)
         assertNotNull(testResponse.getQrCodeUrl());
         assertTrue(testResponse.getQrCodeUrl().contains("970422")); // MB Bank code
@@ -632,10 +657,198 @@ class STITestServiceTest {
         // Assert
         assertTrue(response.isSuccess());
         assertNotNull(response.getData());
-        
+
         STITestResponse testResponse = response.getData();
         assertEquals("QR_CODE", testResponse.getPaymentMethod());
         assertNull(testResponse.getQrPaymentReference());
         assertNull(testResponse.getQrCodeUrl()); // Should be null when no QR reference
+    }
+
+    // ========== PACKAGE BOOKING TESTS ==========
+
+    @Test
+    @DisplayName("Đặt lịch xét nghiệm Package - Thành công")
+    void bookPackageTest_Success() {
+        // Arrange
+        STITestRequest packageRequest = new STITestRequest();
+        packageRequest.setPackageId(1L); // Package booking
+        packageRequest.setAppointmentDate(LocalDateTime.now().plusDays(1));
+        packageRequest.setCustomerNotes("Package booking test");
+        packageRequest.setPaymentMethod("COD");
+
+        STITest packageTest = STITest.builder()
+                .testId(2L)
+                .customer(customer)
+                .stiPackage(stiPackage)
+                .appointmentDate(LocalDateTime.now().plusDays(1))
+                .customerNotes("Package booking test")
+                .totalPrice(stiPackage.getPackagePrice())
+                .status(TestStatus.PENDING)
+                .build();
+
+        Payment packagePayment = Payment.builder()
+                .paymentId(2L)
+                .userId(customer.getId())
+                .serviceType("STI")
+                .serviceId(2L)
+                .paymentMethod(PaymentMethod.COD)
+                .paymentStatus(PaymentStatus.COMPLETED)
+                .amount(stiPackage.getPackagePrice())
+                .build();
+
+        when(userRepository.findById(customer.getId())).thenReturn(Optional.of(customer));
+        when(stiPackageRepository.findByIdWithServicesAndComponents(1L)).thenReturn(Optional.of(stiPackage));
+        when(stiTestRepository.save(any(STITest.class))).thenReturn(packageTest);
+        when(paymentService.processCODPayment(
+                eq(customer.getId()),
+                eq("STI"),
+                eq(2L),
+                eq(stiPackage.getPackagePrice()),
+                any(String.class)))
+                .thenReturn(ApiResponse.success("COD payment processed", packagePayment));
+
+        // Act
+        ApiResponse<STITestResponse> response = stiTestService.bookTest(packageRequest, customer.getId());
+
+        // Assert
+        assertTrue(response.isSuccess());
+        assertNotNull(response.getData());
+        assertEquals(2L, response.getData().getTestId());
+        assertTrue(response.getMessage().contains("package"));
+
+        verify(stiTestRepository).save(any(STITest.class));
+        verify(paymentService).processCODPayment(
+                eq(customer.getId()), eq("STI"), eq(2L), eq(stiPackage.getPackagePrice()), any(String.class));
+        verify(testResultRepository, atLeastOnce()).save(any(TestResult.class)); // Multiple components
+    }
+
+    @Test
+    @DisplayName("Đặt lịch xét nghiệm Package - Package không tồn tại")
+    void bookPackageTest_PackageNotFound() {
+        // Arrange
+        STITestRequest packageRequest = new STITestRequest();
+        packageRequest.setPackageId(999L); // Non-existent package
+        packageRequest.setAppointmentDate(LocalDateTime.now().plusDays(1));
+        packageRequest.setPaymentMethod("COD");
+
+        when(userRepository.findById(customer.getId())).thenReturn(Optional.of(customer));
+        when(stiPackageRepository.findByIdWithServicesAndComponents(999L)).thenReturn(Optional.empty());
+
+        // Act
+        ApiResponse<STITestResponse> response = stiTestService.bookTest(packageRequest, customer.getId());
+
+        // Assert
+        assertFalse(response.isSuccess());
+        assertEquals("STI package not found", response.getMessage());
+        verify(stiTestRepository, never()).save(any(STITest.class));
+    }
+
+    @Test
+    @DisplayName("Đặt lịch xét nghiệm Package - Package không hoạt động")
+    void bookPackageTest_PackageInactive() {
+        // Arrange
+        STITestRequest packageRequest = new STITestRequest();
+        packageRequest.setPackageId(1L);
+        packageRequest.setAppointmentDate(LocalDateTime.now().plusDays(1));
+        packageRequest.setPaymentMethod("COD");
+
+        STIPackage inactivePackage = new STIPackage();
+        inactivePackage.setPackageId(1L);
+        inactivePackage.setPackageName("Inactive Package");
+        inactivePackage.setIsActive(false);
+
+        when(userRepository.findById(customer.getId())).thenReturn(Optional.of(customer));
+        when(stiPackageRepository.findByIdWithServicesAndComponents(1L)).thenReturn(Optional.of(inactivePackage));
+
+        // Act
+        ApiResponse<STITestResponse> response = stiTestService.bookTest(packageRequest, customer.getId());
+
+        // Assert
+        assertFalse(response.isSuccess());
+        assertEquals("STI package is not available", response.getMessage());
+        verify(stiTestRepository, never()).save(any(STITest.class));
+    }
+
+    @Test
+    @DisplayName("Validation request - Phải có serviceId HOẶC packageId")
+    void bookTest_InvalidRequest_BothServiceAndPackage() {
+        // Arrange
+        STITestRequest invalidRequest = new STITestRequest();
+        invalidRequest.setServiceId(1L);
+        invalidRequest.setPackageId(1L); // Both serviceId and packageId
+        invalidRequest.setAppointmentDate(LocalDateTime.now().plusDays(1));
+        invalidRequest.setPaymentMethod("COD");
+
+        when(userRepository.findById(customer.getId())).thenReturn(Optional.of(customer));
+
+        // Act
+        ApiResponse<STITestResponse> response = stiTestService.bookTest(invalidRequest, customer.getId());
+
+        // Assert
+        assertFalse(response.isSuccess());
+        assertEquals("Must specify either serviceId or packageId, not both", response.getMessage());
+        verify(stiTestRepository, never()).save(any(STITest.class));
+    }
+
+    @Test
+    @DisplayName("Validation request - Không có serviceId và packageId")
+    void bookTest_InvalidRequest_NeitherServiceNorPackage() {
+        // Arrange
+        STITestRequest invalidRequest = new STITestRequest();
+        // No serviceId and no packageId
+        invalidRequest.setAppointmentDate(LocalDateTime.now().plusDays(1));
+        invalidRequest.setPaymentMethod("COD");
+
+        when(userRepository.findById(customer.getId())).thenReturn(Optional.of(customer));
+
+        // Act
+        ApiResponse<STITestResponse> response = stiTestService.bookTest(invalidRequest, customer.getId());
+
+        // Assert
+        assertFalse(response.isSuccess());
+        assertEquals("Must specify either serviceId or packageId, not both", response.getMessage());
+        verify(stiTestRepository, never()).save(any(STITest.class));
+    }
+
+    @Test
+    @DisplayName("Lấy kết quả xét nghiệm được group theo service - Thành công")
+    void getTestResultsGroupedByService_Success() {
+        // Arrange
+        Long testId = 1L;
+
+        TestResult result1 = new TestResult();
+        result1.setResultId(1L);
+        result1.setStiTest(savedTest);
+        result1.setTestComponent(testComponents.get(0));
+        result1.setSourceService(stiService);
+        result1.setResultValue("Negative");
+
+        TestResult result2 = new TestResult();
+        result2.setResultId(2L);
+        result2.setStiTest(savedTest);
+        result2.setTestComponent(testComponents.get(1));
+        result2.setSourceService(service2);
+        result2.setResultValue("Negative");
+
+        List<TestResult> testResults = List.of(result1, result2);
+
+        when(stiTestRepository.findById(testId)).thenReturn(Optional.of(savedTest));
+        when(testResultRepository.findByStiTestTestIdOrderBySourceServiceNameAscTestComponentTestNameAsc(testId))
+                .thenReturn(testResults);
+
+        // Act
+        ApiResponse<List<STITestService.ServiceTestGroup>> response = stiTestService
+                .getTestResultsGroupedByService(testId, customer.getId());
+
+        // Assert
+        assertTrue(response.isSuccess());
+        assertNotNull(response.getData());
+        assertFalse(response.getData().isEmpty());
+
+        // Verify grouping by service
+        STITestService.ServiceTestGroup group = response.getData().get(0);
+        assertNotNull(group.getServiceId());
+        assertNotNull(group.getServiceName());
+        assertNotNull(group.getTestResults());
     }
 }

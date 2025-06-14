@@ -20,4 +20,17 @@ public interface TestResultRepository extends JpaRepository<TestResult, Long> {
 
     // You can also have a method to find by STITest entity
     List<TestResult> findByStiTest(STITest stiTest);
+
+    // Lấy results được sắp xếp theo service và component name (cho package)
+    @Query("SELECT tr FROM TestResult tr " +
+            "LEFT JOIN FETCH tr.sourceService s " +
+            "LEFT JOIN FETCH tr.testComponent c " +
+            "WHERE tr.stiTest.testId = :testId " +
+            "ORDER BY s.name ASC, c.testName ASC")
+    List<TestResult> findByStiTestTestIdOrderBySourceServiceNameAscTestComponentTestNameAsc(
+            @Param("testId") Long testId);
+
+    // Lấy results theo source service
+    @Query("SELECT tr FROM TestResult tr WHERE tr.stiTest.testId = :testId AND tr.sourceService.serviceId = :serviceId")
+    List<TestResult> findByTestIdAndSourceServiceId(@Param("testId") Long testId, @Param("serviceId") Long serviceId);
 }

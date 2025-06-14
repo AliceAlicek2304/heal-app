@@ -14,6 +14,8 @@ public class TestResultResponse {
     private Long testId;
     private Long componentId;
     private String componentName;
+    private String testName; // Thêm trường này
+    private String referenceRange; // Thêm trường này
     private String resultValue;
     private String normalRange;
     private String unit;
@@ -21,4 +23,5 @@ public class TestResultResponse {
     private String reviewerName;
     private LocalDateTime reviewedAt;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt; // Thêm trường này
 }

@@ -8,6 +8,7 @@ import com.healapp.dto.TestResultRequest;
 import com.healapp.dto.TestResultResponse;
 import com.healapp.exception.PaymentException;
 import com.healapp.model.STIService;
+import com.healapp.model.STIPackage;
 import com.healapp.model.STITest;
 import com.healapp.model.ServiceTestComponent;
 import com.healapp.model.TestResult;
@@ -17,6 +18,7 @@ import com.healapp.model.PaymentMethod;
 import com.healapp.model.PaymentStatus;
 import com.healapp.model.TestStatus;
 import com.healapp.repository.STIServiceRepository;
+import com.healapp.repository.STIPackageRepository;
 import com.healapp.repository.STITestRepository;
 import com.healapp.repository.ServiceTestComponentRepository;
 import com.healapp.repository.TestResultRepository;
@@ -30,6 +32,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -42,6 +45,9 @@ public class STITestService {
 
     @Autowired
     private STIServiceRepository stiServiceRepository;
+
+    @Autowired
+    private STIPackageRepository stiPackageRepository;
 
     @Autowired
     private ServiceTestComponentRepository testComponentRepository;
@@ -60,23 +66,18 @@ public class STITestService {
 
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<STITestResponse> bookTest(STITestRequest request, Long customerId) {
-        log.info("User {} booking STI test for service {}", customerId, request.getServiceId());
+        log.info("User {} booking STI test", customerId);
+
+        // Validate request
+        if (!request.isValid()) {
+            return ApiResponse.error("Must specify either serviceId or packageId, not both");
+        }
 
         Optional<UserDtls> customerOpt = userRepository.findById(customerId);
         if (customerOpt.isEmpty()) {
             return ApiResponse.error("Customer not found");
         }
         UserDtls customer = customerOpt.get();
-
-        Optional<STIService> serviceOpt = stiServiceRepository.findById(request.getServiceId());
-        if (serviceOpt.isEmpty()) {
-            return ApiResponse.error("STI service not found");
-        }
-        STIService stiService = serviceOpt.get();
-
-        if (!stiService.getIsActive()) {
-            return ApiResponse.error("STI service is not available");
-        }
 
         if (request.getAppointmentDate().isBefore(LocalDateTime.now().plusHours(2))) {
             return ApiResponse.error("Appointment must be at least 2 hours from now");
@@ -89,17 +90,66 @@ public class STITestService {
             return ApiResponse.error("Invalid payment method: " + request.getPaymentMethod());
         }
 
-        STITest stiTest = STITest.builder()
-                .customer(customer)
-                .stiService(stiService)
-                .appointmentDate(request.getAppointmentDate())
-                .customerNotes(request.getCustomerNotes())
-                .totalPrice(BigDecimal.valueOf(stiService.getPrice())) // BigDecimal
-                .status(TestStatus.PENDING)
-                .build();
+        STITest stiTest;
+        BigDecimal totalPrice;
+
+        if (request.isServiceBooking()) {
+            // Service booking
+            log.info("Booking service ID: {}", request.getServiceId());
+            Optional<STIService> serviceOpt = stiServiceRepository.findById(request.getServiceId());
+            if (serviceOpt.isEmpty()) {
+                return ApiResponse.error("STI service not found");
+            }
+            STIService stiService = serviceOpt.get();
+
+            if (!stiService.getIsActive()) {
+                return ApiResponse.error("STI service is not available");
+            }
+
+            totalPrice = BigDecimal.valueOf(stiService.getPrice());
+            stiTest = STITest.builder()
+                    .customer(customer)
+                    .stiService(stiService)
+                    .appointmentDate(request.getAppointmentDate())
+                    .customerNotes(request.getCustomerNotes())
+                    .totalPrice(totalPrice)
+                    .status(TestStatus.PENDING)
+                    .build();
+
+        } else {
+            // Package booking
+            log.info("Booking package ID: {}", request.getPackageId());
+            Optional<STIPackage> packageOpt = stiPackageRepository
+                    .findByIdWithServicesAndComponents(request.getPackageId());
+            if (packageOpt.isEmpty()) {
+                return ApiResponse.error("STI package not found");
+            }
+            STIPackage stiPackage = packageOpt.get();
+
+            if (!stiPackage.getIsActive()) {
+                return ApiResponse.error("STI package is not available");
+            }
+
+            totalPrice = stiPackage.getPackagePrice();
+            stiTest = STITest.builder()
+                    .customer(customer)
+                    .stiPackage(stiPackage)
+                    .appointmentDate(request.getAppointmentDate())
+                    .customerNotes(request.getCustomerNotes())
+                    .totalPrice(totalPrice)
+                    .status(TestStatus.PENDING)
+                    .build();
+        }
 
         STITest savedTest = stiTestRepository.save(stiTest);
         log.info("Created STI Test ID: {} for user: {}", savedTest.getTestId(), customerId);
+
+        // Tạo TestResults
+        if (request.isPackageBooking()) {
+            createTestResultsForPackage(savedTest);
+        } else {
+            createTestResultsForService(savedTest);
+        }
 
         ApiResponse<Payment> paymentResult = processPaymentForTest(savedTest, paymentMethod, request);
 
@@ -114,7 +164,8 @@ public class STITestService {
 
         STITestResponse response = convertToResponse(savedTest);
 
-        String message = "STI test scheduled successfully";
+        String message = request.isPackageBooking() ? "STI package test scheduled successfully"
+                : "STI test scheduled successfully";
         if (paymentMethod == PaymentMethod.COD) {
             message += " - Payment on delivery";
         } else if (payment.getPaymentStatus() == PaymentStatus.COMPLETED) {
@@ -128,7 +179,14 @@ public class STITestService {
 
     private ApiResponse<Payment> processPaymentForTest(STITest stiTest, PaymentMethod paymentMethod,
             STITestRequest request) {
-        String description = "STI Test: " + stiTest.getStiService().getName();
+        String description;
+        if (stiTest.getStiService() != null) {
+            description = "STI Test: " + stiTest.getStiService().getName();
+        } else if (stiTest.getStiPackage() != null) {
+            description = "STI Package: " + stiTest.getStiPackage().getPackageName();
+        } else {
+            description = "STI Test";
+        }
 
         ApiResponse<Payment> paymentResult;
 
@@ -201,15 +259,22 @@ public class STITestService {
 
         if (request.getCardHolderName() == null || request.getCardHolderName().trim().isEmpty()) {
             return ApiResponse.error("Card holder name is required");
+        } // Process Stripe payment
+        String description;
+        if (stiTest.getStiService() != null) {
+            description = "STI Test: " + stiTest.getStiService().getName();
+        } else if (stiTest.getStiPackage() != null) {
+            description = "STI Package: " + stiTest.getStiPackage().getPackageName();
+        } else {
+            description = "STI Test";
         }
 
-        // Process Stripe payment
         return paymentService.processStripePayment(
                 stiTest.getCustomer().getId(),
                 "STI",
                 stiTest.getTestId(),
                 stiTest.getTotalPrice(),
-                "STI Test: " + stiTest.getStiService().getName(),
+                description,
                 request.getCardNumber().trim(),
                 request.getExpiryMonth().trim(),
                 request.getExpiryYear().trim(),
@@ -422,7 +487,23 @@ public class STITestService {
     }
 
     private boolean validateAndSaveTestResults(STITest test, List<TestResultRequest> resultRequests, Long userId) {
-        List<ServiceTestComponent> serviceComponents = test.getStiService().getTestComponents();
+        List<ServiceTestComponent> serviceComponents;
+
+        // Get components based on whether this is a service or package test
+        if (test.getStiService() != null) {
+            // Individual service test
+            serviceComponents = test.getStiService().getTestComponents();
+        } else if (test.getStiPackage() != null) {
+            // Package test - get all components from all services in the package
+            serviceComponents = new ArrayList<>();
+            for (STIService service : test.getStiPackage().getServices()) {
+                serviceComponents.addAll(service.getTestComponents());
+            }
+        } else {
+            log.error("Test {} has neither service nor package", test.getTestId());
+            return false;
+        }
+
         List<Long> serviceComponentIds = serviceComponents.stream()
                 .map(ServiceTestComponent::getComponentId)
                 .collect(Collectors.toList());
@@ -441,8 +522,10 @@ public class STITestService {
         for (TestResultRequest resultReq : resultRequests) {
             try {
                 if (!serviceComponentIds.contains(resultReq.getComponentId())) {
-                    log.error("Component ID {} does not belong to service {}",
-                            resultReq.getComponentId(), test.getStiService().getServiceId());
+                    String serviceInfo = test.getStiService() != null ? "service " + test.getStiService().getServiceId()
+                            : "package " + test.getStiPackage().getPackageId();
+                    log.error("Component ID {} does not belong to {}",
+                            resultReq.getComponentId(), serviceInfo);
                     allResultsSaved = false;
                     continue;
                 }
@@ -734,12 +817,18 @@ public class STITestService {
         response.setCustomerId(stiTest.getCustomer().getId());
         response.setCustomerName(stiTest.getCustomer().getFullName());
         response.setCustomerEmail(stiTest.getCustomer().getEmail());
-        response.setCustomerPhone(stiTest.getCustomer().getPhone());
-
-        // Service information
-        response.setServiceId(stiTest.getStiService().getServiceId());
-        response.setServiceName(stiTest.getStiService().getName());
-        response.setServiceDescription(stiTest.getStiService().getDescription());
+        response.setCustomerPhone(stiTest.getCustomer().getPhone());        // Service information
+        if (stiTest.getStiService() != null) {
+            response.setServiceId(stiTest.getStiService().getServiceId());
+            response.setPackageId(null);
+            response.setServiceName(stiTest.getStiService().getName());
+            response.setServiceDescription(stiTest.getStiService().getDescription());
+        } else if (stiTest.getStiPackage() != null) {
+            response.setServiceId(null);
+            response.setPackageId(stiTest.getStiPackage().getPackageId());
+            response.setServiceName(stiTest.getStiPackage().getPackageName());
+            response.setServiceDescription(stiTest.getStiPackage().getDescription());
+        }
         response.setTotalPrice(stiTest.getTotalPrice());
 
         // Staff information
@@ -824,5 +913,180 @@ public class STITestService {
         }
 
         return response;
+    }
+
+    /**
+     * Tạo TestResults cho Service booking
+     */
+    private void createTestResultsForService(STITest stiTest) {
+        if (stiTest.getStiService() == null || stiTest.getStiService().getTestComponents() == null) {
+            return;
+        }
+
+        for (ServiceTestComponent component : stiTest.getStiService().getTestComponents()) {
+            TestResult result = new TestResult();
+            result.setStiTest(stiTest);
+            result.setTestComponent(component);
+            result.setSourceService(stiTest.getStiService()); // Same as parent service
+            testResultRepository.save(result);
+        }
+        log.info("Created {} test results for service booking: {}",
+                stiTest.getStiService().getTestComponents().size(), stiTest.getTestId());
+    }
+
+    /**
+     * Tạo TestResults cho Package booking
+     */
+    private void createTestResultsForPackage(STITest stiTest) {
+        if (stiTest.getStiPackage() == null || stiTest.getStiPackage().getServices() == null) {
+            return;
+        }
+
+        int totalResults = 0;
+        for (STIService service : stiTest.getStiPackage().getServices()) {
+            if (service.getTestComponents() != null) {
+                for (ServiceTestComponent component : service.getTestComponents()) {
+                    TestResult result = new TestResult();
+                    result.setStiTest(stiTest);
+                    result.setTestComponent(component);
+                    result.setSourceService(service); // Track which service this component belongs to
+                    testResultRepository.save(result);
+                    totalResults++;
+                }
+            }
+        }
+        log.info("Created {} test results for package booking: {}", totalResults, stiTest.getTestId());
+    }
+
+    /**
+     * Lấy TestResults được group theo service (cho package)
+     */
+    public ApiResponse<List<ServiceTestGroup>> getTestResultsGroupedByService(Long testId, Long userId) {
+        try {
+            Optional<STITest> testOpt = stiTestRepository.findById(testId);
+            if (testOpt.isEmpty()) {
+                return ApiResponse.error("Test not found");
+            }
+
+            STITest stiTest = testOpt.get();
+
+            // Kiểm tra quyền
+            if (!canAccessTest(stiTest, userId)) {
+                return ApiResponse.error("Access denied");
+            }
+
+            List<TestResult> results = testResultRepository
+                    .findByStiTestTestIdOrderBySourceServiceNameAscTestComponentTestNameAsc(testId);
+
+            // Group by source service
+            Map<STIService, List<TestResult>> groupedResults = results.stream()
+                    .collect(Collectors.groupingBy(TestResult::getSourceService));
+
+            List<ServiceTestGroup> serviceGroups = new ArrayList<>();
+            for (Map.Entry<STIService, List<TestResult>> entry : groupedResults.entrySet()) {
+                STIService service = entry.getKey();
+                List<TestResult> serviceResults = entry.getValue();
+
+                ServiceTestGroup group = new ServiceTestGroup();
+                group.setServiceId(service.getServiceId());
+                group.setServiceName(service.getName());
+                group.setServiceDescription(service.getDescription());
+
+                List<TestResultResponse> resultResponses = serviceResults.stream()
+                        .map(this::convertTestResultToResponse)
+                        .collect(Collectors.toList());
+                group.setTestResults(resultResponses);
+
+                serviceGroups.add(group);
+            }
+
+            return ApiResponse.success("Test results retrieved successfully", serviceGroups);
+
+        } catch (Exception e) {
+            log.error("Error retrieving grouped test results: {}", e.getMessage(), e);
+            return ApiResponse.error("Failed to retrieve test results: " + e.getMessage());
+        }
+    }
+
+    /**
+     * DTO class for grouped service results
+     */
+    public static class ServiceTestGroup {
+        private Long serviceId;
+        private String serviceName;
+        private String serviceDescription;
+        private List<TestResultResponse> testResults;
+
+        // Getters and setters
+        public Long getServiceId() {
+            return serviceId;
+        }
+
+        public void setServiceId(Long serviceId) {
+            this.serviceId = serviceId;
+        }
+
+        public String getServiceName() {
+            return serviceName;
+        }
+
+        public void setServiceName(String serviceName) {
+            this.serviceName = serviceName;
+        }
+
+        public String getServiceDescription() {
+            return serviceDescription;
+        }
+
+        public void setServiceDescription(String serviceDescription) {
+            this.serviceDescription = serviceDescription;
+        }
+
+        public List<TestResultResponse> getTestResults() {
+            return testResults;
+        }
+
+        public void setTestResults(List<TestResultResponse> testResults) {
+            this.testResults = testResults;
+        }
+    }
+
+    private TestResultResponse convertTestResultToResponse(TestResult result) {
+        TestResultResponse response = new TestResultResponse();
+        response.setResultId(result.getResultId());
+        response.setTestId(result.getStiTest().getTestId());
+        response.setComponentId(result.getTestComponent().getComponentId());
+        response.setTestName(result.getTestComponent().getTestName());
+        response.setReferenceRange(result.getTestComponent().getReferenceRange());
+        response.setResultValue(result.getResultValue());
+        response.setNormalRange(result.getNormalRange());
+        response.setUnit(result.getUnit());
+        response.setReviewedBy(result.getReviewedBy());
+        response.setReviewedAt(result.getReviewedAt());
+        response.setCreatedAt(result.getCreatedAt());
+        response.setUpdatedAt(result.getUpdatedAt());
+        return response;
+    }
+
+    /**
+     * Kiểm tra quyền truy cập test
+     */
+    private boolean canAccessTest(STITest stiTest, Long userId) {
+        // Customer có thể truy cập test của mình
+        if (stiTest.getCustomer().getId().equals(userId)) {
+            return true;
+        }
+
+        // Staff và Admin có thể truy cập tất cả test
+        Optional<UserDtls> userOpt = userRepository.findById(userId);
+        if (userOpt.isPresent()) {
+            UserDtls user = userOpt.get();
+            if (user.getRole() != null) {
+                String roleName = user.getRole().getRoleName();
+                return "ADMIN".equals(roleName) || "STAFF".equals(roleName);
+            }
+        }
+
+        return false;
     }
 }

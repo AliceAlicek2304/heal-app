@@ -82,6 +82,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/sti-services").permitAll()
                         .requestMatchers(HttpMethod.GET, "/sti-services/{serviceId}").permitAll()
 
+                        // API STI Packages (Public endpoints)
+                        .requestMatchers(HttpMethod.GET, "/sti-packages/active").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/sti-packages/{packageId}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/sti-packages/search").permitAll()
+
                         // API Ratings (Public endpoints)
                         .requestMatchers(HttpMethod.GET, "/ratings/consultant/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/ratings/sti-service/**").permitAll()
@@ -168,7 +173,7 @@ public class SecurityConfig {
 
                         // API STI Services (Consultant actions)
                         .requestMatchers(HttpMethod.PUT, "/sti-services/consultant/tests/{testId}/notes")
-                        .hasRole("CONSULTANT")                        // ========= STAFF ENDPOINTS =========
+                        .hasRole("CONSULTANT") // ========= STAFF ENDPOINTS =========
                         // API Staff Ratings Management
                         .requestMatchers("/staff/ratings/**").hasAnyRole("STAFF", "ADMIN")
                         .requestMatchers("/ratings/staff/**").hasAnyRole("STAFF", "ADMIN")
@@ -209,6 +214,11 @@ public class SecurityConfig {
                         .requestMatchers("/staff/**").hasRole("STAFF")
 
                         // ========= ADMIN ENDPOINTS =========
+                        // API STI Package Management (Admin/Staff)
+                        .requestMatchers(HttpMethod.POST, "/sti-packages").hasAnyRole("ADMIN", "STAFF")
+                        .requestMatchers(HttpMethod.PUT, "/sti-packages/{packageId}").hasAnyRole("ADMIN", "STAFF")
+                        .requestMatchers(HttpMethod.DELETE, "/sti-packages/{packageId}").hasRole("ADMIN")
+
                         // API Category Management (Admin only)
                         .requestMatchers(HttpMethod.POST, "/categories").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/categories/{categoryId}").hasRole("ADMIN")

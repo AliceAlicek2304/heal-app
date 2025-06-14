@@ -180,8 +180,7 @@ const SidebarNav = ({ activeTab }) => {
                                 </svg>
                                 <span>Quản lý dịch vụ STI</span>
                             </Link>
-                        </li>
-                        <li className={activeTab === 'manage-sti-tests' ? styles.active : ''}>
+                        </li>                        <li className={activeTab === 'manage-sti-tests' ? styles.active : ''}>
                             <Link to="/profile/manage-sti-tests" className={styles.menuLink}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M9 11H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-2"></path>
@@ -189,6 +188,17 @@ const SidebarNav = ({ activeTab }) => {
                                     <path d="M12 1v6"></path>
                                 </svg>
                                 <span>Quản lý STI Test</span>
+                            </Link>
+                        </li>
+                        <li className={activeTab === 'manage-sti-packages' ? styles.active : ''}>
+                            <Link to="/profile/manage-sti-packages" className={styles.menuLink}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <rect x="7" y="3" width="12" height="6" rx="1"></rect>
+                                    <rect x="3" y="9" width="12" height="6" rx="1"></rect>
+                                    <rect x="7" y="15" width="12" height="6" rx="1"></rect>
+                                    <path d="M21 12h-4l-2-2h-2l-2 2H7"></path>
+                                </svg>
+                                <span>Quản lý STI Packages</span>
                             </Link>
                         </li>
                         <li className={activeTab === 'manage-blogs' ? styles.active : ''}>
