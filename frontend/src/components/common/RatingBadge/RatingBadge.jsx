@@ -46,7 +46,7 @@ const RatingBadge = ({
         }
     };
 
-    const handleClick = () => {
+    const handleClick = () => {     
         if (onClick && !loading && !error) {
             onClick();
         }

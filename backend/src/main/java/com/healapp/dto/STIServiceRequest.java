@@ -36,13 +36,7 @@ public class STIServiceRequest {
 
         @NotBlank(message = "Test name is required")
         @Size(max = 100, message = "Test name must not exceed 100 characters")
-        private String testName;
-
-        @Size(max = 100, message = "Reference range must not exceed 100 characters")
+        private String testName;        @Size(max = 100, message = "Reference range must not exceed 100 characters")
         private String referenceRange;
-        
-        @DecimalMin(value = "0.0", inclusive = true, message = "Component price must be at least 0")
-        @DecimalMax(value = "5000000.0", message = "Component price must not exceed 5,000,000 VND")
-        private Double price;
     }
 }

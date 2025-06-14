@@ -81,7 +81,6 @@ public class STIServiceService {
                         component.setStiService(savedService);
                         component.setTestName(componentReq.getTestName());
                         component.setReferenceRange(componentReq.getReferenceRange());
-                        component.setPrice(componentReq.getPrice());
 
                         ServiceTestComponent savedComponent = serviceTestComponentRepository.save(component);
                         log.info("Component saved: {} with ID: {}", savedComponent.getTestName(),
@@ -162,7 +161,6 @@ public class STIServiceService {
                     component.setStiService(updatedService);
                     component.setTestName(componentReq.getTestName());
                     component.setReferenceRange(componentReq.getReferenceRange());
-                    component.setPrice(componentReq.getPrice());
 
                     serviceTestComponentRepository.save(component);
                 }
@@ -361,7 +359,6 @@ public class STIServiceService {
                         compResp.setComponentId(component.getComponentId());
                         compResp.setTestName(component.getTestName());
                         compResp.setReferenceRange(component.getReferenceRange());
-                        compResp.setPrice(component.getPrice());
                         return compResp;
                     })
                     .toList();

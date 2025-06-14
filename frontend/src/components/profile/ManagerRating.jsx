@@ -21,15 +21,13 @@ const ManagerRating = () => {
         sort: 'newest',
         filterRating: null,
         keyword: ''
-    });    // Reply state
+    });
+
+    // Reply state
     const [replyingToId, setReplyingToId] = useState(null);
     const [replyText, setReplyText] = useState('');
     const [editingReplyId, setEditingReplyId] = useState(null);
     const [editReplyText, setEditReplyText] = useState('');
-
-    // Modal state
-    const [showDetailModal, setShowDetailModal] = useState(false);
-    const [selectedRatingDetail, setSelectedRatingDetail] = useState(null);
 
     // Load dữ liệu khi component mount hoặc tab/filter thay đổi
     useEffect(() => {
@@ -43,7 +41,9 @@ const ManagerRating = () => {
         try {
             const page = reset ? 0 : currentPage;
             const size = 20;
+
             let response;
+            console.log(`Loading ratings for tab: ${activeTab}, page: ${page}`);
 
             switch (activeTab) {
                 case 'consultation':
@@ -54,8 +54,13 @@ const ManagerRating = () => {
                     break;
                 case 'all':
                 default:
-                    response = await getAllRatingsForStaff(page, size, filters.sort, filters.filterRating, filters.keyword); break;
-            }            if (response && response.success && response.data) {
+                    response = await getAllRatingsForStaff(page, size, filters.sort, filters.filterRating, filters.keyword);
+                    break;
+            }
+
+            console.log('API Response:', response);
+
+            if (response && response.success && response.data) {
                 const newRatings = response.data.content || [];
 
                 if (reset) {
@@ -63,8 +68,12 @@ const ManagerRating = () => {
                     setCurrentPage(0);
                 } else {
                     setRatings(prev => [...prev, ...newRatings]);
-                } setTotalPages(response.data.totalPages || 0);
+                }
+
+                setTotalPages(response.data.totalPages || 0);
                 setHasMore(!response.data.last);
+
+                console.log(`Loaded ${newRatings.length} ratings for ${activeTab}`);
             } else {
                 console.warn('No data received or API failed:', response);
                 if (reset) {
@@ -97,8 +106,11 @@ const ManagerRating = () => {
                 default:
                     response = await getAllRatingSummaryForStaff();
                     break;
-            }            if (response && response.success) {
+            }
+
+            if (response && response.success) {
                 setSummary(response.data || {});
+                console.log('Summary loaded:', response.data);
             }
         } catch (error) {
             console.error('Error loading summary:', error);
@@ -122,8 +134,11 @@ const ManagerRating = () => {
         setCurrentPage(0);
     };    // Handle reply to rating
     const handleReply = async (ratingId) => {
-        if (!replyText.trim()) return; try {
-            const response = await replyToRatingAsStaff(ratingId, { staffReply: replyText });
+        if (!replyText.trim()) return;
+
+        try {
+            console.log('Replying to rating ID:', ratingId);
+            const response = await replyToRatingAsStaff(ratingId, { content: replyText });
 
             if (response && response.success) {
                 // Update local state
@@ -131,8 +146,11 @@ const ManagerRating = () => {
                     (rating.ratingId || rating.id) === ratingId
                         ? { ...rating, staffReply: response.data.staffReply }
                         : rating
-                )); setReplyingToId(null);
+                ));
+
+                setReplyingToId(null);
                 setReplyText('');
+                console.log('Reply added successfully');
             }
         } catch (error) {
             console.error('Error adding reply:', error);
@@ -144,14 +162,17 @@ const ManagerRating = () => {
         if (!editReplyText.trim()) return;
 
         try {
-            const response = await updateStaffReply(ratingId, { staffReply: editReplyText }); if (response && response.success) {
+            const response = await updateStaffReply(ratingId, { content: editReplyText }); if (response && response.success) {
                 // Update local state
                 setRatings(prev => prev.map(rating =>
                     (rating.ratingId || rating.id) === ratingId
                         ? { ...rating, staffReply: response.data.staffReply }
                         : rating
-                )); setEditingReplyId(null);
+                ));
+
+                setEditingReplyId(null);
                 setEditReplyText('');
+                console.log('Reply updated successfully');
             }
         } catch (error) {
             console.error('Error updating reply:', error);
@@ -167,9 +188,11 @@ const ManagerRating = () => {
 
             if (response && response.success) {                // Update local state
                 setRatings(prev => prev.map(rating =>
-                    (rating.ratingId || rating.id) === ratingId ? { ...rating, staffReply: null }
+                    (rating.ratingId || rating.id) === ratingId
+                        ? { ...rating, staffReply: null }
                         : rating
                 ));
+                console.log('Reply deleted successfully');
             }
         } catch (error) {
             console.error('Error deleting reply:', error);
@@ -185,31 +208,17 @@ const ManagerRating = () => {
 
             if (response && response.success) {                // Remove from local state
                 setRatings(prev => prev.filter(rating => (rating.ratingId || rating.id) !== ratingId));
+                console.log('Rating hidden successfully');
             }
         } catch (error) {
             console.error('Error hiding rating:', error);
         }
-    };    // Format date
+    };
+
+    // Format date
     const formatDate = (dateString) => {
         if (!dateString) return '';
-
-        // Handle array format [2025, 6, 14, 20, 15, 15, 922000000]
-        if (Array.isArray(dateString)) {
-            const [year, month, day, hour, minute, second] = dateString;
-            const date = new Date(year, month - 1, day, hour || 0, minute || 0, second || 0);
-            return date.toLocaleDateString('vi-VN', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
-
-        // Handle string format
         const date = new Date(dateString);
-        if (isNaN(date.getTime())) return 'Invalid Date';
-
         return date.toLocaleDateString('vi-VN', {
             year: 'numeric',
             month: '2-digit',
@@ -259,9 +268,14 @@ const ManagerRating = () => {
                     <div className={styles.summaryNumber}>
                         {summary.averageRating ? summary.averageRating.toFixed(1) : '0.0'}
                     </div>
-                </div>                <div className={styles.summaryCard}>
+                </div>
+                <div className={styles.summaryCard}>
                     <h3>Chưa phản hồi</h3>
                     <div className={styles.summaryNumber}>{summary.pendingReplies || 0}</div>
+                </div>
+                <div className={styles.summaryCard}>
+                    <h3>Đánh giá tháng này</h3>
+                    <div className={styles.summaryNumber}>{summary.thisMonthRatings || 0}</div>
                 </div>
             </div>
 
@@ -332,42 +346,22 @@ const ManagerRating = () => {
                                 <div className={styles.stars}>
                                     {renderStars(rating.rating)}
                                     <span className={styles.ratingValue}>({rating.rating}/5)</span>
-                                </div>                                <div className={styles.ratingMeta}>
-                                    <div className={styles.userInfo}>
-                                        {rating.userAvatar && (
-                                            <img
-                                                src={`http://localhost:8080${rating.userAvatar}`}
-                                                alt="User Avatar"
-                                                className={styles.userAvatar}
-                                            />
-                                        )}
-                                        <span className={styles.customer}>
-                                            {rating.userFullName || rating.maskedUserName || 'Khách hàng'}
-                                        </span>
-                                    </div>
+                                </div>
+                                <div className={styles.ratingMeta}>
+                                    <span className={styles.customer}>{rating.customerName || 'Khách hàng'}</span>
                                     <span className={styles.date}>{formatDate(rating.createdAt)}</span>
                                     <span className={styles.type}>
-                                        {rating.targetType === 'CONSULTANT' ? '👩‍⚕️ Tư vấn' : '🔬 Dịch vụ STI'}
+                                        {rating.targetType === 'CONSULTANT' ? 'Tư vấn' : 'Dịch vụ STI'}
                                     </span>
                                 </div>
-                            </div>                            <div className={styles.ratingActions}>
-                                <button
-                                    className={styles.detailBtn}
-                                    onClick={() => {
-                                        setSelectedRatingDetail(rating);
-                                        setShowDetailModal(true);
-                                    }}
-                                    title="Xem chi tiết"
-                                >
-                                    👁️
-                                </button>
-                                <button
-                                    className={styles.deleteBtn}
-                                    onClick={() => handleDeleteRating(rating.ratingId || rating.id)}
-                                    title="Ẩn đánh giá"
-                                >
-                                    🗑️
-                                </button>
+                            </div>
+                            <div className={styles.ratingActions}>                                    <button
+                                className={styles.deleteBtn}
+                                onClick={() => handleDeleteRating(rating.ratingId || rating.id)}
+                                title="Ẩn đánh giá"
+                            >
+                                🗑️
+                            </button>
                             </div>
                         </div>
 
@@ -385,10 +379,12 @@ const ManagerRating = () => {
                             {rating.staffReply ? (
                                 <div className={styles.existingReply}>
                                     <div className={styles.replyHeader}>
-                                        <span className={styles.replyLabel}>Phản hồi của nhân viên:</span>                                        <div className={styles.replyActions}>                                                <button onClick={() => {
-                                            setEditingReplyId(rating.ratingId || rating.id);
-                                            setEditReplyText(rating.staffReply || '');
-                                        }}
+                                        <span className={styles.replyLabel}>Phản hồi của nhân viên:</span>
+                                        <div className={styles.replyActions}>                                                <button
+                                            onClick={() => {
+                                                setEditingReplyId(rating.ratingId || rating.id);
+                                                setEditReplyText(rating.staffReply.content);
+                                            }}
                                             className={styles.editBtn}
                                         >
                                             ✏️
@@ -427,13 +423,14 @@ const ManagerRating = () => {
                                                 </button>
                                             </div>
                                         </div>
-                                    ) : (<div className={styles.replyContent}>
-                                        <p>{rating.staffReply || 'Chưa có nội dung phản hồi'}</p>
-                                        <div className={styles.replyMeta}>
-                                            <span>{rating.repliedByName || 'Nhân viên'}</span>
-                                            <span>{formatDate(rating.repliedAt)}</span>
+                                    ) : (
+                                        <div className={styles.replyContent}>
+                                            <p>{rating.staffReply.content}</p>
+                                            <div className={styles.replyMeta}>
+                                                <span>{rating.staffReply.staffName}</span>
+                                                <span>{formatDate(rating.staffReply.repliedAt)}</span>
+                                            </div>
                                         </div>
-                                    </div>
                                     )}
                                 </div>
                             ) : replyingToId === (rating.ratingId || rating.id) ? (
@@ -483,93 +480,7 @@ const ManagerRating = () => {
                         className={styles.loadMoreBtn}
                     >
                         {loading ? 'Đang tải...' : 'Tải thêm'}
-                    </button>                </div>
-            )}
-
-            {/* Detail Modal */}
-            {showDetailModal && selectedRatingDetail && (
-                <div className={styles.modal} onClick={() => setShowDetailModal(false)}>
-                    <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
-                        <div className={styles.modalHeader}>
-                            <h3>Chi tiết đánh giá</h3>
-                            <button
-                                className={styles.closeBtn}
-                                onClick={() => setShowDetailModal(false)}
-                            >
-                                ✕
-                            </button>
-                        </div>
-
-                        <div className={styles.modalBody}>
-                            {/* User Info */}
-                            <div className={styles.userSection}>
-                                <h4>Thông tin người dùng</h4>
-                                <div className={styles.userDetails}>
-                                    {selectedRatingDetail.userAvatar && (
-                                        <img
-                                            src={`http://localhost:8080${selectedRatingDetail.userAvatar}`}
-                                            alt="User Avatar"
-                                            className={styles.modalAvatar}
-                                        />
-                                    )}
-                                    <div>
-                                        <p><strong>Tên:</strong> {selectedRatingDetail.userFullName}</p>
-                                        <p><strong>ID:</strong> {selectedRatingDetail.userId}</p>
-                                        <p><strong>Tên hiển thị:</strong> {selectedRatingDetail.maskedUserName}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Rating Info */}
-                            <div className={styles.ratingSection}>
-                                <h4>Thông tin đánh giá</h4>
-                                <div className={styles.ratingDetails}>
-                                    <p><strong>Điểm đánh giá:</strong> {selectedRatingDetail.rating}/5 ⭐</p>
-                                    <p><strong>Loại:</strong> {selectedRatingDetail.targetType === 'CONSULTANT' ? 'Tư vấn' : 'Dịch vụ STI'}</p>
-                                    <p><strong>Ngày tạo:</strong> {formatDate(selectedRatingDetail.createdAt)}</p>
-                                    <p><strong>Bình luận:</strong></p>
-                                    <div className={styles.commentBox}>
-                                        {selectedRatingDetail.comment}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Service/Consultation Info */}
-                            {selectedRatingDetail.targetType === 'STI_SERVICE' && selectedRatingDetail.stiTestId && (
-                                <div className={styles.serviceSection}>
-                                    <h4>Thông tin dịch vụ STI</h4>
-                                    <div className={styles.serviceDetails}>
-                                        <p><strong>ID Test:</strong> {selectedRatingDetail.stiTestId}</p>
-                                        <p><strong>Target ID:</strong> {selectedRatingDetail.targetId}</p>
-                                    </div>
-                                </div>
-                            )}
-
-                            {selectedRatingDetail.targetType === 'CONSULTANT' && selectedRatingDetail.consultationId && (
-                                <div className={styles.serviceSection}>
-                                    <h4>Thông tin tư vấn</h4>
-                                    <div className={styles.serviceDetails}>
-                                        <p><strong>ID Consultation:</strong> {selectedRatingDetail.consultationId}</p>
-                                        <p><strong>Target ID:</strong> {selectedRatingDetail.targetId}</p>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Reply Info */}
-                            {selectedRatingDetail.staffReply && (
-                                <div className={styles.replySection}>
-                                    <h4>Phản hồi của nhân viên</h4>
-                                    <div className={styles.replyDetails}>
-                                        <p><strong>Người phản hồi:</strong> {selectedRatingDetail.repliedByName}</p>
-                                        <p><strong>Ngày phản hồi:</strong> {formatDate(selectedRatingDetail.repliedAt)}</p>
-                                        <div className={styles.replyContent}>
-                                            {selectedRatingDetail.staffReply}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                    </button>
                 </div>
             )}
         </div>

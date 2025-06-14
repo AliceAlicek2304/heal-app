@@ -739,16 +739,6 @@
     font-size: 0.9rem;
 }
 
-.componentPrice {
-    background: #f0f9ff;
-    color: #0284c7;
-    padding: 0.2rem 0.5rem;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    border: 1px solid #bae6fd;
-}
-
 /* Value Proposition Styling */
 .valueProposition {
     display: grid;

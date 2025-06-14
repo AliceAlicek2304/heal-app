@@ -549,14 +549,13 @@ class ConsultationServiceTest {
         verifyNoInteractions(consultationRepository);
     }
 
-    // Test getConsultationsForUser method
-    @Test
+    // Test getConsultationsForUser method    @Test
     @DisplayName("Lấy consultations cho user - Thành công")
     void getConsultationsForUser_Success() {
         List<Consultation> consultations = Arrays.asList(consultation);
         
         when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
-        when(consultationRepository.findByUserInvolved(1L)).thenReturn(consultations);
+        when(consultationRepository.findByCustomerId(1L)).thenReturn(consultations);
 
         ApiResponse<List<ConsultationResponse>> response = consultationService.getConsultationsForUser(1L);
 
@@ -564,7 +563,7 @@ class ConsultationServiceTest {
         assertEquals("Consultations retrieved successfully", response.getMessage());
         assertEquals(1, response.getData().size());
 
-        verify(consultationRepository).findByUserInvolved(1L);
+        verify(consultationRepository).findByCustomerId(1L);
     }
 
     @Test
@@ -599,25 +598,22 @@ class ConsultationServiceTest {
         verify(userRepository).findByRoleName("CONSULTANT");
     }
 
-    // Test getConsultationsForConsultant method
-    @Test
+    // Test getConsultationsForConsultant method    @Test
     @DisplayName("Lấy consultations cho consultant - Thành công")
     void getConsultationsForConsultant_Success() {
         List<Consultation> consultations = Arrays.asList(consultation);
         
         when(userRepository.findById(2L)).thenReturn(Optional.of(consultant));
-        when(consultationRepository.findByConsultant(consultant)).thenReturn(consultations);
+        when(consultationRepository.findByConsultantId(2L)).thenReturn(consultations);
 
         ApiResponse<List<ConsultationResponse>> response = consultationService.getConsultationsForConsultant(2L);
 
         assertTrue(response.isSuccess());
-        assertEquals("Consultations retrieved successfully", response.getMessage());
+        assertEquals("Consultant schedule retrieved successfully", response.getMessage());
         assertEquals(1, response.getData().size());
 
-        verify(consultationRepository).findByConsultant(consultant);
-    }
-
-    @Test
+        verify(consultationRepository).findByConsultantId(2L);
+    }    @Test
     @DisplayName("Lấy consultations cho consultant - User không tồn tại")
     void getConsultationsForConsultant_UserNotFound() {
         when(userRepository.findById(999L)).thenReturn(Optional.empty());
@@ -625,13 +621,11 @@ class ConsultationServiceTest {
         ApiResponse<List<ConsultationResponse>> response = consultationService.getConsultationsForConsultant(999L);
 
         assertFalse(response.isSuccess());
-        assertEquals("User not found", response.getMessage());
+        assertEquals("Consultant not found", response.getMessage());
 
         verify(userRepository).findById(999L);
         verifyNoInteractions(consultationRepository);
-    }
-
-    @Test
+    }    @Test
     @DisplayName("Lấy consultations cho consultant - User không phải consultant")
     void getConsultationsForConsultant_UserNotConsultant() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
@@ -639,7 +633,7 @@ class ConsultationServiceTest {
         ApiResponse<List<ConsultationResponse>> response = consultationService.getConsultationsForConsultant(1L);
 
         assertFalse(response.isSuccess());
-        assertEquals("User is not a consultant", response.getMessage());
+        assertEquals("Access denied. User is not a consultant", response.getMessage());
 
         verify(userRepository).findById(1L);
         verifyNoInteractions(consultationRepository);

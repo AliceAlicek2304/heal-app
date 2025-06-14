@@ -126,21 +126,12 @@ const STIServiceCard = ({ service, onBookTest, onAuthRequired, autoOpenDetails =
     };
 
     const handleCloseModal = () => {
-        setShowDetailsModal(false);
-        // Wait for animation to finish before clearing data
+        setShowDetailsModal(false);        // Wait for animation to finish before clearing data
         setTimeout(() => {
             setDetailedService(null);
             setError(null);
         }, 300);
-    };
-
-    const calculateTotalComponentPrice = (components) => {
-        if (!components || components.length === 0) return 0;
-        return components.reduce((total, component) => {
-            const componentPrice = parseFloat(component.price) || 0;
-            return total + componentPrice;
-        }, 0);
-    }; const handleRatingSuccess = () => {
+    };const handleRatingSuccess = () => {
         setShowRatingModal(false);
         // Trigger refresh of rating data
         setRefreshRating(prev => prev + 1);
@@ -336,7 +327,6 @@ const STIServiceCard = ({ service, onBookTest, onAuthRequired, autoOpenDetails =
                                                         <th>STT</th>
                                                         <th>Tên xét nghiệm</th>
                                                         <th>Giá trị tham chiếu</th>
-                                                        <th>Giá lẻ</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -345,45 +335,9 @@ const STIServiceCard = ({ service, onBookTest, onAuthRequired, autoOpenDetails =
                                                             <td>{index + 1}</td>
                                                             <td>{component.testName}</td>
                                                             <td>{component.referenceRange || 'N/A'}</td>
-                                                            <td>{component.price ?
-                                                                `${component.price.toLocaleString('vi-VN')} VNĐ` :
-                                                                '-'}
-                                                            </td>
                                                         </tr>
-                                                    ))}
-                                                </tbody>
+                                                    ))}                                                </tbody>
                                             </table>
-
-                                                {/* Hiển thị giá trị tiết kiệm nếu có thông tin giá component */}
-                                                {calculateTotalComponentPrice(detailedService.testComponents) > 0 && (
-                                                    <div className={styles.priceComparison}>
-                                                        <div className={styles.priceRow}>
-                                                            <strong>Tổng giá lẻ:</strong>
-                                                            <span className={styles.totalPrice}>
-                                                                {(calculateTotalComponentPrice(detailedService.testComponents)).toLocaleString('vi-VN')} VNĐ
-                                                            </span>
-                                                        </div>
-
-                                                        <div className={styles.priceRow}>
-                                                            <strong>Giá gói combo:</strong>
-                                                            <span className={styles.packagePrice}>
-                                                                {detailedService.price ? detailedService.price.toLocaleString('vi-VN') : 0} VNĐ
-                                                            </span>
-                                                        </div>
-
-                                                        {calculateTotalComponentPrice(detailedService.testComponents) > detailedService.price && (
-                                                            <div className={styles.savingsRow}>
-                                                                <strong>Tiết kiệm:</strong>
-                                                                <span className={styles.savingsAmount}>
-                                                                    {(calculateTotalComponentPrice(detailedService.testComponents) - detailedService.price).toLocaleString('vi-VN')} VNĐ
-                                                                    {' '}
-                                                                    ({Math.round(((calculateTotalComponentPrice(detailedService.testComponents) - detailedService.price) /
-                                                                        calculateTotalComponentPrice(detailedService.testComponents)) * 100)}%)
-                                                                </span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
                                     )}

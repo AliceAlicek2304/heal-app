@@ -585,14 +585,13 @@ class STITestServiceTest {
         verify(stiTestRepository).save(any(STITest.class));
     }
 
-    // ========== QR CODE GENERATION TESTS ==========
-
-    @Test
+    // ========== QR CODE GENERATION TESTS ==========    @Test
     @DisplayName("Lấy chi tiết test với QR Code - Kiểm tra URL generation")
     void getTestDetails_QRCode_URLGeneration() {
         // Arrange
         payment.setPaymentMethod(PaymentMethod.QR_CODE);
         payment.setQrPaymentReference("HEALSTI112025061298765");
+        payment.setAmount(BigDecimal.valueOf(500000)); // ✅ Ensure amount is set
 
         when(stiTestRepository.findById(savedTest.getTestId())).thenReturn(Optional.of(savedTest));
         when(paymentService.getPaymentByService("STI", savedTest.getTestId())).thenReturn(Optional.of(payment));

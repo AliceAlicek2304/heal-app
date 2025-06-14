@@ -29,6 +29,5 @@ public class STIServiceResponse {
         private Long componentId;
         private String testName;
         private String referenceRange;
-        private Double price;
     }
 }

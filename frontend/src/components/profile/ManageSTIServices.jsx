@@ -27,10 +27,9 @@ const ManageSTIServices = () => {
         price: '',
         isActive: true,
         testComponents: []
-    }); const [newComponent, setNewComponent] = useState({
+    });    const [newComponent, setNewComponent] = useState({
         testName: '',
-        referenceRange: '',
-        price: ''
+        referenceRange: ''
     });
 
     useEffect(() => {
@@ -211,7 +210,7 @@ const ManageSTIServices = () => {
             ]
         }));
 
-        setNewComponent({ testName: '', referenceRange: '', price: '' });
+        setNewComponent({ testName: '', referenceRange: '' });
     };
 
     const handleRemoveComponent = (index) => {
@@ -226,9 +225,7 @@ const ManageSTIServices = () => {
             style: 'currency',
             currency: 'VND'
         }).format(price || 0);
-    };
-
-    const formatDate = (dateString) => {
+    };    const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
         return new Date(dateString).toLocaleDateString('vi-VN', {
             year: 'numeric',
@@ -237,14 +234,6 @@ const ManageSTIServices = () => {
             hour: '2-digit',
             minute: '2-digit'
         });
-    };
-
-    const calculateTotalComponentPrice = (components) => {
-        if (!components || components.length === 0) return 0;
-        return components.reduce((total, component) => {
-            const componentPrice = parseFloat(component.price) || 0;
-            return total + componentPrice;
-        }, 0);
     };
 
     if (loading) {
@@ -507,16 +496,6 @@ const ManageSTIServices = () => {
                                                 placeholder="Giá trị tham chiếu"
                                             />
                                         </div>
-                                        <div className={styles.formGroup}>
-                                            <input
-                                                type="number"
-                                                value={newComponent.price}
-                                                onChange={(e) => setNewComponent(prev => ({ ...prev, price: e.target.value }))}
-                                                placeholder="Giá test (VNĐ)"
-                                                min="0"
-                                                step="1000"
-                                            />
-                                        </div>
                                         <button
                                             type="button"
                                             className={styles.addComponentBtn}
@@ -536,16 +515,10 @@ const ManageSTIServices = () => {
                                     {formData.testComponents.length === 0 ? (
                                         <p className={styles.emptyComponents}>Chưa có test component nào</p>
                                     ) : (
-                                        formData.testComponents.map((component, index) => (<div key={index} className={styles.componentItem}>
-                                            <div className={styles.componentInfo}>
+                                        formData.testComponents.map((component, index) => (<div key={index} className={styles.componentItem}>                                            <div className={styles.componentInfo}>
                                                 <strong>{component.testName}</strong>
                                                 <div className={styles.componentDetails}>
                                                     <span className={styles.referenceRange}>{component.referenceRange}</span>
-                                                    {component.price &&
-                                                        <span className={styles.componentPrice}>
-                                                            {formatPrice(component.price)}
-                                                        </span>
-                                                    }
                                                 </div>
                                             </div>
                                             {modalMode !== 'view' && (
@@ -583,46 +556,11 @@ const ManageSTIServices = () => {
                                                     <span>{component.testName}</span>
                                                     <span>{component.price ? formatPrice(component.price) : '-'}</span>
                                                 </div>
-                                            ))}
-
-                                            {/* Hiển thị giá trị tiết kiệm nếu có thông tin giá lẻ */}
-                                            {calculateTotalComponentPrice(formData.testComponents) > 0 && (
-                                                <>
-                                                    <div className={styles.comparisonFooter}>
-                                                        <span><strong>Tổng giá lẻ:</strong></span>
-                                                        <span className={styles.totalIndividualPrice}>
-                                                            {formatPrice(calculateTotalComponentPrice(formData.testComponents))}
-                                                        </span>
-                                                    </div>
-
-                                                    <div className={styles.packagePriceRow}>
-                                                        <span><strong>Giá gói combo:</strong></span>
-                                                        <span className={styles.packagePrice}>
-                                                            {formatPrice(formData.price)}
-                                                        </span>
-                                                    </div>
-
-                                                    {calculateTotalComponentPrice(formData.testComponents) > parseFloat(formData.price) && (
-                                                        <div className={styles.savingsRow}>
-                                                            <span><strong>Tiết kiệm:</strong></span>
-                                                            <span className={styles.savingsAmount}>
-                                                                {formatPrice(calculateTotalComponentPrice(formData.testComponents) - parseFloat(formData.price))}
-                                                                {' '}
-                                                                ({Math.round(((calculateTotalComponentPrice(formData.testComponents) - parseFloat(formData.price)) /
-                                                                    calculateTotalComponentPrice(formData.testComponents)) * 100)}%)
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                </>
-                                            )}
-                                        </div>
+                                            ))}                                        </div>
 
                                         <div className={styles.marketingPoints}>
                                             <h4>🎯 Lợi ích của gói dịch vụ:</h4>
                                             <ul>
-                                                {calculateTotalComponentPrice(formData.testComponents) > parseFloat(formData.price) && (
-                                                    <li>✅ Tiết kiệm chi phí so với làm riêng lẻ</li>
-                                                )}
                                                 <li>✅ Chẩn đoán toàn diện, chính xác</li>
                                                 <li>✅ Một lần làm, đầy đủ kết quả</li>
                                                 <li>✅ Tư vấn miễn phí từ chuyên gia</li>
