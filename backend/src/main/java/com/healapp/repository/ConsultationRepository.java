@@ -5,6 +5,7 @@ import com.healapp.model.ConsultationStatus;
 import com.healapp.model.UserDtls;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -38,4 +39,12 @@ public interface ConsultationRepository extends JpaRepository<Consultation, Long
 
         @Query("SELECT c FROM Consultation c WHERE c.customer.id = :userId OR c.consultant.id = :userId")
         List<Consultation> findByUserInvolved(Long userId);
+
+        // Method for rating eligibility check
+        @Query("SELECT c FROM Consultation c WHERE c.customer.id = :customerId " +
+                        "AND c.consultant.id = :consultantId AND c.status = :status")
+        List<Consultation> findByCustomerIdAndConsultantIdAndStatus(
+                        @Param("customerId") Long customerId,
+                        @Param("consultantId") Long consultantId,
+                        @Param("status") ConsultationStatus status);
 }

@@ -4,9 +4,15 @@ import com.healapp.dto.*;
 import com.healapp.model.Rating;
 import com.healapp.model.RatingSummary;
 import com.healapp.model.UserDtls;
+import com.healapp.model.Consultation;
+import com.healapp.model.ConsultationStatus;
+import com.healapp.model.STITest;
+import com.healapp.model.TestStatus;
 import com.healapp.repository.RatingRepository;
 import com.healapp.repository.RatingSummaryRepository;
 import com.healapp.repository.UserRepository;
+import com.healapp.repository.ConsultationRepository;
+import com.healapp.repository.STITestRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -29,12 +35,17 @@ public class RatingService {
 
     @Autowired
     private RatingRepository ratingRepository;
-
     @Autowired
     private RatingSummaryRepository ratingSummaryRepository;
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ConsultationRepository consultationRepository;
+
+    @Autowired
+    private STITestRepository stiTestRepository;
 
     // ===================== CUSTOMER METHODS =====================
 
@@ -463,15 +474,17 @@ public class RatingService {
     }
 
     private boolean hasCompletedConsultation(Long userId, Long consultantId) {
-        // TODO: Implement - check consultation repository
-        // For now, return true for demo
-        return true;
+        // Kiểm tra xem user có consultation nào COMPLETED với consultant này không
+        List<Consultation> consultations = consultationRepository.findByCustomerIdAndConsultantIdAndStatus(
+                userId, consultantId, ConsultationStatus.COMPLETED);
+        return !consultations.isEmpty();
     }
 
     private boolean hasCompletedSTIOrder(Long userId, Long serviceId) {
-        // TODO: Implement - check STI order repository
-        // For now, return true for demo
-        return true;
+        // Kiểm tra xem user có STI test nào COMPLETED với service này không
+        List<STITest> stiTests = stiTestRepository.findByCustomerIdAndStiServiceServiceIdAndStatus(
+                userId, serviceId, TestStatus.COMPLETED);
+        return !stiTests.isEmpty();
     }
 
     @Async

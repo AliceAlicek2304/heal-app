@@ -116,4 +116,12 @@ public interface STITestRepository extends JpaRepository<STITest, Long> {
             "WHERE t.status IN ('SAMPLED', 'RESULTED', 'COMPLETED') " +
             "ORDER BY t.updatedAt DESC")
     List<STITest> findAllConsultantAccessibleTests();
+
+    // Method for rating eligibility check
+    @Query("SELECT t FROM STITest t WHERE t.customer.id = :customerId " +
+            "AND t.stiService.serviceId = :serviceId AND t.status = :status")
+    List<STITest> findByCustomerIdAndStiServiceServiceIdAndStatus(
+            @Param("customerId") Long customerId,
+            @Param("serviceId") Long serviceId,
+            @Param("status") TestStatus status);
 }
