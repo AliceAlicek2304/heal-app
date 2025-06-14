@@ -26,17 +26,14 @@ const RatingBadge = ({
             setLoading(true);
             setError(null);
 
-            console.log(`Fetching ratings for ${targetType}/${targetId}`);
             const response = await ratingService.getRatingStats(targetType.toLowerCase(), targetId);
 
             if (response.success) {
                 // Kiểm tra response có cấu trúc lồng data.data không
                 if (response.data && response.data.data) {
                     setSummary(response.data.data);
-                    console.log("Rating data:", response.data.data);
                 } else {
                     setSummary(response.data);
-                    console.log("Rating data:", response.data);
                 }
             } else {
                 setError(response.message);
@@ -100,7 +97,7 @@ const RatingBadge = ({
     const totalRatings = summary?.totalRatings || 0;
 
     return (
-        <div 
+        <div
             className={`${styles.ratingBadge} ${sizeClass} ${onClick ? styles.clickable : ''} ${minimal ? styles.minimal : ''}`}
             onClick={handleClick}
         >
