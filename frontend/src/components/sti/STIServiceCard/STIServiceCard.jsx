@@ -131,7 +131,7 @@ const STIServiceCard = ({ service, onBookTest, onAuthRequired, autoOpenDetails =
             setDetailedService(null);
             setError(null);
         }, 300);
-    };const handleRatingSuccess = () => {
+    }; const handleRatingSuccess = () => {
         setShowRatingModal(false);
         // Trigger refresh of rating data
         setRefreshRating(prev => prev + 1);
@@ -321,23 +321,25 @@ const STIServiceCard = ({ service, onBookTest, onAuthRequired, autoOpenDetails =
                                         <div className={styles.modalSection}>
                                             <h4 className={styles.sectionTitle}>
                                                 Danh sách xét nghiệm ({detailedService.testComponents.length})
-                                            </h4>                                            <div className={styles.componentsList}>                                                <table className={styles.componentsTable}>
-                                                <thead>
-                                                    <tr>
-                                                        <th>STT</th>
-                                                        <th>Tên xét nghiệm</th>
-                                                        <th>Giá trị tham chiếu</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {detailedService.testComponents.map((component, index) => (
-                                                        <tr key={component.componentId || index}>
-                                                            <td>{index + 1}</td>
-                                                            <td>{component.testName}</td>
-                                                            <td>{component.referenceRange || 'N/A'}</td>
+                                            </h4>                                            <div className={styles.componentsList}>
+                                                <table className={styles.componentsTable}>
+                                                    <thead>
+                                                        <tr>
+                                                            <th>STT</th>
+                                                            <th>Tên xét nghiệm</th>
+                                                            <th>Giá trị tham chiếu</th>
                                                         </tr>
-                                                    ))}                                                </tbody>
-                                            </table>
+                                                    </thead>
+                                                    <tbody>
+                                                        {detailedService.testComponents.map((component, index) => (
+                                                            <tr key={component.componentId || index}>
+                                                                <td>{index + 1}</td>
+                                                                <td>{component.testName}</td>
+                                                                <td>{component.referenceRange || 'N/A'}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
                                             </div>
                                         </div>
                                     )}
