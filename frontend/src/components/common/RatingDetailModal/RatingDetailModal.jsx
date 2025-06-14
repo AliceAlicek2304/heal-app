@@ -65,9 +65,9 @@ const RatingDetailModal = ({
             console.error('Date formatting error:', error);
             return 'Không xác định';
         }
-    }; const canEditRating = (rating) => {
+    };
+    const canEditRating = (rating) => {
         if (!rating?.createdAt) {
-            console.log('No createdAt found:', rating);
             return false;
         }
 
@@ -78,18 +78,8 @@ const RatingDetailModal = ({
             createdAt = new Date(year, month - 1, day, hour, minute, second);
         } else {
             createdAt = new Date(rating.createdAt);
-        }
-
-        const now = new Date();
+        } const now = new Date();
         const diffHours = (now - createdAt) / (1000 * 60 * 60);
-
-        console.log('canEditRating debug:', {
-            createdAt: rating.createdAt,
-            parsedCreatedAt: createdAt,
-            now,
-            diffHours,
-            canEdit: diffHours < 24
-        });
 
         return diffHours < 48; // Temporary: increase to 48h for testing
     };
@@ -175,36 +165,27 @@ const RatingDetailModal = ({
                         </div>
                     </div>
                 </div>                <div className={styles.modalFooter}>
-                    {(() => {
-                        console.log('Debug action buttons:', {
-                            currentUserId,
-                            ratingUserId: rating.userId,
-                            canEdit: canEditRating(rating),
-                            ratingData: rating
-                        });
-                        return currentUserId && rating.userId === currentUserId && canEditRating(rating);
-                    })() && (
-                            <div className={styles.actionButtons}>
-                                {onEdit && (
-                                    <button className={styles.editBtn} onClick={() => onEdit(rating)}>
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="m18 2 4 4-14 14H4v-4L18 2z"></path>
-                                            <path d="M21 7L17 3"></path>
-                                        </svg>
-                                        Chỉnh sửa
-                                    </button>
-                                )}
-                                {onDelete && (
-                                    <button className={styles.deleteBtn} onClick={() => onDelete(rating)}>
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <polyline points="3,6 5,6 21,6"></polyline>
-                                            <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1,2-2h4a2,2 0 0,1,2,2v2"></path>
-                                        </svg>
-                                        Xóa
-                                    </button>
-                                )}
-                            </div>
-                        )}
+                    {currentUserId && rating.userId === currentUserId && canEditRating(rating) && (
+                        <div className={styles.actionButtons}>
+                            {onEdit && (
+                                <button className={styles.editBtn} onClick={() => onEdit(rating)}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="m18 2 4 4-14 14H4v-4L18 2z"></path>
+                                        <path d="M21 7L17 3"></path>
+                                    </svg>
+                                    Chỉnh sửa
+                                </button>
+                            )}
+                            {onDelete && (
+                                <button className={styles.deleteBtn} onClick={() => onDelete(rating)}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <polyline points="3,6 5,6 21,6"></polyline>
+                                        <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1,2-2h4a2,2 0 0,1,2,2v2"></path>
+                                    </svg>
+                                    Xóa
+                                </button>)}
+                        </div>
+                    )}
                     <button className={styles.closeFooterBtn} onClick={onClose}>
                         Đóng
                     </button>
