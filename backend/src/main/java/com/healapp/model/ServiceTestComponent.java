@@ -25,7 +25,9 @@ public class ServiceTestComponent {
     private STIService stiService;
 
     @Column(name = "test_name", nullable = false, length = 100)
-    private String testName;    @Column(name = "reference_range", length = 100)
+    private String testName;
+
+    @Column(name = "reference_range", length = 100)
     private String referenceRange;
 
     @Column(name = "created_at", nullable = false)

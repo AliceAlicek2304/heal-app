@@ -26,6 +26,7 @@ public class STITest {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", nullable = false)
     private UserDtls customer;
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "service_id") // Nullable khi có package
     private STIService stiService;
