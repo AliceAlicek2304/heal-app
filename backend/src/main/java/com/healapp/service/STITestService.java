@@ -529,7 +529,6 @@ public class STITestService {
                     allResultsSaved = false;
                     continue;
                 }
-
                 Optional<ServiceTestComponent> componentOpt = testComponentRepository
                         .findById(resultReq.getComponentId());
                 if (componentOpt.isEmpty()) {
@@ -538,9 +537,33 @@ public class STITestService {
                     continue;
                 }
 
-                TestResult testResult = new TestResult();
-                testResult.setStiTest(test);
-                testResult.setTestComponent(componentOpt.get());
+                ServiceTestComponent component = componentOpt.get();
+
+                // Tìm existing TestResult cho component này trong test này
+                Optional<TestResult> existingResultOpt = testResultRepository
+                        .findByStiTest_TestIdAndTestComponent_ComponentId(test.getTestId(), resultReq.getComponentId());
+
+                TestResult testResult;
+                if (existingResultOpt.isPresent()) {
+                    // UPDATE existing result
+                    testResult = existingResultOpt.get();
+                    log.info("Updating existing TestResult ID {} for component {} in test {}",
+                            testResult.getResultId(), resultReq.getComponentId(), test.getTestId());
+                } else {
+                    // CREATE new result
+                    testResult = new TestResult();
+                    testResult.setStiTest(test);
+                    testResult.setTestComponent(component);
+                    testResult.setCreatedAt(LocalDateTime.now()); // Set sourceService for package tests
+                    if (test.getStiPackage() != null) {
+                        testResult.setSourceService(component.getStiService());
+                    }
+
+                    log.info("Creating new TestResult for component {} in test {}",
+                            resultReq.getComponentId(), test.getTestId());
+                }
+
+                // Update/Set result values
                 testResult.setResultValue(resultReq.getResultValue());
                 testResult.setNormalRange(resultReq.getNormalRange());
                 testResult.setUnit(resultReq.getUnit());
@@ -817,7 +840,7 @@ public class STITestService {
         response.setCustomerId(stiTest.getCustomer().getId());
         response.setCustomerName(stiTest.getCustomer().getFullName());
         response.setCustomerEmail(stiTest.getCustomer().getEmail());
-        response.setCustomerPhone(stiTest.getCustomer().getPhone());        // Service information
+        response.setCustomerPhone(stiTest.getCustomer().getPhone()); // Service information
         if (stiTest.getStiService() != null) {
             response.setServiceId(stiTest.getStiService().getServiceId());
             response.setPackageId(null);

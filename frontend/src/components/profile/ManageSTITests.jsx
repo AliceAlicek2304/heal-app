@@ -146,16 +146,23 @@ const ManageSTITests = () => {
     const handleViewDetails = (test) => {
         setSelectedTest(test);
         setShowModal(true);
-    };
-
-    const handleAddResults = (test) => {
+    }; const handleAddResults = async (test) => {
         setSelectedTest(test);
-        // Load test components for this service
-        loadTestComponents(test.serviceId);
-        setShowResultModal(true);
-    };
 
-    const handleViewResults = async (test) => {
+        // Xử lý khác nhau cho test lẻ và test package
+        if (test.packageId) {
+            // Đây là test package - load components từ tất cả services trong package
+            await loadTestComponentsForPackage(test.packageId);
+        } else if (test.serviceId) {
+            // Đây là test lẻ - load components từ service
+            await loadTestComponents(test.serviceId);
+        } else {
+            toast.error('Không thể xác định loại test');
+            return;
+        }
+
+        setShowResultModal(true);
+    }; const handleViewResults = async (test) => {
         try {
             setSelectedTest(test);
             const response = await stiService.getTestResults(test.testId, () => {
@@ -163,7 +170,58 @@ const ManageSTITests = () => {
             });
 
             if (response.success && response.data) {
-                setSelectedTestResults(response.data);
+                // If test is from a package and backend doesn't provide service info, enhance data
+                if (test.packageId && Array.isArray(response.data)) {
+                    try {
+                        // Enhance test results with service info if not already present
+                        const enhancedResults = [...response.data];
+
+                        // If package details are available, get component to service mapping
+                        const packageResponse = await import('../../services/stiPackageService')
+                            .then(module => module.default.getPackageById(test.packageId));
+
+                        if (packageResponse.success && packageResponse.data.services) {
+                            // Create a mapping of componentId to serviceId and serviceName
+                            const componentServiceMap = {};
+
+                            // For each service in the package, load its components
+                            for (const service of packageResponse.data.services) {
+                                const serviceDetails = await stiService.getServiceDetails(service.serviceId);
+
+                                if (serviceDetails.success && serviceDetails.data.testComponents) {
+                                    serviceDetails.data.testComponents.forEach(comp => {
+                                        componentServiceMap[comp.componentId] = {
+                                            serviceId: service.serviceId,
+                                            serviceName: service.name || service.serviceName
+                                        };
+                                    });
+                                }
+                            }
+
+                            // Map service info to each test result
+                            enhancedResults.forEach(result => {
+                                const componentId = result.componentId;
+                                const serviceInfo = componentServiceMap[componentId];
+
+                                if (serviceInfo) {
+                                    result.serviceId = serviceInfo.serviceId;
+                                    result.serviceName = serviceInfo.serviceName;
+                                }
+                            });
+                        }
+
+                        // Use enhanced results
+                        setSelectedTestResults(enhancedResults);
+                    } catch (error) {
+                        console.error('Error enhancing test results with service info:', error);
+                        // Fall back to original results if enhancement fails
+                        setSelectedTestResults(response.data);
+                    }
+                } else {
+                    // Use original results for non-package tests
+                    setSelectedTestResults(response.data);
+                }
+
                 setShowViewResultModal(true);
             } else {
                 toast.error(response.message || 'Không thể tải kết quả xét nghiệm');
@@ -172,14 +230,9 @@ const ManageSTITests = () => {
             console.error('Error fetching test results:', error);
             toast.error('Có lỗi xảy ra khi tải kết quả');
         }
-    };
-
-    const loadTestComponents = async (serviceId) => {
+    }; const loadTestComponents = async (serviceId) => {
         try {
-            console.log('Loading test components for service:', serviceId);
             const response = await stiService.getServiceDetails(serviceId);
-
-            console.log('Service details response:', response);
 
             if (response.success && response.data.testComponents) {
                 const initialResults = response.data.testComponents.map(component => ({
@@ -189,7 +242,6 @@ const ManageSTITests = () => {
                     normalRange: component.normalRange || '',
                     unit: component.unit || ''
                 }));
-                console.log('Initial test results setup:', initialResults);
                 setTestResults(initialResults);
             } else {
                 toast.error('Không thể tải thông tin các thành phần xét nghiệm');
@@ -198,6 +250,56 @@ const ManageSTITests = () => {
         } catch (error) {
             console.error('Error loading test components:', error);
             toast.error('Không thể tải thông tin xét nghiệm');
+        }
+    }; const loadTestComponentsForPackage = async (packageId) => {
+        try {
+            // Import stiPackageService if not already imported
+            const { default: stiPackageService } = await import('../../services/stiPackageService');
+
+            const response = await stiPackageService.getPackageById(packageId);
+
+            if (response.success && response.data.services) {
+                // Combine all components from all services in the package
+                const allComponents = [];                // Load detailed info for each service to get testComponents
+                for (const service of response.data.services) {
+                    try {
+                        const serviceDetails = await stiService.getServiceDetails(service.serviceId);
+
+                        if (serviceDetails.success && serviceDetails.data.testComponents) {
+                            serviceDetails.data.testComponents.forEach(component => {                                // Kiểm tra duplicate componentId trước khi thêm
+                                const existingComponent = allComponents.find(c => c.componentId === component.componentId);
+                                if (!existingComponent) {
+                                    allComponents.push({
+                                        componentId: component.componentId,
+                                        componentName: component.testName,
+                                        resultValue: '',
+                                        normalRange: component.normalRange || '',
+                                        unit: component.unit || '',
+                                        serviceName: service.name || service.serviceName, // Từ package data
+                                        serviceId: service.serviceId
+                                    });
+                                } else {
+                                    console.warn(`Duplicate componentId ${component.componentId} found, skipping...`);
+                                }
+                            });
+                        }
+                    } catch (serviceError) {
+                        console.error(`Error loading components for service ${service.serviceId}:`, serviceError);
+                        toast.error(`Không thể tải thành phần của dịch vụ ${service.name}`);
+                    }
+                }
+                if (allComponents.length > 0) {
+                    setTestResults(allComponents);
+                } else {
+                    toast.error('Gói xét nghiệm không có thành phần nào');
+                }
+            } else {
+                toast.error('Không thể tải thông tin gói xét nghiệm');
+                console.error('Failed to load package components:', response);
+            }
+        } catch (error) {
+            console.error('Error loading package components:', error);
+            toast.error('Không thể tải thông tin gói xét nghiệm');
         }
     };
 
@@ -208,19 +310,10 @@ const ManageSTITests = () => {
     };
 
     const handleSubmitResults = () => {
-        const validResults = testResults.filter(result => result.resultValue.trim() !== '');
-
-        if (validResults.length === 0) {
+        const validResults = testResults.filter(result => result.resultValue.trim() !== ''); if (validResults.length === 0) {
             toast.error('Vui lòng nhập ít nhất một kết quả');
             return;
         }
-
-        console.log('Submitting test results:', {
-            testId: selectedTest.testId,
-            totalComponents: testResults.length,
-            validResults: validResults.length,
-            resultData: validResults
-        });
 
         const resultData = {
             status: 'RESULTED',
@@ -232,7 +325,6 @@ const ManageSTITests = () => {
             }))
         };
 
-        console.log('Final request data:', resultData);
         handleStatusUpdate(selectedTest.testId, 'RESULTED', resultData);
     };
 
@@ -820,45 +912,105 @@ const ManageSTITests = () => {
                                     <line x1="6" y1="6" x2="18" y2="18"></line>
                                 </svg>
                             </button>
-                        </div>
-
-                        <div className={styles.modalBody}>
+                        </div>                        <div className={styles.modalBody}>
                             <div className={styles.resultForm}>
-                                <h4>Kết quả các thành phần xét nghiệm</h4>
-                                {testResults.map((result, index) => (
-                                    <div key={result.componentId} className={styles.resultItem}>
-                                        <h5>{result.componentName}</h5>
-                                        <div className={styles.resultInputs}>
-                                            <div className={styles.inputGroup}>
-                                                <label>Kết quả</label>
-                                                <input
-                                                    type="text"
-                                                    value={result.resultValue}
-                                                    onChange={(e) => handleResultChange(index, 'resultValue', e.target.value)}
-                                                    placeholder="Nhập kết quả..."
-                                                />
+                                <h4>Kết quả các thành phần xét nghiệm</h4>                                {selectedTest.packageId ? (
+                                    // Hiển thị theo group service cho package test
+                                    (() => {
+                                        const groupedByService = testResults.reduce((acc, result, index) => {
+                                            const serviceKey = result.serviceId || 'unknown';
+                                            if (!acc[serviceKey]) {
+                                                acc[serviceKey] = {
+                                                    serviceName: result.serviceName || 'Dịch vụ không xác định',
+                                                    components: []
+                                                };
+                                            }
+                                            // Thêm originalIndex để tracking
+                                            acc[serviceKey].components.push({
+                                                ...result,
+                                                originalIndex: index
+                                            });
+                                            return acc;
+                                        }, {});
+
+                                        return Object.entries(groupedByService).map(([serviceId, serviceGroup]) => (
+                                            <div key={serviceId} className={styles.serviceGroup}>
+                                                <h5 className={styles.serviceGroupTitle}>
+                                                    📋 {serviceGroup.serviceName}
+                                                </h5>
+                                                {serviceGroup.components.map((result) => (
+                                                    <div key={`${serviceId}-${result.componentId}`} className={styles.resultItem}>
+                                                        <h6>{result.componentName}</h6>
+                                                        <div className={styles.resultInputs}>
+                                                            <div className={styles.inputGroup}>
+                                                                <label>Kết quả</label>
+                                                                <input
+                                                                    type="text"
+                                                                    value={result.resultValue}
+                                                                    onChange={(e) => handleResultChange(result.originalIndex, 'resultValue', e.target.value)}
+                                                                    placeholder="Nhập kết quả..."
+                                                                />
+                                                            </div>
+                                                            <div className={styles.inputGroup}>
+                                                                <label>Khoảng bình thường</label>
+                                                                <input
+                                                                    type="text"
+                                                                    value={result.normalRange}
+                                                                    onChange={(e) => handleResultChange(result.originalIndex, 'normalRange', e.target.value)}
+                                                                    placeholder="Khoảng bình thường..."
+                                                                />
+                                                            </div>
+                                                            <div className={styles.inputGroup}>
+                                                                <label>Đơn vị</label>
+                                                                <input
+                                                                    type="text"
+                                                                    value={result.unit}
+                                                                    onChange={(e) => handleResultChange(result.originalIndex, 'unit', e.target.value)}
+                                                                    placeholder="Đơn vị..."
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
                                             </div>
-                                            <div className={styles.inputGroup}>
-                                                <label>Khoảng bình thường</label>
-                                                <input
-                                                    type="text"
-                                                    value={result.normalRange}
-                                                    onChange={(e) => handleResultChange(index, 'normalRange', e.target.value)}
-                                                    placeholder="VD: 0-10"
-                                                />
-                                            </div>
-                                            <div className={styles.inputGroup}>
-                                                <label>Đơn vị</label>
-                                                <input
-                                                    type="text"
-                                                    value={result.unit}
-                                                    onChange={(e) => handleResultChange(index, 'unit', e.target.value)}
-                                                    placeholder="VD: mg/dL"
-                                                />
+                                        ));
+                                    })()
+                                ) : (
+                                    // Hiển thị bình thường cho test lẻ
+                                    testResults.map((result, index) => (
+                                        <div key={result.componentId} className={styles.resultItem}>
+                                            <h5>{result.componentName}</h5>
+                                            <div className={styles.resultInputs}>
+                                                <div className={styles.inputGroup}>
+                                                    <label>Kết quả</label>
+                                                    <input
+                                                        type="text"
+                                                        value={result.resultValue}
+                                                        onChange={(e) => handleResultChange(index, 'resultValue', e.target.value)}
+                                                        placeholder="Nhập kết quả..."
+                                                    />
+                                                </div>
+                                                <div className={styles.inputGroup}>
+                                                    <label>Khoảng bình thường</label>
+                                                    <input
+                                                        type="text"
+                                                        value={result.normalRange}
+                                                        onChange={(e) => handleResultChange(index, 'normalRange', e.target.value)}
+                                                        placeholder="Khoảng bình thường..."
+                                                    />
+                                                </div>
+                                                <div className={styles.inputGroup}>
+                                                    <label>Đơn vị</label>
+                                                    <input
+                                                        type="text"
+                                                        value={result.unit}
+                                                        onChange={(e) => handleResultChange(index, 'unit', e.target.value)}
+                                                        placeholder="Đơn vị..."
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    )))}
                             </div>
                         </div>
 
@@ -915,45 +1067,102 @@ const ManageSTITests = () => {
                                             <div><strong>Ngày có kết quả:</strong> {formatDateTime(selectedTest.resultDate)}</div>
                                         )}
                                     </div>
-                                </div>
-
-                                <div className={styles.resultsSection}>
+                                </div>                                <div className={styles.resultsSection}>
                                     <h4>Chi tiết kết quả</h4>
                                     {selectedTestResults && selectedTestResults.length > 0 ? (
-                                        <div className={styles.resultsTable}>
-                                            <div className={styles.tableHeader}>
-                                                <div>Thành phần</div>
-                                                <div>Kết quả</div>
-                                                <div>Khoảng bình thường</div>
-                                                <div>Đơn vị</div>
-                                                <div>Nhân viên xét nghiệm</div>
-                                                <div>Ngày xét nghiệm</div>
-                                            </div>
-                                            {selectedTestResults.map((result, index) => {
-                                                return (
-                                                    <div key={result.resultId || index} className={styles.tableRow}>
-                                                        <div className={styles.componentName}>
-                                                            {result.componentName}
-                                                        </div>
-                                                        <div className={styles.resultValue}>
-                                                            {result.resultValue}
-                                                        </div>
-                                                        <div className={styles.normalRange}>
-                                                            {result.normalRange || 'N/A'}
-                                                        </div>
-                                                        <div className={styles.unit}>
-                                                            {result.unit || 'N/A'}
-                                                        </div>
-                                                        <div className={styles.reviewerName}>
-                                                            {result.reviewerName || 'N/A'}
-                                                        </div>
-                                                        <div className={styles.reviewedAt}>
-                                                            {result.reviewedAt ? formatDate(result.reviewedAt) : 'N/A'}
+                                        (() => {
+                                            // Group by serviceId for package tests
+                                            if (selectedTest.packageId) {
+                                                const groupedByService = selectedTestResults.reduce((acc, result) => {
+                                                    const serviceId = result.serviceId || result.sourceServiceId || 'unknown';
+                                                    const serviceName = result.serviceName || 'Dịch vụ không xác định';
+
+                                                    if (!acc[serviceId]) {
+                                                        acc[serviceId] = {
+                                                            serviceName: serviceName,
+                                                            results: []
+                                                        };
+                                                    }
+
+                                                    acc[serviceId].results.push(result);
+                                                    return acc;
+                                                }, {});
+
+                                                return Object.entries(groupedByService).map(([serviceId, group]) => (
+                                                    <div key={serviceId} className={styles.serviceGroup}>
+                                                        <h5 className={styles.serviceGroupTitle}>📋 {group.serviceName}</h5>
+                                                        <div className={styles.resultsTable}>
+                                                            <div className={styles.tableHeader}>
+                                                                <div>Thành phần</div>
+                                                                <div>Kết quả</div>
+                                                                <div>Khoảng bình thường</div>
+                                                                <div>Đơn vị</div>
+                                                                <div>Nhân viên xét nghiệm</div>
+                                                                <div>Ngày xét nghiệm</div>
+                                                            </div>
+                                                            {group.results.map((result, index) => (
+                                                                <div key={result.resultId || `${serviceId}-${index}`} className={styles.tableRow}>
+                                                                    <div className={styles.componentName}>
+                                                                        {result.componentName || result.testName}
+                                                                    </div>
+                                                                    <div className={styles.resultValue}>
+                                                                        {result.resultValue}
+                                                                    </div>
+                                                                    <div className={styles.normalRange}>
+                                                                        {result.normalRange || result.referenceRange || 'N/A'}
+                                                                    </div>
+                                                                    <div className={styles.unit}>
+                                                                        {result.unit || 'N/A'}
+                                                                    </div>
+                                                                    <div className={styles.reviewerName}>
+                                                                        {result.reviewerName || 'N/A'}
+                                                                    </div>
+                                                                    <div className={styles.reviewedAt}>
+                                                                        {result.reviewedAt ? formatDate(result.reviewedAt) : 'N/A'}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
                                                         </div>
                                                     </div>
+                                                ));
+                                            } else {
+                                                // For single service tests, keep original behavior
+                                                return (
+                                                    <div className={styles.resultsTable}>
+                                                        <div className={styles.tableHeader}>
+                                                            <div>Thành phần</div>
+                                                            <div>Kết quả</div>
+                                                            <div>Khoảng bình thường</div>
+                                                            <div>Đơn vị</div>
+                                                            <div>Nhân viên xét nghiệm</div>
+                                                            <div>Ngày xét nghiệm</div>
+                                                        </div>
+                                                        {selectedTestResults.map((result, index) => (
+                                                            <div key={result.resultId || index} className={styles.tableRow}>
+                                                                <div className={styles.componentName}>
+                                                                    {result.componentName || result.testName}
+                                                                </div>
+                                                                <div className={styles.resultValue}>
+                                                                    {result.resultValue}
+                                                                </div>
+                                                                <div className={styles.normalRange}>
+                                                                    {result.normalRange || result.referenceRange || 'N/A'}
+                                                                </div>
+                                                                <div className={styles.unit}>
+                                                                    {result.unit || 'N/A'}
+                                                                </div>
+                                                                <div className={styles.reviewerName}>
+                                                                    {result.reviewerName || 'N/A'}
+                                                                </div>
+                                                                <div className={styles.reviewedAt}>
+                                                                    {result.reviewedAt ? formatDate(result.reviewedAt) : 'N/A'}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
                                                 );
-                                            })}
-                                        </div>
+                                            }
+                                        })()
                                     ) : (
                                         <p className={styles.noResults}>Chưa có kết quả xét nghiệm</p>
                                     )}

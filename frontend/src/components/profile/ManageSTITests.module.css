@@ -725,7 +725,43 @@
     background: #2563eb;
 }
 
-/* Responsive Design */
+/* Service Group for Package Tests */
+.serviceGroup {
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+}
+
+.serviceGroupTitle {
+    margin: 0 0 16px 0;
+    color: #1e40af;
+    font-size: 18px;
+    font-weight: 700;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border-radius: 8px;
+    border-left: 4px solid #3b82f6;
+}
+
+.serviceGroup .resultItem {
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    margin-bottom: 12px;
+}
+
+.serviceGroup .resultItem h6 {
+    margin: 0 0 12px 0;
+    color: #374151;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.serviceGroup .resultItem:last-child {
+    margin-bottom: 0;
+}
+
 @media (max-width: 768px) {
     .manageTests {
         padding: 16px;
