@@ -9,10 +9,9 @@ services:
   # Backend API Service
   - type: web
     name: healapp-backend
-    runtime: docker
-    plan: free    dockerfilePath: ./Dockerfile
-    healthCheckPath: /actuator/health
-    envVars:
+    runtime: docker    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /actuator/healthenvVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
       - key: DATABASE_URL
