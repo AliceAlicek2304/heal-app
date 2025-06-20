@@ -16,10 +16,26 @@ services:
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
-      - key: DATABASE_URL
+      - key: PGHOST
         fromDatabase:
           name: healapp-db
-          property: connectionString
+          property: host
+      - key: PGPORT
+        fromDatabase:
+          name: healapp-db
+          property: port
+      - key: PGDATABASE
+        fromDatabase:
+          name: healapp-db
+          property: databaseName
+      - key: PGUSER
+        fromDatabase:
+          name: healapp-db
+          property: user
+      - key: PGPASSWORD
+        fromDatabase:
+          name: healapp-db
+          property: password
       - key: SPRING_DATASOURCE_DRIVER_CLASS_NAME
         value: "org.postgresql.Driver"
       - key: JWT_SECRET
