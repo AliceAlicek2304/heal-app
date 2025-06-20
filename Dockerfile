@@ -26,7 +26,7 @@ RUN addgroup -g 1001 -S healapp && \
 USER healapp
 
 # Expose port
-EXPOSE 8080
+EXPOSE 10000
 
-# Run the application
-ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "/app/target/HealApp-0.0.1-SNAPSHOT.jar"]
+# Run application on dynamic port provided by Render via $PORT
+ENTRYPOINT ["sh", "-c", "java -Dspring.profiles.active=prod -Dserver.port=$PORT -jar /app/target/HealApp-0.0.1-SNAPSHOT.jar"]
