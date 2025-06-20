@@ -103,22 +103,22 @@ services:
       - key: HEALAPP_MODERATION_CACHE_ENABLED
         value: "true"
       - key: HEALAPP_MODERATION_CACHE_TTL
-        value: "3600"
-      # AI Assistant Configuration
+        value: "3600"      # AI Assistant Configuration
       - key: HEALAPP_ASSISTANT_MAX_HISTORY
         value: "10"
-      # JWT Configuration      - key: JWT_ACCESS_TOKEN_EXPIRATION
+      # JWT Configuration
+      - key: JWT_ACCESS_TOKEN_EXPIRATION
         value: "3600000"
       - key: JWT_REFRESH_TOKEN_EXPIRATION
         value: "86400000"
       - key: JWT_ISSUER
         value: "HealApp"
-
   # Frontend Service
   - type: web
     name: healapp-frontend
     runtime: node
-    plan: free    buildCommand: cd frontend && npm install && npm run build
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
     startCommand: npx serve -s build
     envVars:
       - key: REACT_APP_API_BASE_URL
