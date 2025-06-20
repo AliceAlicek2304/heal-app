@@ -114,13 +114,12 @@ services:
         value: "86400000"
       - key: JWT_ISSUER
         value: "HealApp"
-
   # Frontend Service
   - type: web
     name: healapp-frontend
     runtime: node
     plan: free
-    previews: enabled
+    previews: true
     buildCommand: cd frontend && npm install && npm run build
     startCommand: npx serve -s build
     envVars:
