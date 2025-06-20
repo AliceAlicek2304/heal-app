@@ -27,7 +27,7 @@ services:
       - key: PGDATABASE
         fromDatabase:
           name: healapp-db
-          property: databaseName
+          property: database
       - key: PGUSER
         fromDatabase:
           name: healapp-db
