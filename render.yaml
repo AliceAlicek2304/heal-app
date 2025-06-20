@@ -16,7 +16,7 @@ services:
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
-      - key: DATABASE_URL
+      - key: RENDER_DATABASE_URL # Use a different name to avoid Spring Boot auto-config
         fromDatabase:
           name: healapp-db
           property: connectionString
@@ -118,7 +118,8 @@ services:
     name: healapp-frontend
     runtime: node
     plan: free
-    buildCommand: cd frontend && npm install && npm run build
+    rootDir: ./frontend
+    buildCommand: npm install && npm run build
     startCommand: npx serve -s build
     envVars:
       - key: REACT_APP_API_BASE_URL
