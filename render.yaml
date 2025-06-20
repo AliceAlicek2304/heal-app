@@ -111,20 +111,17 @@ services:
       - key: JWT_ACCESS_TOKEN_EXPIRATION
         value: "3600000"
       - key: JWT_REFRESH_TOKEN_EXPIRATION
-        value: "86400000"
-      - key: JWT_ISSUER
-        value: "HealApp"  # Frontend Service
+        value: "86400000"      - key: JWT_ISSUER
+        value: "HealApp"
+
+  # Frontend Service
   - type: web
     name: healapp-frontend
     runtime: node
     plan: free
     buildCommand: cd frontend && npm install && npm run build
-    startCommand: npx serve -s build
-    envVars:
+    startCommand: npx serve -s build    envVars:
       - key: REACT_APP_API_BASE_URL
-        fromService:
-          type: web
-          name: healapp-backend
-          property: url
+        value: https://healapp-backend.onrender.com
       - key: NODE_ENV
         value: production
