@@ -1,0 +1,620 @@
+/* Main Container */
+.consultationHistory {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Header Styles */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.headerLeft {
+  flex: 1;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  font-size: 1.5rem;
+  margin: 0 0 0.5rem;
+  color: #333;
+  gap: 0.75rem;
+}
+
+.subtitle {
+  color: #666;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.refreshBtn {
+  background: transparent;
+  border: none;
+  color: #4285f4;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.refreshBtn:hover:not(:disabled) {
+  background-color: rgba(66, 133, 244, 0.1);
+  transform: rotate(15deg);
+}
+
+.refreshBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Loading State */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 0;
+  gap: 1rem;
+  color: #666;
+}
+
+/* Empty State */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.emptyIcon {
+  color: #ccc;
+  margin-bottom: 1.5rem;
+}
+
+.emptyState h3 {
+  font-size: 1.25rem;
+  margin: 0 0 0.5rem;
+  color: #333;
+}
+
+.emptyState p {
+  color: #666;
+  margin: 0 0 1.5rem;
+  max-width: 400px;
+}
+
+.createBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #4285f4;
+  color: white;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.createBtn:hover {
+  background-color: #3367d6;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Status Badges */
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.badgePending {
+  background-color: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+}
+
+.badgeConfirmed {
+  background-color: rgba(76, 175, 80, 0.1);
+  color: #4caf50;
+}
+
+.badgeCanceled {
+  background-color: rgba(244, 67, 54, 0.1);
+  color: #f44336;
+}
+
+.badgeCompleted {
+  background-color: rgba(33, 150, 243, 0.1);
+  color: #2196f3;
+}
+
+.badgePaymentPending {
+  background-color: rgba(156, 39, 176, 0.1);
+  color: #9c27b0;
+}
+
+.badgePaymentFailed {
+  background-color: rgba(96, 125, 139, 0.1);
+  color: #607d8b;
+}
+
+/* Mobile Card View */
+.mobileView {
+  display: none;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.consultationCard {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.consultationCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  gap: 0.75rem;
+}
+
+.consultantInfo {
+  flex: 1;
+}
+
+.consultantName {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  color: #333;
+}
+
+.qualifications {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.cardContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.timeInfo, .priceInfo {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.timeInfo svg, .priceInfo svg {
+  color: #666;
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+}
+
+.date, .price {
+  font-weight: 500;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.time, .paymentMethod {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.cardActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.detailBtn, .actionBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: transparent;
+  color: #4285f4;
+  border: 1px solid #4285f4;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.detailBtn:hover, .actionBtn:hover {
+  background-color: rgba(66, 133, 244, 0.1);
+}
+
+.joinBtn, .joinBtnTable {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.joinBtn:hover, .joinBtnTable:hover {
+  background-color: #3367d6;
+}
+
+.rateBtn, .rateBtnTable {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: #f59e0b;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rateBtn:hover, .rateBtnTable:hover {
+  background-color: #d97706;
+}
+
+.viewRatingBtn, .viewRatingBtnTable {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: #6366f1;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.viewRatingBtn:hover, .viewRatingBtnTable:hover {
+  background-color: #4f46e5;
+}
+
+/* Desktop Table View */
+.desktopView {
+  margin-bottom: 1.5rem;
+}
+
+.tableContainer {
+  overflow-x: auto;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.consultationTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.consultationTable th {
+  background-color: #f5f5f5;
+  text-align: left;
+  padding: 0.8rem 1rem;
+  font-weight: 600;
+  color: #555;
+  white-space: nowrap;
+}
+
+.consultationTable td {
+  padding: 0.8rem 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  vertical-align: middle;
+}
+
+.consultationTable tr:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.consultantCell, .timeCell, .priceCell {
+  display: flex;
+  flex-direction: column;
+}
+
+.consultantNameTable {
+  font-weight: 500;
+  color: #333;
+}
+
+.qualificationsTable {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.dateTable {
+  font-weight: 500;
+  color: #333;
+}
+
+.timeTable {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.priceTable {
+  font-weight: 500;
+  color: #333;
+}
+
+.paymentMethodTable {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.dateCell {
+  color: #666;
+  white-space: nowrap;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Modal Styles */
+.modalBackdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.modal {
+  background-color: white;
+  border-radius: 12px;
+  max-width: 600px;
+  width: 100%;
+  max-height: calc(100vh - 2rem);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.modalHeader h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #333;
+}
+
+.closeBtn {
+  background: transparent;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.closeBtn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #333;
+}
+
+.modalBody {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.detailSection {
+  margin-bottom: 1.5rem;
+}
+
+.detailSection:last-child {
+  margin-bottom: 0;
+}
+
+.detailSection h4 {
+  font-size: 1rem;
+  margin: 0 0 0.75rem;
+  color: #333;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.detailRow {
+  display: flex;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.detailRow:last-child {
+  margin-bottom: 0;
+}
+
+.detailRow strong {
+  min-width: 150px;
+  color: #555;
+}
+
+.detailRow span {
+  flex: 1;
+  color: #333;
+  word-break: break-word;
+}
+
+.meetLink {
+  color: #4285f4;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.meetLink:hover {
+  text-decoration: underline;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.successBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.successBtn:hover {
+  background-color: #43a047;
+}
+
+.secondaryBtn {
+  display: flex;
+  align-items: center;
+  background-color: #f1f3f4;
+  color: #333;
+  border: none;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.secondaryBtn:hover {
+  background-color: #e2e6ea;
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+  .mobileView {
+    display: flex;
+  }
+  
+  .desktopView {
+    display: none;
+  }
+  
+  .modal {
+    max-width: 100%;
+    max-height: calc(100vh - 2rem);
+  }
+  
+  .detailRow {
+    flex-direction: column;
+    margin-bottom: 1rem;
+  }
+  
+  .detailRow strong {
+    min-width: unset;
+    margin-bottom: 0.25rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .refreshBtn {
+    margin-top: 0.5rem;
+    align-self: flex-end;
+  }
+  
+  .modalHeader {
+    padding: 1rem;
+  }
+  
+  .modalBody {
+    padding: 1rem;
+  }
+  
+  .modalFooter {
+    padding: 1rem;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .successBtn, .secondaryBtn {
+    width: 100%;
+    justify-content: center;
+  }
+}

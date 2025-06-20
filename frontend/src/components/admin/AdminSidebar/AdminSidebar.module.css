@@ -1,0 +1,173 @@
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 280px;
+    height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s ease;
+    z-index: 1000;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar.collapsed {
+    width: 80px;
+}
+
+.sidebarHeader {
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.nav {
+    flex: 1;
+    padding: 1.5rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.navItem {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1.5rem;
+    color: rgba(255, 255, 255, 0.8);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+    text-align: left;
+    width: 100%;
+}
+
+.navItem:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.navItem.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    border-right: 3px solid white;
+}
+
+.navIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+}
+
+.navLabel {
+    flex: 1;
+}
+
+.sidebarFooter {
+    padding: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.userInfo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    color: white;
+}
+
+.userAvatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.125rem;
+}
+
+.userDetails {
+    flex: 1;
+}
+
+.userName {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.userRole {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.logoutBtn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    color: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    width: 100%;
+}
+
+.logoutBtn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+/* Collapsed state adjustments */
+.sidebar.collapsed .sidebarHeader {
+    padding: 1.5rem 1rem;
+}
+
+.sidebar.collapsed .nav {
+    padding: 1.5rem 0;
+}
+
+.sidebar.collapsed .navItem {
+    padding: 0.875rem 1rem;
+    justify-content: center;
+}
+
+.sidebar.collapsed .sidebarFooter {
+    padding: 1.5rem 1rem;
+}
+
+.sidebar.collapsed .userInfo {
+    justify-content: center;
+}
+
+.sidebar.collapsed .logoutBtn {
+    justify-content: center;
+    padding: 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+    
+    .sidebar.collapsed {
+        transform: translateX(0);
+        width: 100%;
+    }
+}

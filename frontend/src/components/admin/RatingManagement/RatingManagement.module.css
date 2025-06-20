@@ -1,0 +1,412 @@
+/* Rating Management */
+.ratingManagement {
+    padding: 24px;
+    background: #f8fafc;
+    min-height: calc(100vh - 80px);
+}
+
+.header {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.headerLeft {
+    flex: 1;
+}
+
+.title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0 0 8px 0;
+}
+
+.titleIcon {
+    color: #f59e0b;
+}
+
+.subtitle {
+    color: #6b7280;
+    margin: 0;
+    font-size: 1rem;
+}
+
+.stats {
+    display: flex;
+    gap: 24px;
+}
+
+.statItem {
+    text-align: center;
+}
+
+.statNumber {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #f59e0b;
+}
+
+.statLabel {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+/* Filters */
+.filters {
+    display: flex;
+    gap: 16px;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.searchBox {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 300px;
+}
+
+.searchIcon {
+    position: absolute;
+    left: 12px;
+    color: #9ca3af;
+    z-index: 1;
+}
+
+.searchInput {
+    width: 100%;
+    padding: 12px 12px 12px 40px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease;
+}
+
+.searchInput:focus {
+    outline: none;
+    border-color: #f59e0b;
+}
+
+.ratingFilter {
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+    min-width: 150px;
+}
+
+.ratingFilter:focus {
+    outline: none;
+    border-color: #f59e0b;
+}
+
+/* Ratings Container */
+.ratingsContainer {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Table Styles */
+.tableContainer {
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tableHeader {
+    background: #f8fafc;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.tableHeader th {
+    padding: 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.875rem;
+    white-space: nowrap;
+}
+
+.tableBody tr {
+    border-bottom: 1px solid #f3f4f6;
+    transition: background-color 0.2s ease;
+}
+
+.tableBody tr:hover {
+    background: #f8fafc;
+}
+
+.tableBody td {
+    padding: 16px;
+    font-size: 0.875rem;
+    color: #374151;
+    vertical-align: middle;
+}
+
+.idCell {
+    font-weight: 600;
+    color: #f59e0b;
+}
+
+.userInfo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.userIcon {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.targetCell {
+    max-width: 200px;
+}
+
+.targetName {
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.targetTypeBadge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: white;
+}
+
+.ratingCell {
+    min-width: 150px;
+}
+
+.ratingDisplay {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.star {
+    font-size: 1rem;
+}
+
+.starFilled {
+    color: #f59e0b;
+}
+
+.starEmpty {
+    color: #d1d5db;
+}
+
+.ratingNumber {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.commentCell {
+    max-width: 300px;
+}
+
+.commentPreview {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.commentIcon {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.commentText {
+    color: #374151;
+    line-height: 1.4;
+}
+
+.noComment {
+    color: #9ca3af;
+    font-style: italic;
+}
+
+.replyCell {
+    max-width: 280px;
+}
+
+.replyPreview {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.replyIcon {
+    color: #10b981;
+    font-size: 0.875rem;
+    margin-right: 6px;
+}
+
+.replyText {
+    color: #374151;
+    line-height: 1.4;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.replyInfo {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+.noReply {
+    color: #ef4444;
+    font-style: italic;
+    font-size: 0.875rem;
+}
+
+.createdCell {
+    min-width: 150px;
+}
+
+.dateInfo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.dateIcon {
+    color: #6b7280;
+    font-size: 0.75rem;
+}
+
+.viewBtn {
+    padding: 6px 12px;
+    background: #f59e0b;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.viewBtn:hover {
+    background: #d97706;
+}
+
+/* Empty State */
+.emptyState {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6b7280;
+}
+
+.emptyIcon {
+    font-size: 4rem;
+    color: #d1d5db;
+    margin-bottom: 16px;
+}
+
+.emptyState p {
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+/* Loading */
+.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    color: #6b7280;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e5e7eb;
+    border-top: 4px solid #f59e0b;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .filters {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .searchBox {
+        min-width: unset;
+    }
+    
+    .ratingFilter {
+        min-width: unset;
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .ratingManagement {
+        padding: 16px;
+    }
+    
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .tableContainer {
+        font-size: 0.75rem;
+    }
+    
+    .tableHeader th,
+    .tableBody td {
+        padding: 8px;
+    }
+      .commentCell,
+    .replyCell,
+    .targetCell {
+        max-width: 150px;
+    }
+}

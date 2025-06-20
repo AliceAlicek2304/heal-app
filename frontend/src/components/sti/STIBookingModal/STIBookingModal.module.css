@@ -1,0 +1,749 @@
+/* Modal Backdrop */
+.modalBackdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+/* Modal Container */
+.stiBookingModal {
+  background-color: white;
+  border-radius: 12px;
+  max-width: 600px;
+  width: 100%;
+  max-height: calc(100vh - 2rem);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  animation: modalFadeIn 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+/* QR Payment Modal - Wider for QR content */
+.qrPaymentModal {
+  max-width: 700px;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Modal Header */
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.modalHeader h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.modalCloseBtn {
+  background: transparent;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.modalCloseBtn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #333;
+}
+
+/* Modal Body */
+.modalBody {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Service Summary */
+.serviceSummary {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.serviceSummary h4 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.serviceSummary p {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.6;
+}
+
+.componentInfo {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.componentLabel {
+  color: #666;
+  margin-right: 0.5rem;
+}
+
+.componentValue {
+  font-weight: 500;
+  color: #333;
+}
+
+.priceSummary {
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.priceLabel {
+  color: #666;
+  margin-right: 0.5rem;
+}
+
+.priceValue {
+  font-weight: 600;
+  color: #34a853;
+}
+
+/* Booking Form */
+.bookingForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.formSection {
+  margin-bottom: 1rem;
+}
+
+.formSection h4 {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  color: #333;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.formGroup label {
+  font-size: 0.85rem;
+  color: #555;
+  margin-bottom: 0.35rem;
+  font-weight: 500;
+}
+
+.formGroup input,
+.formGroup select,
+.formGroup textarea {
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #333;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.formGroup input:focus,
+.formGroup select:focus,
+.formGroup textarea:focus {
+  outline: none;
+  border-color: #4285f4;
+  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+}
+
+.formGroup textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.formGroup input:disabled,
+.formGroup select:disabled,
+.formGroup textarea:disabled {
+  background-color: #f9f9f9;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.readonlyField {
+  background-color: #f5f5f5 !important;
+  color: #666 !important;
+  border-color: #eee !important;
+}
+
+/* Payment Methods */
+.paymentMethods {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.paymentMethodOption {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.paymentMethodOption:hover {
+  background-color: rgba(66, 133, 244, 0.05);
+  border-color: #4285f4;
+}
+
+.paymentMethodOption input[type="radio"] {
+  margin: 0;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #4285f4;
+}
+
+.paymentMethodLabel {
+  font-size: 0.9rem;
+  color: #333;
+  user-select: none;
+}
+
+/* QR Code Info Section */
+.qrCodeInfo {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.qrCodeInfoContent {
+  margin-top: 0.5rem;
+}
+
+.qrInfoItem {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.qrInfoNote {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: #e3f2fd;
+  border-left: 3px solid #2196f3;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: #1976d2;
+  line-height: 1.4;
+}
+
+/* VISA Card Fields */
+.visaFields {
+  background-color: #f9f9f9;
+  padding: 1.25rem;
+  border-radius: 8px;
+  margin-top: 0.5rem;
+}
+
+/* QR Payment Section */
+.qrPaymentSection {
+  text-align: center;
+}
+
+.qrHeader {
+  margin-bottom: 1.5rem;
+}
+
+.qrHeader h4 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.qrHeader p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* QR Code Container */
+.qrCodeContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.qrCodeWrapper {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: #fff;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.qrCodeImageLarge {
+  width: 280px;
+  height: 280px;
+  border-radius: 8px;
+  display: block;
+}
+
+.qrCodePlaceholder {
+  width: 280px;
+  height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  border-radius: 8px;
+  color: #6c757d;
+  text-align: center;
+}
+
+.qrCodePlaceholder h6 {
+  margin: 0.5rem 0;
+  font-size: 1rem;
+  color: #495057;
+}
+
+.qrCodeInfo {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.paymentAmount {
+  font-size: 1.5rem;
+  color: #28a745;
+  margin-bottom: 0.5rem;
+}
+
+.paymentNote {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 0.25rem;
+}
+
+.qrReference {
+  font-size: 0.8rem;
+  color: #999;
+  font-family: 'Courier New', monospace;
+}
+
+/* Manual Payment Backup */
+.manualPaymentBackup {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.manualPaymentBackup h6 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  color: #333;
+  text-align: center;
+}
+
+.bankingDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.bankRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.bankRow:last-child {
+  border-bottom: none;
+}
+
+.bankLabel {
+  font-weight: 500;
+  color: #495057;
+  min-width: 120px;
+}
+
+.bankValue {
+  color: #333;
+  font-weight: 400;
+  text-align: right;
+}
+
+.transferContent {
+  font-family: 'Courier New', monospace;
+  background-color: #e9ecef;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.transferNote {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  padding: 0.75rem;
+  font-size: 0.85rem;
+  color: #856404;
+  line-height: 1.4;
+}
+
+/* QR Instructions */
+.qrInstructions {
+  margin-top: 2rem;
+  text-align: left;
+}
+
+.qrInstructions h6 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  color: #333;
+  text-align: center;
+}
+
+.instructionTabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.instructionTab {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.instructionTab strong {
+  display: block;
+  margin-bottom: 0.75rem;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.instructionTab ol {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.85rem;
+  color: #6c757d;
+  line-height: 1.5;
+}
+
+.instructionTab li {
+  margin-bottom: 0.25rem;
+}
+
+/* Modal Footer */
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.btnPrimary {
+  background-color: #4285f4;
+  color: white;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background-color: #3367d6;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.btnSecondary {
+  background-color: #f1f3f4;
+  color: #333;
+}
+
+.btnSecondary:hover:not(:disabled) {
+  background-color: #e2e6ea;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Loading States */
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.modalLoadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+  .stiBookingModal {
+    max-width: 100%;
+    max-height: calc(100vh - 2rem);
+  }
+  
+  .qrPaymentModal {
+    max-width: 100%;
+  }
+  
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+  
+  .modalFooter {
+    flex-direction: column-reverse;
+  }
+  
+  .modalFooter .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .instructionTabs {
+    grid-template-columns: 1fr;
+  }
+  
+  .qrCodeImageLarge,
+  .qrCodePlaceholder {
+    width: 240px;
+    height: 240px;
+  }
+  
+  .bankRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  
+  .bankLabel {
+    min-width: auto;
+  }
+  
+  .bankValue {
+    text-align: left;
+  }
+}
+
+@media (max-width: 576px) {
+  .modalHeader, .modalBody, .modalFooter {
+    padding: 1rem;
+  }
+  
+  .serviceSummary h4 {
+    font-size: 1rem;
+  }
+  
+  .formSection h4 {
+    font-size: 0.9rem;
+  }
+  
+  .qrCodeImageLarge,
+  .qrCodePlaceholder {
+    width: 200px;
+    height: 200px;
+  }
+  
+  .paymentAmount {
+    font-size: 1.25rem;
+  }
+  
+  .manualPaymentBackup {
+    padding: 1rem;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .modalBackdrop {
+    background-color: white;
+  }
+  
+  .stiBookingModal {
+    box-shadow: none;
+  }
+  
+  .modalCloseBtn, .modalFooter {
+    display: none;
+  }
+  
+  .qrInstructions {
+    display: none;
+  }
+}
+
+/* Additional QR Modal Specific Styles */
+.qrPaymentModal .modalBody {
+  padding: 1.5rem 2rem;
+}
+
+.qrActions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.qrActions .btn {
+  min-width: 150px;
+}
+
+/* QR Code Animation */
+.qrCodeWrapper {
+  animation: qrFadeIn 0.5s ease;
+}
+
+@keyframes qrFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Manual Banking Info in QR Placeholder */
+.manualBankingInfo {
+  text-align: left;
+  margin: 10px 0;
+  font-size: 0.8rem;
+}
+
+.bankDetail {
+  margin: 5px 0;
+  color: #495057;
+}
+
+.bankDetail strong {
+  color: #333;
+}
+
+/* Success States */
+.paymentSuccessSection {
+  text-align: center;
+  padding: 2rem;
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.successIcon {
+  font-size: 3rem;
+  color: #28a745;
+  margin-bottom: 1rem;
+}
+
+.paymentSuccessSection h5 {
+  margin: 0 0 0.5rem;
+  color: #155724;
+}
+
+.paymentSuccessSection p {
+  margin: 0 0 1rem;
+  color: #155724;
+}
+
+.transactionId {
+  font-family: 'Courier New', monospace;
+  background-color: #f8f9fa;
+  padding: 0.5rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: #6c757d;
+}

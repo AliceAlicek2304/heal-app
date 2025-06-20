@@ -1,0 +1,512 @@
+/* Main Container */
+.securityForm {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Header Styles */
+.header {
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  font-size: 1.5rem;
+  margin: 0 0 0.5rem;
+  color: #333;
+  gap: 0.75rem;
+}
+
+.subtitle {
+  color: #666;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Loading State */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 0;
+  gap: 1rem;
+  color: #666;
+}
+
+/* Tab System */
+.tabContainer {
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.tabList {
+  display: flex;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.tabBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  font-size: 0.95rem;
+  color: #666;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tabBtn:hover {
+  color: #4285f4;
+  background-color: rgba(66, 133, 244, 0.05);
+}
+
+.tabBtn.active {
+  color: #4285f4;
+  border-bottom-color: #4285f4;
+  font-weight: 500;
+}
+
+.tabContent {
+  padding: 1.5rem;
+}
+
+/* Tab Headers */
+.tabHeader {
+  margin-bottom: 1.5rem;
+}
+
+.tabHeader h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.tabHeader p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+/* Forms */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.label {
+  font-size: 0.9rem;
+  color: #555;
+  font-weight: 500;
+}
+
+.required {
+  color: #f44336;
+  margin-left: 0.25rem;
+}
+
+.input {
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #333;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #4285f4;
+  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+}
+
+.inputError {
+  border-color: #f44336;
+  background-color: rgba(244, 67, 54, 0.05);
+}
+
+.inputError:focus {
+  box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.2);
+}
+
+.errorText {
+  color: #f44336;
+  font-size: 0.85rem;
+  margin: 0.25rem 0 0;
+}
+
+.currentValue {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+/* Verification Info */
+.verificationInfo {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: rgba(66, 133, 244, 0.1);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.infoIcon {
+  display: flex;
+  align-items: flex-start;
+  color: #4285f4;
+}
+
+.verificationInfo p {
+  margin: 0 0 0.25rem;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.verificationInfo strong {
+  color: #333;
+  font-size: 0.95rem;
+}
+
+/* Password Strength */
+.passwordStrength {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.strengthBar {
+  flex: 1;
+  height: 4px;
+  background-color: #eee;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.strengthFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.strengthText {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Password Hints */
+.passwordHints {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+.passwordHints p {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.passwordHints ul {
+  margin: 0;
+  padding: 0 0 0 1.25rem;
+  list-style-type: none;
+}
+
+.passwordHints li {
+  position: relative;
+  margin-bottom: 0.25rem;
+  font-size: 0.85rem;
+  color: #999;
+  padding-left: 0.25rem;
+}
+
+.passwordHints li::before {
+  content: "○";
+  position: absolute;
+  left: -1.25rem;
+  color: #ccc;
+}
+
+.passwordHints li.valid {
+  color: #4caf50;
+}
+
+.passwordHints li.valid::before {
+  content: "●";
+  color: #4caf50;
+}
+
+/* Form Actions */
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Buttons */
+.btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.primaryBtn {
+  background-color: #4285f4;
+  color: white;
+}
+
+.primaryBtn:hover:not(:disabled) {
+  background-color: #3367d6;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.secondaryBtn {
+  background-color: #f1f3f4;
+  color: #333;
+}
+
+.secondaryBtn:hover:not(:disabled) {
+  background-color: #e2e6ea;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Loading Spinner */
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Phone Tab Styles */
+.phoneTab {
+  padding: 24px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.currentPhoneInfo {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border-left: 4px solid #3b82f6;
+}
+
+.phoneStatus {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.phoneNumber {
+  font-weight: 600;
+  color: #374151;
+  font-size: 1rem;
+}
+
+.verifiedBadge {
+  background: #d1fae5;
+  color: #065f46;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid #a7f3d0;
+}
+
+.unverifiedBadge {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid #fbbf24;
+}
+
+.noPhone {
+  color: #6b7280;
+  font-style: italic;
+  margin: 0;
+}
+
+.otpSection {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.otpInfo {
+  text-align: center;
+  padding: 16px;
+  background: #f3f4f6;
+  border-radius: 8px;
+}
+
+.otpInfo p {
+  margin: 0 0 8px 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.phoneDisplay {
+  background: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  display: inline-block;
+}
+
+.otpInput {
+  text-align: center !important;
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 4px !important;
+  font-family: 'Courier New', monospace !important;
+}
+
+.otpActions {
+  display: flex;
+  justify-content: center;
+  margin: 12px 0;
+}
+
+.resendSection {
+  text-align: center;
+}
+
+.countdown {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.resendBtn {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.875rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.resendBtn:hover:not(:disabled) {
+  color: #2563eb;
+  background: #f3f4f6;
+}
+
+.resendBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.inputHelp {
+  margin-top: 6px;
+  font-size: 0.875rem;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+  .tabBtn {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .tabContent {
+    padding: 1rem;
+  }
+  
+  .formActions {
+    flex-direction: column-reverse;
+  }
+  
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 576px) {
+  .tabList {
+    flex-direction: column;
+  }
+  
+  .tabBtn {
+    padding: 0.75rem;
+    border-bottom: none;
+    border-left: 2px solid transparent;
+  }
+  
+  .tabBtn.active {
+    border-bottom-color: transparent;
+    border-left-color: #4285f4;
+    background-color: rgba(66, 133, 244, 0.05);
+  }
+  
+  .passwordStrength {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .strengthBar {
+    width: 100%;
+  }
+}

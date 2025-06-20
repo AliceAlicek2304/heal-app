@@ -1,0 +1,362 @@
+.packageCard {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.2);
+    transition: all 0.3s ease;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.packageCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.35);
+}
+
+.packageCard::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+    pointer-events: none;
+}               
+
+.packageHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.packageBadge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.packageBadge svg {
+    opacity: 0.8;
+    width: 14px;
+    height: 14px;
+}
+
+.discountBadge {
+    background: #ff4757;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(255, 71, 87, 0.3);
+}
+
+.packageInfo {
+    margin-bottom: 12px;
+}
+
+.packageName {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 4px 0;
+    line-height: 1.2;
+}
+
+.packageDescription {
+    font-size: 12px;
+    opacity: 0.9;
+    margin: 0;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.packageServices {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+    backdrop-filter: blur(10px);
+}
+
+.servicesHeader {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    opacity: 0.9;
+}
+
+.servicesList {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.serviceItem {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.serviceItem:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.serviceIcon {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.serviceIcon svg {
+    width: 10px;
+    height: 10px;
+}
+
+.serviceDetails {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.serviceName {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+.serviceComponents {
+    font-size: 11px;
+    opacity: 0.8;
+}
+
+.servicePrice {
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffeaa7;
+}
+
+.packagePricing {
+    margin-bottom: 20px;
+}
+
+.originalPrice,
+.packagePrice {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.priceLabel {
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+.originalPriceValue {
+    font-size: 14px;
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+.packagePriceValue {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffeaa7;
+}
+
+.savings {
+    text-align: center;
+    margin-top: 12px;
+    padding: 8px;
+    background: rgba(255, 234, 167, 0.2);
+    border-radius: 8px;
+}
+
+.savingsText {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffeaa7;
+}
+
+.packageMeta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+}
+
+.totalComponents {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+.totalComponents svg {
+    opacity: 0.7;
+    width: 14px;
+    height: 14px;
+}
+
+.packageActions {
+    display: flex;
+    justify-content: center;
+    margin-top: auto;
+}
+
+.bookingBtn {
+    background: white;
+    color: #667eea;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    justify-content: center;
+    max-width: 280px;
+}
+
+.bookingBtn:hover {
+    background: #f8f9ff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.bookingBtn:active {
+    transform: translateY(0);
+}
+
+.bookingBtn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.ratingSection {
+    margin: 12px 0;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.ratingSection > div {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    padding: 4px 8px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ratingSection > div:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .packageCard {
+        padding: 20px;
+        margin-bottom: 16px;
+    }
+
+    .packageName {
+        font-size: 20px;
+    }
+
+    .packageServices {
+        padding: 16px;
+    }
+
+    .serviceItem {
+        padding: 10px;
+    }
+
+    .packagePriceValue {
+        font-size: 18px;
+    }
+
+    .bookingBtn {
+        padding: 14px 24px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .packageCard {
+        padding: 16px;
+    }
+
+    .packageHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .packageBadge {
+        padding: 6px 12px;
+        font-size: 11px;
+    }
+
+    .packageName {
+        font-size: 18px;
+    }
+
+    .serviceItem {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        text-align: left;
+    }
+
+    .serviceDetails {
+        width: 100%;
+    }
+
+    .packagePrice,
+    .originalPrice {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+}

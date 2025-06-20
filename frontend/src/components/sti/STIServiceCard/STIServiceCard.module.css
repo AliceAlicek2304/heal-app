@@ -1,0 +1,731 @@
+/* Card Base Styles */
+.stiServiceCard {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 520px; /* Fixed minimum height */
+    max-height: 580px; /* Maximum height to prevent too tall cards */
+}
+
+.stiServiceCard:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+}
+
+/* Header Section */
+.serviceHeader {
+    margin-bottom: 20px;
+    min-height: 60px; /* Fixed height for header */
+}
+
+.serviceTitle {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 15px;
+    height: 100%;
+}
+
+.serviceTitle h3 {
+    color: #2c3e50;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.4;
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Limit to 2 lines */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-height: 3.2rem;
+}
+
+.statusBadge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.danger {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.secondary {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
+/* Content Section */
+.serviceContent {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.serviceDescription {
+    margin-bottom: 20px;
+    min-height: 50px; /* Fixed height for description */
+}
+
+.serviceDescription p {
+    color: #6c757d;
+    line-height: 1.6;
+    margin: 0;
+    font-size: 0.9rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Limit to 2 lines */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-height: 2.8rem;
+}
+
+.serviceComponents {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    min-height: 140px; /* Fixed height for components */
+    max-height: 140px;
+    overflow: hidden;
+}
+
+.serviceComponents h4 {
+    color: #495057;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0 0 10px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.serviceComponents ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 100px;
+    overflow: hidden;
+}
+
+.serviceComponents li {
+    color: #6c757d;
+    font-size: 0.85rem;
+    padding: 2px 0;
+    position: relative;
+    padding-left: 20px;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.serviceComponents li:before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #28a745;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.moreItems {
+    font-style: italic;
+    color: #868e96;
+    white-space: normal;
+}
+
+.moreItems:before {
+    content: "..." !important;
+    color: #868e96 !important;
+}
+
+.referenceRange {
+    font-size: 0.75rem;
+    color: #6c757d;
+    font-style: italic;
+    font-weight: normal;
+}
+
+.serviceDetails {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    min-height: 90px; /* Fixed height for details */
+}
+
+.detailItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.detailItem:last-child {
+    border-bottom: none;
+}
+
+.label {
+    color: #495057;
+    font-weight: 500;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.value {
+    color: #6c757d;
+    font-size: 0.85rem;
+    text-align: right;
+    flex: 1;
+    margin-left: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.servicePrice {
+    margin-bottom: 20px;
+    padding: 12px; /* Reduced from 15px */
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+    color: white;
+    min-height: 40px; /* Reduced from 50px */
+    display: flex;
+    align-items: center;
+}
+
+.priceInfo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.priceLabel {
+    font-weight: 500;
+    font-size: 0.8rem; /* Reduced from 0.9rem */
+    color: white;
+}
+
+.priceValue {
+    font-size: 0.95rem; /* Reduced from 1.1rem */
+    font-weight: 700;
+    color: rgb(255, 110, 129) !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 60%;
+}
+
+/* Price Comparison Styles */
+.priceComparison {
+    margin-top: 1.5rem;
+    padding: 1.25rem;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.priceRow {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.priceRow strong {
+    color: #334155;
+}
+
+.totalPrice {
+    font-weight: 600;
+    color: #475569;
+}
+
+.packagePrice {
+    font-weight: 700;
+    color: #059669;
+}
+
+.savingsRow {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    margin-top: 0.5rem;
+    border-radius: 6px;
+    background: #ecfdf5;
+    padding: 0.75rem 1rem;
+}
+
+.savingsAmount {
+    font-weight: 700;
+    color: #059669;
+}
+
+/* Action Buttons */
+.serviceActions {
+    margin-top: auto;
+    min-height: 50px; /* Fixed height for button */
+}
+
+.actionButtons {
+    display: flex;
+    gap: 10px;
+}
+
+.btnBook {
+    flex: 2; /* Make book button larger */
+    padding: 12px;
+    font-weight: 600;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    border: none;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.btnDetails {
+    flex: 1;
+    padding: 12px;
+    font-weight: 600;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    border: 1px solid #4285f4;
+    background-color: transparent;
+    color: #4285f4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.btnDetails:hover {
+    background-color: rgba(66, 133, 244, 0.1);
+    transform: translateY(-2px);
+}
+
+.btnPrimary {
+    background-color: #4285f4;
+    color: white;
+}
+
+.btnDisabled {
+    background-color: #6c757d !important;
+    cursor: not-allowed;
+}
+
+.btnBook:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btnBook:disabled {
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Modal Styles */
+.modalBackdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.detailsModal {
+    background-color: white;
+    border-radius: 15px;
+    width: 100%;
+    max-width: 800px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    animation: modalFadeIn 0.3s ease;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    border-bottom: 1px solid #eee;
+}
+
+.modalHeader h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #333;
+}
+
+.closeBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.closeBtn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #333;
+}
+
+.modalBody {
+    padding: 25px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modalFooter {
+    padding: 15px 25px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+}
+
+.btnSecondary {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    color: #444;
+}
+
+.btnSecondary:hover {
+    background-color: #e9ecef;
+}
+
+.btnPrimary {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: #4285f4;
+    border: none;
+    color: white;
+}
+
+.btnPrimary:hover {
+    background-color: #3367d6;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Modal Content Styles */
+.modalSection {
+    margin-bottom: 25px;
+}
+
+.sectionTitle {
+    font-size: 1.1rem;
+    color: #333;
+    margin: 0 0 15px 0;
+}
+
+.serviceBadge {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.priceBadge {
+    background-color: #e8f0fe;
+    color: #4285f4;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.serviceInfo {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 15px;
+}
+
+.infoItem {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.infoItem:last-child {
+    border-bottom: none;
+}
+
+.infoLabel {
+    color: #666;
+    font-weight: 500;
+}
+
+.infoValue {
+    color: #333;
+    font-weight: 500;
+}
+
+.componentsList {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 10px;
+}
+
+.componentsTable {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.componentsTable th,
+.componentsTable td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.componentsTable th {
+    background: #f8fafc;
+    color: #334155;
+    font-weight: 600;
+}
+
+.componentsTable th:last-child,
+.componentsTable td:last-child {
+    text-align: right;
+}
+
+.componentsTable tr:hover {
+    background: #f8fafc;
+}
+
+/* Loading and Error States */
+.loadingContainer, 
+.errorContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.errorIcon {
+    color: #dc3545;
+    margin-bottom: 20px;
+}
+
+.errorMessage {
+    color: #555;
+    margin-bottom: 20px;
+}
+
+.retryBtn {
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: #4285f4;
+    border: none;
+    color: white;
+}
+
+.retryBtn:hover {
+    background-color: #3367d6;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .stiServiceCard {
+        padding: 20px;
+        min-height: 480px;
+        max-height: 520px;
+    }
+
+    .serviceTitle {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .serviceTitle h3 {
+        font-size: 1.1rem;
+    }
+
+    .serviceComponents {
+        min-height: 120px;
+        max-height: 120px;
+    }
+
+    .detailItem {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 3px;
+        padding: 4px 0;
+    }
+
+    .detailItem .value {
+        text-align: left;
+        margin-left: 0;
+    }
+    
+    .actionButtons {
+        flex-direction: column;
+    }
+    
+    .btnDetails, 
+    .btnBook {
+        width: 100%;
+    }
+    
+    .detailsModal {
+        max-width: 95%;
+    }
+    
+    .modalHeader, 
+    .modalBody, 
+    .modalFooter {
+        padding: 15px;
+    }
+    
+    .modalFooter {
+        flex-direction: column-reverse;
+    }
+    
+    .modalFooter button {
+        width: 100%;
+    }
+    
+    .infoItem {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .componentsTable th, 
+    .componentsTable td {
+        padding: 10px;
+    }
+}
+
+@media (max-width: 576px) {
+    .stiServiceCard {
+        padding: 15px;
+        min-height: 450px;
+        max-height: 500px;
+    }
+
+    .serviceComponents {
+        min-height: 100px;
+        max-height: 100px;
+        padding: 12px;
+    }
+
+    .serviceDetails {
+        min-height: 80px;
+        padding: 12px;
+    }
+
+    .servicePrice {
+        min-height: 45px;
+        padding: 12px;
+    }
+    
+    .detailsModal {
+        max-width: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+    
+    .modalBackdrop {
+        padding: 0;
+    }
+}
+
+/* Rating Section Styles */
+.ratingSection {
+    margin: 12px 0;
+    padding: 8px 0;
+    border-top: 1px solid #f1f5f9;
+}
+
+.ratingStars {
+    color: #f39c12;
+    font-size: 1rem;
+}
+
+.ratingValue {
+    font-size: 0.9rem;
+    color: #333;
+    font-weight: 500;
+    margin-left: 8px;
+}
+
+.ratingDescription {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 4px;
+    line-height: 1.4;
+}

@@ -1,0 +1,558 @@
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.header h2 {
+    margin: 0;
+    color: #333;
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.refreshButton {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.refreshButton:hover {
+    background-color: #0056b3;
+}
+
+.refreshButton:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+.loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+    font-size: 18px;
+}
+
+.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    border: 1px solid #f5c6cb;
+}
+
+.emptyState {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+    font-size: 16px;
+}
+
+.statsInfo {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    text-align: center;
+    padding: 0.5rem;
+    background-color: rgba(66, 133, 244, 0.1);
+    border-radius: 6px;
+}
+
+.consultationsList {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.consultationCard {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e9ecef;
+    transition: box-shadow 0.2s;
+}
+
+.consultationCard:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.consultationHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.patientInfo h3 {
+    margin: 0 0 8px 0;
+    color: #333;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.contactInfo {
+    margin: 4px 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.statusBadge {
+    flex-shrink: 0;
+}
+
+.status {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.consultationDetails {
+    margin-bottom: 20px;
+}
+
+.detailRow {
+    margin-bottom: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.detailRow strong {
+    color: #333;
+    font-weight: 600;
+    margin-right: 8px;
+}
+
+.description {
+    margin: 8px 0 0 0;
+    padding: 12px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid #007bff;
+    color: #495057;
+    line-height: 1.6;
+}
+
+.consultationActions {
+    border-top: 1px solid #e9ecef;
+    padding-top: 20px;
+}
+
+.actionButtons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.actionButton {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+    min-width: 120px;
+}
+
+.actionButton:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.confirmButton {
+    background-color: #28a745;
+    color: white;
+}
+
+.confirmButton:hover:not(:disabled) {
+    background-color: #218838;
+}
+
+.completeButton {
+    background-color: #007bff;
+    color: white;
+}
+
+.completeButton:hover:not(:disabled) {
+    background-color: #0056b3;
+}
+
+.cancelButton {
+    background-color: #dc3545;
+    color: white;
+}
+
+.cancelButton:hover:not(:disabled) {
+    background-color: #c82333;
+}
+
+.detailButton {
+    background-color: #6c757d;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.detailButton:hover:not(:disabled) {
+    background-color: #5a6268;
+}
+
+.disabledButton {
+    background-color: #6c757d !important;
+    color: #dee2e6 !important;
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+}
+
+.disabledButton:hover {
+    background-color: #6c757d !important;
+}
+
+/* Modal Styles */
+.modalBackdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.detailModal {
+    background: white;
+    border-radius: 12px;
+    max-width: 800px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 24px 16px 24px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.modalHeader h3 {
+    margin: 0;
+    color: #333;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.closeBtn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #6c757d;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.closeBtn:hover {
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+.modalBody {
+    padding: 24px;
+}
+
+.modalSection {
+    margin-bottom: 32px;
+}
+
+.modalSection:last-child {
+    margin-bottom: 0;
+}
+
+.modalSection h4 {
+    margin: 0 0 16px 0;
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #007bff;
+}
+
+.statusInfo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.statusBadge {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.customerInfo, .consultationInfo {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+}
+
+.infoRow {
+    display: flex;
+    margin-bottom: 12px;
+    align-items: flex-start;
+}
+
+.infoRow:last-child {
+    margin-bottom: 0;
+}
+
+.label {
+    font-weight: 600;
+    color: #495057;
+    min-width: 140px;
+    margin-right: 12px;
+}
+
+.value {
+    color: #333;
+    flex: 1;
+    word-break: break-word;
+}
+
+.contactLink {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.contactLink:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+.unavailable {
+    color: #6c757d;
+    font-style: italic;
+    font-size: 0.9em;
+}
+
+.meetingInfo {
+    background-color: #e8f4fd;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+}
+
+.meetingUrl {
+    margin-bottom: 16px;
+}
+
+.urlContainer {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.urlInput {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    background-color: white;
+    font-family: monospace;
+}
+
+.copyBtn {
+    padding: 12px 16px;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.copyBtn:hover {
+    background-color: #5a6268;
+}
+
+.joinMeetingBtn {
+    padding: 12px 24px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    justify-content: center;
+}
+
+.joinMeetingBtn:hover {
+    background-color: #218838;
+}
+
+.joinMeetingBtn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.joinMeetingBtn:disabled:hover {
+    background-color: #6c757d;
+}
+
+.modalFooter {
+    padding: 16px 24px 24px 24px;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.closeButton {
+    padding: 10px 24px;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.closeButton:hover {
+    background-color: #5a6268;
+}
+
+.noMeetingUrl {
+    padding: 1rem;
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.noMeetingUrl .unavailable {
+    color: #856404;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.verifiedBadge {
+    background: #d1fae5;
+    color: #065f46;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid #a7f3d0;
+}
+
+.unverifiedBadge {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid #fbbf24;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .header h2 {
+        font-size: 24px;
+    }
+    
+    .consultationCard {
+        padding: 20px;
+    }
+    
+    .consultationHeader {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .patientInfo h3 {
+        font-size: 18px;
+    }
+    
+    .actionButtons {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .actionButton {
+        width: 100%;
+    }
+}

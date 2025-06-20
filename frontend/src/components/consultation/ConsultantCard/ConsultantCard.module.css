@@ -1,0 +1,507 @@
+/* ConsultantCard.module.css */
+.consultantCard {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f1f5f9;
+    padding: 20px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    height: auto;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+}
+
+.consultantCard.expanded {
+    min-height: auto;
+    max-height: none;
+}
+
+.consultantCard:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    border-color: #e2e8f0;
+}
+
+.consultantInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.avatar {
+    position: relative;
+    align-self: center;
+    margin-bottom: 16px;
+    width: 80px;
+    height: 80px;
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #3b82f6;
+    background: #f1f5f9;
+}
+
+.avatarPlaceholder {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    font-weight: 600;
+    border: 3px solid #3b82f6;
+}
+
+.details {
+    flex: 1;
+    text-align: center;
+}
+
+.name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 16px 0;
+    line-height: 1.3;
+}
+
+.qualifications {
+    margin-bottom: 12px;
+    color: #64748b;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.qualifications .label {
+    font-weight: 600;
+    color: #475569;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.truncatedText {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+    max-height: 2.8em; /* 2 lines * 1.4 line-height */
+}
+
+.experience {
+    margin-bottom: 16px;
+    color: #64748b;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.experience .label {
+    font-weight: 600;
+    color: #475569;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.bio {
+    margin-bottom: 16px;
+    color: #64748b;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    transition: all 0.3s ease;
+}
+
+.bio .label {
+    font-weight: 600;
+    color: #475569;
+    display: block;
+    margin-bottom: 4px;
+}
+
+/* Content display styles */
+.truncatedContent {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-height: 2.8em;
+    transition: all 0.3s ease;
+}
+
+.fullContent {
+    display: block;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    transition: all 0.3s ease;
+}
+
+/* Bio visibility states */
+.bio.visible {
+    opacity: 1;
+    max-height: 500px;
+    transform: translateY(0);
+}
+
+.bio.hidden {
+    opacity: 0;
+    max-height: 0;
+    margin-bottom: 0;
+    overflow: hidden;
+    transform: translateY(-10px);
+}
+
+/* Toggle button styles */
+.toggleButton {
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 20px;
+    margin: 8px 0 12px 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.toggleButton:hover {
+    background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+    border-color: #94a3b8;
+    color: #334155;
+    transform: translateY(-1px);
+}
+
+.noInfo {
+    font-style: italic;
+    color: #94a3b8;
+    font-size: 0.8rem;
+}
+
+.availability {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #dcfce7;
+    color: #166534;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 20px;
+}
+
+.availabilityIcon {
+    color: #22c55e;
+    font-size: 12px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.actions {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    gap: 8px;
+}
+
+.detailButton {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 12px;
+    background: white;
+    color: #3b82f6;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.detailButton:hover:not(:disabled) {
+    background: #f8fafc;
+    border-color: #3b82f6;
+    color: #2563eb;
+}
+
+.detailButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.detailButton svg {
+    width: 14px;
+    height: 14px;
+}
+
+.bookButton {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 12px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.bookButton:hover:not(:disabled) {
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+
+.bookButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.bookButton svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Modal Styles */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+}
+
+.modalContent {
+    background: white;
+    border-radius: 16px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.modalHeader h3 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+    color: #64748b;
+}
+
+.closeButton:hover {
+    background-color: #f1f5f9;
+    color: #334155;
+}
+
+.modalBody {
+    padding: 24px;
+}
+
+.modalAvatar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.modalAvatar img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #3b82f6;
+    margin-bottom: 12px;
+}
+
+.modalAvatarPlaceholder {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 36px;
+    font-weight: 600;
+    border: 4px solid #3b82f6;
+    margin-bottom: 12px;
+}
+
+.modalAvatar h2 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 1.4rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.modalSection {
+    margin-bottom: 20px;
+}
+
+.modalSection h4 {
+    margin: 0 0 8px 0;
+    color: #475569;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.modalSection p {
+    margin: 0;
+    color: #64748b;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+.modalFooter {
+    padding: 20px 24px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.modalBookButton {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.modalBookButton:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+
+.ratingSection {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .consultantCard {
+        min-height: 260px;
+    }
+    
+    .modalContent {
+        max-width: 95%;
+        margin: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .consultantCard {
+        min-height: 240px;
+        padding: 16px;
+    }
+    
+    .name {
+        font-size: 1rem;
+    }
+    
+    .qualifications,
+    .experience,
+    .bio {
+        font-size: 0.8rem;
+    }
+    
+    .actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .detailButton,
+    .bookButton {
+        font-size: 0.8rem;
+        padding: 10px 12px;
+    }
+    
+    .detailButton svg,
+    .bookButton svg {
+        width: 14px;
+        height: 14px;
+    }
+}

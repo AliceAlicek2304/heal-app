@@ -1,0 +1,21 @@
+/* Toast Container - Global styles */
+:global(.toast-container) {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 400px;
+    pointer-events: none;
+}
+
+@media (max-width: 768px) {
+    :global(.toast-container) {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+}

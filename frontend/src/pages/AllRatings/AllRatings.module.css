@@ -1,0 +1,403 @@
+/* Main Container */
+.allRatings {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: 1px solid #d1d5db;
+  color: #6b7280;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.backBtn:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.titleSection {
+  flex: 1;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 0.25rem 0;
+}
+
+.subtitle {
+  color: #6b7280;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+/* Stats Section */
+.statsSection {
+  display: flex;
+  gap: 2rem;
+  background: #f9fafb;
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+}
+
+.overallRating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 120px;
+}
+
+.ratingNumber {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.ratingStars {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.star {
+  transition: all 0.2s ease;
+}
+
+.totalRatings {
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.ratingDistribution {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.distributionRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.starLabel {
+  font-size: 0.9rem;
+  color: #6b7280;
+  min-width: 45px;
+}
+
+.progressBar {
+  flex: 1;
+  height: 8px;
+  background-color: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: #fbbf24;
+  transition: width 0.3s ease;
+}
+
+.countLabel {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  min-width: 35px;
+}
+
+/* Ratings List */
+.ratingsList {
+  flex: 1;
+}
+
+.ratingCard {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  transition: all 0.2s ease;
+}
+
+.ratingCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.ratingHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.ratingInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ratingStars {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.ratingValue {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 0.9rem;
+}
+
+.ratingDate {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.ratingContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.raterInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.raterName {
+  color: #1f2937;
+  font-size: 0.95rem;
+}
+
+.ratingComment {
+  color: #4b5563;
+  line-height: 1.6;
+  font-size: 0.95rem;
+  background: #f9fafb;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 3px solid #fbbf24;
+}
+
+/* Staff Reply Styles */
+.staffReplySection {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  background-color: #f0f9ff;
+  border: 1px solid #bae6fd;
+  position: relative;
+}
+
+.staffReplyHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0369a1;
+  margin-bottom: 0.75rem;
+}
+
+.staffReplyContent {
+  color: #334155;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.staffReplyMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed #bae6fd;
+}
+
+/* Empty State */
+.emptyState {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #6b7280;
+}
+
+.emptyIcon {
+  margin-bottom: 1rem;
+  color: #d1d5db;
+}
+
+.emptyState h3 {
+  font-size: 1.25rem;
+  color: #1f2937;
+  margin: 0 0 0.5rem 0;
+}
+
+.emptyState p {
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+/* Loading Container */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 1rem;
+  gap: 1rem;
+  color: #6b7280;
+}
+
+/* Error Container */
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 1rem;
+  gap: 1rem;
+  text-align: center;
+}
+
+.errorIcon {
+  color: #ef4444;
+  margin-bottom: 0.5rem;
+}
+
+.errorContainer h3 {
+  color: #1f2937;
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.errorContainer p {
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.retryBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 0.5rem;
+}
+
+.retryBtn:hover {
+  background-color: #2563eb;
+}
+
+/* Page Loading Container */
+.pageLoadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  gap: 0.75rem;
+  color: #6b7280;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .allRatings {
+    padding: 1rem 0.5rem;
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .backBtn {
+    align-self: flex-start;
+  }
+  
+  .statsSection {
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1rem;
+  }
+  
+  .overallRating {
+    align-items: flex-start;
+  }
+  
+  .ratingCard {
+    padding: 1rem;
+  }
+  
+  .ratingHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+  }
+  
+  .distributionRow {
+    gap: 0.5rem;
+  }
+  
+  .starLabel {
+    min-width: 40px;
+    font-size: 0.85rem;
+  }
+  
+  .countLabel {
+    min-width: 30px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .ratingNumber {
+    font-size: 2rem;
+  }
+  
+  .ratingCard {
+    padding: 0.75rem;
+  }
+  
+  .ratingComment {
+    padding: 0.75rem;
+  }
+}

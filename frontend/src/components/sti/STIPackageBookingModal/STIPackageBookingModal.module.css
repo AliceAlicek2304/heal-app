@@ -1,0 +1,714 @@
+.modalBackdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal {
+    background: white;
+    border-radius: 16px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 24px 0;
+    margin-bottom: 24px;
+}
+
+.modalHeader h3 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.closeBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    color: #718096;
+    transition: all 0.2s ease;
+}
+
+.closeBtn:hover {
+    background: #f7fafc;
+    color: #2d3748;
+}
+
+.modalBody {
+    padding: 0 24px 24px;
+}
+
+.packageSummary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+}
+
+.packageInfo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.packageInfo h4 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.packagePrice {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffeaa7;
+    margin: 0;
+}
+
+.servicesIncluded {
+    margin-bottom: 16px;
+}
+
+.servicesIncluded h5 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+.servicesIncluded ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.servicesIncluded li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.servicesIncluded li:last-child {
+    margin-bottom: 0;
+}
+
+.serviceName {
+    font-weight: 500;
+}
+
+.componentCount {
+    opacity: 0.8;
+    font-size: 12px;
+}
+
+.totalInfo {
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    padding-top: 16px;
+}
+
+.totalItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.totalItem:last-child {
+    margin-bottom: 0;
+}
+
+.totalValue {
+    font-weight: 600;
+    color: #ffeaa7;
+}
+
+.originalPrice {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+.savings {
+    font-weight: 600;
+    color: #00d2d3;
+}
+
+.bookingForm {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.formGroup label {
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 14px;
+}
+
+.formGroup input,
+.formGroup select,
+.formGroup textarea {
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.2s ease;
+    font-family: inherit;
+}
+
+.formGroup input:focus,
+.formGroup select:focus,
+.formGroup textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.formGroup textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.paymentInfo {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+    background: #f7fafc;
+    border-radius: 12px;
+    border-left: 4px solid #667eea;
+}
+
+.paymentIcon {
+    background: #667eea;
+    color: white;
+    padding: 12px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.paymentText {
+    flex: 1;
+}
+
+.paymentText p {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: #4a5568;
+}
+
+.paymentText p:last-child {
+    margin-bottom: 0;
+}
+
+.totalAmount {
+    font-size: 16px !important;
+    color: #2d3748 !important;
+    font-weight: 600 !important;
+}
+
+.modalActions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.cancelBtn,
+.confirmBtn {
+    flex: 1;
+    padding: 14px 20px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+}
+
+.cancelBtn {
+    background: #f7fafc;
+    color: #4a5568;
+    border: 2px solid #e2e8f0;
+}
+
+.cancelBtn:hover {
+    background: #edf2f7;
+    border-color: #cbd5e0;
+}
+
+.confirmBtn {
+    background: #667eea;
+    color: white;
+}
+
+.confirmBtn:hover {
+    background: #5a6fd8;
+    transform: translateY(-1px);
+}
+
+.confirmBtn:disabled,
+.cancelBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Payment Section */
+.paymentSection {
+    background: #f8f9ff;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.paymentSection h4 {
+    margin: 0 0 16px 0;
+    color: #667eea;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* Form Rows */
+.formRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+}
+
+/* QR Modal Styles */
+.qrModalBackdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    padding: 20px;
+}
+
+.qrModal {
+    background: white;
+    border-radius: 16px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+.qrModalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 24px 0;
+    margin-bottom: 24px;
+}
+
+.qrModalHeader h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.qrCloseBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    color: #718096;
+    transition: all 0.2s ease;
+}
+
+.qrCloseBtn:hover {
+    background: #f7fafc;
+    color: #2d3748;
+}
+
+.qrModalBody {
+    padding: 0 24px 24px;
+}
+
+.qrCodeContainer {
+    text-align: center;
+    margin-bottom: 24px;
+    padding: 20px;
+    background: #f7fafc;
+    border-radius: 12px;
+}
+
+.qrCodeImage {
+    max-width: 200px;
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.qrPaymentInfo h4 {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.qrPaymentDetails {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.qrDetailItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: #f7fafc;
+    border-radius: 8px;
+}
+
+.qrAmount {
+    font-weight: 700;
+    color: #667eea;
+    font-size: 16px;
+}
+
+.qrReference {
+    font-family: monospace;
+    background: #e2e8f0;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.qrInstructions {
+    background: #f0fff4;
+    border-left: 4px solid #38a169;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+}
+
+.qrInstructions h5 {
+    margin: 0 0 12px 0;
+    color: #2f855a;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.qrInstructions ol {
+    margin: 0;
+    padding-left: 20px;
+    color: #2d3748;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.qrInstructions li {
+    margin-bottom: 4px;
+}
+
+.qrModalActions {
+    display: flex;
+    gap: 12px;
+}
+
+.checkPaymentBtn,
+.qrCancelBtn {
+    flex: 1;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.checkPaymentBtn {
+    background: #38a169;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+}
+
+.checkPaymentBtn svg {
+    flex-shrink: 0;
+}
+
+.qrCancelBtn {
+    background: #f7fafc;
+    color: #4a5568;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+}
+
+.qrCancelBtn:hover {
+    background: #edf2f7;
+    border-color: #cbd5e0;
+}
+
+/* Manual Payment Backup */
+.manualPaymentBackup {
+    margin-top: 24px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.manualPaymentBackup h6 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #4a5568;
+}
+
+.bankingDetails {
+    margin-bottom: 12px;
+}
+
+.bankRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 4px 0;
+}
+
+.bankLabel {
+    font-size: 13px;
+    color: #718096;
+    font-weight: 500;
+}
+
+.bankValue {
+    font-size: 13px;
+    color: #2d3748;
+    font-weight: 600;
+    text-align: right;
+}
+
+.transferContent {
+    background: #fff3cd;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #ffeaa7;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.transferNote {
+    margin-top: 12px;
+    padding: 12px;
+    background: #fff5f5;
+    border: 1px solid #fed7d7;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #742a2a;
+    line-height: 1.4;
+}
+
+.transferNote strong {
+    color: #c53030;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .modalBackdrop {
+        padding: 16px;
+    }
+
+    .modal {
+        max-height: 95vh;
+    }
+
+    .modalHeader {
+        padding: 20px 20px 0;
+    }
+
+    .modalHeader h3 {
+        font-size: 20px;
+    }
+
+    .modalBody {
+        padding: 0 20px 20px;
+    }
+
+    .packageInfo {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .packageInfo h4 {
+        font-size: 18px;
+    }
+
+    .packagePrice {
+        font-size: 18px;
+    }
+
+    .servicesIncluded li {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .modalActions {
+        flex-direction: column;
+    }
+
+    .paymentInfo {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+
+    .formRow {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .qrModalActions {
+        flex-direction: column;
+    }
+
+    .qrCodeContainer {
+        padding: 16px;
+    }
+
+    .qrCodeImage {
+        max-width: 160px;
+    }
+
+    .instructionTabs {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .instructionTab {
+        padding: 12px;
+    }
+    
+    .manualPaymentBackup {
+        padding: 12px;
+    }
+    
+    .bankRow {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    .bankValue {
+        text-align: left;
+    }
+}
+
+@media (max-width: 480px) {
+    .modalBackdrop {
+        padding: 12px;
+    }
+
+    .modalHeader {
+        padding: 16px 16px 0;
+    }
+
+    .modalBody {
+        padding: 0 16px 16px;
+    }
+
+    .packageSummary {
+        padding: 16px;
+    }
+
+    .formGroup input,
+    .formGroup select,
+    .formGroup textarea {
+        padding: 10px 12px;
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+
+    .cancelBtn,
+    .confirmBtn {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+}

@@ -1,0 +1,341 @@
+.blogCard {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    border: 1px solid #f1f5f9;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.blogCard:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    border-color: #e2e8f0;
+}
+
+.blogCardImage {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+}
+
+.blogCardImage img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.blogCard:hover .blogCardImage img {
+    transform: scale(1.05);
+}
+
+.statusBadge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.statusBadge.processing {
+    background: rgba(251, 191, 36, 0.9);
+    color: #92400e;
+}
+
+.statusBadge.canceled {
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+}
+
+.statusBadge.confirmed {
+    background: rgba(34, 197, 94, 0.9);
+    color: white;
+}
+
+.statusIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.imageOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.blogCard:hover .imageOverlay {
+    opacity: 1;
+}
+
+.overlayContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: white;
+    text-align: center;
+}
+
+.overlayContent svg {
+    opacity: 0.9;
+}
+
+.overlayContent span {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.blogCardContent {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.blogCardMeta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.category,
+.date {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.category svg,
+.date svg {
+    color: #3b82f6;
+}
+
+.blogCardTitle {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 12px 0;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.blogCardExcerpt {
+    color: #64748b;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin: 0 0 16px 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    flex-grow: 1;
+}
+
+.blogCardFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.authorInfo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.authorAvatarWrapper {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.authorAvatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #f1f5f9;
+}
+
+.authorStatus {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    background: #22c55e;
+    border: 2px solid white;
+    border-radius: 50%;
+}
+
+.authorDetails {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.authorName {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.authorRole {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.readMoreBtn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.readMoreBtn:hover {
+    background: #2563eb;
+    transform: translateX(2px);
+}
+
+.btnIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+}
+
+.readMoreBtn:hover .btnIcon {
+    transform: translateX(2px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .blogCardImage {
+        height: 180px;
+    }
+    
+    .blogCardContent {
+        padding: 16px;
+    }
+    
+    .blogCardMeta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .blogCardTitle {
+        font-size: 1rem;
+    }
+    
+    .blogCardFooter {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    
+    .readMoreBtn {
+        align-self: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+    .blogCardImage {
+        height: 160px;
+    }
+    
+    .statusBadge {
+        top: 8px;
+        left: 8px;
+        padding: 4px 8px;
+        font-size: 0.7rem;
+    }
+    
+    .blogCardContent {
+        padding: 12px;
+    }
+    
+    .blogCardTitle {
+        font-size: 0.95rem;
+    }
+    
+    .blogCardExcerpt {
+        font-size: 0.85rem;
+        -webkit-line-clamp: 2;
+    }
+    
+    .authorAvatar {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .authorStatus {
+        width: 8px;
+        height: 8px;
+    }
+}
+
+/* Animation cho loading state */
+.blogCard.loading {
+    pointer-events: none;
+}
+
+.blogCard.loading .blogCardImage {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}

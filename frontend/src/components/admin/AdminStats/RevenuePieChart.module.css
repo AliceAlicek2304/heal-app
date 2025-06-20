@@ -1,0 +1,217 @@
+.chartContainer {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    padding: 24px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.chartHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.chartHeader h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.totalRevenue {
+    font-size: 14px;        
+    font-weight: 600;
+    color: #059669;
+    background: #dcfdf4;
+    padding: 6px 12px;
+    border-radius: 6px;
+}
+
+.chartContent {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    flex: 1;
+}
+
+.pieChartWrapper {
+    flex-shrink: 0;
+}
+
+.pieChart {
+    max-width: 100%;
+    height: auto;
+}
+
+.pieSlice {
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.pieSlice:hover {
+    opacity: 0.8;
+}
+
+.centerText {
+    font-family: inherit;
+}
+
+.centerValue {
+    font-family: inherit;
+}
+
+.legend {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 200px;
+}
+
+.legendItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    background: #f9fafb;
+    transition: background-color 0.2s ease;
+}
+
+.legendItem:hover {
+    background: #f3f4f6;
+}
+
+.legendColor {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.legendContent {
+    flex: 1;
+    min-width: 0;
+}
+
+.legendLabel {
+    font-weight: 500;
+    color: #1f2937;
+    margin-bottom: 4px;
+}
+
+.legendValue {
+    font-size: 14px;
+    color: #374151;
+    font-weight: 600;
+}
+
+.legendPercent {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+.loadingContainer,
+.errorContainer,
+.noDataContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+    color: #6b7280;
+}
+
+.loadingContainer p,
+.errorContainer p,
+.noDataContainer p {
+    margin: 12px 0 0 0;
+    font-size: 14px;
+}
+
+.retryBtn {
+    margin-top: 16px;
+    padding: 8px 16px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s ease;
+}
+
+.retryBtn:hover {
+    background: #2563eb;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .chartContent {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .pieChartWrapper {
+        order: 1;
+    }
+    
+    .legend {
+        order: 2;
+        width: 100%;
+        min-width: unset;
+    }
+    
+    .chartHeader {
+        text-align: center;
+    }
+    
+    .totalRevenue {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .chartContainer {
+        padding: 16px;
+    }
+    
+    .chartHeader h3 {
+        font-size: 16px;
+    }
+    
+    .pieChart {
+        width: 200px;
+        height: 200px;
+    }
+    
+    .legendItem {
+        padding: 10px;
+        gap: 10px;
+    }
+    
+    .legendColor {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .legendLabel {
+        font-size: 14px;
+    }
+    
+    .legendValue {
+        font-size: 13px;
+    }
+    
+    .legendPercent {
+        font-size: 11px;
+    }
+}

@@ -1,0 +1,371 @@
+/* UserManagement.module.css */
+.userManagement {
+    padding: 24px;
+    background-color: #f8fafc;
+    min-height: 100vh;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1a202c;
+    margin: 0;
+}
+
+.createButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.createButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.statsContainer {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.statCard {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: transform 0.2s ease;
+}
+
+.statCard:hover {
+    transform: translateY(-2px);
+}
+
+.statIcon {
+    font-size: 24px;
+    color: #667eea;
+}
+
+.statInfo h3 {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+    color: #1a202c;
+}
+
+.statInfo p {
+    font-size: 14px;
+    color: #718096;
+    margin: 4px 0 0 0;
+}
+
+.filters {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.searchContainer {
+    position: relative;
+    flex: 1;
+    min-width: 300px;
+}
+
+.searchIcon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #a0aec0;
+}
+
+.searchInput {
+    width: 100%;
+    padding: 12px 12px 12px 40px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+    transition: border-color 0.2s ease;
+}
+
+.searchInput:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.roleFilter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filterIcon {
+    color: #718096;
+}
+
+.roleSelect {
+    padding: 12px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    font-size: 14px;
+    cursor: pointer;
+    min-width: 150px;
+}
+
+.roleSelect:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.tableContainer {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.usersTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.usersTable th {
+    background: #f7fafc;
+    padding: 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #4a5568;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.usersTable td {
+    padding: 16px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+/* Center align specific columns */
+.usersTable th:nth-child(2), /* Vai trò */
+.usersTable th:nth-child(3), /* Trạng thái */
+.usersTable th:nth-child(5) { /* Hành động */
+    text-align: center;
+}
+
+.usersTable td:nth-child(2), /* Vai trò */
+.usersTable td:nth-child(3), /* Trạng thái */
+.usersTable td:nth-child(5) { /* Hành động */
+    text-align: center;
+}
+
+.usersTable tr:hover {
+    background: #f8fafc;
+}
+
+.userInfo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    position: relative;
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatarPlaceholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+    border-radius: 50%;
+}
+
+.userDetails {
+    flex: 1;
+}
+
+.userName {
+    font-weight: 600;
+    color: #1a202c;
+    margin-bottom: 4px;
+}
+
+.userContact {
+    font-size: 12px;
+    color: #718096;
+}
+
+.roleBadge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.roleBadge.user {
+    background: #e6fffa;
+    color: #00a3c4;
+}
+
+.roleBadge.consultant {
+    background: #f0fff4;
+    color: #38a169;
+}
+
+.roleBadge.admin {
+    background: #fed7d7;
+    color: #e53e3e;
+}
+
+.statusBadge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.statusBadge.active {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.statusBadge.inactive {
+    background: #fed7d7;
+    color: #742a2a;
+}
+
+.statusBadge:hover {
+    transform: scale(1.05);
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+}
+
+.actionButton {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    color: #718096;
+    background: #f7fafc;
+}
+
+.actionButton:hover {
+    color: #667eea;
+    background: #edf2f7;
+    transform: scale(1.1);
+}
+
+.noData {
+    text-align: center;
+    color: #a0aec0;
+    font-style: italic;
+    padding: 40px;
+}
+
+.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    color: #718096;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e2e8f0;
+    border-left: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .userManagement {
+        padding: 16px;
+    }
+    
+    .header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: stretch;
+    }
+    
+    .filters {
+        flex-direction: column;
+    }
+    
+    .searchContainer {
+        min-width: auto;
+    }
+    
+    .statsContainer {
+        grid-template-columns: 1fr;
+    }
+    
+    .usersTable {
+        font-size: 14px;
+    }
+    
+    .usersTable th,
+    .usersTable td {
+        padding: 12px 8px;
+    }
+}
