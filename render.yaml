@@ -16,6 +16,8 @@ services:
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
+      - key: SPRING_DATASOURCE_URL
+        value: "jdbc:postgresql://${PGHOST}:${PGPORT}/${PGDATABASE}"
       - key: PGHOST
         fromDatabase:
           name: healapp-db
