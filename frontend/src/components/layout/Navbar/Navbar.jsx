@@ -297,11 +297,33 @@ const Navbar = () => {
                                     onClick={toggleUserDropdown}
                                 >
                                     <img
-                                        src={authService.getAvatarUrl(user.avatar)}
+                                        src={(() => {
+                                            if (user?.avatar) {
+                                                if (/^https?:\/\//.test(user.avatar)) {
+                                                    return user.avatar;
+                                                } else if (user.avatar.startsWith('/')) {
+                                                    return process.env.REACT_APP_API_URL
+                                                        ? `${process.env.REACT_APP_API_URL}${user.avatar}`
+                                                        : `http://localhost:8080${user.avatar}`;
+                                                } else {
+                                                    return process.env.REACT_APP_API_URL
+                                                        ? `${process.env.REACT_APP_API_URL}/uploads/avatar/${user.avatar}`
+                                                        : `http://localhost:8080/uploads/avatar/${user.avatar}`;
+                                                }
+                                            }
+                                            return process.env.REACT_APP_API_URL
+                                                ? `${process.env.REACT_APP_API_URL}/uploads/avatar/default.jpg`
+                                                : `http://localhost:8080/uploads/avatar/default.jpg`;
+                                        })()}
                                         alt={getDisplayName(user)}
                                         className={styles.userAvatar}
                                         onError={(e) => {
-                                            e.target.src = authService.getAvatarUrl('/img/avatar/default.jpg');
+                                            const backendDefault = process.env.REACT_APP_API_URL
+                                                ? `${process.env.REACT_APP_API_URL}/uploads/avatar/default.jpg`
+                                                : 'http://localhost:8080/uploads/avatar/default.jpg';
+                                            if (e.target.src !== backendDefault) {
+                                                e.target.src = backendDefault;
+                                            }
                                         }}
                                     />
                                     <span className={styles.userName}>{getDisplayName(user)}</span>
@@ -314,11 +336,33 @@ const Navbar = () => {
                                     <div className={styles.userDropdown}>
                                         <div className={styles.dropdownHeader}>
                                             <img
-                                                src={authService.getAvatarUrl(user.avatar)}
+                                                src={(() => {
+                                                    if (user?.avatar) {
+                                                        if (/^https?:\/\//.test(user.avatar)) {
+                                                            return user.avatar;
+                                                        } else if (user.avatar.startsWith('/')) {
+                                                            return process.env.REACT_APP_API_URL
+                                                                ? `${process.env.REACT_APP_API_URL}${user.avatar}`
+                                                                : `http://localhost:8080${user.avatar}`;
+                                                        } else {
+                                                            return process.env.REACT_APP_API_URL
+                                                                ? `${process.env.REACT_APP_API_URL}/uploads/avatar/${user.avatar}`
+                                                                : `http://localhost:8080/uploads/avatar/${user.avatar}`;
+                                                        }
+                                                    }
+                                                    return process.env.REACT_APP_API_URL
+                                                        ? `${process.env.REACT_APP_API_URL}/uploads/avatar/default.jpg`
+                                                        : `http://localhost:8080/uploads/avatar/default.jpg`;
+                                                })()}
                                                 alt={getDisplayName(user)}
                                                 className={styles.dropdownAvatar}
                                                 onError={(e) => {
-                                                    e.target.src = authService.getAvatarUrl('/img/avatar/default.jpg');
+                                                    const backendDefault = process.env.REACT_APP_API_URL
+                                                        ? `${process.env.REACT_APP_API_URL}/uploads/avatar/default.jpg`
+                                                        : 'http://localhost:8080/uploads/avatar/default.jpg';
+                                                    if (e.target.src !== backendDefault) {
+                                                        e.target.src = backendDefault;
+                                                    }
                                                 }}
                                             />
                                             <div className={styles.dropdownUserInfo}>

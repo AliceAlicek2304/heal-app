@@ -199,11 +199,29 @@ const PersonalInfoForm = () => {
                     <div className={styles.avatarContainer}>
                         <div className={styles.avatarImageWrapper}>
                             <img
-                                src={avatarPreview || authService.getAvatarUrl(user?.avatar || null)}
+                                src={(() => {
+                                    // Robust avatar URL logic for preview and user avatar
+                                    if (avatarPreview) return avatarPreview;
+                                    if (user?.avatar) {
+                                        if (/^https?:\/\//.test(user.avatar)) {
+                                            return user.avatar;
+                                        } else if (user.avatar.startsWith('/')) {
+                                            return process.env.REACT_APP_API_URL
+                                                ? `${process.env.REACT_APP_API_URL}${user.avatar}`
+                                                : `http://localhost:8080${user.avatar}`;
+                                        } else {
+                                            return process.env.REACT_APP_API_URL
+                                                ? `${process.env.REACT_APP_API_URL}/uploads/avatar/${user.avatar}`
+                                                : `http://localhost:8080/uploads/avatar/${user.avatar}`;
+                                        }
+                                    }
+                                    return process.env.REACT_APP_API_URL
+                                        ? `${process.env.REACT_APP_API_URL}/uploads/avatar/default.jpg`
+                                        : `http://localhost:8080/uploads/avatar/default.jpg`;
+                                })()}
                                 alt="Avatar"
                                 className={styles.avatarImage}
                                 onError={(e) => {
-                                    // Use backend default avatar from environment variable or fallback
                                     const backendDefault = process.env.REACT_APP_API_URL
                                         ? `${process.env.REACT_APP_API_URL}/uploads/avatar/default.jpg`
                                         : `http://localhost:8080/uploads/avatar/default.jpg`;

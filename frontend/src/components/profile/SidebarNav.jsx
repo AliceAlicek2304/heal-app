@@ -6,7 +6,26 @@ import styles from './SidebarNav.module.css';
 
 const SidebarNav = ({ activeTab }) => {
     const { user } = useAuth();
-    const avatarUrl = user?.avatar ? authService.getAvatarUrl(user.avatar) : '/img/avatar/default.jpg';
+
+    // Avatar URL logic: handle absolute, relative, and filename cases robustly
+    let avatarUrl = '';
+    if (user?.avatar) {
+        if (/^https?:\/\//.test(user.avatar)) {
+            avatarUrl = user.avatar;
+        } else if (user.avatar.startsWith('/')) {
+            avatarUrl = (process.env.REACT_APP_API_URL
+                ? `${process.env.REACT_APP_API_URL}${user.avatar}`
+                : `http://localhost:8080${user.avatar}`);
+        } else {
+            avatarUrl = (process.env.REACT_APP_API_URL
+                ? `${process.env.REACT_APP_API_URL}/uploads/avatar/${user.avatar}`
+                : `http://localhost:8080/uploads/avatar/${user.avatar}`);
+        }
+    } else {
+        avatarUrl = (process.env.REACT_APP_API_URL
+            ? `${process.env.REACT_APP_API_URL}/uploads/avatar/default.jpg`
+            : 'http://localhost:8080/uploads/avatar/default.jpg');
+    }
 
     // Kiểm tra role của user
     const isStaff = user?.role === 'STAFF';
@@ -22,7 +41,12 @@ const SidebarNav = ({ activeTab }) => {
                         alt="Avatar"
                         className={styles.avatar}
                         onError={(e) => {
-                            e.target.src = '/img/avatar/default.jpg';
+                            const backendDefault = process.env.REACT_APP_API_URL
+                                ? `${process.env.REACT_APP_API_URL}/uploads/avatar/default.jpg`
+                                : 'http://localhost:8080/uploads/avatar/default.jpg';
+                            if (e.target.src !== backendDefault) {
+                                e.target.src = backendDefault;
+                            }
                         }}
                     />
                     <div className={styles.onlineIndicator}></div>
