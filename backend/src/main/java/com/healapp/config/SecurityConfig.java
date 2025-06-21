@@ -151,7 +151,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/consultations/assigned").hasRole("CONSULTANT")
                 // API STI Services (Consultant actions)
                 .requestMatchers(HttpMethod.PUT, "/sti-services/consultant/tests/{testId}/notes")
-                .hasRole("CONSULTANT") // ========= STAFF ENDPOINTS =========
+                .hasRole("CONSULTANT")
+                // Cho phép tất cả OPTIONS request (CORS preflight) đi qua mà không cần xác thực
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                // ========= STAFF ENDPOINTS =========
                 // API Staff Ratings Management
                 .requestMatchers("/staff/ratings/**").hasAnyRole("STAFF", "ADMIN")
                 .requestMatchers("/ratings/staff/**").hasAnyRole("STAFF", "ADMIN")
