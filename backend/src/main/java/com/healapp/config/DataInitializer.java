@@ -24,8 +24,16 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DataInitializer {
 
-    @Value("${app.avatar.url.pattern}default.jpg")
-    private String defaultAvatarPath;
+    @Value("${app.avatar.url.pattern}")
+    private String avatarUrlPattern;
+
+    private String getDefaultAvatarUrl() {
+        String base = avatarUrlPattern;
+        if (!base.endsWith("/")) {
+            base += "/";
+        }
+        return base + "default.jpg";
+    }
 
     @Bean
     @Order(1) // Ensure this runs first, before any other initialization
@@ -56,7 +64,7 @@ public class DataInitializer {
             @Autowired PasswordEncoder passwordEncoder) {
         return args -> {
             log.info("Checking for default admin user...");
-            
+
             // Check if any admin user exists
             Optional<Role> adminRole = roleRepository.findByRoleName("ADMIN");
             if (adminRole.isEmpty()) {
@@ -73,7 +81,7 @@ public class DataInitializer {
 
             // Create default admin user
             log.info("No admin users found. Creating default admin user...");
-            
+
             UserDtls defaultAdmin = new UserDtls();
             defaultAdmin.setUsername("admin123");
             defaultAdmin.setPassword(passwordEncoder.encode("Admin123@"));
@@ -82,12 +90,12 @@ public class DataInitializer {
             defaultAdmin.setGender(Gender.OTHER); // Default to OTHER for admin
             defaultAdmin.setBirthDay(LocalDate.of(1990, 1, 1)); // Default birth date
             defaultAdmin.setRole(adminRole.get());
-            defaultAdmin.setAvatar(defaultAvatarPath);
+            defaultAdmin.setAvatar(getDefaultAvatarUrl());
             defaultAdmin.setIsActive(true);
             defaultAdmin.setCreatedDate(LocalDateTime.now());
-            
+
             userRepository.save(defaultAdmin);
-            
+
             log.info("✅ Default admin user created successfully!");
             log.info("Username: admin123");
             log.info("Password: Admin123@");

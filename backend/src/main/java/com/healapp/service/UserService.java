@@ -1,12 +1,34 @@
 package com.healapp.service;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.healapp.dto.AdminResetPasswordRequest;
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.ChangePasswordRequest;
 import com.healapp.dto.CreateUserRequest;
+import com.healapp.dto.ForgotPasswordRequest;
 import com.healapp.dto.LoginRequest;
 import com.healapp.dto.LoginResponse;
+import com.healapp.dto.PhoneVerificationRequest;
 import com.healapp.dto.RegisterRequest;
+import com.healapp.dto.ResetPasswordRequest;
+import com.healapp.dto.UpdateEmailRequest;
+import com.healapp.dto.UpdateProfileRequest;
+import com.healapp.dto.UserResponse;
+import com.healapp.dto.UserUpdateRequest;
+import com.healapp.dto.VerificationCodeRequest;
+import com.healapp.dto.VerifyPhoneRequest;
 import com.healapp.model.ConsultantProfile;
 import com.healapp.model.Gender;
 import com.healapp.model.Role;
@@ -14,34 +36,8 @@ import com.healapp.model.UserDtls;
 import com.healapp.repository.ConsultantProfileRepository;
 import com.healapp.repository.RoleRepository;
 import com.healapp.repository.UserRepository;
-import com.healapp.dto.ForgotPasswordRequest;
-import com.healapp.dto.ResetPasswordRequest;
-import com.healapp.dto.UpdateEmailRequest;
-import com.healapp.dto.UpdateProfileRequest;
-import com.healapp.dto.UserResponse;
-import com.healapp.dto.UserUpdateRequest;
-import com.healapp.dto.VerificationCodeRequest;
-import com.healapp.dto.PhoneVerificationRequest;
-import com.healapp.dto.VerifyPhoneRequest;
-import com.healapp.service.EmailService;
-import com.healapp.service.PasswordResetService;
-import com.healapp.service.PasswordResetService.RateLimitException;
-import jakarta.mail.MessagingException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
-import java.util.stream.Collectors;
+import jakarta.mail.MessagingException;
 
 @Service
 public class UserService {
@@ -79,8 +75,16 @@ public class UserService {
     @Autowired
     private FirebaseSMSService firebaseSMSService;
 
-    @Value("${app.avatar.url.pattern}default.jpg")
-    private String defaultAvatarPath;
+    @Value("${app.avatar.url.pattern}")
+    private String avatarUrlPattern;
+
+    private String getDefaultAvatarUrl() {
+        String base = avatarUrlPattern;
+        if (!base.endsWith("/")) {
+            base += "/";
+        }
+        return base + "default.jpg";
+    }
 
     public boolean isEmailExists(String email) {
         return userRepository.existsByEmail(email);
@@ -138,7 +142,7 @@ public class UserService {
             user.setEmail(request.getEmail());
             user.setUsername(request.getUsername());
             user.setPassword(passwordEncoder.encode(request.getPassword()));
-            user.setAvatar(defaultAvatarPath);
+            user.setAvatar(getDefaultAvatarUrl());
             user.setIsActive(true);
 
             // Set role mặc định là customer
@@ -599,7 +603,6 @@ public class UserService {
     }
 
     // ===================== PHONE VERIFICATION METHODS =====================
-
     /**
      * Gửi mã xác thực số điện thoại
      */
@@ -615,8 +618,8 @@ public class UserService {
 
             // Kiểm tra số điện thoại mới có trùng với số hiện tại không
             String currentOriginalPhone = phoneVerificationService.getOriginalPhone(user.getPhone());
-            if (currentOriginalPhone != null &&
-                    phoneVerificationService.isSamePhone(currentOriginalPhone, newPhone)) {
+            if (currentOriginalPhone != null
+                    && phoneVerificationService.isSamePhone(currentOriginalPhone, newPhone)) {
 
                 // Nếu số hiện tại đã được xác thực thì không cho phép xác thực lại
                 if (phoneVerificationService.isPhoneVerified(user.getPhone())) {
@@ -825,7 +828,7 @@ public class UserService {
             user.setRole(role);
 
             // Set default values
-            user.setAvatar(defaultAvatarPath); // Sử dụng avatar mặc định
+            user.setAvatar(getDefaultAvatarUrl()); // Sử dụng avatar mặc định
             user.setIsActive(true);
             user.setCreatedDate(LocalDateTime.now()); // Lưu user
             UserDtls savedUser = userRepository.save(user);
@@ -855,7 +858,6 @@ public class UserService {
             user.setPassword(encodedPassword);
 
             // Cập nhật thời gian - UserDtls doesn't have setUpdatedDate, so we'll skip this
-
             userRepository.save(user);
 
             // Log lý do reset password nếu có

@@ -103,17 +103,33 @@ public class FileStorageService {
     }
 
     private String uploadToGcs(MultipartFile file, String folder, String fileName) throws IOException {
-        if (gcsStorage == null)
+        if (gcsStorage == null) {
             throw new IOException("GCS Storage not initialized");
+        }
         String objectName = folder + "/" + fileName;
         BlobInfo blobInfo = BlobInfo.newBuilder(gcsBucketName, objectName).build();
         gcsStorage.create(blobInfo, file.getBytes());
         return String.format("https://storage.googleapis.com/%s/%s", gcsBucketName, objectName);
     }
 
+    /**
+     * Helper to safely join avatarUrlPattern and fileName, avoiding double
+     * slashes
+     */
+    private String buildAvatarUrl(String fileName) {
+        String base = avatarUrlPattern;
+        if (!base.endsWith("/")) {
+            base += "/";
+        }
+        if (fileName.startsWith("/")) {
+            fileName = fileName.substring(1);
+        }
+        return base + fileName;
+    }
+
     public String storeAvatar(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) {
-            return avatarUrlPattern + "default.jpg";
+            return buildAvatarUrl("default.jpg");
         }
         String originalFileName = file.getOriginalFilename();
         String fileExtension = getFileExtension(originalFileName);
@@ -126,7 +142,7 @@ public class FileStorageService {
         Path targetLocation = avatarStoragePath.resolve(uniqueFileName);
         Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
         log.debug(" Avatar stored locally: {}", uniqueFileName);
-        return avatarUrlPattern + uniqueFileName;
+        return buildAvatarUrl(uniqueFileName);
     }
 
     public String storeBlogImage(MultipartFile file, String prefix) throws IOException {
@@ -157,7 +173,7 @@ public class FileStorageService {
 
     public String saveAvatarFile(MultipartFile file, Long userId) throws IOException {
         if (file == null || file.isEmpty()) {
-            return avatarUrlPattern + "default.jpg";
+            return buildAvatarUrl("default.jpg");
         }
         String originalFileName = file.getOriginalFilename();
         String fileExtension = getFileExtension(originalFileName);
@@ -170,7 +186,7 @@ public class FileStorageService {
         Path targetLocation = avatarStoragePath.resolve(uniqueFileName);
         Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
         log.debug(" User avatar stored locally: {}", uniqueFileName);
-        return avatarUrlPattern + uniqueFileName;
+        return buildAvatarUrl(uniqueFileName);
     }
 
     public void deleteFile(String filePath) throws IOException {

@@ -284,10 +284,10 @@ export const authService = {
         }
     },// Generate avatar URL
     getAvatarUrl: (avatarPath) => {
-        if (!avatarPath) return `${API_BASE_URL}/img/avatar/default.jpg`;
+        if (!avatarPath) return `${API_BASE_URL}/uploads/avatar/default.jpg`;
         if (avatarPath.startsWith('http')) return avatarPath;
-        if (avatarPath.startsWith('/img/')) return `${API_BASE_URL}${avatarPath}`;
-        return `${API_BASE_URL}/img/avatar/${avatarPath}`;
+        if (avatarPath.startsWith('/uploads/')) return `${API_BASE_URL}${avatarPath}`;
+        return `${API_BASE_URL}/uploads/avatar/${avatarPath}`;
     },
 
     // Forgot password - send reset code

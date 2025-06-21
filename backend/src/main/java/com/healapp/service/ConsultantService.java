@@ -1,5 +1,16 @@
 package com.healapp.service;
 
+import java.security.SecureRandom;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.ConsultantProfileRequest;
 import com.healapp.dto.ConsultantProfileResponse;
@@ -11,17 +22,8 @@ import com.healapp.model.UserDtls;
 import com.healapp.repository.ConsultantProfileRepository;
 import com.healapp.repository.RoleRepository;
 import com.healapp.repository.UserRepository;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.security.SecureRandom;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -42,14 +44,21 @@ public class ConsultantService {
     @Autowired
     private EmailService emailService;
 
-    @Value("${app.avatar.url.pattern}default.jpg")
-    private String defaultAvatarPath;
+    @Value("${app.avatar.url.pattern}")
+    private String avatarUrlPattern;
+
+    private String getDefaultAvatarUrl() {
+        String base = avatarUrlPattern;
+        if (!base.endsWith("/")) {
+            base += "/";
+        }
+        return base + "default.jpg";
+    }
 
     private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private static final SecureRandom RANDOM = new SecureRandom();
 
     // ========== ADMIN ONLY METHODS ==========
-
     @Transactional
     public ApiResponse<ConsultantProfileResponse> createConsultantAccount(CreateConsultantAccountRequest request) {
         try {
@@ -90,7 +99,7 @@ public class ConsultantService {
             }
 
             newUser.setPassword(passwordEncoder.encode(temporaryPassword));
-            newUser.setAvatar(defaultAvatarPath);
+            newUser.setAvatar(getDefaultAvatarUrl());
             newUser.setRole(consultantRole);
             newUser.setIsActive(true);
 
@@ -325,7 +334,6 @@ public class ConsultantService {
     }
 
     // ========== PUBLIC METHODS ==========
-
     public ApiResponse<List<ConsultantProfileResponse>> getAllConsultantProfiles() {
         try {
             // Lấy tất cả user có role CONSULTANT (cả active và inactive)
@@ -412,45 +420,54 @@ public class ConsultantService {
         } catch (Exception e) {
             log.error("Failed to retrieve consultant profile: {}", e.getMessage(), e);
             return ApiResponse.error("Failed to retrieve consultant profile: " + e.getMessage());
+        
+        
         }
+        
     }
+    
+        
 
-    @Transactional
-    public ApiResponse<ConsultantProfileResponse> createOrUpdateConsultantProfile(Long userId,
-            ConsultantProfileRequest request) {
+    
+
+        @Transactional
+        public ApiResponse<ConsultantProfileResponse> createOrUpdateConsultantProfile
+        (Long userId,
+                ConsultantProfileRequest request
+            
+        ) {
         try {
-            Optional<UserDtls> userOpt = userRepository.findById(userId);
-            if (userOpt.isEmpty()) {
-                return ApiResponse.error("User not found");
+                Optional<UserDtls> userOpt = userRepository.findById(userId);
+                if (userOpt.isEmpty()) {
+                    return ApiResponse.error("User not found");
+                }
+
+                UserDtls user = userOpt.get();
+
+                if (!"CONSULTANT".equals(user.getRoleName())) {
+                    return ApiResponse.error("User must have CONSULTANT role to update profile. Please update role first.");
+                }
+
+                // Tìm profile của user, tạo mới nếu chưa có
+                ConsultantProfile consultantProfile = consultantProfileRepository.findByUser(user)
+                        .orElse(new ConsultantProfile());
+
+                consultantProfile.setUser(user);
+                consultantProfile.setQualifications(request.getQualifications());
+                consultantProfile.setExperience(request.getExperience());
+                consultantProfile.setBio(request.getBio());
+
+                ConsultantProfile savedProfile = consultantProfileRepository.save(consultantProfile);
+
+                log.info("Updated consultant profile for user: {}", userId);
+
+                return ApiResponse.success("Consultant profile updated successfully", convertToResponse(savedProfile));
+            } catch (Exception e) {
+                log.error("Failed to update consultant profile: {}", e.getMessage(), e);
+                return ApiResponse.error("Failed to update consultant profile: " + e.getMessage());
             }
-
-            UserDtls user = userOpt.get();
-
-            if (!"CONSULTANT".equals(user.getRoleName())) {
-                return ApiResponse.error("User must have CONSULTANT role to update profile. Please update role first.");
-            }
-
-            // Tìm profile của user, tạo mới nếu chưa có
-            ConsultantProfile consultantProfile = consultantProfileRepository.findByUser(user)
-                    .orElse(new ConsultantProfile());
-
-            consultantProfile.setUser(user);
-            consultantProfile.setQualifications(request.getQualifications());
-            consultantProfile.setExperience(request.getExperience());
-            consultantProfile.setBio(request.getBio());
-
-            ConsultantProfile savedProfile = consultantProfileRepository.save(consultantProfile);
-
-            log.info("Updated consultant profile for user: {}", userId);
-
-            return ApiResponse.success("Consultant profile updated successfully", convertToResponse(savedProfile));
-        } catch (Exception e) {
-            log.error("Failed to update consultant profile: {}", e.getMessage(), e);
-            return ApiResponse.error("Failed to update consultant profile: " + e.getMessage());
         }
-    }
-
-    // ========== PRIVATE HELPER METHODS ==========
+        // ========== PRIVATE HELPER METHODS ==========
 
     private String generateTemporaryPassword() {
         StringBuilder password = new StringBuilder(12);
