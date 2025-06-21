@@ -203,7 +203,10 @@ const PersonalInfoForm = () => {
                                 alt="Avatar"
                                 className={styles.avatarImage}
                                 onError={(e) => {
-                                    const backendDefault = `http://localhost:8080/img/avatar/default.jpg`;
+                                    // Use backend default avatar from environment variable or fallback
+                                    const backendDefault = process.env.REACT_APP_API_URL
+                                        ? `${process.env.REACT_APP_API_URL}/uploads/avatar/default.jpg`
+                                        : `http://localhost:8080/uploads/avatar/default.jpg`;
                                     if (e.target.src !== backendDefault) {
                                         e.target.src = backendDefault;
                                     }
@@ -367,4 +370,4 @@ const PersonalInfoForm = () => {
     );
 };
 
-export default PersonalInfoForm;    
+export default PersonalInfoForm;
