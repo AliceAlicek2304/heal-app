@@ -1,6 +1,6 @@
 import { getAuthHeader } from './authService';
 
-const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/admin';
+const BASE_URL = (process.env.REACT_APP_API_URL || 'http://localhost:8080') + '/admin';
 
 // Helper function to make authenticated API calls
 const makeAuthenticatedRequest = async (url, options = {}) => {
