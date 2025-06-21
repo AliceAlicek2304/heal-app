@@ -1,0 +1,408 @@
+.modalOverlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modalContent {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 340px;
+  max-width: 95vw;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 32px;
+    border-bottom: 1px solid #e5e7eb;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px 12px 0 0;
+}
+.title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+}
+.closeBtn {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: white;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+.closeBtn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+}
+.priceSection {
+  margin: 16px 0 24px 0;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #e53935;
+}
+.content {
+    padding: 24px 32px;
+    overflow-y: auto;
+    flex: 1;
+}
+.section {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f3f4f6;
+}
+.section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+.sectionTitle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 16px;
+}
+.sectionIcon {
+    color: #6366f1;
+    font-size: 1rem;
+}
+.infoGrid {
+    display: grid;
+    gap: 16px;
+}
+.infoItem {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    background: #f9fafb;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+.infoIcon {
+    color: #6366f1;
+    font-size: 1rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+.infoLabel {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280;
+}
+.infoValue {
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: #1f2937;
+    word-break: break-word;
+}
+.statusContainer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.statusIconActive {
+    color: #10b981;
+    font-size: 1.25rem;
+}
+.statusIconInactive {
+    color: #6b7280;
+    font-size: 1.25rem;
+}
+.statusTextActive {
+    color: #10b981;
+    font-weight: 600;
+}
+.statusTextInactive {
+    color: #6b7280;
+    font-weight: 600;
+}
+.descriptionContent {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: #374151;
+    white-space: pre-wrap;
+}
+.componentsGrid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: stretch;
+    justify-content: space-between;
+}
+.componentCard {
+    flex: 1 1 320px;
+    min-width: 300px;
+    max-width: 370px;
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 18px 16px 14px 16px;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    box-sizing: border-box;
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+.componentCard:hover {
+    border-color: #6366f1;
+    box-shadow: 0 2px 12px rgba(99,102,241,0.10);
+    transform: translateY(-2px) scale(1.01);
+}
+.componentHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.componentIcon {
+    color: #6366f1;
+    font-size: 0.875rem;
+}
+.componentName {
+    font-size: 1.08rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+}
+.componentInfo {
+    margin-bottom: 4px;
+    font-size: 0.93rem;
+    color: #555;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+.rangeLabel {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+.rangeValue {
+    font-size: 0.875rem;
+    color: #374151;
+    font-weight: 400;
+}
+.footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 20px 32px 24px 32px;
+    border-top: 1px solid #f3f4f6;
+    background: #f9fafb;
+    border-radius: 0 0 12px 12px;
+}
+.btnPrimary {
+    background: #6366f1;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 32px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btnPrimary:hover {
+    background: #5855eb;
+}
+.serviceTestComponentsSection {
+    margin-top: 10px;
+    background: #f3f4f6;
+    border-radius: 6px;
+    padding: 10px 12px;
+    min-height: 40px;
+}
+.serviceTestComponentsTitle {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #6366f1;
+    margin-bottom: 6px;
+}
+.serviceTestComponentsList {
+    list-style: disc inside;
+    margin: 0;
+    padding-left: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.serviceTestComponentItem {
+    font-size: 0.95rem;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 0;
+}
+.testComponentName {
+    font-weight: 500;
+    color: #22223b;
+}
+.testComponentRange {
+    font-size: 0.85em;
+    color: #6b7280;
+}
+.testComponentRangeValue {
+    color: #764ba2;
+    font-weight: 500;
+}
+.packagePriceValue {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #e53935;
+    background: #fff3e0;
+    padding: 2px 10px;
+    border-radius: 6px;
+    margin-left: 6px;
+    box-shadow: 0 2px 8px rgba(229,57,53,0.08);
+}
+
+.originalPriceValue {
+    font-size: 1rem;
+    text-decoration: line-through;
+    opacity: 0.7;
+    color: #888;
+    margin-left: 6px;
+}
+.serviceGroup {
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 18px 16px 10px 16px;
+  margin-bottom: 28px;
+  box-shadow: 0 2px 8px rgba(99,102,241,0.04);
+}
+.serviceGroupTitle {
+  margin: 0 0 16px 0;
+  color: #1e40af;
+  font-size: 1.08rem;
+  font-weight: 700;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-radius: 8px;
+  border-left: 4px solid #3b82f6;
+  letter-spacing: 0.01em;
+}
+.resultsTable {
+  overflow-x: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 0;
+}
+.resultsTable table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+  background-color: #fff;
+}
+.resultsTable th {
+  background-color: #f3f4f6;
+  color: #374151;
+  font-weight: 600;
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 2px solid #e5e7eb;
+}
+.resultsTable td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #e5e7eb;
+  color: #4b5563;
+}
+.resultsTable tbody tr:last-child td {
+  border-bottom: none;
+}
+.resultsTable tbody tr:hover {
+  background-color: #f9fafb;
+}
+.noResults {
+  background-color: #f9fafb;
+  padding: 18px;
+  text-align: center;
+  border-radius: 8px;
+  border: 1px dashed #d1d5db;
+  color: #6b7280;
+  margin-top: 8px;
+}
+@media (max-width: 768px) {
+    .header {
+        padding: 16px 20px;
+    }
+    .title {
+        font-size: 1.25rem;
+    }
+    .content {
+        padding: 16px 20px;
+    }
+    .infoGrid {
+        gap: 12px;
+    }
+    .infoItem {
+        padding: 8px;
+    }
+    .componentsGrid {
+        flex-direction: column;
+        gap: 14px;
+    }
+    .componentCard {
+        min-width: 0;
+        max-width: 100%;
+    }
+    .footer {
+        padding: 16px 20px 20px 20px;
+    }
+    .serviceTestComponentsSection {
+        padding: 8px 6px;
+    }
+    .serviceTestComponentsTitle {
+        font-size: 0.9rem;
+    }
+    .serviceTestComponentItem {
+        font-size: 0.88rem;
+    }
+    .serviceGroup {
+    padding: 12px 6px 8px 8px;
+  }
+  .serviceGroupTitle {
+    font-size: 1rem;
+    padding: 6px 8px;
+  }
+  .resultsTable th, .resultsTable td {
+    padding: 8px 8px;
+    font-size: 14px;
+  }
+}
+@media (max-width: 600px) {
+    .componentsGrid {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .componentCard {
+        min-width: 0;
+        max-width: 100%;
+        padding: 12px 6px 10px 8px;
+    }
+}

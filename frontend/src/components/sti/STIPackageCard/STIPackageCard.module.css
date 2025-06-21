@@ -271,6 +271,38 @@
     height: 16px;
 }
 
+.detailBtn {
+    background: white;
+    color: #764ba2;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    justify-content: center;
+    max-width: 180px;
+    margin-left: 8px;
+}
+
+.detailBtn:hover {
+    background: #f3e8ff;
+    color: #5f3dc4;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(118, 75, 162, 0.12);
+}
+
+.detailBtn svg {
+    width: 16px;
+    height: 16px;
+}
+
 .ratingSection {
     margin: 12px 0;
     display: flex;
@@ -319,6 +351,12 @@
     .bookingBtn {
         padding: 14px 24px;
         font-size: 14px;
+    }
+
+    .detailBtn {
+        padding: 10px 16px;
+        font-size: 13px;
+        max-width: 100%;
     }
 }
 

@@ -40,3 +40,7 @@ build/
 **/*.properties
 !**/application.properties.example
 !**/backend/src/main/resources/application-prod.properties
+# Allow public cloud config for deployment
+!backend/src/main/resources/application-cloud.properties
+
+env.yaml

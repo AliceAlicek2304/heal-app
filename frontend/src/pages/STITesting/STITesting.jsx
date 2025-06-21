@@ -15,6 +15,7 @@ import { stiService } from '../../services/stiService';
 import stiPackageService from '../../services/stiPackageService';
 import { useAuthModal } from '../../hooks/useAuthModal';
 import styles from './STITesting.module.css';
+import STIPackageDetailModal from '../../components/sti/STIPackageDetailModal/STIPackageDetailModal';
 
 const STITesting = () => {
     const navigate = useNavigate();
@@ -29,6 +30,7 @@ const STITesting = () => {
     const [showBookingModal, setShowBookingModal] = useState(false);
     const [showPackageBookingModal, setShowPackageBookingModal] = useState(false);
     const [selectedServiceIdForDetails, setSelectedServiceIdForDetails] = useState(null);
+    const [selectedPackageForDetails, setSelectedPackageForDetails] = useState(null);
 
     // Auth modals
     const {
@@ -175,6 +177,14 @@ const STITesting = () => {
         fetchData();
     };
 
+    const handleOpenPackageDetails = (pkg) => {
+        setSelectedPackageForDetails(pkg);
+    };
+
+    const handleClosePackageDetails = () => {
+        setSelectedPackageForDetails(null);
+    };
+
     if (loading) return <LoadingSpinner />;
 
     return (
@@ -252,6 +262,7 @@ const STITesting = () => {
                                     package={pkg}
                                     onBooking={handleBookPackage}
                                     onAuthRequired={openLoginModal}
+                                    onDetails={() => handleOpenPackageDetails(pkg)}
                                 />
                             ))}
                         </div>
@@ -314,6 +325,15 @@ const STITesting = () => {
                     isOpen={showPackageBookingModal}
                     package={selectedPackage}
                     onClose={handleClosePackageBookingModal}
+                />
+            )}
+
+            {/* Package Detail Modal */}
+            {selectedPackageForDetails && (
+                <STIPackageDetailModal
+                    pkg={selectedPackageForDetails}
+                    onClose={handleClosePackageDetails}
+                    onBook={handleBookPackage}
                 />
             )}
 

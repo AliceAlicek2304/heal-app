@@ -4,7 +4,7 @@ import RatingBadge from '../../common/RatingBadge/RatingBadge';
 import RatingQuickView from '../../common/RatingQuickView/RatingQuickView';
 import { useAuth } from '../../../contexts/AuthContext';
 
-const STIPackageCard = ({ package: pkg, onBooking, onAuthRequired }) => {
+const STIPackageCard = ({ package: pkg, onBooking, onAuthRequired, onDetails }) => {
     const [showRatingModal, setShowRatingModal] = useState(false);
     const [refreshRating, setRefreshRating] = useState(0); // Add refresh trigger
     const { isAuthenticated } = useAuth();
@@ -50,7 +50,7 @@ const STIPackageCard = ({ package: pkg, onBooking, onAuthRequired }) => {
     return (
         <>
             <div className={styles.packageCard}>
-                <div className={styles.packageHeader}>
+                <div className={styles.packageHeader} onClick={onDetails} style={{ cursor: 'pointer' }}>
                     <div className={styles.packageBadge}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -161,6 +161,19 @@ const STIPackageCard = ({ package: pkg, onBooking, onAuthRequired }) => {
                             <line x1="3" y1="10" x2="21" y2="10"></line>
                         </svg>
                         Đặt Gói Combo
+                    </button>
+                    <button
+                        className={styles.detailBtn}
+                        onClick={onDetails}
+                        type="button"
+                        style={{ marginLeft: 8, display: 'flex', alignItems: 'center', gap: 6 }}
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12" y2="8"></line>
+                        </svg>
+                        <span style={{ fontWeight: 500 }}>Chi tiết gói</span>
                     </button>
                 </div>
             </div>

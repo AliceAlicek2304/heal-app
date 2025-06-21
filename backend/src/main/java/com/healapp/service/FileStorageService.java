@@ -15,6 +15,10 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
+
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,13 +48,25 @@ public class FileStorageService {
     @Value("${app.config.url.pattern}")
     private String configUrlPattern;
 
+    @Value("${app.storage.type:local}")
+    private String storageType;
+
+    // Google Cloud Storage config
+    @Value("${gcs.bucket.name:}")
+    private String gcsBucketName;
+
     private Path avatarStoragePath;
     private Path blogStoragePath;
     private Path configStoragePath;
 
+    private Storage gcsStorage;
+
     @PostConstruct
     public void init() {
-        log.info("💾 Using local file storage for file operations");
+        log.info(" Using {} file storage for file operations", storageType);
+        if (isGcs()) {
+            gcsStorage = StorageOptions.getDefaultInstance().getService();
+        }
         initializeLocalPaths();
     }
 
@@ -64,9 +80,9 @@ public class FileStorageService {
             Files.createDirectories(blogStoragePath);
             Files.createDirectories(configStoragePath);
             createDefaultAvatar();
-            log.info("✅ Local storage directories created successfully");
+            log.info(" Local storage directories created successfully");
         } catch (IOException e) {
-            log.error("❌ Could not create local storage directories: {}", e.getMessage());
+            log.error(" Could not create local storage directories: {}", e.getMessage());
             throw new RuntimeException("Could not create storage directories", e);
         }
     }
@@ -77,29 +93,39 @@ public class FileStorageService {
         if (!Files.exists(defaultAvatarPath)) {
             try (InputStream inputStream = new ClassPathResource("static/img/default-avatar.jpg").getInputStream()) {
                 Files.copy(inputStream, defaultAvatarPath, StandardCopyOption.REPLACE_EXISTING);
-                log.debug("📸 Default avatar created");
+                log.debug(" Default avatar created");
             } catch (IOException e) {
                 // Create empty file as fallback
                 Files.createFile(defaultAvatarPath);
-                log.warn("⚠️ Created empty default avatar file as fallback: {}", e.getMessage());
+                log.warn(" Created empty default avatar file as fallback: {}", e.getMessage());
             }
         }
+    }
+
+    private String uploadToGcs(MultipartFile file, String folder, String fileName) throws IOException {
+        if (gcsStorage == null)
+            throw new IOException("GCS Storage not initialized");
+        String objectName = folder + "/" + fileName;
+        BlobInfo blobInfo = BlobInfo.newBuilder(gcsBucketName, objectName).build();
+        gcsStorage.create(blobInfo, file.getBytes());
+        return String.format("https://storage.googleapis.com/%s/%s", gcsBucketName, objectName);
     }
 
     public String storeAvatar(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) {
             return avatarUrlPattern + "default.jpg";
         }
-
         String originalFileName = file.getOriginalFilename();
         String fileExtension = getFileExtension(originalFileName);
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
         String uniqueFileName = UUID.randomUUID().toString().substring(0, 8) + "_" + timestamp + fileExtension;
-
+        if (isGcs()) {
+            return uploadToGcs(file, "avatar", uniqueFileName);
+        }
         // Local storage implementation
         Path targetLocation = avatarStoragePath.resolve(uniqueFileName);
         Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
-        log.debug("💾 Avatar stored locally: {}", uniqueFileName);
+        log.debug(" Avatar stored locally: {}", uniqueFileName);
         return avatarUrlPattern + uniqueFileName;
     }
 
@@ -107,17 +133,17 @@ public class FileStorageService {
         if (file == null || file.isEmpty()) {
             return null;
         }
-
         String originalFileName = file.getOriginalFilename();
         String fileExtension = getFileExtension(originalFileName);
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-        String uniqueFileName = prefix + "_" + UUID.randomUUID().toString().substring(0, 8) + "_" + timestamp
-                + fileExtension;
-
+        String uniqueFileName = prefix + "_" + UUID.randomUUID().toString().substring(0, 8) + "_" + timestamp + fileExtension;
+        if (isGcs()) {
+            return uploadToGcs(file, "blog", uniqueFileName);
+        }
         // Local storage implementation
         Path targetLocation = blogStoragePath.resolve(uniqueFileName);
         Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
-        log.debug("💾 Blog image stored locally: {}", uniqueFileName);
+        log.debug(" Blog image stored locally: {}", uniqueFileName);
         return blogUrlPattern + uniqueFileName;
     }
 
@@ -133,16 +159,17 @@ public class FileStorageService {
         if (file == null || file.isEmpty()) {
             return avatarUrlPattern + "default.jpg";
         }
-
         String originalFileName = file.getOriginalFilename();
         String fileExtension = getFileExtension(originalFileName);
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
         String uniqueFileName = "user_" + userId + "_" + timestamp + fileExtension;
-
+        if (isGcs()) {
+            return uploadToGcs(file, "avatar", uniqueFileName);
+        }
         // Local storage implementation
         Path targetLocation = avatarStoragePath.resolve(uniqueFileName);
         Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
-        log.debug("💾 User avatar stored locally: {}", uniqueFileName);
+        log.debug(" User avatar stored locally: {}", uniqueFileName);
         return avatarUrlPattern + uniqueFileName;
     }
 
@@ -169,7 +196,7 @@ public class FileStorageService {
 
         if (targetPath != null && Files.exists(targetPath)) {
             Files.delete(targetPath);
-            log.debug("💾 File deleted locally: {}", fileName);
+            log.debug(" File deleted locally: {}", fileName);
         }
     }
 
@@ -190,11 +217,13 @@ public class FileStorageService {
         String originalFilename = file.getOriginalFilename();
         String fileExtension = getFileExtension(originalFilename);
         String fileName = fileKey + "_" + System.currentTimeMillis() + fileExtension;
-
+        if (isGcs()) {
+            return uploadToGcs(file, "config", fileName);
+        }
         // Local storage implementation
         Path targetLocation = configStoragePath.resolve(fileName);
         Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
-        log.debug("💾 Config image stored locally: {}", fileName);
+        log.debug(" Config image stored locally: {}", fileName);
         return configUrlPattern + fileName;
     }
 
@@ -211,6 +240,11 @@ public class FileStorageService {
 
     // Helper method for health checks
     public String getStorageInfo() {
-        return "💾 Local File Storage (Render optimized)";
+        return " Local File Storage (Render optimized)";
+    }
+
+    // Helper: check if using GCS
+    private boolean isGcs() {
+        return "gcs".equalsIgnoreCase(storageType) && gcsBucketName != null && !gcsBucketName.isEmpty();
     }
 }
