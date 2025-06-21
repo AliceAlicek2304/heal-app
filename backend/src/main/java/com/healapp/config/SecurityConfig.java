@@ -50,7 +50,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                 // ========= PUBLIC ENDPOINTS =========
                 // Static resources
-                .requestMatchers("/img/**").permitAll() // API Authentication & User Management
+                .requestMatchers("/img/**").permitAll()
+                .requestMatchers("/uploads/avatar/**").permitAll() // Cho phép truy cập công khai avatar
+                // API Authentication & User Management
                 .requestMatchers("/users/register", "/users/login", "/users/logout",
                         "/users/forgot-password", "/users/reset-password", "/users/send-verification")
                 .permitAll()
