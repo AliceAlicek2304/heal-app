@@ -286,7 +286,8 @@ export const authService = {
     getAvatarUrl: (avatarPath) => {
         if (!avatarPath) return `${API_BASE_URL}/uploads/avatar/default.jpg`;
         if (avatarPath.startsWith('http')) return avatarPath;
-        if (avatarPath.startsWith('/uploads/')) return `${API_BASE_URL}${avatarPath}`;
+        // Nếu backend trả về path đã bắt đầu bằng /img/avatar hoặc /uploads/avatar thì render nguyên xi
+        if (avatarPath.startsWith('/uploads/avatar') || avatarPath.startsWith('/img/avatar')) return `${API_BASE_URL}${avatarPath}`;
         return `${API_BASE_URL}/uploads/avatar/${avatarPath}`;
     },
 
