@@ -25,14 +25,6 @@ public class WebConfig implements WebMvcConfigurer {
     }
 
     @Override
-    public void addCorsMappings(org.springframework.web.servlet.config.annotation.CorsRegistry registry) {
-        registry.addMapping("/**")
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .allowCredentials(true);
-    }
-
-    @Override
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
         // Tạo JSON converter hỗ trợ application/octet-stream
         MappingJackson2HttpMessageConverter jsonConverter = new MappingJackson2HttpMessageConverter();
