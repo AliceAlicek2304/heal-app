@@ -153,6 +153,19 @@ const Navbar = () => {
         return user?.fullName || user?.username || 'User';
     };
 
+    // Helper lấy avatar URL thống nhất
+    const getAvatarUrl = (avatarPath) => {
+        const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+        if (!avatarPath || typeof avatarPath !== 'string' || !avatarPath.trim()) {
+            return `${API_BASE_URL}/uploads/avatar/default.jpg`;
+        }
+        if (/^https?:\/\//.test(avatarPath)) return avatarPath;
+        if (avatarPath.startsWith('/uploads/avatar') || avatarPath.startsWith('/img/avatar')) {
+            return `${API_BASE_URL}${avatarPath}`;
+        }
+        return `${API_BASE_URL}/uploads/avatar/${avatarPath}`;
+    };
+
     return (
         <>
             <nav className={styles.navbar}>
@@ -297,30 +310,11 @@ const Navbar = () => {
                                     onClick={toggleUserDropdown}
                                 >
                                     <img
-                                        src={(() => {
-                                            if (user?.avatar) {
-                                                if (/^https?:\/\//.test(user.avatar)) {
-                                                    return user.avatar;
-                                                } else if (user.avatar.startsWith('/')) {
-                                                    return process.env.REACT_APP_API_URL
-                                                        ? `${process.env.REACT_APP_API_URL}${user.avatar}`
-                                                        : `http://localhost:8080${user.avatar}`;
-                                                } else {
-                                                    return process.env.REACT_APP_API_URL
-                                                        ? `${process.env.REACT_APP_API_URL}/uploads/avatar/${user.avatar}`
-                                                        : `http://localhost:8080/uploads/avatar/${user.avatar}`;
-                                                }
-                                            }
-                                            return process.env.REACT_APP_API_URL
-                                                ? `${process.env.REACT_APP_API_URL}/uploads/avatar/default.jpg`
-                                                : `http://localhost:8080/uploads/avatar/default.jpg`;
-                                        })()}
+                                        src={getAvatarUrl(user?.avatar)}
                                         alt={getDisplayName(user)}
                                         className={styles.userAvatar}
                                         onError={(e) => {
-                                            const backendDefault = process.env.REACT_APP_API_URL
-                                                ? `${process.env.REACT_APP_API_URL}/uploads/avatar/default.jpg`
-                                                : 'http://localhost:8080/uploads/avatar/default.jpg';
+                                            const backendDefault = getAvatarUrl();
                                             if (e.target.src !== backendDefault) {
                                                 e.target.src = backendDefault;
                                             }
@@ -336,30 +330,11 @@ const Navbar = () => {
                                     <div className={styles.userDropdown}>
                                         <div className={styles.dropdownHeader}>
                                             <img
-                                                src={(() => {
-                                                    if (user?.avatar) {
-                                                        if (/^https?:\/\//.test(user.avatar)) {
-                                                            return user.avatar;
-                                                        } else if (user.avatar.startsWith('/')) {
-                                                            return process.env.REACT_APP_API_URL
-                                                                ? `${process.env.REACT_APP_API_URL}${user.avatar}`
-                                                                : `http://localhost:8080${user.avatar}`;
-                                                        } else {
-                                                            return process.env.REACT_APP_API_URL
-                                                                ? `${process.env.REACT_APP_API_URL}/uploads/avatar/${user.avatar}`
-                                                                : `http://localhost:8080/uploads/avatar/${user.avatar}`;
-                                                        }
-                                                    }
-                                                    return process.env.REACT_APP_API_URL
-                                                        ? `${process.env.REACT_APP_API_URL}/uploads/avatar/default.jpg`
-                                                        : `http://localhost:8080/uploads/avatar/default.jpg`;
-                                                })()}
+                                                src={getAvatarUrl(user?.avatar)}
                                                 alt={getDisplayName(user)}
                                                 className={styles.dropdownAvatar}
                                                 onError={(e) => {
-                                                    const backendDefault = process.env.REACT_APP_API_URL
-                                                        ? `${process.env.REACT_APP_API_URL}/uploads/avatar/default.jpg`
-                                                        : 'http://localhost:8080/uploads/avatar/default.jpg';
+                                                    const backendDefault = getAvatarUrl();
                                                     if (e.target.src !== backendDefault) {
                                                         e.target.src = backendDefault;
                                                     }

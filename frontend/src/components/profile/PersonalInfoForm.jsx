@@ -17,6 +17,17 @@ const PersonalInfoForm = () => {
     const [avatarFile, setAvatarFile] = useState(null);
     const [avatarPreview, setAvatarPreview] = useState('');
 
+    // Helper function to build avatar URL (unified with UserManagement)
+    const getAvatarUrl = (avatarPath) => {
+        const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+        if (!avatarPath) return `${API_BASE_URL}/uploads/avatar/default.jpg`;
+        if (/^https?:\/\//.test(avatarPath)) return avatarPath;
+        if (avatarPath.startsWith('/uploads/avatar') || avatarPath.startsWith('/img/avatar')) {
+            return `${API_BASE_URL}${avatarPath}`;
+        }
+        return `${API_BASE_URL}/uploads/avatar/${avatarPath}`;
+    };
+
     const setUserDataToForm = useCallback((userData) => {
         // Xử lý birthDay
         let formattedBirthDay = '';
@@ -199,32 +210,11 @@ const PersonalInfoForm = () => {
                     <div className={styles.avatarContainer}>
                         <div className={styles.avatarImageWrapper}>
                             <img
-                                src={(() => {
-                                    // Robust avatar URL logic for preview and user avatar
-                                    if (avatarPreview) return avatarPreview;
-                                    if (user?.avatar) {
-                                        if (/^https?:\/\//.test(user.avatar)) {
-                                            return user.avatar;
-                                        } else if (user.avatar.startsWith('/')) {
-                                            return process.env.REACT_APP_API_URL
-                                                ? `${process.env.REACT_APP_API_URL}${user.avatar}`
-                                                : `http://localhost:8080${user.avatar}`;
-                                        } else {
-                                            return process.env.REACT_APP_API_URL
-                                                ? `${process.env.REACT_APP_API_URL}/uploads/avatar/${user.avatar}`
-                                                : `http://localhost:8080/uploads/avatar/${user.avatar}`;
-                                        }
-                                    }
-                                    return process.env.REACT_APP_API_URL
-                                        ? `${process.env.REACT_APP_API_URL}/uploads/avatar/default.jpg`
-                                        : `http://localhost:8080/uploads/avatar/default.jpg`;
-                                })()}
+                                src={avatarPreview || authService.getAvatarUrl(user?.avatar)}
                                 alt="Avatar"
                                 className={styles.avatarImage}
                                 onError={(e) => {
-                                    const backendDefault = process.env.REACT_APP_API_URL
-                                        ? `${process.env.REACT_APP_API_URL}/uploads/avatar/default.jpg`
-                                        : `http://localhost:8080/uploads/avatar/default.jpg`;
+                                    const backendDefault = authService.getAvatarUrl();
                                     if (e.target.src !== backendDefault) {
                                         e.target.src = backendDefault;
                                     }

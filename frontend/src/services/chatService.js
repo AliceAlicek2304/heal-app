@@ -5,18 +5,7 @@ export const chatService = {
     // Gửi câu hỏi đến chatbot
     sendMessage: async (message) => {
         try {
-            const body = {
-                contents: [
-                    {
-                        parts: [{ text: message }],
-                        role: 'user'
-                    }
-                ],
-                generationConfig: {
-                    temperature: 0.7,
-                    maxOutputTokens: 800
-                }
-            };
+            const body = { userQuestion: message };
             const response = await authService.apiCall(`${API_BASE_URL}/chatbot`, {
                 method: 'POST',
                 body: JSON.stringify(body)

@@ -7,25 +7,19 @@ import styles from './SidebarNav.module.css';
 const SidebarNav = ({ activeTab }) => {
     const { user } = useAuth();
 
-    // Avatar URL logic: handle absolute, relative, and filename cases robustly
-    let avatarUrl = '';
-    if (user?.avatar) {
-        if (/^https?:\/\//.test(user.avatar)) {
-            avatarUrl = user.avatar;
-        } else if (user.avatar.startsWith('/')) {
-            avatarUrl = (process.env.REACT_APP_API_URL
-                ? `${process.env.REACT_APP_API_URL}${user.avatar}`
-                : `http://localhost:8080${user.avatar}`);
-        } else {
-            avatarUrl = (process.env.REACT_APP_API_URL
-                ? `${process.env.REACT_APP_API_URL}/uploads/avatar/${user.avatar}`
-                : `http://localhost:8080/uploads/avatar/${user.avatar}`);
+    // Avatar URL logic: dùng helper thống nhất
+    const getAvatarUrl = (avatarPath) => {
+        const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+        if (!avatarPath || typeof avatarPath !== 'string' || !avatarPath.trim()) {
+            return `${API_BASE_URL}/uploads/avatar/default.jpg`;
         }
-    } else {
-        avatarUrl = (process.env.REACT_APP_API_URL
-            ? `${process.env.REACT_APP_API_URL}/uploads/avatar/default.jpg`
-            : 'http://localhost:8080/uploads/avatar/default.jpg');
-    }
+        if (/^https?:\/\//.test(avatarPath)) return avatarPath;
+        if (avatarPath.startsWith('/uploads/avatar') || avatarPath.startsWith('/img/avatar')) {
+            return `${API_BASE_URL}${avatarPath}`;
+        }
+        return `${API_BASE_URL}/uploads/avatar/${avatarPath}`;
+    };
+    const avatarUrl = getAvatarUrl(user?.avatar);
 
     // Kiểm tra role của user
     const isStaff = user?.role === 'STAFF';
@@ -41,9 +35,7 @@ const SidebarNav = ({ activeTab }) => {
                         alt="Avatar"
                         className={styles.avatar}
                         onError={(e) => {
-                            const backendDefault = process.env.REACT_APP_API_URL
-                                ? `${process.env.REACT_APP_API_URL}/uploads/avatar/default.jpg`
-                                : 'http://localhost:8080/uploads/avatar/default.jpg';
+                            const backendDefault = getAvatarUrl();
                             if (e.target.src !== backendDefault) {
                                 e.target.src = backendDefault;
                             }
