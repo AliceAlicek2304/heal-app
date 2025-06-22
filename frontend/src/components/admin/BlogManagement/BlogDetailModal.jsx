@@ -35,23 +35,17 @@ const BlogDetailModal = ({ blog, onClose }) => {
                 <div className={styles.content}>
                     {/* Blog Header */}
                     <div className={styles.blogHeader}>
-                        {blog.thumbnailImage && (
-                            <div className={styles.thumbnailContainer}>
-                                <img
-                                    src={require('../../../services/blogService').blogService.getBlogImageUrl(blog.thumbnailImage.replace(/^.*[\\/]/, ''))}
-                                    alt={blog.title}
-                                    className={styles.thumbnail}
-                                    onError={(e) => {
-                                        e.target.style.display = 'none';
-                                        e.target.nextSibling.style.display = 'flex';
-                                    }}
-                                />
-                                <div className={styles.noImage} style={{ display: 'none' }}>
-                                    <FaImage className={styles.noImageIcon} />
-                                    <span>Không có hình ảnh</span>
-                                </div>
-                            </div>
-                        )}
+                        {blog.thumbnailImage ? (
+                            <img
+                                src={require('../../../services/blogService').blogService.getBlogImageUrl(blog.thumbnailImage)}
+                                alt={blog.title}
+                                className={styles.thumbnail}
+                                onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    e.target.nextSibling.style.display = 'flex';
+                                }}
+                            />
+                        ) : null}
 
                         <div className={styles.blogMeta}>
                             <h1 className={styles.blogTitle}>{blog.title}</h1>
@@ -115,7 +109,7 @@ const BlogDetailModal = ({ blog, onClose }) => {
                                         {(section.sectionImageUrl || section.sectionImage) && (
                                             <div className={styles.sectionImageContainer}>
                                                 <img
-                                                    src={require('../../../services/blogService').blogService.getBlogImageUrl((section.sectionImageUrl || section.sectionImage).replace(/^.*[\\/]/, ''))}
+                                                    src={require('../../../services/blogService').blogService.getBlogImageUrl(section.sectionImageUrl || section.sectionImage)}
                                                     alt={section.sectionTitle || `Section ${index + 1}`}
                                                     className={styles.sectionImage}
                                                     onError={(e) => {

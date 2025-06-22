@@ -162,7 +162,7 @@ const BlogManagement = () => {
                                 <div className={styles.blogImage}>
                                     {blog.thumbnailImage ? (
                                         <img
-                                            src={require('../../../services/blogService').blogService.getBlogImageUrl(blog.thumbnailImage.replace(/^.*[\\/]/, ''))}
+                                            src={require('../../../services/blogService').blogService.getBlogImageUrl(blog.thumbnailImage)}
                                             alt={blog.title}
                                             className={styles.thumbnail}
                                             onError={(e) => {
@@ -176,23 +176,24 @@ const BlogManagement = () => {
                                     </div>
                                 </div>
 
-                                <div className={styles.blogContent}>                                <div className={styles.blogMeta}>
-                                    {blog.categoryName && (
-                                        <span className={styles.category}>
-                                            <FaTag className={styles.categoryIcon} />
-                                            {blog.categoryName}
+                                <div className={styles.blogContent}>
+                                    <div className={styles.blogMeta}>
+                                        {blog.categoryName && (
+                                            <span className={styles.category}>
+                                                <FaTag className={styles.categoryIcon} />
+                                                {blog.categoryName}
+                                            </span>
+                                        )}
+                                        <span className={styles.date}>
+                                            <FaCalendarAlt className={styles.dateIcon} />
+                                            {formatDateTime(blog.createdAt)}
                                         </span>
-                                    )}
-                                    <span className={styles.date}>
-                                        <FaCalendarAlt className={styles.dateIcon} />
-                                        {formatDateTime(blog.createdAt)}
-                                    </span>
-                                    {blog.status && (
-                                        <span className={`${styles.status} ${styles[`status${blog.status}`]}`}>
-                                            {getStatusLabel(blog.status)}
-                                        </span>
-                                    )}
-                                </div>
+                                        {blog.status && (
+                                            <span className={`${styles.status} ${styles[`status${blog.status}`]}`}>
+                                                {getStatusLabel(blog.status)}
+                                            </span>
+                                        )}
+                                    </div>
 
                                     <h3 className={styles.blogTitle}>
                                         {truncateText(blog.title, 80)}
