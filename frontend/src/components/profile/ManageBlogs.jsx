@@ -592,13 +592,18 @@ const ManageBlogs = () => {
                                     <line x1="6" y1="6" x2="18" y2="18"></line>
                                 </svg>
                             </button>
-                        </div>                        <div className={styles.modalBody}>
+                        </div>
+                        <div className={styles.modalBody}>
                             {/* Blog Header with Thumbnail */}
                             {selectedBlog.thumbnailImage && (
                                 <div className={styles.blogHeader}>
                                     <div className={styles.thumbnailContainer}>
                                         <img
-                                            src={`http://localhost:8080${selectedBlog.thumbnailImage}`}
+                                            src={
+                                                selectedBlog.thumbnailImage.startsWith('http')
+                                                    ? selectedBlog.thumbnailImage
+                                                    : blogService.getBlogImageUrl(selectedBlog.thumbnailImage)
+                                            }
                                             alt={selectedBlog.title}
                                             className={styles.thumbnail}
                                             onError={(e) => {

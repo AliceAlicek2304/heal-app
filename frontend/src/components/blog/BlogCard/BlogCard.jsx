@@ -42,7 +42,7 @@ const BlogCard = ({ post, truncateContent }) => {
         <article className={styles.blogCard} onClick={handleReadMore}>
             <div className={styles.blogCardImage}>
                 <img
-                    src={blogService.getBlogImageUrl(post.thumbnailImage ? post.thumbnailImage.replace(/^.*[\\/]/, '') : '')}
+                    src={blogService.getBlogImageUrl(post.thumbnailImage)}
                     alt={post.title}
                     onError={(e) => {
                         e.target.src = blogService.getBlogImageUrl('/img/blog/default.jpg');
