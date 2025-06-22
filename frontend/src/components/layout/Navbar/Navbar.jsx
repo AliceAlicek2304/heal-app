@@ -153,7 +153,7 @@ const Navbar = () => {
         return user?.fullName || user?.username || 'User';
     };
 
-    // Helper lấy avatar URL thống nhất
+    // Helper lấy avatar URL thống nhất (giống authService)
     const getAvatarUrl = (avatarPath) => {
         const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
         if (!avatarPath || typeof avatarPath !== 'string' || !avatarPath.trim()) {

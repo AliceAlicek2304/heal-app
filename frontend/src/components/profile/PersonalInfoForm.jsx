@@ -17,10 +17,12 @@ const PersonalInfoForm = () => {
     const [avatarFile, setAvatarFile] = useState(null);
     const [avatarPreview, setAvatarPreview] = useState('');
 
-    // Helper function to build avatar URL (unified with UserManagement)
+    // Helper function to build avatar URL (dùng chung toàn app, giống authService)
     const getAvatarUrl = (avatarPath) => {
         const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-        if (!avatarPath) return `${API_BASE_URL}/uploads/avatar/default.jpg`;
+        if (!avatarPath || typeof avatarPath !== 'string' || !avatarPath.trim()) {
+            return `${API_BASE_URL}/uploads/avatar/default.jpg`;
+        }
         if (/^https?:\/\//.test(avatarPath)) return avatarPath;
         if (avatarPath.startsWith('/uploads/avatar') || avatarPath.startsWith('/img/avatar')) {
             return `${API_BASE_URL}${avatarPath}`;
@@ -210,11 +212,11 @@ const PersonalInfoForm = () => {
                     <div className={styles.avatarContainer}>
                         <div className={styles.avatarImageWrapper}>
                             <img
-                                src={avatarPreview || authService.getAvatarUrl(user?.avatar)}
+                                src={avatarPreview || getAvatarUrl(user?.avatar)}
                                 alt="Avatar"
                                 className={styles.avatarImage}
                                 onError={(e) => {
-                                    const backendDefault = authService.getAvatarUrl();
+                                    const backendDefault = getAvatarUrl();
                                     if (e.target.src !== backendDefault) {
                                         e.target.src = backendDefault;
                                     }

@@ -7,7 +7,7 @@ import styles from './SidebarNav.module.css';
 const SidebarNav = ({ activeTab }) => {
     const { user } = useAuth();
 
-    // Avatar URL logic: dùng helper thống nhất
+    // Avatar URL logic: dùng helper thống nhất (giống authService)
     const getAvatarUrl = (avatarPath) => {
         const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
         if (!avatarPath || typeof avatarPath !== 'string' || !avatarPath.trim()) {
