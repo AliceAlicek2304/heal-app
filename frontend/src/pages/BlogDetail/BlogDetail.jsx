@@ -156,7 +156,7 @@ const BlogDetail = () => {
                                     )}                                    {section.sectionImage && (
                                         <div className={styles.sectionImage}>
                                             <img
-                                                src={blogService.getBlogImageUrl(section.sectionImage)}
+                                                src={blogService.getBlogImageUrl(section.sectionImage.replace(/^.*[\\/]/, ''))}
                                                 alt={section.sectionTitle || "Section image"}
                                                 onError={(e) => {
                                                     e.target.src = blogService.getBlogImageUrl('/img/blog/default.jpg');

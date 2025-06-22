@@ -679,7 +679,7 @@ const ManageBlogs = () => {
                                                 {(section.sectionImageUrl || section.sectionImage) && (
                                                     <div className={styles.sectionImageContainer}>
                                                         <img
-                                                            src={`http://localhost:8080${section.sectionImageUrl || section.sectionImage}`}
+                                                            src={`/uploads/blog/${(section.sectionImageUrl || section.sectionImage)?.replace(/^.*[\\/]/, '')}`}
                                                             alt={section.sectionTitle || `Section ${index + 1}`}
                                                             className={styles.sectionImage}
                                                             onError={(e) => {

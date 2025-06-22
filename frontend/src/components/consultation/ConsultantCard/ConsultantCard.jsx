@@ -14,7 +14,7 @@ const ConsultantCard = ({ consultant, onBookConsultation, onViewDetails, onAuthR
 
     const handleViewDetails = () => {
         onViewDetails(consultant);
-    };    const handleRatingClick = () => {
+    }; const handleRatingClick = () => {
         setShowRatingModal(true);
     };
 
@@ -24,12 +24,13 @@ const ConsultantCard = ({ consultant, onBookConsultation, onViewDetails, onAuthR
     };
 
     const getAvatarUrl = (avatar) => {
-        if (!avatar) return '/img/avatar/default.jpg';
-
+        if (!avatar) return authService.getAvatarUrl('/img/avatar/default.jpg');
+        // Nếu avatar đã là url tuyệt đối thì giữ nguyên
         if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
             return avatar;
         }
-        return authService.getAvatarUrl(avatar);
+        // Luôn dùng authService.getAvatarUrl để sinh url đúng chuẩn backend
+        return authService.getAvatarUrl(avatar.replace(/^.*[\\/]/, ''));
     };
 
     const handleAvatarError = (e) => {
@@ -39,7 +40,7 @@ const ConsultantCard = ({ consultant, onBookConsultation, onViewDetails, onAuthR
         if (!text) return '';
         if (text.length <= maxLength) return text;
         return text.substring(0, maxLength) + '...';
-    };    return (
+    }; return (
         <>
             <div className={styles.consultantCard}>
                 <div className={styles.consultantInfo}>

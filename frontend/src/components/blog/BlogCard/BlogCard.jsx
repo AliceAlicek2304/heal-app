@@ -39,46 +39,47 @@ const BlogCard = ({ post, truncateContent }) => {
     };
 
     return (
-        <article className={styles.blogCard} onClick={handleReadMore}>            <div className={styles.blogCardImage}>
-            <img
-                src={blogService.getBlogImageUrl(post.thumbnailImage)}
-                alt={post.title}
-                onError={(e) => {
-                    e.target.src = blogService.getBlogImageUrl('/img/blog/default.jpg');
-                }}
-            />
+        <article className={styles.blogCard} onClick={handleReadMore}>
+            <div className={styles.blogCardImage}>
+                <img
+                    src={blogService.getBlogImageUrl(post.thumbnailImage ? post.thumbnailImage.replace(/^.*[\\/]/, '') : '')}
+                    alt={post.title}
+                    onError={(e) => {
+                        e.target.src = blogService.getBlogImageUrl('/img/blog/default.jpg');
+                    }}
+                />
 
-            {post.status && post.status !== 'CONFIRMED' && (
-                <div className={`${styles.statusBadge} ${styles[getBlogStatusBadge(post.status).class]}`}>
-                    <div className={styles.statusIcon}>
-                        {post.status === 'PROCESSING' && (
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <path d="M12 6v6l4 2"></path>
-                            </svg>
-                        )}
-                        {post.status === 'CANCELED' && (
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="15" y1="9" x2="9" y2="15"></line>
-                                <line x1="9" y1="9" x2="15" y2="15"></line>
-                            </svg>
-                        )}
+                {post.status && post.status !== 'CONFIRMED' && (
+                    <div className={`${styles.statusBadge} ${styles[getBlogStatusBadge(post.status).class]}`}>
+                        <div className={styles.statusIcon}>
+                            {post.status === 'PROCESSING' && (
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M12 6v6l4 2"></path>
+                                </svg>
+                            )}
+                            {post.status === 'CANCELED' && (
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                                </svg>
+                            )}
+                        </div>
+                        {getBlogStatusBadge(post.status).text}
                     </div>
-                    {getBlogStatusBadge(post.status).text}
-                </div>
-            )}
+                )}
 
-            <div className={styles.imageOverlay}>
-                <div className={styles.overlayContent}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
-                    <span>Xem chi tiết</span>
+                <div className={styles.imageOverlay}>
+                    <div className={styles.overlayContent}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        <span>Xem chi tiết</span>
+                    </div>
                 </div>
             </div>
-        </div>
 
             <div className={styles.blogCardContent}>
                 <div className={styles.blogCardMeta}>

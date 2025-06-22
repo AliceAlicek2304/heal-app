@@ -247,6 +247,18 @@ const BlogHistory = () => {
                                             {statusInfo.text}
                                         </span>
                                     </div>
+                                    {post.thumbnailImage && (
+                                        <div className={styles.thumbnailWrapper}>
+                                            <img
+                                                src={require('../../services/blogService').blogService.getBlogImageUrl(post.thumbnailImage.replace(/^.*[\\/]/, ''))}
+                                                alt={post.title}
+                                                className={styles.thumbnail}
+                                                onError={(e) => {
+                                                    e.target.src = require('../../services/blogService').blogService.getBlogImageUrl('/img/blog/default.jpg');
+                                                }}
+                                            />
+                                        </div>
+                                    )}
                                     <div className={styles.cardMeta}>
                                         <span className={styles.postDate}>
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

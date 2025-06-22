@@ -156,68 +156,70 @@ const BlogManagement = () => {
                         <p>Hiện tại chưa có bài viết blog nào trong hệ thống.</p>
                     </div>
                 ) : (
-                    <div className={styles.blogsGrid}>                        {getCurrentPageItems().map((blog) => (
-                        <div key={blog.id} className={styles.blogCard}>                                <div className={styles.blogImage}>
-                            {blog.thumbnailImage ? (
-                                <img
-                                    src={`http://localhost:8080${blog.thumbnailImage}`}
-                                    alt={blog.title}
-                                    className={styles.thumbnail}
-                                    onError={(e) => {
-                                        e.target.style.display = 'none';
-                                        e.target.nextSibling.style.display = 'flex';
-                                    }}
-                                />
-                            ) : null}
-                            <div className={styles.noImage} style={{ display: blog.thumbnailImage ? 'none' : 'flex' }}>
-                                <FaImage className={styles.noImageIcon} />
-                            </div>
-                        </div>
-
-                            <div className={styles.blogContent}>                                <div className={styles.blogMeta}>
-                                {blog.categoryName && (
-                                    <span className={styles.category}>
-                                        <FaTag className={styles.categoryIcon} />
-                                        {blog.categoryName}
-                                    </span>
-                                )}
-                                <span className={styles.date}>
-                                    <FaCalendarAlt className={styles.dateIcon} />
-                                    {formatDateTime(blog.createdAt)}
-                                </span>
-                                {blog.status && (
-                                    <span className={`${styles.status} ${styles[`status${blog.status}`]}`}>
-                                        {getStatusLabel(blog.status)}
-                                    </span>
-                                )}
-                            </div>
-
-                                <h3 className={styles.blogTitle}>
-                                    {truncateText(blog.title, 80)}
-                                </h3>
-
-                                <p className={styles.blogExcerpt}>
-                                    {truncateText(blog.content, 120)}
-                                </p>
-
-                                <div className={styles.blogFooter}>
-                                    <div className={styles.author}>
-                                        <FaUser className={styles.authorIcon} />
-                                        <span>{blog.authorName || 'Admin'}</span>
+                    <div className={styles.blogsGrid}>
+                        {getCurrentPageItems().map((blog) => (
+                            <div key={blog.id} className={styles.blogCard}>
+                                <div className={styles.blogImage}>
+                                    {blog.thumbnailImage ? (
+                                        <img
+                                            src={require('../../../services/blogService').blogService.getBlogImageUrl(blog.thumbnailImage.replace(/^.*[\\/]/, ''))}
+                                            alt={blog.title}
+                                            className={styles.thumbnail}
+                                            onError={(e) => {
+                                                e.target.style.display = 'none';
+                                                e.target.nextSibling.style.display = 'flex';
+                                            }}
+                                        />
+                                    ) : null}
+                                    <div className={styles.noImage} style={{ display: blog.thumbnailImage ? 'none' : 'flex' }}>
+                                        <FaImage className={styles.noImageIcon} />
                                     </div>
+                                </div>
 
-                                    <button
-                                        className={styles.viewBtn}
-                                        onClick={() => handleViewDetail(blog)}
-                                        title="Xem chi tiết"
-                                    >
-                                        <FaEye />
-                                        Chi tiết
-                                    </button>
+                                <div className={styles.blogContent}>                                <div className={styles.blogMeta}>
+                                    {blog.categoryName && (
+                                        <span className={styles.category}>
+                                            <FaTag className={styles.categoryIcon} />
+                                            {blog.categoryName}
+                                        </span>
+                                    )}
+                                    <span className={styles.date}>
+                                        <FaCalendarAlt className={styles.dateIcon} />
+                                        {formatDateTime(blog.createdAt)}
+                                    </span>
+                                    {blog.status && (
+                                        <span className={`${styles.status} ${styles[`status${blog.status}`]}`}>
+                                            {getStatusLabel(blog.status)}
+                                        </span>
+                                    )}
+                                </div>
+
+                                    <h3 className={styles.blogTitle}>
+                                        {truncateText(blog.title, 80)}
+                                    </h3>
+
+                                    <p className={styles.blogExcerpt}>
+                                        {truncateText(blog.content, 120)}
+                                    </p>
+
+                                    <div className={styles.blogFooter}>
+                                        <div className={styles.author}>
+                                            <FaUser className={styles.authorIcon} />
+                                            <span>{blog.authorName || 'Admin'}</span>
+                                        </div>
+
+                                        <button
+                                            className={styles.viewBtn}
+                                            onClick={() => handleViewDetail(blog)}
+                                            title="Xem chi tiết"
+                                        >
+                                            <FaEye />
+                                            Chi tiết
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
                     </div>
                 )}
             </div>
