@@ -367,7 +367,7 @@ const SearchResults = () => {
                                                     onClick={() => navigate('/sti-testing', { state: { selectedPackageId: pkg.packageId } })}
                                                     style={{ cursor: 'pointer', color: '#1976d2', textDecoration: 'underline' }}
                                                     dangerouslySetInnerHTML={{
-                                                        __html: highlightSearchTerm(pkg.name, query)
+                                                        __html: highlightSearchTerm(pkg.packageName, query)
                                                     }}
                                                 />
                                                 <p
@@ -382,7 +382,7 @@ const SearchResults = () => {
                                                             <line x1="12" y1="1" x2="12" y2="23"></line>
                                                             <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                                                         </svg>
-                                                        {pkg.price?.toLocaleString('vi-VN')} VNĐ
+                                                        {pkg.packagePrice?.toLocaleString('vi-VN')} VNĐ
                                                     </span>
                                                     <span className={styles.category}>
                                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
