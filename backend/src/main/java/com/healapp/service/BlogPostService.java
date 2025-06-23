@@ -1,5 +1,15 @@
 package com.healapp.service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.BlogPostRequest;
 import com.healapp.dto.BlogPostResponse;
@@ -15,19 +25,10 @@ import com.healapp.repository.BlogPostRepository;
 import com.healapp.repository.BlogSectionRepository;
 import com.healapp.repository.CategoryRepository;
 import com.healapp.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class BlogPostService {
+
     @Autowired
     private BlogPostRepository blogPostRepository;
 
@@ -51,10 +52,10 @@ public class BlogPostService {
             // Kiểm tra vai trò tác giả
             UserDtls authorUser = author.get();
             String authorRole = authorUser.getRoleName();
-            if (!"CUSTOMER".equals(authorRole) &&
-                    !"CONSULTANT".equals(authorRole) &&
-                    !"STAFF".equals(authorRole) &&
-                    !"ADMIN".equals(authorRole)) {
+            if (!"CUSTOMER".equals(authorRole)
+                    && !"CONSULTANT".equals(authorRole)
+                    && !"STAFF".equals(authorRole)
+                    && !"ADMIN".equals(authorRole)) {
                 return ApiResponse.error("You do not have permission to create blog posts");
             }
 
@@ -117,11 +118,6 @@ public class BlogPostService {
             // kiểm tra tác dả
             if (!blogPost.getAuthor().getId().equals(userId)) {
                 return ApiResponse.error("Only the author can update this post");
-            }
-
-            // Kiểm tra trạng thái
-            if (blogPost.getStatus() == BlogPostStatus.CONFIRMED) {
-                return ApiResponse.error("Confirmed posts cannot be edited");
             }
 
             // Kiểm tra category
@@ -191,8 +187,8 @@ public class BlogPostService {
             }
 
             // Nếu từ chối bài viết cần có lý do
-            if (request.getStatus() == BlogPostStatus.CANCELED &&
-                    (request.getRejectionReason() == null || request.getRejectionReason().trim().isEmpty())) {
+            if (request.getStatus() == BlogPostStatus.CANCELED
+                    && (request.getRejectionReason() == null || request.getRejectionReason().trim().isEmpty())) {
                 return ApiResponse.error("Rejection reason is required when canceling a post");
             }
 
