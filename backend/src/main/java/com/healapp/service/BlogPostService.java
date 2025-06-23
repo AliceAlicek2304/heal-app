@@ -359,6 +359,13 @@ public class BlogPostService {
         response.setUpdatedAt(blogPost.getUpdatedAt());
         response.setStatus(blogPost.getStatus());
 
+        // Nếu không có thumbnailImage, trả về existingThumbnail là ảnh cũ (nếu có)
+        if (blogPost.getThumbnailImage() != null) {
+            response.setExistingThumbnail(blogPost.getThumbnailImage());
+        } else {
+            response.setExistingThumbnail(null);
+        }
+
         // Get sections for this blog post
         List<BlogSection> sections = blogSectionRepository
                 .findByBlogPostPostIdOrderByDisplayOrder(blogPost.getPostId());
@@ -371,6 +378,12 @@ public class BlogPostService {
                 sectionResponse.setSectionContent(section.getSectionContent());
                 sectionResponse.setSectionImage(section.getSectionImage());
                 sectionResponse.setDisplayOrder(section.getDisplayOrder());
+                // Nếu không có sectionImage, trả về existingSectionImage là ảnh cũ (nếu có)
+                if (section.getSectionImage() != null) {
+                    sectionResponse.setExistingSectionImage(section.getSectionImage());
+                } else {
+                    sectionResponse.setExistingSectionImage(null);
+                }
                 sectionResponses.add(sectionResponse);
             }
             response.setSections(sectionResponses);
