@@ -56,7 +56,16 @@ const STITesting = () => {
                 navigate(location.pathname, { replace: true });
             }
         }
-    }, [location.state, services, navigate, location.pathname]);
+        // Handle package selection from navigation state (e.g., from search results)
+        if (location.state?.selectedPackageId && packages.length > 0) {
+            const packageId = location.state.selectedPackageId;
+            const foundPackage = packages.find(pkg => pkg.packageId === packageId);
+            if (foundPackage) {
+                setSelectedPackageForDetails(foundPackage);
+                navigate(location.pathname, { replace: true });
+            }
+        }
+    }, [location.state, services, packages, navigate, location.pathname]);
 
     const handleAuthRequired = () => {
         openLoginModal();
