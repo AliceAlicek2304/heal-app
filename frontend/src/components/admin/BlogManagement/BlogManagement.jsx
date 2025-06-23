@@ -160,9 +160,9 @@ const BlogManagement = () => {
                         {getCurrentPageItems().map((blog) => (
                             <div key={blog.id} className={styles.blogCard}>
                                 <div className={styles.blogImage}>
-                                    {blog.thumbnailImage ? (
+                                    {(blog.thumbnailImage || blog.existingThumbnail) ? (
                                         <img
-                                            src={require('../../../services/blogService').blogService.getBlogImageUrl(blog.thumbnailImage)}
+                                            src={require('../../../services/blogService').blogService.getBlogImageUrl(blog.thumbnailImage || blog.existingThumbnail)}
                                             alt={blog.title}
                                             className={styles.thumbnail}
                                             onError={(e) => {
@@ -171,7 +171,7 @@ const BlogManagement = () => {
                                             }}
                                         />
                                     ) : null}
-                                    <div className={styles.noImage} style={{ display: blog.thumbnailImage ? 'none' : 'flex' }}>
+                                    <div className={styles.noImage} style={{ display: (blog.thumbnailImage || blog.existingThumbnail) ? 'none' : 'flex' }}>
                                         <FaImage className={styles.noImageIcon} />
                                     </div>
                                 </div>

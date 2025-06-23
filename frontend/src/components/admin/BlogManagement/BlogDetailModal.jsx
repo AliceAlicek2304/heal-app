@@ -35,9 +35,9 @@ const BlogDetailModal = ({ blog, onClose }) => {
                 <div className={styles.content}>
                     {/* Blog Header */}
                     <div className={styles.blogHeader}>
-                        {blog.thumbnailImage ? (
+                        {blog.thumbnailImage || blog.existingThumbnail ? (
                             <img
-                                src={require('../../../services/blogService').blogService.getBlogImageUrl(blog.thumbnailImage)}
+                                src={require('../../../services/blogService').blogService.getBlogImageUrl(blog.thumbnailImage || blog.existingThumbnail)}
                                 alt={blog.title}
                                 className={styles.thumbnail}
                                 onError={(e) => {
@@ -106,10 +106,10 @@ const BlogDetailModal = ({ blog, onClose }) => {
                                             </h4>
                                         )}
 
-                                        {(section.sectionImageUrl || section.sectionImage) && (
+                                        {(section.sectionImage || section.existingSectionImage) && (
                                             <div className={styles.sectionImageContainer}>
                                                 <img
-                                                    src={require('../../../services/blogService').blogService.getBlogImageUrl(section.sectionImageUrl || section.sectionImage)}
+                                                    src={require('../../../services/blogService').blogService.getBlogImageUrl(section.sectionImage || section.existingSectionImage)}
                                                     alt={section.sectionTitle || `Section ${index + 1}`}
                                                     className={styles.sectionImage}
                                                     onError={(e) => {

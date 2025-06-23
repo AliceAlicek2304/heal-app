@@ -149,26 +149,32 @@ const BlogDetail = () => {
                     <div className={styles.blogSections}>
                         {blogPost.sections
                             .sort((a, b) => a.displayOrder - b.displayOrder)
-                            .map((section) => (
-                                <div key={section.sectionId} className={styles.blogSection}>
-                                    {section.sectionTitle && (
-                                        <h2 className={styles.sectionTitle}>{section.sectionTitle}</h2>
-                                    )}                                    {section.sectionImage && (
-                                        <div className={styles.sectionImage}>
-                                            <img
-                                                src={blogService.getBlogImageUrl(section.sectionImage)}
-                                                alt={section.sectionTitle || "Section image"}
-                                                onError={(e) => {
-                                                    e.target.src = blogService.getBlogImageUrl('/img/blog/default.jpg');
-                                                }}
-                                            />
-                                        </div>
-                                    )}                                    <div
-                                        className={styles.sectionContent}
-                                        dangerouslySetInnerHTML={{ __html: formatTextForDisplay(section.sectionContent) }}
-                                    />
-                                </div>
-                            ))}
+                            .map((section) => {
+                                // Ưu tiên hiển thị section.sectionImage, nếu không có thì dùng section.existingSectionImage
+                                const displaySectionImage = section.sectionImage || section.existingSectionImage;
+                                return (
+                                    <div key={section.sectionId || section.id} className={styles.blogSection}>
+                                        {section.sectionTitle && (
+                                            <h2 className={styles.sectionTitle}>{section.sectionTitle}</h2>
+                                        )}
+                                        {displaySectionImage && (
+                                            <div className={styles.sectionImage}>
+                                                <img
+                                                    src={blogService.getBlogImageUrl(displaySectionImage)}
+                                                    alt={section.sectionTitle || "Section image"}
+                                                    onError={(e) => {
+                                                        e.target.src = blogService.getBlogImageUrl('/img/blog/default.jpg');
+                                                    }}
+                                                />
+                                            </div>
+                                        )}
+                                        <div
+                                            className={styles.sectionContent}
+                                            dangerouslySetInnerHTML={{ __html: formatTextForDisplay(section.sectionContent) }}
+                                        />
+                                    </div>
+                                );
+                            })}
                     </div>
                 )}
 
