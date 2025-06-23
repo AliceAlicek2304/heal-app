@@ -201,13 +201,18 @@ const EditBlog = () => {
                 content: cleanTextForStorage(formData.content),
                 categoryId: categoryIdNum, // Ensure it's a valid number
                 thumbnail: formData.thumbnail, // File hoặc null
+                // Nếu không upload ảnh mới, gửi tên file thumbnail cũ để backend giữ lại
+                ...(formData.thumbnail === null && originalPost?.thumbnailImage ? { existingThumbnail: originalPost.thumbnailImage } : {}),
                 sections: formData.sections.map((section, index) => ({
                     sectionTitle: section.sectionTitle.trim(),
                     sectionContent: cleanTextForStorage(section.sectionContent),
                     displayOrder: index,
-                    sectionImage: section.sectionImage // File hoặc null
+                    sectionImage: section.sectionImage, // File hoặc null
+                    // Nếu không upload ảnh mới cho section, gửi tên file ảnh cũ để backend giữ lại
+                    ...(section.sectionImage === null && section.existingSectionImageUrl ? { existingSectionImage: section.existingSectionImageUrl } : {})
                 }))
-            }; const response = await blogService.updateBlogPost(postId, submissionData);
+            };
+            const response = await blogService.updateBlogPost(postId, submissionData);
 
             if (response.success) {
                 addToast('Cập nhật bài viết thành công!', 'success');
