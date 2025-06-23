@@ -69,13 +69,6 @@ const EditBlog = () => {
                     })) || []
                 });
 
-                // Kiểm tra xem bài viết có thể chỉnh sửa không
-                if (post.status === 'CONFIRMED') {
-                    addToast('Bài viết đã được duyệt không thể chỉnh sửa', 'warning');
-                    navigate('/profile/blog-history');
-                    return;
-                }
-
                 // Set thumbnail preview nếu có
                 if (post.thumbnailImage) {
                     setThumbnailPreview(blogService.getBlogImageUrl(post.thumbnailImage));
