@@ -1,11 +1,13 @@
 package com.healapp.service;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -14,9 +16,8 @@ import org.springframework.stereotype.Service;
 import com.healapp.model.Consultation;
 import com.healapp.model.UserDtls;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 
 @Service
 public class EmailService {
@@ -28,6 +29,9 @@ public class EmailService {
 
     @Autowired
     private JavaMailSender mailSender;
+
+    @Value("${spring.mail.from}")
+    private String from;
 
     public void sendPasswordResetCode(String to, String code) throws MessagingException {
         MimeMessage message = createResetPasswordMessage(to, code);
@@ -48,22 +52,21 @@ public class EmailService {
     private MimeMessage createResetPasswordMessage(String to, String code) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
+        helper.setFrom(from);
         helper.setTo(to);
         helper.setSubject("Password Reset Verification Code");
 
         String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
-                +
-                "<h2 style='color: #4a6ee0;'>Password Reset</h2>" +
-                "<p>You have requested to reset your password. Please use the following verification code:</p>" +
-                "<div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0; " +
-                "text-align: center; font-size: 24px; letter-spacing: 5px; font-weight: bold;'>" +
-                code +
-                "</div>" +
-                "<p>This code will expire in 15 minutes.</p>" +
-                "<p>If you did not request a password reset, please ignore this email.</p>" +
-                "<p>Best regards,<br/>Heal App Team</p>" +
-                "</div>";
+                + "<h2 style='color: #4a6ee0;'>Password Reset</h2>"
+                + "<p>You have requested to reset your password. Please use the following verification code:</p>"
+                + "<div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0; "
+                + "text-align: center; font-size: 24px; letter-spacing: 5px; font-weight: bold;'>"
+                + code
+                + "</div>"
+                + "<p>This code will expire in 15 minutes.</p>"
+                + "<p>If you did not request a password reset, please ignore this email.</p>"
+                + "<p>Best regards,<br/>Heal App Team</p>"
+                + "</div>";
 
         helper.setText(htmlContent, true);
 
@@ -95,31 +98,30 @@ public class EmailService {
         String subject = "Xác nhận cuộc tư vấn #" + consultation.getConsultationId();
 
         String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
-                +
-                "<h2 style='color: #4a6ee0;'>Xác nhận cuộc tư vấn</h2>" +
-                "<p>Xin chào " + customer.getFullName() + ",</p>" +
-                "<p>Cuộc tư vấn của bạn đã được xác nhận với các thông tin sau:</p>" +
-                "<div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;'>" +
-                "<p><strong>Mã cuộc tư vấn:</strong> #" + consultation.getConsultationId() + "</p>" +
-                "<p><strong>Nhân viên tư vấn:</strong> " + staff.getFullName() + "</p>" +
-                "<p><strong>Ngày tư vấn:</strong> " + consultation.getStartTime().format(DATE_FORMATTER) + "</p>" +
-                "<p><strong>Thời gian:</strong> " + consultation.getStartTime().format(TIME_FORMATTER) +
-                " - " + consultation.getEndTime().format(TIME_FORMATTER) + "</p>" +
-                "</div>" +
-                "<p>Vui lòng tham gia cuộc tư vấn trực tuyến qua link Jitsi Meet sau:</p>" +
-                "<p><a href=\"" + consultation.getMeetUrl() + "\" style='display: inline-block; " +
-                "background-color: #4a6ee0; color: white; padding: 10px 20px; text-decoration: none; " +
-                "border-radius: 5px; font-weight: bold;'>Tham gia cuộc họp</a></p>" +
-                "<p><small>Hoặc copy link sau: " + consultation.getMeetUrl() + "</small></p>" +
-                "<h3>Hướng dẫn sử dụng Jitsi Meet:</h3>" +
-                "<ol>" +
-                "<li>Nhấn vào đường link trên vào đúng thời gian hẹn</li>" +
-                "<li>Cho phép trình duyệt truy cập camera và microphone</li>" +
-                "<li>Nhập tên của bạn và tham gia cuộc họp</li>" +
-                "</ol>" +
-                "<p>Nếu bạn cần hỗ trợ, vui lòng liên hệ chúng tôi qua email hoặc số điện thoại.</p>" +
-                "<p>Trân trọng,<br/>HealApp Team</p>" +
-                "</div>";
+                + "<h2 style='color: #4a6ee0;'>Xác nhận cuộc tư vấn</h2>"
+                + "<p>Xin chào " + customer.getFullName() + ",</p>"
+                + "<p>Cuộc tư vấn của bạn đã được xác nhận với các thông tin sau:</p>"
+                + "<div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;'>"
+                + "<p><strong>Mã cuộc tư vấn:</strong> #" + consultation.getConsultationId() + "</p>"
+                + "<p><strong>Nhân viên tư vấn:</strong> " + staff.getFullName() + "</p>"
+                + "<p><strong>Ngày tư vấn:</strong> " + consultation.getStartTime().format(DATE_FORMATTER) + "</p>"
+                + "<p><strong>Thời gian:</strong> " + consultation.getStartTime().format(TIME_FORMATTER)
+                + " - " + consultation.getEndTime().format(TIME_FORMATTER) + "</p>"
+                + "</div>"
+                + "<p>Vui lòng tham gia cuộc tư vấn trực tuyến qua link Jitsi Meet sau:</p>"
+                + "<p><a href=\"" + consultation.getMeetUrl() + "\" style='display: inline-block; "
+                + "background-color: #4a6ee0; color: white; padding: 10px 20px; text-decoration: none; "
+                + "border-radius: 5px; font-weight: bold;'>Tham gia cuộc họp</a></p>"
+                + "<p><small>Hoặc copy link sau: " + consultation.getMeetUrl() + "</small></p>"
+                + "<h3>Hướng dẫn sử dụng Jitsi Meet:</h3>"
+                + "<ol>"
+                + "<li>Nhấn vào đường link trên vào đúng thời gian hẹn</li>"
+                + "<li>Cho phép trình duyệt truy cập camera và microphone</li>"
+                + "<li>Nhập tên của bạn và tham gia cuộc họp</li>"
+                + "</ol>"
+                + "<p>Nếu bạn cần hỗ trợ, vui lòng liên hệ chúng tôi qua email hoặc số điện thoại.</p>"
+                + "<p>Trân trọng,<br/>HealApp Team</p>"
+                + "</div>";
 
         sendEmail(customer.getEmail(), subject, htmlContent);
     }
@@ -131,26 +133,25 @@ public class EmailService {
         String subject = "Xác nhận cuộc tư vấn với khách hàng #" + consultation.getConsultationId();
 
         String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
-                +
-                "<h2 style='color: #4a6ee0;'>Thông tin cuộc tư vấn</h2>" +
-                "<p>Xin chào " + consultant.getFullName() + ",</p>" +
-                "<p>Bạn có một cuộc tư vấn đã được xác nhận với khách hàng:</p>" +
-                "<div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;'>" +
-                "<p><strong>Mã cuộc tư vấn:</strong> #" + consultation.getConsultationId() + "</p>" +
-                "<p><strong>Khách hàng:</strong> " + customer.getFullName() + "</p>" +
-                "<p><strong>Email khách hàng:</strong> " + customer.getEmail() + "</p>" +
-                "<p><strong>Ngày tư vấn:</strong> " + consultation.getStartTime().format(DATE_FORMATTER) + "</p>" +
-                "<p><strong>Thời gian:</strong> " + consultation.getStartTime().format(TIME_FORMATTER) +
-                " - " + consultation.getEndTime().format(TIME_FORMATTER) + "</p>" +
-                "</div>" +
-                "<p>Link Jitsi Meet để tư vấn:</p>" +
-                "<p><a href=\"" + consultation.getMeetUrl() + "\" style='display: inline-block; " +
-                "background-color: #4a6ee0; color: white; padding: 10px 20px; text-decoration: none; " +
-                "border-radius: 5px; font-weight: bold;'>Tham gia cuộc họp</a></p>" +
-                "<p><small>Hoặc copy link sau: " + consultation.getMeetUrl() + "</small></p>" +
-                "<p>Vui lòng chuẩn bị và có mặt đúng giờ để đảm bảo chất lượng dịch vụ.</p>" +
-                "<p>Trân trọng,<br/>HealApp Team</p>" +
-                "</div>";
+                + "<h2 style='color: #4a6ee0;'>Thông tin cuộc tư vấn</h2>"
+                + "<p>Xin chào " + consultant.getFullName() + ",</p>"
+                + "<p>Bạn có một cuộc tư vấn đã được xác nhận với khách hàng:</p>"
+                + "<div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;'>"
+                + "<p><strong>Mã cuộc tư vấn:</strong> #" + consultation.getConsultationId() + "</p>"
+                + "<p><strong>Khách hàng:</strong> " + customer.getFullName() + "</p>"
+                + "<p><strong>Email khách hàng:</strong> " + customer.getEmail() + "</p>"
+                + "<p><strong>Ngày tư vấn:</strong> " + consultation.getStartTime().format(DATE_FORMATTER) + "</p>"
+                + "<p><strong>Thời gian:</strong> " + consultation.getStartTime().format(TIME_FORMATTER)
+                + " - " + consultation.getEndTime().format(TIME_FORMATTER) + "</p>"
+                + "</div>"
+                + "<p>Link Jitsi Meet để tư vấn:</p>"
+                + "<p><a href=\"" + consultation.getMeetUrl() + "\" style='display: inline-block; "
+                + "background-color: #4a6ee0; color: white; padding: 10px 20px; text-decoration: none; "
+                + "border-radius: 5px; font-weight: bold;'>Tham gia cuộc họp</a></p>"
+                + "<p><small>Hoặc copy link sau: " + consultation.getMeetUrl() + "</small></p>"
+                + "<p>Vui lòng chuẩn bị và có mặt đúng giờ để đảm bảo chất lượng dịch vụ.</p>"
+                + "<p>Trân trọng,<br/>HealApp Team</p>"
+                + "</div>";
 
         sendEmail(consultant.getEmail(), subject, htmlContent);
     }
@@ -162,23 +163,21 @@ public class EmailService {
     private MimeMessage createEmailVerificationMessage(String to, String code) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
+        helper.setFrom(from);
         helper.setTo(to);
         helper.setSubject("Xác thực email - HealApp");
 
         String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
-                +
-                "<h2 style='color: #4a6ee0;'>Xác thực địa chỉ email</h2>" +
-                "<p>Cảm ơn bạn đã đăng ký tài khoản tại HealApp. Để hoàn tất quá trình đăng ký, vui lòng nhập mã xác thực sau:</p>"
-                +
-                "<div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0; " +
-                "text-align: center; font-size: 24px; letter-spacing: 5px; font-weight: bold;'>" +
-                code +
-                "</div>" +
-                "<p>Mã xác thực có hiệu lực trong vòng 10 phút.</p>" +
-                "<p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.</p>" +
-                "<p>Trân trọng,<br/>HealApp Team</p>" +
-                "</div>";
+                + "<h2 style='color: #4a6ee0;'>Xác thực địa chỉ email</h2>"
+                + "<p>Cảm ơn bạn đã đăng ký tài khoản tại HealApp. Để hoàn tất quá trình đăng ký, vui lòng nhập mã xác thực sau:</p>"
+                + "<div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0; "
+                + "text-align: center; font-size: 24px; letter-spacing: 5px; font-weight: bold;'>"
+                + code
+                + "</div>"
+                + "<p>Mã xác thực có hiệu lực trong vòng 10 phút.</p>"
+                + "<p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.</p>"
+                + "<p>Trân trọng,<br/>HealApp Team</p>"
+                + "</div>";
 
         helper.setText(htmlContent, true);
 
@@ -260,28 +259,25 @@ public class EmailService {
             throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
+        helper.setFrom(from);
         helper.setTo(to);
         helper.setSubject("Nhắc nhở ngày rụng trứng - HealApp");
 
         String dateFormatted = ovulationDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
         String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
-                +
-                "<h2 style='color: #ff69b4;'>Nhắc nhở ngày rụng trứng</h2>" +
-                "<p>Xin chào " + fullName + ",</p>" +
-                "<p>Chúng tôi gửi email này để nhắc bạn rằng <strong>ngày mai (" + dateFormatted
-                + ")</strong> là ngày rụng trứng theo chu kỳ kinh nguyệt bạn đã theo dõi trên HealApp.</p>" +
-                "<div style='background-color: #fff0f5; padding: 15px; border-radius: 5px; margin: 20px 0;'>" +
-                "<p><strong>Thông tin:</strong></p>" +
-                "<p>Ngày rụng trứng: " + dateFormatted + "</p>" +
-                "<p>Đây là thời điểm quan trọng trong chu kỳ kinh nguyệt của bạn, là lúc cơ hội mang thai cao nhất nếu bạn đang có kế hoạch.</p>"
-                +
-                "</div>" +
-                "<p>Để biết thêm thông tin chi tiết về chu kỳ kinh nguyệt và sức khỏe sinh sản, bạn có thể truy cập HealApp hoặc tham khảo ý kiến từ các chuyên gia y tế của chúng tôi.</p>"
-                +
-                "<p>Trân trọng,<br/>HealApp Team</p>" +
-                "</div>";
+                + "<h2 style='color: #ff69b4;'>Nhắc nhở ngày rụng trứng</h2>"
+                + "<p>Xin chào " + fullName + ",</p>"
+                + "<p>Chúng tôi gửi email này để nhắc bạn rằng <strong>ngày mai (" + dateFormatted
+                + ")</strong> là ngày rụng trứng theo chu kỳ kinh nguyệt bạn đã theo dõi trên HealApp.</p>"
+                + "<div style='background-color: #fff0f5; padding: 15px; border-radius: 5px; margin: 20px 0;'>"
+                + "<p><strong>Thông tin:</strong></p>"
+                + "<p>Ngày rụng trứng: " + dateFormatted + "</p>"
+                + "<p>Đây là thời điểm quan trọng trong chu kỳ kinh nguyệt của bạn, là lúc cơ hội mang thai cao nhất nếu bạn đang có kế hoạch.</p>"
+                + "</div>"
+                + "<p>Để biết thêm thông tin chi tiết về chu kỳ kinh nguyệt và sức khỏe sinh sản, bạn có thể truy cập HealApp hoặc tham khảo ý kiến từ các chuyên gia y tế của chúng tôi.</p>"
+                + "<p>Trân trọng,<br/>HealApp Team</p>"
+                + "</div>";
 
         helper.setText(htmlContent, true);
         return message;
@@ -291,25 +287,22 @@ public class EmailService {
             throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
+        helper.setFrom(from);
         helper.setTo(to);
         helper.setSubject("Xác thực email mới - HealApp");
 
         String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
-                +
-                "<h2 style='color: #4a6ee0;'>Xác thực địa chỉ email mới</h2>" +
-                "<p>Xin chào " + fullName + ",</p>" +
-                "<p>Bạn đã yêu cầu thay đổi địa chỉ email cho tài khoản HealApp của mình. Để xác nhận địa chỉ email mới, vui lòng nhập mã xác thực sau:</p>"
-                +
-                "<div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0; " +
-                "text-align: center; font-size: 24px; letter-spacing: 5px; font-weight: bold;'>" +
-                code +
-                "</div>" +
-                "<p>Mã xác thực có hiệu lực trong vòng 10 phút.</p>" +
-                "<p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này và địa chỉ email của bạn sẽ không thay đổi.</p>"
-                +
-                "<p>Trân trọng,<br/>HealApp Team</p>" +
-                "</div>";
+                + "<h2 style='color: #4a6ee0;'>Xác thực địa chỉ email mới</h2>"
+                + "<p>Xin chào " + fullName + ",</p>"
+                + "<p>Bạn đã yêu cầu thay đổi địa chỉ email cho tài khoản HealApp của mình. Để xác nhận địa chỉ email mới, vui lòng nhập mã xác thực sau:</p>"
+                + "<div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0; "
+                + "text-align: center; font-size: 24px; letter-spacing: 5px; font-weight: bold;'>"
+                + code
+                + "</div>"
+                + "<p>Mã xác thực có hiệu lực trong vòng 10 phút.</p>"
+                + "<p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này và địa chỉ email của bạn sẽ không thay đổi.</p>"
+                + "<p>Trân trọng,<br/>HealApp Team</p>"
+                + "</div>";
 
         helper.setText(htmlContent, true);
         return message;
@@ -319,21 +312,20 @@ public class EmailService {
             throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
+        helper.setFrom(from);
         helper.setTo(oldEmail);
         helper.setSubject("Thông báo thay đổi email - HealApp");
 
         String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
-                +
-                "<h2 style='color: #4a6ee0;'>Thông báo thay đổi email</h2>" +
-                "<p>Xin chào " + fullName + ",</p>" +
-                "<p>Địa chỉ email cho tài khoản HealApp của bạn đã được thay đổi thành công.</p>" +
-                "<p><strong>Email cũ:</strong> " + oldEmail + "</p>" +
-                "<p><strong>Email mới:</strong> " + newEmail + "</p>" +
-                "<p>Từ bây giờ, bạn sẽ cần sử dụng email mới để đăng nhập vào tài khoản.</p>" +
-                "<p>Nếu bạn không thực hiện thay đổi này, vui lòng liên hệ với chúng tôi ngay lập tức.</p>" +
-                "<p>Trân trọng,<br/>HealApp Team</p>" +
-                "</div>";
+                + "<h2 style='color: #4a6ee0;'>Thông báo thay đổi email</h2>"
+                + "<p>Xin chào " + fullName + ",</p>"
+                + "<p>Địa chỉ email cho tài khoản HealApp của bạn đã được thay đổi thành công.</p>"
+                + "<p><strong>Email cũ:</strong> " + oldEmail + "</p>"
+                + "<p><strong>Email mới:</strong> " + newEmail + "</p>"
+                + "<p>Từ bây giờ, bạn sẽ cần sử dụng email mới để đăng nhập vào tài khoản.</p>"
+                + "<p>Nếu bạn không thực hiện thay đổi này, vui lòng liên hệ với chúng tôi ngay lập tức.</p>"
+                + "<p>Trân trọng,<br/>HealApp Team</p>"
+                + "</div>";
 
         helper.setText(htmlContent, true);
         return message;
@@ -343,25 +335,24 @@ public class EmailService {
             throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
+        helper.setFrom(from);
         helper.setTo(newEmail);
         helper.setSubject("Chào mừng đến với HealApp - Email đã được cập nhật");
 
         String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
-                +
-                "<h2 style='color: #4a6ee0;'>Email đã được cập nhật thành công</h2>" +
-                "<p>Xin chào " + fullName + ",</p>" +
-                "<p>Địa chỉ email cho tài khoản HealApp của bạn đã được cập nhật thành công sang: <strong>" + newEmail
-                + "</strong></p>" +
-                "<p>Từ bây giờ, bạn có thể sử dụng địa chỉ email này để:</p>" +
-                "<ul>" +
-                "<li>Đăng nhập vào tài khoản HealApp</li>" +
-                "<li>Nhận các thông báo và cập nhật từ hệ thống</li>" +
-                "<li>Khôi phục mật khẩu nếu cần</li>" +
-                "</ul>" +
-                "<p>Cảm ơn bạn đã sử dụng HealApp!</p>" +
-                "<p>Trân trọng,<br/>HealApp Team</p>" +
-                "</div>";
+                + "<h2 style='color: #4a6ee0;'>Email đã được cập nhật thành công</h2>"
+                + "<p>Xin chào " + fullName + ",</p>"
+                + "<p>Địa chỉ email cho tài khoản HealApp của bạn đã được cập nhật thành công sang: <strong>" + newEmail
+                + "</strong></p>"
+                + "<p>Từ bây giờ, bạn có thể sử dụng địa chỉ email này để:</p>"
+                + "<ul>"
+                + "<li>Đăng nhập vào tài khoản HealApp</li>"
+                + "<li>Nhận các thông báo và cập nhật từ hệ thống</li>"
+                + "<li>Khôi phục mật khẩu nếu cần</li>"
+                + "</ul>"
+                + "<p>Cảm ơn bạn đã sử dụng HealApp!</p>"
+                + "<p>Trân trọng,<br/>HealApp Team</p>"
+                + "</div>";
 
         helper.setText(htmlContent, true);
         return message;
@@ -371,30 +362,29 @@ public class EmailService {
             throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
+        helper.setFrom(from);
         helper.setTo(email);
         helper.setSubject("Thông báo thay đổi mật khẩu - HealApp");
 
         String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
-                +
-                "<h2 style='color: #4a6ee0;'>Mật khẩu đã được thay đổi</h2>" +
-                "<p>Xin chào " + fullName + ",</p>" +
-                "<p>Mật khẩu cho tài khoản HealApp của bạn đã được thay đổi thành công vào lúc: <strong>" +
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")) + "</strong></p>" +
-                "<p>Nếu bạn không thực hiện thay đổi này, vui lòng:</p>" +
-                "<ol>" +
-                "<li>Liên hệ với chúng tôi ngay lập tức</li>" +
-                "<li>Đặt lại mật khẩu của bạn</li>" +
-                "<li>Kiểm tra bảo mật tài khoản</li>" +
-                "</ol>" +
-                "<p>Để đảm bảo an toàn, chúng tôi khuyến nghị bạn:</p>" +
-                "<ul>" +
-                "<li>Sử dụng mật khẩu mạnh và duy nhất</li>" +
-                "<li>Không chia sẻ mật khẩu với bất kỳ ai</li>" +
-                "<li>Thay đổi mật khẩu định kỳ</li>" +
-                "</ul>" +
-                "<p>Trân trọng,<br/>HealApp Team</p>" +
-                "</div>";
+                + "<h2 style='color: #4a6ee0;'>Mật khẩu đã được thay đổi</h2>"
+                + "<p>Xin chào " + fullName + ",</p>"
+                + "<p>Mật khẩu cho tài khoản HealApp của bạn đã được thay đổi thành công vào lúc: <strong>"
+                + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")) + "</strong></p>"
+                + "<p>Nếu bạn không thực hiện thay đổi này, vui lòng:</p>"
+                + "<ol>"
+                + "<li>Liên hệ với chúng tôi ngay lập tức</li>"
+                + "<li>Đặt lại mật khẩu của bạn</li>"
+                + "<li>Kiểm tra bảo mật tài khoản</li>"
+                + "</ol>"
+                + "<p>Để đảm bảo an toàn, chúng tôi khuyến nghị bạn:</p>"
+                + "<ul>"
+                + "<li>Sử dụng mật khẩu mạnh và duy nhất</li>"
+                + "<li>Không chia sẻ mật khẩu với bất kỳ ai</li>"
+                + "<li>Thay đổi mật khẩu định kỳ</li>"
+                + "</ul>"
+                + "<p>Trân trọng,<br/>HealApp Team</p>"
+                + "</div>";
 
         helper.setText(htmlContent, true);
         return message;
@@ -463,7 +453,7 @@ public class EmailService {
     private void sendEmail(String to, String subject, String htmlContent) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
+        helper.setFrom(from);
         helper.setTo(to);
         helper.setSubject(subject);
         helper.setText(htmlContent, true);
