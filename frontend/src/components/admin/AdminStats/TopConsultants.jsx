@@ -147,13 +147,20 @@ const TopConsultants = () => {
                                     <td className={styles.consultantInfo}>
                                         <div className={styles.consultantDetails}>
                                             <img
-                                                src={consultant.avatar ? `http://localhost:8080${consultant.avatar}` : '/image/default-avatar.png'}
+                                                src={consultant.avatar ? getAvatarUrl(consultant.avatar) : '/image/default-avatar.png'}
                                                 alt={consultant.fullName}
                                                 className={styles.avatar}
                                                 onError={(e) => {
-                                                    e.target.src = '/image/default-avatar.png';
+                                                    e.target.style.display = 'none';
+                                                    e.target.nextSibling.style.display = 'flex';
                                                 }}
                                             />
+                                            <div
+                                                className={styles.avatarPlaceholder}
+                                                style={{ display: consultant.avatar ? 'none' : 'flex' }}
+                                            >
+                                                {consultant.fullName?.charAt(0)?.toUpperCase()}
+                                            </div>
                                             <div>
                                                 <div className={styles.name}>{consultant.fullName}</div>
                                                 <div className={styles.email}>{consultant.email}</div>
@@ -196,3 +203,14 @@ const TopConsultants = () => {
 };
 
 export default TopConsultants;
+
+// Helper function (add to this file or import from utils if shared)
+const getAvatarUrl = (avatarPath) => {
+    if (!avatarPath) return null;
+    const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+    if (avatarPath.startsWith('http')) return avatarPath;
+    if (avatarPath.startsWith('/uploads/avatar') || avatarPath.startsWith('/img/avatar')) {
+        return `${API_BASE_URL}${avatarPath}`;
+    }
+    return `${API_BASE_URL}/uploads/avatar/${avatarPath}`;
+};
