@@ -14,6 +14,15 @@ public class BlogSectionRequest {
     
     private String sectionImage;
     
+    private String existingSectionImage;
+    
     @NotNull(message = "Display order is required")
     private Integer displayOrder;
+
+    public String getExistingSectionImage() {
+        return existingSectionImage;
+    }
+    public void setExistingSectionImage(String existingSectionImage) {
+        this.existingSectionImage = existingSectionImage;
+    }
 }

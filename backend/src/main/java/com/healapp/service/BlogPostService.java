@@ -127,7 +127,14 @@ public class BlogPostService {
             } // Cập nhật bài viết
             blogPost.setTitle(request.getTitle());
             blogPost.setContent(request.getContent());
-            blogPost.setThumbnailImage(request.getThumbnailImage());
+            // Xử lý giữ lại thumbnail cũ nếu không upload mới
+            if (request.getThumbnailImage() != null) {
+                blogPost.setThumbnailImage(request.getThumbnailImage());
+            } else if (request.getExistingThumbnail() != null) {
+                blogPost.setThumbnailImage(request.getExistingThumbnail());
+            } else {
+                blogPost.setThumbnailImage(null);
+            }
             blogPost.setCategory(category.get());
             blogPost.setUpdatedAt(LocalDateTime.now());// PROCESSING sau khi cập nhật
             blogPost.setStatus(BlogPostStatus.PROCESSING);
@@ -149,7 +156,14 @@ public class BlogPostService {
                     section.setBlogPost(updatedPost);
                     section.setSectionTitle(sectionRequest.getSectionTitle());
                     section.setSectionContent(sectionRequest.getSectionContent());
-                    section.setSectionImage(sectionRequest.getSectionImage());
+                    // Xử lý giữ lại sectionImage cũ nếu không upload mới
+                    if (sectionRequest.getSectionImage() != null) {
+                        section.setSectionImage(sectionRequest.getSectionImage());
+                    } else if (sectionRequest.getExistingSectionImage() != null) {
+                        section.setSectionImage(sectionRequest.getExistingSectionImage());
+                    } else {
+                        section.setSectionImage(null);
+                    }
                     section.setDisplayOrder(sectionRequest.getDisplayOrder());
                     blogSectionRepository.save(section);
                 }
