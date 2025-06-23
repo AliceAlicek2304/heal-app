@@ -14,6 +14,7 @@ const SearchResults = () => {
         blogs: [],
         questions: [],
         stiServices: [],
+        packages: [],
         total: 0
     });
     const [loading, setLoading] = useState(false);
@@ -58,16 +59,33 @@ const SearchResults = () => {
                         }
                     };
                 }
+            } else if (searchType === 'package') {
+                response = await searchService.searchPackages(searchQuery);
+                if (response.success) {
+                    response = {
+                        success: true,
+                        data: {
+                            content: response.data,
+                            totalElements: response.data.length,
+                            totalPages: 1,
+                            size: response.data.length,
+                            number: 0
+                        }
+                    };
+                }
             } else {
                 // Tìm kiếm tổng hợp
-                response = await searchService.globalSearch(searchQuery, { page, size: 10 });
-
-                if (response.success) {
+                const [global, packages] = await Promise.all([
+                    searchService.globalSearch(searchQuery, { page, size: 10 }),
+                    searchService.searchPackages(searchQuery)
+                ]);
+                if (global.success) {
                     setResults({
-                        blogs: response.data.blogs || [],
-                        questions: response.data.questions || [],
-                        stiServices: response.data.stiServices || [],
-                        total: response.data.totalElements || 0
+                        blogs: global.data.blogs || [],
+                        questions: global.data.questions || [],
+                        stiServices: global.data.stiServices || [],
+                        packages: packages.success ? packages.data : [],
+                        total: (global.data.totalElements || 0) + (packages.success ? packages.data.length : 0)
                     });
                     return;
                 }
@@ -81,18 +99,19 @@ const SearchResults = () => {
                         blogs: searchType === 'blog' ? response.data.content || [] : [],
                         questions: searchType === 'question' ? response.data.content || [] : [],
                         stiServices: searchType === 'sti' ? response.data.content || [] : [],
+                        packages: searchType === 'package' ? response.data.content || [] : [],
                         total: response.data.totalElements || 0
                     });
                     setTotalPages(response.data.totalPages || 0);
                     setCurrentPage(page);
                 }
             } else {
-                setResults({ blogs: [], questions: [], stiServices: [], total: 0 });
+                setResults({ blogs: [], questions: [], stiServices: [], packages: [], total: 0 });
                 toast.error(response.message || 'Không tìm thấy kết quả');
             }
         } catch (error) {
             toast.error('Có lỗi xảy ra khi tìm kiếm');
-            setResults({ blogs: [], questions: [], stiServices: [], total: 0 });
+            setResults({ blogs: [], questions: [], stiServices: [], packages: [], total: 0 });
         } finally {
             setLoading(false);
         }
@@ -183,6 +202,16 @@ const SearchResults = () => {
                             <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                         Dịch vụ STI ({results.stiServices.length})
+                    </button>
+                    <button
+                        className={`${styles.tabBtn} ${activeTab === 'package' ? styles.active : ''}`}
+                        onClick={() => handleTabChange('package')}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <path d="M16 3v4a1 1 0 0 0 1 1h4"></path>
+                        </svg>
+                        Gói xét nghiệm ({results.packages.length})
                     </button>
                 </div>
 
@@ -316,6 +345,50 @@ const SearchResults = () => {
                                                             <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                                         </svg>
                                                         Xét nghiệm STI
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* STI Packages Results */}
+                        {(activeTab === 'all' || activeTab === 'package') && results.packages.length > 0 && (
+                            <div className={styles.resultSection}>
+                                {activeTab === 'all' && <h2>Gói xét nghiệm STI</h2>}
+                                <div className={styles.stiResults}>
+                                    {results.packages.map((pkg) => (
+                                        <div key={pkg.packageId} className={styles.stiCard}>
+                                            <div className={styles.stiContent}>
+                                                <h3
+                                                    className={styles.stiTitle}
+                                                    onClick={() => navigate(`/sti-testing`, { state: { selectedPackageId: pkg.packageId } })}
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: highlightSearchTerm(pkg.name, query)
+                                                    }}
+                                                />
+                                                <p
+                                                    className={styles.stiDescription}
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: highlightSearchTerm(pkg.description?.substring(0, 200) + '...', query)
+                                                    }}
+                                                />
+                                                <div className={styles.stiMeta}>
+                                                    <span className={styles.price}>
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                                                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                                        </svg>
+                                                        {pkg.price?.toLocaleString('vi-VN')} VNĐ
+                                                    </span>
+                                                    <span className={styles.category}>
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                                            <path d="M16 3v4a1 1 0 0 0 1 1h4"></path>
+                                                        </svg>
+                                                        Gói xét nghiệm
                                                     </span>
                                                 </div>
                                             </div>

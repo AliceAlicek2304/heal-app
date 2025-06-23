@@ -162,6 +162,41 @@ export const searchService = {    // Tìm kiếm tổng hợp - sử dụng các
         }
     },
 
+    // Tìm kiếm STI package
+    searchPackages: async (query) => {
+        try {
+            if (!query || query.trim().length < 2) {
+                return { success: false, message: 'Vui lòng nhập ít nhất 2 ký tự để tìm kiếm' };
+            }
+
+            const queryParams = new URLSearchParams({
+                keyword: query.trim()
+            });
+
+            const response = await fetch(`${API_BASE_URL}/sti-packages/search?${queryParams}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                return { success: true, data: data.data };
+            } else {
+                return { success: false, message: data.message || 'Không tìm thấy gói dịch vụ' };
+            }
+        } catch (error) {
+            console.error('Error in searchPackages:', error);
+            return { success: false, message: 'Có lỗi xảy ra khi tìm kiếm gói dịch vụ' };
+        }
+    },
+
     // Gợi ý tìm kiếm - tạm thời disable vì backend chưa có API
     getSearchSuggestions: async (query) => {
         try {
