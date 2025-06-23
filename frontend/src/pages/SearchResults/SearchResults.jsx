@@ -364,7 +364,7 @@ const SearchResults = () => {
                                             <div className={styles.stiContent}>
                                                 <h3
                                                     className={styles.stiTitle}
-                                                    onClick={() => navigate('/sti-package-detail/' + pkg.packageId)}
+                                                    onClick={() => navigate('/sti-testing', { state: { selectedPackageId: pkg.packageId } })}
                                                     style={{ cursor: 'pointer', color: '#1976d2', textDecoration: 'underline' }}
                                                     dangerouslySetInnerHTML={{
                                                         __html: highlightSearchTerm(pkg.name, query)
