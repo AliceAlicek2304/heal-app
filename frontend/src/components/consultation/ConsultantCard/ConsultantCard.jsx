@@ -23,14 +23,16 @@ const ConsultantCard = ({ consultant, onBookConsultation, onViewDetails, onAuthR
         setRefreshRating(prev => prev + 1);
     };
 
-    const getAvatarUrl = (avatar) => {
-        if (!avatar) return authService.getAvatarUrl('/img/avatar/default.jpg');
-        // Nếu avatar đã là url tuyệt đối thì giữ nguyên
-        if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
-            return avatar;
+    const getAvatarUrl = (avatarPath) => {
+        const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+        if (!avatarPath || typeof avatarPath !== 'string' || !avatarPath.trim()) {
+            return `${API_BASE_URL}/uploads/avatar/default.jpg`;
         }
-        // Luôn dùng authService.getAvatarUrl để sinh url đúng chuẩn backend
-        return authService.getAvatarUrl(avatar.replace(/^.*[\\/]/, ''));
+        if (/^https?:\/\//.test(avatarPath)) return avatarPath;
+        if (avatarPath.startsWith('/uploads/avatar') || avatarPath.startsWith('/img/avatar')) {
+            return `${API_BASE_URL}${avatarPath}`;
+        }
+        return `${API_BASE_URL}/uploads/avatar/${avatarPath}`;
     };
 
     const handleAvatarError = (e) => {

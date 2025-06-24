@@ -1,0 +1,473 @@
+.guidesPage {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  position: relative;
+}
+
+/* Guides Header */
+.guidesHeader {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding: 2rem 0;
+}
+
+.guidesHeaderContent {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.guidesTitle {
+  font-size: 2.5rem;
+  margin: 0 0 1rem;
+  color: #333;
+  font-weight: 700;
+}
+
+.guidesSubtitle {
+  color: #666;
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+/* Navigation Tabs */
+.navigationTabs {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+}
+
+.tabButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: 2px solid #e0e0e0;
+  background-color: white;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #666;
+}
+
+.tabButton:hover {
+  border-color: #4285f4;
+  color: #4285f4;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.15);
+}
+
+.tabButton.active {
+  background-color: #4285f4;
+  border-color: #4285f4;
+  color: white;
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
+}
+
+.tabIcon {
+  font-size: 1.2rem;
+}
+
+.tabTitle {
+  font-weight: 500;
+}
+
+/* Guides Content */
+.guidesContent {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.sectionHeader {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.sectionTitle {
+  font-size: 2rem;
+  margin: 0;
+  color: #333;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.sectionIcon {
+  font-size: 2.5rem;
+}
+
+/* Steps Container */
+.stepsContainer {
+  margin-bottom: 3rem;
+}
+
+.stepCard {
+  background-color: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.stepCard:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px);
+}
+
+.stepHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.stepNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+  color: white;
+  border-radius: 50%;
+  font-size: 1.25rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.stepInfo {
+  flex: 1;
+}
+
+.stepTitle {
+  font-size: 1.25rem;
+  margin: 0 0 0.5rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.stepDescription {
+  color: #666;
+  margin: 0;
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+.stepDetails {
+  padding: 0 2rem 2rem;
+}
+
+.detailsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.detailItem {
+  position: relative;
+  padding: 0.75rem 0 0.75rem 2rem;
+  color: #555;
+  line-height: 1.6;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.detailItem:last-child {
+  border-bottom: none;
+}
+
+.detailItem::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  top: 0.75rem;
+  width: 20px;
+  height: 20px;
+  background-color: #34a853;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+/* Quick Links */
+.quickLinks {
+  background-color: white;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 3rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.quickLinksTitle {
+  font-size: 1.5rem;
+  margin: 0 0 1.5rem;
+  color: #333;
+  font-weight: 600;
+  text-align: center;
+}
+
+.quickLinksGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.quickLink {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.quickLink:hover {
+  background-color: #e3f2fd;
+  border-color: #4285f4;
+  color: #4285f4;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.15);
+}
+
+.quickLinkIcon {
+  font-size: 1.5rem;
+}
+
+/* Contact Section */
+.contactSection {
+  margin-top: 3rem;
+}
+
+.contactCard {
+  background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+  color: white;
+  padding: 2.5rem;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(66, 133, 244, 0.3);
+}
+
+.contactIcon {
+  margin-bottom: 1.5rem;
+  opacity: 0.9;
+}
+
+.contactCard h3 {
+  font-size: 1.5rem;
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+}
+
+.contactCard p {
+  margin: 0 0 2rem;
+  opacity: 0.9;
+  font-size: 1rem;
+}
+
+.contactButtons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btnPrimary,
+.btnSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.btnPrimary {
+  background-color: white;
+  color: #4285f4;
+}
+
+.btnPrimary:hover {
+  background-color: #f8f9fa;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btnSecondary {
+  background-color: transparent;
+  color: white;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btnSecondary:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+  .container {
+    padding: 1.5rem 1rem;
+  }
+
+  .guidesTitle {
+    font-size: 2rem;
+  }
+
+  .guidesSubtitle {
+    font-size: 1rem;
+  }
+
+  .navigationTabs {
+    gap: 0.5rem;
+  }
+
+  .tabButton {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .tabTitle {
+    display: none;
+  }
+
+  .sectionTitle {
+    font-size: 1.5rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .sectionIcon {
+    font-size: 2rem;
+  }
+
+  .stepHeader {
+    padding: 1.5rem;
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .stepNumber {
+    align-self: center;
+  }
+
+  .stepDetails {
+    padding: 0 1.5rem 1.5rem;
+  }
+
+  .quickLinks {
+    padding: 1.5rem;
+  }
+
+  .quickLinksGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .contactCard {
+    padding: 2rem 1.5rem;
+  }
+
+  .contactButtons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .btnPrimary,
+  .btnSecondary {
+    width: 100%;
+    max-width: 250px;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 576px) {
+  .guidesTitle {
+    font-size: 1.75rem;
+  }
+
+  .stepHeader {
+    padding: 1rem;
+  }
+
+  .stepDetails {
+    padding: 0 1rem 1rem;
+  }
+
+  .quickLinksGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .contactCard {
+    padding: 1.5rem 1rem;
+  }
+
+  .contactCard h3 {
+    font-size: 1.25rem;
+  }
+}
+
+/* Animation for step cards */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stepCard {
+  animation: slideInUp 0.6s ease;
+}
+
+.stepCard:nth-child(1) { animation-delay: 0.1s; }
+.stepCard:nth-child(2) { animation-delay: 0.2s; }
+.stepCard:nth-child(3) { animation-delay: 0.3s; }
+.stepCard:nth-child(4) { animation-delay: 0.4s; }
+
+/* Focus styles for accessibility */
+.tabButton:focus {
+  outline: 2px solid #4285f4;
+  outline-offset: 2px;
+}
+
+.quickLink:focus {
+  outline: 2px solid #4285f4;
+  outline-offset: 2px;
+}
+
+.btnPrimary:focus,
+.btnSecondary:focus {
+  outline: 2px solid white;
+  outline-offset: 2px;
+} 

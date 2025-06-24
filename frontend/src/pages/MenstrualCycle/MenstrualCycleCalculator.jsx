@@ -271,9 +271,9 @@ const MenstrualCycleCalculator = () => {
         }));
     }; if (!isAuthenticated) {
         return (
-            <div className={styles.authRequired}>
+            <div className={styles.authRequired} style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
                 <Navbar />
-                <div className={styles.authMessage}>
+                <div className={styles.authMessage} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                     <h2>Đăng nhập để sử dụng tính năng này</h2>
                     <p>Vui lòng đăng nhập để theo dõi chu kỳ kinh nguyệt của bạn.</p>
                     <button
@@ -283,6 +283,7 @@ const MenstrualCycleCalculator = () => {
                         Đăng nhập
                     </button>
                 </div>
+                <Footer />
 
                 {/* Login Modal */}
                 {showLoginModal && (

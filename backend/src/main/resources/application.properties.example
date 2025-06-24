@@ -1,6 +1,13 @@
 spring.application.name=HealApp
 
-#database
+# Set default profile to local for development
+# Change to 'cloud' for production deployment
+spring.profiles.active=local
+
+# =============================================================================
+# DATABASE CONFIGURATION
+# =============================================================================
+# Local SQL Server Configuration
 spring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=HealApp;encrypt=true;trustServerCertificate=true
 spring.datasource.driverClassName=com.microsoft.sqlserver.jdbc.SQLServerDriver
 spring.datasource.username=${DB_USERNAME:sa}
@@ -8,67 +15,135 @@ spring.datasource.password=${DB_PASSWORD:your_password}
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.SQLServer2012Dialect
 spring.jpa.hibernate.ddl-auto=update
 
-#file upload
+# =============================================================================
+# FILE UPLOAD CONFIGURATION
+# =============================================================================
 spring.servlet.multipart.max-file-size=10MB
 spring.servlet.multipart.max-request-size=10MB
 
-#avatar
+# File storage paths
 app.avatar.storage.location=${AVATAR_STORAGE_PATH:uploads/img/avatar}
 app.avatar.url.pattern=/img/avatar/
 
-#blog images
 app.blog.storage.location=${BLOG_STORAGE_PATH:uploads/img/blog}
 app.blog.url.pattern=/img/blog/
 
-#app config images (logo, banner)
 app.config.storage.location=${APP_CONFIG_STORAGE_PATH:uploads/img/app}
 app.config.url.pattern=/img/app/
 
-# Java mail
-spring.mail.host=smtp.gmail.com
-spring.mail.port=587
-spring.mail.username=${MAIL_USERNAME:your_email@gmail.com}
-spring.mail.password=${MAIL_PASSWORD:your_app_password}
+# Storage type: local (default) or gcs (for cloud)
+app.storage.type=${STORAGE_TYPE:local}
+
+# =============================================================================
+# EMAIL CONFIGURATION (SendGrid)
+# =============================================================================
+spring.mail.host=${SMTP_HOST:smtp.sendgrid.net}
+spring.mail.port=${SMTP_PORT:587}
+spring.mail.username=${SMTP_USERNAME:apikey}
+spring.mail.password=${SMTP_PASSWORD:your_sendgrid_api_key}
 spring.mail.properties.mail.smtp.auth=true
 spring.mail.properties.mail.smtp.starttls.enable=true
+spring.mail.properties.mail.smtp.starttls.required=true
+spring.mail.from=${SPRING_MAIL_FROM:your_verified_sender@example.com}
 
-#logging
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
 logging.level.com.healapp.service.EmailService=DEBUG
+logging.level.com.healapp=${LOG_LEVEL:INFO}
 
-#Stripe
-stripe.api.key=${STRIPE_SECRET_KEY:sk_test_your_stripe_secret_key}
+# =============================================================================
+# PAYMENT CONFIGURATION (Stripe)
+# =============================================================================
+stripe.api.key=${STRIPE_API_KEY:sk_test_your_stripe_secret_key}
 stripe.publishable.key=${STRIPE_PUBLISHABLE_KEY:pk_test_your_stripe_publishable_key}
 
-# MB Bank API
-banking.mb.api.url=${MB_API_URL:https://api.mbbank.com.vn}
-banking.mb.api.key=${MB_API_KEY:your_mb_api_key}
-banking.mb.device.id=${MB_DEVICE_ID:healapp-device-001}
+# =============================================================================
+# BANKING INTEGRATION (MB Bank)
+# =============================================================================
+banking.mb.api.url=${BANKING_MB_API_URL:https://api.mbbank.com.vn}
+banking.mb.api.key=${BANKING_MB_API_KEY:your_mb_api_key}
+banking.mb.device.id=${BANKING_MB_DEVICE_ID:healapp-device-001}
 
 # MB Bank Account Information
-banking.mb.account.number=${MB_ACCOUNT_NUMBER:your_account_number}
-banking.mb.account.name=${MB_ACCOUNT_NAME:YOUR ACCOUNT NAME}
-
-# QR Payment Settings
-qr.payment.expiry.hours=${QR_EXPIRY_HOURS:24}
-qr.payment.check.interval.minutes=${QR_CHECK_INTERVAL:2}
-qr.payment.auto.check.enabled=${QR_AUTO_CHECK:true}
+banking.mb.account.number=${BANKING_MB_ACCOUNT_NUMBER:your_account_number}
+banking.mb.account.name=${BANKING_MB_ACCOUNT_NAME:YOUR ACCOUNT NAME}
 
 # Banking Integration Settings
-banking.api.timeout.seconds=${BANKING_TIMEOUT:30}
-banking.api.retry.attempts=${BANKING_RETRY_ATTEMPTS:3}
+banking.api.timeout.seconds=${BANKING_API_TIMEOUT_SECONDS:30}
+banking.api.retry.attempts=${BANKING_API_RETRY_ATTEMPTS:3}
 # Set to true for testing, false for production
-banking.simulation.enabled=${BANKING_SIMULATION:false}
+banking.simulation.enabled=${BANKING_SIMULATION_ENABLED:false}
 
-# MCP Server Configuration
-mcp.api.provider=${MCP_PROVIDER:google}
-mcp.api.base-url=${MCP_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
-mcp.api.key=${GOOGLE_API_KEY:your_google_api_key}
-mcp.api.model=${MCP_MODEL:gemini-2.0-flash}
+# =============================================================================
+# SMS CONFIGURATION (Twilio)
+# =============================================================================
+sms.enabled=${SMS_ENABLED:true}
+sms.provider=${SMS_PROVIDER:twilio}
+sms.development.mode=${SMS_DEVELOPMENT_MODE:false}
+
+# Verified phone numbers for Twilio trial (comma-separated)
+twilio.verified.numbers=${TWILIO_VERIFIED_NUMBERS:+84349079940,+84982677408}
+
+# Twilio Configuration
+twilio.account.sid=${TWILIO_ACCOUNT_SID:your_twilio_account_sid}
+twilio.auth.token=${TWILIO_AUTH_TOKEN:your_twilio_auth_token}
+twilio.phone.number=${TWILIO_PHONE_NUMBER:your_twilio_phone_number}
+
+# =============================================================================
+# QR PAYMENT SETTINGS
+# =============================================================================
+qr.payment.expiry.hours=${QR_PAYMENT_EXPIRY_HOURS:24}
+qr.payment.check.interval.minutes=${QR_PAYMENT_CHECK_INTERVAL_MINUTES:2}
+qr.payment.auto.check.enabled=${QR_PAYMENT_AUTO_CHECK_ENABLED:true}
+
+# =============================================================================
+# AI ASSISTANT CONFIGURATION (Google Gemini)
+# =============================================================================
+mcp.api.provider=${MCP_API_PROVIDER:google}
+mcp.api.base-url=${MCP_API_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
+mcp.api.key=${MCP_API_KEY:your_google_api_key}
+mcp.api.model=${MCP_API_MODEL:gemini-2.0-flash}
 
 # Content Moderation Configuration
-healapp.moderation.enabled=${MODERATION_ENABLED:true}
-healapp.moderation.cache.enabled=${MODERATION_CACHE_ENABLED:true}
-healapp.moderation.cache.ttl=${MODERATION_CACHE_TTL:3600}
+healapp.moderation.enabled=${HEALAPP_MODERATION_ENABLED:true}
+healapp.moderation.cache.enabled=${HEALAPP_MODERATION_CACHE_ENABLED:true}
+healapp.moderation.cache.ttl=${HEALAPP_MODERATION_CACHE_TTL:3600}
 
 # AI Assistant Configuration
-healapp.assistant.max-history=${ASSISTANT_MAX_HISTORY:10}
+healapp.assistant.max-history=${HEALAPP_ASSISTANT_MAX_HISTORY:10}
+
+# =============================================================================
+# JWT CONFIGURATION
+# =============================================================================
+jwt.secret=${JWT_SECRET:your-jwt-secret-key-change-this-in-production}
+jwt.access-token-expiration=${JWT_ACCESS_TOKEN_EXPIRATION:3600000}
+jwt.refresh-token-expiration=${JWT_REFRESH_TOKEN_EXPIRATION:86400000}
+jwt.issuer=${JWT_ISSUER:HealApp}
+
+# =============================================================================
+# SERVER CONFIGURATION
+# =============================================================================
+server.port=${PORT:8080}
+
+# =============================================================================
+# DEPLOYMENT NOTES
+# =============================================================================
+# For local development:
+# 1. Copy this file to application-local.properties
+# 2. Fill in your actual values for local testing
+# 3. Keep sensitive data in environment variables
+
+# For cloud deployment:
+# 1. Set spring.profiles.active=cloud
+# 2. Configure all environment variables in your cloud platform
+# 3. Use application-cloud.properties for cloud-specific settings
+
+# Required environment variables for production:
+# - Database: CLOUDSQL_HOST, CLOUDSQL_DB, CLOUDSQL_USER, CLOUDSQL_PASS
+# - Email: SMTP_PASSWORD, SPRING_MAIL_FROM
+# - Payment: STRIPE_API_KEY, STRIPE_PUBLISHABLE_KEY
+# - SMS: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER
+# - AI: MCP_API_KEY
+# - Security: JWT_SECRET
+# - Storage: GCS_BUCKET_NAME (if using Google Cloud Storage)

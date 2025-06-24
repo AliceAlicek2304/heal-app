@@ -16,6 +16,10 @@ import STITesting from './pages/STITesting/STITesting';
 import SearchResults from './pages/SearchResults/SearchResults';
 import AllRatings from './pages/AllRatings/AllRatings';
 import AdminDashboard from './pages/Admin/AdminDashboard';
+import FAQ from './pages/FAQ/FAQ';
+import Guides from './pages/Guides/Guides';
+import Privacy from './pages/Privacy/Privacy';
+import Terms from './pages/Terms/Terms';
 import { AuthProvider } from "./contexts/AuthContext";
 import { ToastProvider } from './contexts/ToastContext';
 
@@ -41,6 +45,10 @@ function App() {
               <Route path="/search" element={<SearchResults />} />
               <Route path="/all-ratings/:targetType/:targetId" element={<AllRatings />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/guides" element={<Guides />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
             </Routes>
             {window.location.pathname !== '/admin' && <ChatBot />}
           </div>
