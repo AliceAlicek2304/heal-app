@@ -2,7 +2,9 @@ package com.healapp.service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -115,7 +117,7 @@ public class BlogPostService {
 
             BlogPost blogPost = existingPost.get();
 
-            // kiểm tra tác dả
+            // kiểm tra tác giả
             if (!blogPost.getAuthor().getId().equals(userId)) {
                 return ApiResponse.error("Only the author can update this post");
             }
@@ -124,18 +126,24 @@ public class BlogPostService {
             Optional<Category> category = categoryRepository.findById(request.getCategoryId());
             if (category.isEmpty()) {
                 return ApiResponse.error("Category not found");
-            } // Cập nhật bài viết
+            }
+            
+            // Cập nhật bài viết
             blogPost.setTitle(request.getTitle());
             blogPost.setContent(request.getContent());
-            // Xử lý giữ lại thumbnail cũ nếu không upload mới
+            
+            // Xử lý thumbnail: nếu có ảnh mới thì dùng, không thì giữ ảnh cũ
             if (request.getThumbnailImage() != null) {
                 blogPost.setThumbnailImage(request.getThumbnailImage());
             } else if (request.getExistingThumbnail() != null) {
                 blogPost.setThumbnailImage(request.getExistingThumbnail());
             }
-            // Nếu cả hai đều null thì KHÔNG set lại thumbnailImage, giữ nguyên giá trị cũ
+            // Nếu cả hai đều null thì giữ nguyên thumbnailImage hiện tại
+            
             blogPost.setCategory(category.get());
-            blogPost.setUpdatedAt(LocalDateTime.now());// PROCESSING sau khi cập nhật
+            blogPost.setUpdatedAt(LocalDateTime.now());
+            
+            // Chuyển về PROCESSING sau khi cập nhật
             blogPost.setStatus(BlogPostStatus.PROCESSING);
             blogPost.setReviewer(null);
             blogPost.setReviewedAt(null);
@@ -144,9 +152,17 @@ public class BlogPostService {
 
             // Process sections if any
             if (request.getSections() != null && !request.getSections().isEmpty()) {
-                // First delete existing sections
+                // Get existing sections to preserve images
                 List<BlogSection> existingSections = blogSectionRepository
                         .findByBlogPostPostIdOrderByDisplayOrder(postId);
+                
+                // Create a map of existing sections by display order for easy lookup
+                Map<Integer, BlogSection> existingSectionsMap = new HashMap<>();
+                for (BlogSection existingSection : existingSections) {
+                    existingSectionsMap.put(existingSection.getDisplayOrder(), existingSection);
+                }
+                
+                // Delete existing sections
                 blogSectionRepository.deleteAll(existingSections);
 
                 // Then add new sections
@@ -155,13 +171,20 @@ public class BlogPostService {
                     section.setBlogPost(updatedPost);
                     section.setSectionTitle(sectionRequest.getSectionTitle());
                     section.setSectionContent(sectionRequest.getSectionContent());
-                    // Xử lý giữ lại sectionImage cũ nếu không upload mới
+                    
+                    // Xử lý sectionImage: ưu tiên ảnh mới, sau đó ảnh cũ từ request, cuối cùng là ảnh cũ từ database
                     if (sectionRequest.getSectionImage() != null) {
                         section.setSectionImage(sectionRequest.getSectionImage());
                     } else if (sectionRequest.getExistingSectionImage() != null) {
                         section.setSectionImage(sectionRequest.getExistingSectionImage());
+                    } else {
+                        // Try to preserve from existing section at same position
+                        BlogSection existingSection = existingSectionsMap.get(sectionRequest.getDisplayOrder());
+                        if (existingSection != null && existingSection.getSectionImage() != null) {
+                            section.setSectionImage(existingSection.getSectionImage());
+                        }
                     }
-                    // Nếu cả hai đều null thì KHÔNG set lại sectionImage, giữ nguyên giá trị cũ
+                    
                     section.setDisplayOrder(sectionRequest.getDisplayOrder());
                     blogSectionRepository.save(section);
                 }
@@ -357,12 +380,8 @@ public class BlogPostService {
         response.setUpdatedAt(blogPost.getUpdatedAt());
         response.setStatus(blogPost.getStatus());
 
-        // Nếu không có thumbnailImage, trả về existingThumbnail là ảnh cũ (nếu có)
-        if (blogPost.getThumbnailImage() != null) {
-            response.setExistingThumbnail(blogPost.getThumbnailImage());
-        } else {
-            response.setExistingThumbnail(null);
-        }
+        // Set existingThumbnail để frontend biết ảnh cũ
+        response.setExistingThumbnail(blogPost.getThumbnailImage());
 
         // Get sections for this blog post
         List<BlogSection> sections = blogSectionRepository
@@ -376,12 +395,9 @@ public class BlogPostService {
                 sectionResponse.setSectionContent(section.getSectionContent());
                 sectionResponse.setSectionImage(section.getSectionImage());
                 sectionResponse.setDisplayOrder(section.getDisplayOrder());
-                // Nếu không có sectionImage, trả về existingSectionImage là ảnh cũ (nếu có)
-                if (section.getSectionImage() != null) {
-                    sectionResponse.setExistingSectionImage(section.getSectionImage());
-                } else {
-                    sectionResponse.setExistingSectionImage(null);
-                }
+                // Set existingSectionImage để frontend biết ảnh cũ
+                sectionResponse.setExistingSectionImage(section.getSectionImage());
+                
                 sectionResponses.add(sectionResponse);
             }
             response.setSections(sectionResponses);

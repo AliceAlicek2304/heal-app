@@ -1155,3 +1155,20 @@
         max-height: 200px;
     }
 }
+
+.sectionNoImage {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px;
+    background: #f9fafb;
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin: 12px 0;
+}
+
+.sectionNoImage svg {
+    color: #9ca3af;
+}

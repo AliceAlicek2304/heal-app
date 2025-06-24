@@ -46,27 +46,35 @@ const EditBlog = () => {
             const [categoriesResponse, blogResponse] = await Promise.all([
                 blogService.getCategories(),
                 blogService.getBlogPostById(postId)
-            ]);            // Set categories
+            ]);
+            
+            // Set categories
             if (categoriesResponse.success && categoriesResponse.data) {
                 setCategories(categoriesResponse.data);
-            }// Set blog data
+            }
+            
+            // Set blog data
             if (blogResponse.success && blogResponse.data) {
                 const post = blogResponse.data;
-                setOriginalPost(post);// Populate form với dữ liệu hiện tại
+                setOriginalPost(post);
+                
+                // Populate form với dữ liệu hiện tại
                 const categoryIdStr = post.categoryId ? String(post.categoryId) : '';
+
+                const sectionsData = post.sections?.map(section => ({
+                    sectionTitle: section.sectionTitle || '',
+                    sectionContent: section.sectionContent || '',
+                    displayOrder: section.displayOrder || 0,
+                    sectionImage: null, // Không set image cũ
+                    existingSectionImageUrl: section.sectionImage // Lưu URL ảnh cũ để hiển thị và gửi lên backend
+                })) || [];
 
                 setFormData({
                     title: post.title || '',
                     content: post.content || '',
                     categoryId: categoryIdStr, // Convert to string for select
                     thumbnail: null, // Không set thumbnail cũ
-                    sections: post.sections?.map(section => ({
-                        sectionTitle: section.sectionTitle || '',
-                        sectionContent: section.sectionContent || '',
-                        displayOrder: section.displayOrder || 0,
-                        sectionImage: null, // Không set image cũ
-                        existingSectionImageUrl: section.sectionImage // Lưu URL ảnh cũ để hiển thị
-                    })) || []
+                    sections: sectionsData
                 });
 
                 // Set thumbnail preview nếu có
@@ -180,20 +188,28 @@ const EditBlog = () => {
         if (!formData.content.trim()) {
             addToast('Vui lòng nhập nội dung bài viết', 'error');
             return;
-        } if (!formData.categoryId || formData.categoryId === '') {
+        }
+        
+        if (!formData.categoryId || formData.categoryId === '') {
             addToast('Vui lòng chọn danh mục', 'error');
             return;
-        }        // Validate categoryId is a valid number
+        }
+        
+        // Validate categoryId is a valid number
         const categoryIdNum = parseInt(formData.categoryId);
         if (isNaN(categoryIdNum) || categoryIdNum <= 0) {
             addToast('Danh mục không hợp lệ - ID không đúng định dạng', 'error');
             return;
-        }        // Validate categoryId exists in available categories
+        }
+        
+        // Validate categoryId exists in available categories
         const categoryExists = categories.some(cat => cat.categoryId === categoryIdNum);
         if (!categoryExists) {
             addToast('Danh mục không tồn tại trong hệ thống', 'error');
             return;
-        } setLoading(true);
+        }
+        
+        setLoading(true);
         try {
             // Prepare data for submission
             const submissionData = {
@@ -203,15 +219,20 @@ const EditBlog = () => {
                 thumbnail: formData.thumbnail, // File hoặc null
                 // Nếu không upload ảnh mới, gửi tên file thumbnail cũ để backend giữ lại
                 ...(formData.thumbnail === null && originalPost?.thumbnailImage ? { existingThumbnail: originalPost.thumbnailImage } : {}),
-                sections: formData.sections.map((section, index) => ({
-                    sectionTitle: section.sectionTitle.trim(),
-                    sectionContent: cleanTextForStorage(section.sectionContent),
-                    displayOrder: index,
-                    sectionImage: section.sectionImage, // File hoặc null
-                    // Nếu không upload ảnh mới cho section, gửi tên file ảnh cũ để backend giữ lại
-                    ...(section.sectionImage === null && section.existingSectionImageUrl ? { existingSectionImage: section.existingSectionImageUrl } : {})
-                }))
+                sections: formData.sections.map((section, index) => {
+                    const sectionData = {
+                        sectionTitle: section.sectionTitle.trim(),
+                        sectionContent: cleanTextForStorage(section.sectionContent),
+                        displayOrder: index,
+                        sectionImage: section.sectionImage, // File hoặc null
+                        // Nếu không upload ảnh mới cho section, gửi tên file ảnh cũ để backend giữ lại
+                        ...(section.sectionImage === null && section.existingSectionImageUrl ? { existingSectionImage: section.existingSectionImageUrl } : {})
+                    };
+                    
+                    return sectionData;
+                })
             };
+            
             const response = await blogService.updateBlogPost(postId, submissionData);
 
             if (response.success) {

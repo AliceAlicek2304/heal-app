@@ -599,11 +599,7 @@ const ManageBlogs = () => {
                                 <div className={styles.blogHeader}>
                                     <div className={styles.thumbnailContainer}>
                                         <img
-                                            src={
-                                                selectedBlog.thumbnailImage.startsWith('http')
-                                                    ? selectedBlog.thumbnailImage
-                                                    : blogService.getBlogImageUrl(selectedBlog.thumbnailImage)
-                                            }
+                                            src={blogService.getBlogImageUrl(selectedBlog.thumbnailImage)}
                                             alt={selectedBlog.title}
                                             className={styles.thumbnail}
                                             onError={(e) => {
@@ -671,7 +667,7 @@ const ManageBlogs = () => {
                             {/* Blog Sections */}
                             {selectedBlog.sections && selectedBlog.sections.length > 0 && (
                                 <div className={styles.sectionsSection}>
-                                    <h4>Các phần bổ sung</h4>
+                                    <h4>Các phần bổ sung ({selectedBlog.sections.length} phần)</h4>
                                     <div className={styles.sectionsContainer}>
                                         {selectedBlog.sections.map((section, index) => (
                                             <div key={`section-${index}`} className={styles.blogSection}>
@@ -681,10 +677,10 @@ const ManageBlogs = () => {
                                                     </h5>
                                                 )}
 
-                                                {(section.sectionImageUrl || section.sectionImage) && (
+                                                {section.sectionImage ? (
                                                     <div className={styles.sectionImageContainer}>
                                                         <img
-                                                            src={section.sectionImageUrl || section.sectionImage}
+                                                            src={blogService.getBlogImageUrl(section.sectionImage)}
                                                             alt={section.sectionTitle || `Section ${index + 1}`}
                                                             className={styles.sectionImage}
                                                             onError={(e) => {
@@ -700,6 +696,15 @@ const ManageBlogs = () => {
                                                             </svg>
                                                             <span>Không có hình ảnh</span>
                                                         </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className={styles.sectionNoImage}>
+                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                                            <polyline points="21,15 16,10 5,21"></polyline>
+                                                        </svg>
+                                                        <span>Phần này không có hình ảnh</span>
                                                     </div>
                                                 )}
 
