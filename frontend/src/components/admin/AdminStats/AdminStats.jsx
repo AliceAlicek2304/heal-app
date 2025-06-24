@@ -8,6 +8,7 @@ import TopSTIServices from './TopSTIServices';
 import TopSTIPackages from './TopSTIPackages';
 import { getStatsOverview } from '../../../services/adminStatsService';
 import { exportToPDF, exportToExcel } from '../../../utils/exportUtils';
+import { useToast } from '../../../contexts/ToastContext';
 import styles from './AdminStats.module.css';
 
 const AdminStats = () => {
@@ -15,6 +16,7 @@ const AdminStats = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [exportLoading, setExportLoading] = useState({ pdf: false, excel: false });
+    const toast = useToast();
 
     useEffect(() => {
         fetchStats();
@@ -134,8 +136,10 @@ const AdminStats = () => {
             try {
                 setExportLoading(prev => ({ ...prev, pdf: true }));
                 await exportToPDF(stats);
+                toast.addToast('Thống kê đã được xuất thành công', 'success');
             } catch (error) {
                 console.error('Export PDF failed:', error);
+                toast.addToast('Xuất thống kê thất bại', 'error');
             } finally {
                 setExportLoading(prev => ({ ...prev, pdf: false }));
             }
@@ -147,8 +151,10 @@ const AdminStats = () => {
             try {
                 setExportLoading(prev => ({ ...prev, excel: true }));
                 await exportToExcel(stats);
+                toast.addToast('Thống kê đã được xuất thành công', 'success');
             } catch (error) {
                 console.error('Export Excel failed:', error);
+                toast.addToast('Xuất thống kê thất bại', 'error');
             } finally {
                 setExportLoading(prev => ({ ...prev, excel: false }));
             }

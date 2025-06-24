@@ -5,6 +5,7 @@ import { saveAs } from 'file-saver';
 
 /**
  * Convert Vietnamese text to ASCII for better PDF compatibility
+ * This is a fallback function for cases where Unicode fonts are not available
  */
 const vietnameseToASCII = (str) => {
     if (!str) return '';
@@ -29,6 +30,83 @@ const vietnameseToASCII = (str) => {
     return str.replace(/[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]/g, function (match) {
         return vietnameseMap[match] || match;
     });
+};
+
+/**
+ * Test and improve Unicode font support for PDF
+ */
+const testUnicodeSupport = (pdf) => {
+    const testStrings = [
+        'Test Unicode: á à ả ã ạ ă ắ ằ ẳ ẵ ặ â ấ ầ ẩ ẫ ậ',
+        'Test Unicode: é è ẻ ẽ ẹ ê ế ề ể ễ ệ',
+        'Test Unicode: í ì ỉ ĩ ị',
+        'Test Unicode: ó ò ỏ õ ọ ô ố ồ ổ ỗ ộ ơ ớ ờ ở ỡ ợ',
+        'Test Unicode: ú ù ủ ũ ụ ư ứ ừ ử ữ ự',
+        'Test Unicode: ý ỳ ỷ ỹ ỵ đ'
+    ];
+
+    let unicodeSupported = true;
+
+    testStrings.forEach((testStr, index) => {
+        try {
+            pdf.text(testStr, 10, 20 + (index * 15));
+        } catch (error) {
+            console.warn(`Unicode test ${index + 1} failed:`, error);
+            unicodeSupported = false;
+        }
+    });
+
+    return unicodeSupported;
+};
+
+/**
+ * Initialize PDF with Unicode font support
+ */
+const initializePDFWithUnicode = () => {
+    const pdf = new jsPDF({
+        unit: 'pt',
+        orientation: 'portrait',
+        format: 'a4'
+    });
+
+    // Try to use Unicode font for Vietnamese text
+    try {
+        // Import and use a Unicode font if available
+        // For now, we'll use the built-in font with better encoding
+        pdf.setFont('helvetica', 'normal');
+
+        // Set encoding to support Unicode characters
+        pdf.setFontSize(12);
+
+        // Test if Unicode is supported
+        try {
+            pdf.text('Test Unicode: á à ả ã ạ', 10, 10);
+        } catch (unicodeError) {
+            console.warn('Unicode not fully supported, will use fallback');
+        }
+    } catch (fontError) {
+        console.warn('Font initialization failed, using default font');
+        pdf.setFont('helvetica', 'normal');
+    }
+
+    return pdf;
+};
+
+/**
+ * Safe text function that handles Vietnamese characters
+ */
+const safeText = (pdf, text, x, y, options = {}) => {
+    if (!text) return;
+
+    try {
+        // Try to use original text first
+        pdf.text(text, x, y, options);
+    } catch (error) {
+        // If Unicode text fails, fallback to ASCII
+        console.warn('Unicode text failed, using ASCII fallback:', error);
+        const asciiText = vietnameseToASCII(text);
+        pdf.text(asciiText, x, y, options);
+    }
 };
 
 /**
@@ -63,24 +141,24 @@ export const exportToPDF = (stats) => {
         // === HEADER SECTION ===
         pdf.setFontSize(24);
         pdf.setTextColor(31, 41, 55);
-        pdf.text('BAO CAO DASHBOARD HEALAPP', 40, currentY);
+        pdf.text('HEALAPP DASHBOARD REPORT', 40, currentY);
 
         currentY += 30;
         pdf.setFontSize(12);
         pdf.setTextColor(107, 114, 128);
-        pdf.text(`Bao cao duoc tao: ${new Date().toLocaleString('vi-VN')}`, 40, currentY);
+        pdf.text(`Report generated: ${new Date().toLocaleString('en-US')}`, 40, currentY);
 
         currentY += 20;
-        pdf.text('Bao cao tong quan hieu suat kinh doanh', 40, currentY);
+        pdf.text('Business performance overview', 40, currentY);
 
         currentY += 20;
-        pdf.text(`Chu ky bao cao: ${getCurrentPeriod()}`, 40, currentY);
+        pdf.text(`Report period: ${getCurrentPeriod()}`, 40, currentY);
 
         // === EXECUTIVE SUMMARY ===
         currentY += 40;
         pdf.setFontSize(16);
         pdf.setTextColor(31, 41, 55);
-        pdf.text('TOM TAT DIEU HANH', 40, currentY);
+        pdf.text('EXECUTIVE SUMMARY', 40, currentY);
 
         currentY += 30;
         const executiveSummary = generateExecutiveSummary(stats);
@@ -96,16 +174,16 @@ export const exportToPDF = (stats) => {
         currentY += 30;
         pdf.setFontSize(14);
         pdf.setTextColor(31, 41, 55);
-        pdf.text('THONG KE TONG QUAN', 40, currentY);
+        pdf.text('OVERVIEW STATISTICS', 40, currentY);
 
         const overviewData = [
-            ['Chi so', 'Gia tri', 'So voi ky truoc', 'Ghi chu'],
-            ['Tong nguoi dung', formatNumber(stats.totalUsers), calculateUserGrowth(stats), 'Tat ca users trong he thong'],
-            ['Tu van vien', formatNumber(stats.totalConsultants), 'N/A', 'Chuyen gia tu van suc khoe'],
-            ['Khach hang', formatNumber(stats.totalUsers - stats.totalConsultants), 'N/A', 'Nguoi dung thuong'],
-            ['Tong buoi tu van', formatNumber(stats.totalConsultations), 'N/A', 'Cac buoi tu van da thuc hien'],
-            ['Xet nghiem STI', formatNumber(stats.totalSTITests), 'N/A', 'Cac goi xet nghiem da dat'],
-            ['Tong doanh thu', formatCurrencyPlain(stats.totalRevenue), getRevenueGrowthText(stats.revenueGrowthRate), 'Doanh thu tich luy tu truoc den nay']
+            ['Metric', 'Value', 'Vs Previous Period', 'Note'],
+            ['Total users', formatNumber(stats.totalUsers), calculateUserGrowth(stats), 'All users in the system'],
+            ['Consultants', formatNumber(stats.totalConsultants), 'N/A', 'Health consultants'],
+            ['Customers', formatNumber(stats.totalUsers - stats.totalConsultants), 'N/A', 'Regular users'],
+            ['Total consultations', formatNumber(stats.totalConsultations), 'N/A', 'Completed consultations'],
+            ['STI tests', formatNumber(stats.totalSTITests), 'N/A', 'Booked STI test packages'],
+            ['Total revenue', formatCurrencyPlain(stats.totalRevenue), getRevenueGrowthText(stats.revenueGrowthRate), 'Accumulated revenue']
         ];
 
         pdf.autoTable({
@@ -311,7 +389,7 @@ export const exportToExcel = (stats) => {
             ['Tổng người dùng', stats.totalUsers || 0, 'người', 'Tất cả users trong hệ thống', 'COUNT(users)'],
             ['Tư vấn viên', stats.totalConsultants || 0, 'người', 'Chuyên gia tư vấn', 'COUNT(users WHERE role=consultant)'],
             ['Khách hàng', (stats.totalUsers || 0) - (stats.totalConsultants || 0), 'người', 'Người dùng thường', 'totalUsers - consultants'],
-            ['Tỷ lệ tư vấn viên', stats.totalUsers > 0 ? ((stats.totalConsultants || 0) / stats.totalUsers * 100).toFixed(2) : 0, '%', 'Tỷ lệ chuyên gia', 'consultants/totalUsers*100'],
+            ['Tỷ lệ tư vấn viên', stats.totalUsers > 0 ? ((stats.totalConsultations || 0) / stats.totalUsers * 100).toFixed(2) : 0, '%', 'Tỷ lệ chuyên gia', 'consultants/totalUsers*100'],
             ['Buổi tư vấn/Tư vấn viên', stats.totalConsultants > 0 ? ((stats.totalConsultations || 0) / stats.totalConsultants).toFixed(1) : 0, 'buổi/người', 'Hiệu suất tư vấn viên', 'consultations/consultants'],
             ['STI test/User', stats.totalUsers > 0 ? ((stats.totalSTITests || 0) / stats.totalUsers).toFixed(2) : 0, 'test/người', 'Mức độ sử dụng dịch vụ', 'stiTests/totalUsers'],
             [''],
@@ -573,20 +651,34 @@ const formatCurrencyPlain = (amount) => {
  * Export STI test result to PDF
  */
 export const exportSTIResultToPDF = (data) => {
+    let unicodeSupported = false; // Declare at function level
+
     try {
         const { test, results, customerInfo, testInfo } = data;
 
+        // Create PDF with better Unicode support
         const pdf = new jsPDF({
             unit: 'pt',
             orientation: 'portrait',
-            format: 'a4'
+            format: 'a4',
+            putOnlyUsedFonts: true,
+            floatPrecision: 16
         });
 
-        // Set font
+        // Test Unicode support
+        unicodeSupported = testUnicodeSupport(pdf);
+        console.log('Unicode support:', unicodeSupported);
+
+        // Set font based on Unicode support
         try {
-            pdf.setFont('helvetica', 'normal');
+            if (unicodeSupported) {
+                pdf.setFont('helvetica', 'normal');
+            } else {
+                pdf.setFont('helvetica', 'normal');
+                console.warn('Using ASCII fallback for Vietnamese text');
+            }
         } catch (fontError) {
-            console.warn('Font setting failed, using default');
+            console.warn('Font setup failed, using default');
         }
 
         let currentY = 40;
@@ -594,25 +686,39 @@ export const exportSTIResultToPDF = (data) => {
         // === HEADER ===
         pdf.setFontSize(24);
         pdf.setTextColor(31, 41, 55);
-        pdf.text('KET QUA XET NGHIEM STI', 40, currentY);
+
+        const headerText = unicodeSupported ? 'KẾT QUẢ XÉT NGHIỆM STI' : 'KET QUA XET NGHIEM STI';
+        pdf.text(headerText, 40, currentY);
 
         currentY += 30;
         pdf.setFontSize(12);
         pdf.setTextColor(107, 114, 128);
-        pdf.text(`Bao cao duoc tao: ${new Date().toLocaleString('vi-VN')}`, 40, currentY);
+
+        const reportDate = unicodeSupported
+            ? `Báo cáo được tạo: ${new Date().toLocaleString('vi-VN')}`
+            : `Bao cao duoc tao: ${new Date().toLocaleString('vi-VN')}`;
+        pdf.text(reportDate, 40, currentY);
 
         currentY += 40;
 
         // === CUSTOMER INFORMATION ===
         pdf.setFontSize(16);
         pdf.setTextColor(31, 41, 55);
-        pdf.text('THONG TIN KHACH HANG', 40, currentY);
+
+        const customerHeader = unicodeSupported ? 'THÔNG TIN KHÁCH HÀNG' : 'THONG TIN KHACH HANG';
+        pdf.text(customerHeader, 40, currentY);
 
         currentY += 25;
         pdf.setFontSize(11);
         pdf.setTextColor(55, 65, 81);
 
-        const customerData = [
+        const customerData = unicodeSupported ? [
+            ['Thông tin', 'Chi tiết'],
+            ['Họ tên', customerInfo.name || 'N/A'],
+            ['Email', customerInfo.email || 'N/A'],
+            ['Số điện thoại', customerInfo.phone || 'N/A'],
+            ['Mã khách hàng', customerInfo.id || 'N/A']
+        ] : [
             ['Thong tin', 'Chi tiet'],
             ['Ho ten', customerInfo.name || 'N/A'],
             ['Email', customerInfo.email || 'N/A'],
@@ -620,6 +726,7 @@ export const exportSTIResultToPDF = (data) => {
             ['Ma khach hang', customerInfo.id || 'N/A']
         ];
 
+        // Use autoTable with safe text handling
         pdf.autoTable({
             startY: currentY,
             head: [customerData[0]],
@@ -638,6 +745,12 @@ export const exportSTIResultToPDF = (data) => {
             columnStyles: {
                 0: { fontStyle: 'bold', cellWidth: 150 },
                 1: { cellWidth: 350 }
+            },
+            didParseCell: function (data) {
+                // Handle Vietnamese text in cells
+                if (data.cell.text && !unicodeSupported) {
+                    data.cell.text = vietnameseToASCII(data.cell.text);
+                }
             }
         });
 
@@ -646,11 +759,21 @@ export const exportSTIResultToPDF = (data) => {
         // === TEST INFORMATION ===
         pdf.setFontSize(16);
         pdf.setTextColor(31, 41, 55);
-        pdf.text('THONG TIN XET NGHIEM', 40, currentY);
+
+        const testHeader = unicodeSupported ? 'THÔNG TIN XÉT NGHIỆM' : 'THONG TIN XET NGHIEM';
+        pdf.text(testHeader, 40, currentY);
 
         currentY += 25;
 
-        const testData = [
+        const testData = unicodeSupported ? [
+            ['Thông tin', 'Chi tiết'],
+            ['Mã xét nghiệm', testInfo.id?.toString() || 'N/A'],
+            ['Tên dịch vụ', testInfo.serviceName || 'N/A'],
+            ['Mô tả', testInfo.serviceDescription || 'N/A'],
+            ['Ngày hẹn', formatDateForPDF(testInfo.appointmentDate) || 'N/A'],
+            ['Ngày có kết quả', formatDateForPDF(testInfo.resultDate) || 'N/A'],
+            ['Nhân viên thực hiện', testInfo.staffName || 'N/A']
+        ] : [
             ['Thong tin', 'Chi tiet'],
             ['Ma xet nghiem', testInfo.id?.toString() || 'N/A'],
             ['Ten dich vu', testInfo.serviceName || 'N/A'],
@@ -678,6 +801,12 @@ export const exportSTIResultToPDF = (data) => {
             columnStyles: {
                 0: { fontStyle: 'bold', cellWidth: 150 },
                 1: { cellWidth: 350 }
+            },
+            didParseCell: function (data) {
+                // Handle Vietnamese text in cells
+                if (data.cell.text && !unicodeSupported) {
+                    data.cell.text = vietnameseToASCII(data.cell.text);
+                }
             }
         });
 
@@ -691,14 +820,16 @@ export const exportSTIResultToPDF = (data) => {
 
         pdf.setFontSize(16);
         pdf.setTextColor(31, 41, 55);
-        pdf.text('KET QUA CHI TIET', 40, currentY);
+
+        const resultsHeader = unicodeSupported ? 'KẾT QUẢ CHI TIẾT' : 'KET QUA CHI TIET';
+        pdf.text(resultsHeader, 40, currentY);
 
         currentY += 25;
 
         if (results && results.length > 0) {
             // Group results by service if available
             const groupedResults = results.reduce((acc, result) => {
-                const serviceName = result.serviceName || 'Xet nghiem tong hop';
+                const serviceName = result.serviceName || (unicodeSupported ? 'Xét nghiệm tổng hợp' : 'Xet nghiem tong hop');
                 if (!acc[serviceName]) {
                     acc[serviceName] = [];
                 }
@@ -714,12 +845,23 @@ export const exportSTIResultToPDF = (data) => {
                 // Service header
                 pdf.setFontSize(14);
                 pdf.setTextColor(31, 41, 55);
-                pdf.text(serviceName, 40, currentY);
+
+                const displayServiceName = unicodeSupported ? serviceName : vietnameseToASCII(serviceName);
+                pdf.text(displayServiceName, 40, currentY);
+
                 currentY += 15;
 
                 // Results table for this service
                 const serviceResults = groupedResults[serviceName];
-                const resultTableData = [
+                const resultTableData = unicodeSupported ? [
+                    ['Thành phần', 'Kết quả', 'Khoảng bình thường', 'Đơn vị'],
+                    ...serviceResults.map(result => [
+                        result.componentName || result.testName || 'N/A',
+                        result.resultValue || 'N/A',
+                        result.normalRange || 'N/A',
+                        result.unit || 'N/A'
+                    ])
+                ] : [
                     ['Thanh phan', 'Ket qua', 'Khoang binh thuong', 'Don vi'],
                     ...serviceResults.map(result => [
                         result.componentName || result.testName || 'N/A',
@@ -749,6 +891,12 @@ export const exportSTIResultToPDF = (data) => {
                         1: { cellWidth: 100 },
                         2: { cellWidth: 120 },
                         3: { cellWidth: 80 }
+                    },
+                    didParseCell: function (data) {
+                        // Handle Vietnamese text in cells
+                        if (data.cell.text && !unicodeSupported) {
+                            data.cell.text = vietnameseToASCII(data.cell.text);
+                        }
                     }
                 });
 
@@ -757,7 +905,8 @@ export const exportSTIResultToPDF = (data) => {
         } else {
             pdf.setFontSize(12);
             pdf.setTextColor(107, 114, 128);
-            pdf.text('Chua co ket qua xet nghiem', 40, currentY);
+            const noResultsText = unicodeSupported ? 'Chưa có kết quả xét nghiệm' : 'Chua co ket qua xet nghiem';
+            pdf.text(noResultsText, 40, currentY);
         }
 
         // === NOTES ===
@@ -770,13 +919,20 @@ export const exportSTIResultToPDF = (data) => {
 
             pdf.setFontSize(16);
             pdf.setTextColor(31, 41, 55);
-            pdf.text('GHI CHU CUA BAC SI', 40, currentY);
+            const notesHeader = unicodeSupported ? 'GHI CHÚ CỦA BÁC SĨ' : 'GHI CHU CUA BAC SI';
+            pdf.text(notesHeader, 40, currentY);
 
             currentY += 25;
             pdf.setFontSize(11);
             pdf.setTextColor(55, 65, 81);
 
-            const splitNotes = pdf.splitTextToSize(vietnameseToASCII(testInfo.consultantNotes), 500);
+            // Handle long text with Vietnamese characters
+            let notesText = testInfo.consultantNotes;
+            if (!unicodeSupported) {
+                notesText = vietnameseToASCII(notesText);
+            }
+
+            const splitNotes = pdf.splitTextToSize(notesText, 500);
             pdf.text(splitNotes, 40, currentY);
         }
 
@@ -786,9 +942,15 @@ export const exportSTIResultToPDF = (data) => {
             pdf.setPage(i);
             pdf.setFontSize(8);
             pdf.setTextColor(107, 114, 128);
-            pdf.text('HealApp - Ket qua xet nghiem STI', 40, pdf.internal.pageSize.height - 40);
+            const footerText = unicodeSupported
+                ? 'HealApp - Kết quả xét nghiệm STI'
+                : 'HealApp - Ket qua xet nghiem STI';
+            pdf.text(footerText, 40, pdf.internal.pageSize.height - 40);
             pdf.text(`Trang ${i} / ${pageCount}`, pdf.internal.pageSize.width - 100, pdf.internal.pageSize.height - 40);
-            pdf.text('Lien he: admin@healapp.vn | Hotline: 1900-xxxx', 40, pdf.internal.pageSize.height - 25);
+            const contactText = unicodeSupported
+                ? 'Liên hệ: admin@healapp.vn | Hotline: 1900-xxxx'
+                : 'Lien he: admin@healapp.vn | Hotline: 1900-xxxx';
+            pdf.text(contactText, 40, pdf.internal.pageSize.height - 25);
         }
 
         // Save file
@@ -797,7 +959,7 @@ export const exportSTIResultToPDF = (data) => {
 
     } catch (error) {
         console.error('PDF Export Error:', error);
-        throw new Error('Co loi khi xuat PDF');
+        throw new Error(unicodeSupported ? 'Có lỗi khi xuất PDF' : 'Co loi khi xuat PDF');
     }
 };
 
@@ -968,4 +1130,434 @@ const formatDateForExcel = (dateInput) => {
         console.error('Date formatting error:', error);
         return 'N/A';
     }
+};
+
+/**
+ * Export STI test list to PDF for admin management
+ */
+export const exportSTITestListToPDF = (data) => {
+    let unicodeSupported = false;
+
+    try {
+        const { tests, filters, exportInfo } = data;
+
+        // Create PDF with better Unicode support
+        const pdf = new jsPDF({
+            unit: 'pt',
+            orientation: 'landscape', // Use landscape for better table fit
+            format: 'a4',
+            putOnlyUsedFonts: true,
+            floatPrecision: 16
+        });
+
+        // Test Unicode support
+        unicodeSupported = testUnicodeSupport(pdf);
+        console.log('Unicode support for STI list:', unicodeSupported);
+
+        // Set font based on Unicode support
+        try {
+            if (unicodeSupported) {
+                pdf.setFont('helvetica', 'normal');
+            } else {
+                pdf.setFont('helvetica', 'normal');
+                console.warn('Using ASCII fallback for Vietnamese text in STI list');
+            }
+        } catch (fontError) {
+            console.warn('Font setup failed, using default');
+        }
+
+        let currentY = 40;
+
+        // === HEADER ===
+        pdf.setFontSize(20);
+        pdf.setTextColor(31, 41, 55);
+
+        const headerText = unicodeSupported ? 'DANH SÁCH STI TEST - QUẢN LÝ' : 'DANH SACH STI TEST - QUAN LY';
+        pdf.text(headerText, 40, currentY);
+
+        currentY += 25;
+        pdf.setFontSize(12);
+        pdf.setTextColor(107, 114, 128);
+
+        const reportDate = unicodeSupported
+            ? `Báo cáo được tạo: ${new Date().toLocaleString('vi-VN')}`
+            : `Bao cao duoc tao: ${new Date().toLocaleString('vi-VN')}`;
+        pdf.text(reportDate, 40, currentY);
+
+        currentY += 20;
+        const exportInfoText = unicodeSupported
+            ? `Tổng số test: ${exportInfo.totalTests} | Xuất bởi: ${exportInfo.exportedBy}`
+            : `Tong so test: ${exportInfo.totalTests} | Xuat boi: ${exportInfo.exportedBy}`;
+        pdf.text(exportInfoText, 40, currentY);
+
+        currentY += 30;
+
+        // === FILTERS INFO ===
+        if (filters.searchTerm || filters.selectedStatus || filters.selectedPaymentStatus) {
+            pdf.setFontSize(14);
+            pdf.setTextColor(31, 41, 55);
+
+            const filtersHeader = unicodeSupported ? 'BỘ LỌC ÁP DỤNG' : 'BO LOC AP DUNG';
+            pdf.text(filtersHeader, 40, currentY);
+
+            currentY += 20;
+            pdf.setFontSize(10);
+            pdf.setTextColor(55, 65, 81);
+
+            const filterTexts = [];
+            if (filters.searchTerm) {
+                filterTexts.push(unicodeSupported
+                    ? `Tìm kiếm: "${filters.searchTerm}"`
+                    : `Tim kiem: "${filters.searchTerm}"`
+                );
+            }
+            if (filters.selectedStatus) {
+                filterTexts.push(unicodeSupported
+                    ? `Trạng thái: ${filters.selectedStatus}`
+                    : `Trang thai: ${filters.selectedStatus}`
+                );
+            }
+            if (filters.selectedPaymentStatus) {
+                filterTexts.push(unicodeSupported
+                    ? `Thanh toán: ${filters.selectedPaymentStatus}`
+                    : `Thanh toan: ${filters.selectedPaymentStatus}`
+                );
+            }
+
+            filterTexts.forEach(text => {
+                pdf.text(text, 50, currentY);
+                currentY += 15;
+            });
+
+            currentY += 20;
+        }
+
+        // === TEST LIST TABLE ===
+        if (tests && tests.length > 0) {
+            pdf.setFontSize(14);
+            pdf.setTextColor(31, 41, 55);
+
+            const tableHeader = unicodeSupported ? 'DANH SÁCH CHI TIẾT' : 'DANH SACH CHI TIET';
+            pdf.text(tableHeader, 40, currentY);
+
+            currentY += 20;
+
+            // Prepare table data
+            const tableData = unicodeSupported ? [
+                ['ID', 'Khách hàng', 'Dịch vụ/Package', 'Ngày hẹn', 'Giá', 'Trạng thái', 'Thanh toán', 'Phương thức', 'Ngày tạo']
+            ] : [
+                ['ID', 'Khach hang', 'Dich vu/Package', 'Ngay hen', 'Gia', 'Trang thai', 'Thanh toan', 'Phuong thuc', 'Ngay tao']
+            ];
+
+            tests.forEach(test => {
+                const row = [
+                    `#${test.testId}`,
+                    test.customerName || 'N/A',
+                    test.packageName || test.serviceName || 'N/A',
+                    formatDateForPDF(test.appointmentDate) || 'Chưa có lịch hẹn',
+                    formatCurrencyForPDF(test.totalPrice),
+                    getStatusLabel(test.status, unicodeSupported),
+                    getPaymentStatusLabel(test.paymentStatus, unicodeSupported),
+                    getPaymentMethodLabel(test.paymentMethod, unicodeSupported),
+                    formatDateForPDF(test.createdAt)
+                ];
+                tableData.push(row);
+            });
+
+            // Use autoTable with safe text handling
+            pdf.autoTable({
+                startY: currentY,
+                head: [tableData[0]],
+                body: tableData.slice(1),
+                theme: 'grid',
+                headStyles: {
+                    fillColor: [59, 130, 246],
+                    textColor: 255,
+                    fontStyle: 'bold',
+                    fontSize: 9
+                },
+                styles: {
+                    fontSize: 8,
+                    cellPadding: 4,
+                    lineColor: [200, 200, 200],
+                    lineWidth: 0.5
+                },
+                columnStyles: {
+                    0: { cellWidth: 60, halign: 'center' },
+                    1: { cellWidth: 120 },
+                    2: { cellWidth: 140 },
+                    3: { cellWidth: 100, halign: 'center' },
+                    4: { cellWidth: 80, halign: 'right' },
+                    5: { cellWidth: 80, halign: 'center' },
+                    6: { cellWidth: 80, halign: 'center' },
+                    7: { cellWidth: 80, halign: 'center' },
+                    8: { cellWidth: 100, halign: 'center' }
+                },
+                didParseCell: function (data) {
+                    // Handle Vietnamese text in cells
+                    if (data.cell.text && !unicodeSupported) {
+                        data.cell.text = vietnameseToASCII(data.cell.text);
+                    }
+                }
+            });
+
+            currentY = pdf.lastAutoTable.finalY + 20;
+        }
+
+        // === SUMMARY STATS ===
+        if (currentY > 500) {
+            pdf.addPage();
+            currentY = 40;
+        }
+
+        pdf.setFontSize(14);
+        pdf.setTextColor(31, 41, 55);
+
+        const summaryHeader = unicodeSupported ? 'THỐNG KÊ TỔNG HỢP' : 'THONG KE TONG HOP';
+        pdf.text(summaryHeader, 40, currentY);
+
+        currentY += 25;
+
+        // Calculate summary stats
+        const statusCounts = tests.reduce((acc, test) => {
+            acc[test.status] = (acc[test.status] || 0) + 1;
+            return acc;
+        }, {});
+
+        const paymentStatusCounts = tests.reduce((acc, test) => {
+            acc[test.paymentStatus] = (acc[test.paymentStatus] || 0) + 1;
+            return acc;
+        }, {});
+
+        const totalRevenue = tests.reduce((sum, test) => sum + (test.totalPrice || 0), 0);
+
+        const summaryData = unicodeSupported ? [
+            ['Chỉ số', 'Giá trị', 'Tỷ lệ'],
+            ['Tổng số test', tests.length.toString(), '100%'],
+            ['Đã hoàn thành', (statusCounts.COMPLETED || 0).toString(), `${((statusCounts.COMPLETED || 0) / tests.length * 100).toFixed(1)}%`],
+            ['Đã thanh toán', (paymentStatusCounts.COMPLETED || 0).toString(), `${((paymentStatusCounts.COMPLETED || 0) / tests.length * 100).toFixed(1)}%`],
+            ['Tổng doanh thu', formatCurrencyForPDF(totalRevenue), 'N/A']
+        ] : [
+            ['Chi so', 'Gia tri', 'Ty le'],
+            ['Tong so test', tests.length.toString(), '100%'],
+            ['Da hoan thanh', (statusCounts.COMPLETED || 0).toString(), `${((statusCounts.COMPLETED || 0) / tests.length * 100).toFixed(1)}%`],
+            ['Da thanh toan', (paymentStatusCounts.COMPLETED || 0).toString(), `${((paymentStatusCounts.COMPLETED || 0) / tests.length * 100).toFixed(1)}%`],
+            ['Tong doanh thu', formatCurrencyForPDF(totalRevenue), 'N/A']
+        ];
+
+        pdf.autoTable({
+            startY: currentY,
+            head: [summaryData[0]],
+            body: summaryData.slice(1),
+            theme: 'grid',
+            headStyles: {
+                fillColor: [16, 185, 129],
+                textColor: 255,
+                fontStyle: 'bold',
+                fontSize: 10
+            },
+            styles: {
+                fontSize: 9,
+                cellPadding: 6
+            },
+            columnStyles: {
+                0: { fontStyle: 'bold', cellWidth: 120 },
+                1: { halign: 'center', cellWidth: 100 },
+                2: { halign: 'center', cellWidth: 80 }
+            },
+            didParseCell: function (data) {
+                // Handle Vietnamese text in cells
+                if (data.cell.text && !unicodeSupported) {
+                    data.cell.text = vietnameseToASCII(data.cell.text);
+                }
+            }
+        });
+
+        // === FOOTER ===
+        const pageCount = pdf.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            pdf.setPage(i);
+            pdf.setFontSize(8);
+            pdf.setTextColor(107, 114, 128);
+            const footerText = unicodeSupported
+                ? 'HealApp - Quản lý STI Test'
+                : 'HealApp - Quan ly STI Test';
+            pdf.text(footerText, 40, pdf.internal.pageSize.height - 40);
+            pdf.text(`Trang ${i} / ${pageCount}`, pdf.internal.pageSize.width - 100, pdf.internal.pageSize.height - 40);
+            const contactText = unicodeSupported
+                ? 'Liên hệ: admin@healapp.vn | Hotline: 1900-xxxx'
+                : 'Lien he: admin@healapp.vn | Hotline: 1900-xxxx';
+            pdf.text(contactText, 40, pdf.internal.pageSize.height - 25);
+        }
+
+        // Save file
+        const fileName = `HealApp_STI_Test_List_${new Date().toISOString().split('T')[0]}.pdf`;
+        pdf.save(fileName);
+
+    } catch (error) {
+        console.error('PDF Export Error:', error);
+        throw new Error(unicodeSupported ? 'Có lỗi khi xuất PDF' : 'Co loi khi xuat PDF');
+    }
+};
+
+/**
+ * Export STI test list to Excel for admin management
+ */
+export const exportSTITestListToExcel = (data) => {
+    try {
+        const { tests, filters, exportInfo } = data;
+        const wb = XLSX.utils.book_new();
+
+        // === SHEET 1: TEST LIST ===
+        const testListData = [
+            ['DANH SÁCH STI TEST - HEALAPP'],
+            [`Báo cáo được tạo: ${new Date().toLocaleString('vi-VN')}`],
+            [`Tổng số test: ${exportInfo.totalTests}`],
+            [`Xuất bởi: ${exportInfo.exportedBy}`],
+            ['']
+        ];
+
+        // Add filters info
+        if (filters.searchTerm || filters.selectedStatus || filters.selectedPaymentStatus) {
+            testListData.push(['=== BỘ LỌC ÁP DỤNG ===']);
+            if (filters.searchTerm) {
+                testListData.push(['Tìm kiếm', filters.searchTerm]);
+            }
+            if (filters.selectedStatus) {
+                testListData.push(['Trạng thái', filters.selectedStatus]);
+            }
+            if (filters.selectedPaymentStatus) {
+                testListData.push(['Thanh toán', filters.selectedPaymentStatus]);
+            }
+            testListData.push(['']);
+        }
+
+        // Add table headers
+        testListData.push([
+            'ID', 'Khách hàng', 'Dịch vụ/Package', 'Ngày hẹn', 'Giá',
+            'Trạng thái', 'Thanh toán', 'Phương thức', 'Ngày tạo', 'Ghi chú'
+        ]);
+
+        // Add test data
+        tests.forEach(test => {
+            testListData.push([
+                test.testId,
+                test.customerName || 'N/A',
+                test.packageName || test.serviceName || 'N/A',
+                formatDateForExcel(test.appointmentDate) || 'Chưa có lịch hẹn',
+                test.totalPrice || 0,
+                test.status || 'N/A',
+                test.paymentStatus || 'N/A',
+                test.paymentMethod || 'N/A',
+                formatDateForExcel(test.createdAt),
+                test.customerNotes || test.consultantNotes || ''
+            ]);
+        });
+
+        const testListWs = XLSX.utils.aoa_to_sheet(testListData);
+        XLSX.utils.book_append_sheet(wb, testListWs, 'Danh sach test');
+
+        // === SHEET 2: SUMMARY STATS ===
+        const statusCounts = tests.reduce((acc, test) => {
+            acc[test.status] = (acc[test.status] || 0) + 1;
+            return acc;
+        }, {});
+
+        const paymentStatusCounts = tests.reduce((acc, test) => {
+            acc[test.paymentStatus] = (acc[test.paymentStatus] || 0) + 1;
+            return acc;
+        }, {});
+
+        const totalRevenue = tests.reduce((sum, test) => sum + (test.totalPrice || 0), 0);
+
+        const summaryData = [
+            ['THỐNG KÊ TỔNG HỢP STI TEST'],
+            [''],
+            ['Chỉ số', 'Giá trị', 'Tỷ lệ', 'Ghi chú'],
+            ['Tổng số test', tests.length, '100%', 'Tất cả test trong hệ thống'],
+            ['Đã hoàn thành', statusCounts.COMPLETED || 0, `${((statusCounts.COMPLETED || 0) / tests.length * 100).toFixed(1)}%`, 'Test đã hoàn thành'],
+            ['Đã thanh toán', paymentStatusCounts.COMPLETED || 0, `${((paymentStatusCounts.COMPLETED || 0) / tests.length * 100).toFixed(1)}%`, 'Test đã thanh toán'],
+            ['Tổng doanh thu', totalRevenue, 'N/A', 'Tổng doanh thu từ STI test'],
+            [''],
+            ['=== PHÂN TÍCH THEO TRẠNG THÁI ==='],
+            ['Trạng thái', 'Số lượng', 'Tỷ lệ'],
+            ...Object.entries(statusCounts).map(([status, count]) => [
+                status, count, `${(count / tests.length * 100).toFixed(1)}%`
+            ]),
+            [''],
+            ['=== PHÂN TÍCH THEO THANH TOÁN ==='],
+            ['Trạng thái thanh toán', 'Số lượng', 'Tỷ lệ'],
+            ...Object.entries(paymentStatusCounts).map(([status, count]) => [
+                status, count, `${(count / tests.length * 100).toFixed(1)}%`
+            ])
+        ];
+
+        const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+        XLSX.utils.book_append_sheet(wb, summaryWs, 'Thong ke');
+
+        // Auto-adjust column widths
+        [testListWs, summaryWs].forEach(ws => {
+            const cols = [];
+            const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:A1');
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                let maxWidth = 10;
+                for (let R = range.s.r; R <= range.e.r; ++R) {
+                    const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                    const cell = ws[cellAddress];
+                    if (cell && cell.v) {
+                        const cellLength = String(cell.v).length;
+                        maxWidth = Math.max(maxWidth, cellLength);
+                    }
+                }
+                cols.push({ width: Math.min(maxWidth + 2, 60) });
+            }
+            ws['!cols'] = cols;
+        });
+
+        // Export file
+        const fileName = `HealApp_STI_Test_List_${new Date().toISOString().split('T')[0]}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+
+    } catch (error) {
+        console.error('Excel Export Error:', error);
+        throw new Error('Có lỗi khi xuất Excel');
+    }
+};
+
+// Helper functions for STI list export
+const getStatusLabel = (status, unicodeSupported) => {
+    const statusMap = {
+        'PENDING': unicodeSupported ? 'Chờ xử lý' : 'Cho xu ly',
+        'CONFIRMED': unicodeSupported ? 'Đã xác nhận' : 'Da xac nhan',
+        'SAMPLED': unicodeSupported ? 'Đã lấy mẫu' : 'Da lay mau',
+        'RESULTED': unicodeSupported ? 'Có kết quả' : 'Co ket qua',
+        'COMPLETED': unicodeSupported ? 'Hoàn thành' : 'Hoan thanh',
+        'CANCELED': unicodeSupported ? 'Đã hủy' : 'Da huy'
+    };
+    return statusMap[status] || status;
+};
+
+const getPaymentStatusLabel = (status, unicodeSupported) => {
+    const statusMap = {
+        'PENDING': unicodeSupported ? 'Chờ thanh toán' : 'Cho thanh toan',
+        'COMPLETED': unicodeSupported ? 'Đã thanh toán' : 'Da thanh toan',
+        'FAILED': unicodeSupported ? 'Thất bại' : 'That bai',
+        'EXPIRED': unicodeSupported ? 'Hết hạn' : 'Het han',
+        'REFUNDED': unicodeSupported ? 'Đã hoàn tiền' : 'Da hoan tien'
+    };
+    return statusMap[status] || status;
+};
+
+const getPaymentMethodLabel = (method, unicodeSupported) => {
+    const methodMap = {
+        'COD': unicodeSupported ? 'Tiền mặt' : 'Tien mat',
+        'VISA': unicodeSupported ? 'Thẻ' : 'The',
+        'QR_CODE': unicodeSupported ? 'QR Code' : 'QR Code'
+    };
+    return methodMap[method] || method;
+};
+
+const formatCurrencyForPDF = (amount) => {
+    if (!amount) return '0 VND';
+    return new Intl.NumberFormat('vi-VN').format(amount) + ' VND';
 };

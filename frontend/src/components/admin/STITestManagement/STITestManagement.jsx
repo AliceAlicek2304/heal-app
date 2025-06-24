@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { FaEye, FaSearch, FaVial, FaUser, FaCalendarAlt, FaMoneyBillWave, FaCreditCard, FaQrcode } from 'react-icons/fa';
+import { FaEye, FaSearch, FaVial, FaUser, FaCalendarAlt, FaMoneyBillWave, FaCreditCard, FaQrcode, FaFilePdf, FaFileExcel } from 'react-icons/fa';
 import { useToast } from '../../../contexts/ToastContext';
 import { stiService } from '../../../services/stiService';
 import { formatDateTime } from '../../../utils/dateUtils';
+import { exportSTITestListToPDF, exportSTITestListToExcel } from '../../../utils/exportUtils';
 import STITestDetailModal from './STITestDetailModal';
 import Pagination from '../../common/Pagination/Pagination';
 import styles from './STITestManagement.module.css';
@@ -47,6 +48,9 @@ const STITestManagement = () => {
     // Modal
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedTest, setSelectedTest] = useState(null);
+
+    // Export state
+    const [exportLoading, setExportLoading] = useState({ pdf: false, excel: false });
 
     const { addToast } = useToast();
 
@@ -163,6 +167,73 @@ const STITestManagement = () => {
         }).format(price);
     };
 
+    // Export functions
+    const handleExportPDF = async () => {
+        if (!filteredTests.length) {
+            addToast('Không có dữ liệu để xuất', 'warning');
+            return;
+        }
+
+        try {
+            setExportLoading(prev => ({ ...prev, pdf: true }));
+            
+            const exportData = {
+                tests: filteredTests,
+                filters: {
+                    searchTerm,
+                    selectedStatus,
+                    selectedPaymentStatus
+                },
+                exportInfo: {
+                    totalTests: filteredTests.length,
+                    exportDate: new Date(),
+                    exportedBy: 'Admin'
+                }
+            };
+
+            await exportSTITestListToPDF(exportData);
+            addToast('Xuất PDF thành công!', 'success');
+        } catch (error) {
+            console.error('PDF Export Error:', error);
+            addToast('Có lỗi xảy ra khi xuất PDF', 'error');
+        } finally {
+            setExportLoading(prev => ({ ...prev, pdf: false }));
+        }
+    };
+
+    const handleExportExcel = async () => {
+        if (!filteredTests.length) {
+            addToast('Không có dữ liệu để xuất', 'warning');
+            return;
+        }
+
+        try {
+            setExportLoading(prev => ({ ...prev, excel: true }));
+            
+            const exportData = {
+                tests: filteredTests,
+                filters: {
+                    searchTerm,
+                    selectedStatus,
+                    selectedPaymentStatus
+                },
+                exportInfo: {
+                    totalTests: filteredTests.length,
+                    exportDate: new Date(),
+                    exportedBy: 'Admin'
+                }
+            };
+
+            await exportSTITestListToExcel(exportData);
+            addToast('Xuất Excel thành công!', 'success');
+        } catch (error) {
+            console.error('Excel Export Error:', error);
+            addToast('Có lỗi xảy ra khi xuất Excel', 'error');
+        } finally {
+            setExportLoading(prev => ({ ...prev, excel: false }));
+        }
+    };
+
     if (loading) {
         return (
             <div className={styles.loading}>
@@ -182,10 +253,40 @@ const STITestManagement = () => {
                         Xem và theo dõi tất cả các STI test đã được đặt trong hệ thống
                     </p>
                 </div>
-                <div className={styles.stats}>
-                    <div className={styles.statItem}>
-                        <span className={styles.statNumber}>{filteredTests.length}</span>
-                        <span className={styles.statLabel}>Tổng số test</span>
+                <div className={styles.headerRight}>
+                    <div className={styles.stats}>
+                        <div className={styles.statItem}>
+                            <span className={styles.statNumber}>{filteredTests.length}</span>
+                            <span className={styles.statLabel}>Tổng số test</span>
+                        </div>
+                    </div>
+                    <div className={styles.exportButtons}>
+                        <button
+                            onClick={handleExportPDF}
+                            className={`${styles.exportBtn} ${styles.pdfBtn}`}
+                            disabled={loading || exportLoading.pdf || !filteredTests.length}
+                            title="Xuất PDF"
+                        >
+                            {exportLoading.pdf ? (
+                                <div className={styles.spinner}></div>
+                            ) : (
+                                <FaFilePdf />
+                            )}
+                            {exportLoading.pdf ? 'Đang xuất...' : 'PDF'}
+                        </button>
+                        <button
+                            onClick={handleExportExcel}
+                            className={`${styles.exportBtn} ${styles.excelBtn}`}
+                            disabled={loading || exportLoading.excel || !filteredTests.length}
+                            title="Xuất Excel"
+                        >
+                            {exportLoading.excel ? (
+                                <div className={styles.spinner}></div>
+                            ) : (
+                                <FaFileExcel />
+                            )}
+                            {exportLoading.excel ? 'Đang xuất...' : 'Excel'}
+                        </button>
                     </div>
                 </div>
             </div>

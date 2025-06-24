@@ -12,11 +12,18 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
 }
 
 .headerLeft {
     flex: 1;
+}
+
+.headerRight {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-end;
 }
 
 .title {
@@ -58,6 +65,58 @@
 .statLabel {
     font-size: 0.875rem;
     color: #6b7280;
+}
+
+.exportButtons {
+    display: flex;
+    gap: 8px;
+}
+
+.exportBtn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 80px;
+    justify-content: center;
+}
+
+.pdfBtn {
+    background: #dc2626;
+    color: white;
+}
+
+.pdfBtn:hover:not(:disabled) {
+    background: #b91c1c;
+}
+
+.excelBtn {
+    background: #059669;
+    color: white;
+}
+
+.excelBtn:hover:not(:disabled) {
+    background: #047857;
+}
+
+.exportBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.exportBtn .spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
 }
 
 /* Filters */

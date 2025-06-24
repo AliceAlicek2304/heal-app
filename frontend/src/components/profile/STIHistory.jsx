@@ -5,6 +5,7 @@ import { stiService } from '../../services/stiService';
 import stiPackageService from '../../services/stiPackageService';
 import { ratingService } from '../../services/ratingService';
 import { formatDateTime, parseDate } from '../../utils/dateUtils';
+import { exportSTIResultToPDF, exportSTIResultToExcel } from '../../utils/exportUtils';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
 import AdvancedFilter from '../common/AdvancedFilter/AdvancedFilter';
 import Pagination from '../common/Pagination/Pagination';
@@ -97,6 +98,7 @@ const STIHistory = () => {
     const [currentRating, setCurrentRating] = useState(null);
     const [showCurrentRating, setShowCurrentRating] = useState(false); const [testResults, setTestResults] = useState(null);
     const [loadingResults, setLoadingResults] = useState(false);
+    const [exportLoading, setExportLoading] = useState({ pdf: false, excel: false });
     const [allServices, setAllServices] = useState([]);
     const [allPackages, setAllPackages] = useState([]);
     const [paymentInfo, setPaymentInfo] = useState(null);
@@ -638,6 +640,127 @@ const STIHistory = () => {
             toast.error('Có lỗi xảy ra khi xóa đánh giá');
         }
     };
+
+    // Handler để export PDF
+    const handleExportPDF = async () => {
+        if (!selectedTest || !testResults) {
+            toast.error('Không có dữ liệu để xuất');
+            return;
+        }
+
+        try {
+            setExportLoading(prev => ({ ...prev, pdf: true }));
+
+            const exportData = {
+                test: selectedTest,
+                results: testResults.results,
+                customerInfo: {
+                    name: user?.fullName || 'N/A',
+                    email: user?.email || 'N/A',
+                    phone: user?.phone || 'N/A',
+                    id: user?.id || 'N/A'
+                },
+                testInfo: {
+                    id: selectedTest.testId,
+                    serviceName: getTestInfo(selectedTest).name,
+                    serviceDescription: getTestInfo(selectedTest).description,
+                    appointmentDate: selectedTest.appointmentDate,
+                    resultDate: new Date(),
+                    staffName: 'Hệ thống HealApp'
+                }
+            };
+
+            await exportSTIResultToPDF(exportData);
+            toast.success('Xuất PDF thành công!');
+        } catch (error) {
+            console.error('PDF Export Error:', error);
+            toast.error('Có lỗi xảy ra khi xuất PDF');
+        } finally {
+            setExportLoading(prev => ({ ...prev, pdf: false }));
+        }
+    };
+
+    // Handler để export Excel
+    const handleExportExcel = async () => {
+        if (!selectedTest || !testResults) {
+            toast.error('Không có dữ liệu để xuất');
+            return;
+        }
+
+        try {
+            setExportLoading(prev => ({ ...prev, excel: true }));
+
+            const exportData = {
+                test: selectedTest,
+                results: testResults.results,
+                customerInfo: {
+                    name: user?.fullName || 'N/A',
+                    email: user?.email || 'N/A',
+                    phone: user?.phone || 'N/A',
+                    id: user?.id || 'N/A'
+                },
+                testInfo: {
+                    id: selectedTest.testId,
+                    serviceName: getTestInfo(selectedTest).name,
+                    serviceDescription: getTestInfo(selectedTest).description,
+                    appointmentDate: selectedTest.appointmentDate,
+                    resultDate: new Date(),
+                    staffName: 'Hệ thống HealApp'
+                }
+            };
+
+            await exportSTIResultToExcel(exportData);
+            toast.success('Xuất Excel thành công!');
+        } catch (error) {
+            console.error('Excel Export Error:', error);
+            toast.error('Có lỗi xảy ra khi xuất Excel');
+        } finally {
+            setExportLoading(prev => ({ ...prev, excel: false }));
+        }
+    };
+
+    // Test function để kiểm tra export
+    const handleTestExport = async () => {
+        try {
+            setExportLoading(prev => ({ ...prev, pdf: true }));
+
+            const testData = {
+                test: { testId: 'TEST001' },
+                results: [
+                    {
+                        componentName: 'Test Component 1',
+                        resultValue: 'Normal',
+                        normalRange: 'Normal',
+                        unit: 'mg/dL',
+                        serviceName: 'Test Service'
+                    }
+                ],
+                customerInfo: {
+                    name: 'Nguyễn Văn A',
+                    email: 'test@example.com',
+                    phone: '0123456789',
+                    id: 'USER001'
+                },
+                testInfo: {
+                    id: 'TEST001',
+                    serviceName: 'Dịch vụ xét nghiệm STI',
+                    serviceDescription: 'Mô tả dịch vụ xét nghiệm',
+                    appointmentDate: new Date(),
+                    resultDate: new Date(),
+                    staffName: 'Hệ thống HealApp'
+                }
+            };
+
+            await exportSTIResultToPDF(testData);
+            toast.success('Test export PDF thành công!');
+        } catch (error) {
+            console.error('Test Export Error:', error);
+            toast.error('Có lỗi xảy ra khi test export');
+        } finally {
+            setExportLoading(prev => ({ ...prev, pdf: false }));
+        }
+    };
+
     // Helper function để kiểm tra QR có hết hạn từ frontend data không
     const isQRExpiredFromTestData = (test) => {
         // Nếu không phải QR payment, không expired
@@ -1017,6 +1140,14 @@ const STIHistory = () => {
             'star': (
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                </svg>
+            ),
+            'file-excel': (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14,2 14,8 20,8"></polyline>
+                    <path d="M8 13l3 3 5-5"></path>
+                    <path d="M8 17l3-3 5 5"></path>
                 </svg>
             )
         };
@@ -1902,10 +2033,19 @@ const STIHistory = () => {
                         <div className={styles.modalFooter}>
                             <button
                                 className={`${styles.btn} ${styles.btnOutlinePrimary}`}
-                                onClick={() => window.print()}
+                                onClick={handleExportPDF}
+                                disabled={exportLoading.pdf}
                             >
-                                {renderSVGIcon('print')}
-                                In kết quả
+                                {renderSVGIcon(exportLoading.pdf ? 'spinner' : 'print')}
+                                {exportLoading.pdf ? 'Đang xuất...' : 'Xuất PDF'}
+                            </button>
+                            <button
+                                className={`${styles.btn} ${styles.btnOutlineSecondary}`}
+                                onClick={handleExportExcel}
+                                disabled={exportLoading.excel}
+                            >
+                                {renderSVGIcon(exportLoading.excel ? 'spinner' : 'file-excel')}
+                                {exportLoading.excel ? 'Đang xuất...' : 'Xuất Excel'}
                             </button>
                             <button className={`${styles.btn} ${styles.btnSecondary}`} onClick={handleCloseResults}>
                                 Đóng
