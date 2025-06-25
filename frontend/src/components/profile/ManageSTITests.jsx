@@ -130,9 +130,11 @@ const ManageSTITests = () => {
                 } else if (response.message && response.message.includes('payment')) {
                     errorMessage = 'Có lỗi xảy ra với thanh toán. Vui lòng kiểm tra lại thông tin thanh toán của khách hàng.';
                 } else if (response.message && response.message.includes('Test results are required')) {
-                    errorMessage = 'Vui lòng nhập đầy đủ kết quả xét nghiệm cho tất cả các thành phần.';
+                    errorMessage = 'Vui lòng nhập ít nhất một kết quả xét nghiệm để chuyển sang trạng thái có kết quả.';
                 } else if (response.message && response.message.includes('test results could not be saved')) {
                     errorMessage = 'Một số kết quả xét nghiệm không thể lưu. Vui lòng kiểm tra và thử lại.';
+                } else if (response.message && response.message.includes('all test results must be filled')) {
+                    errorMessage = 'Không thể hoàn thành xét nghiệm: Tất cả kết quả xét nghiệm phải được nhập đầy đủ trước khi đánh dấu hoàn thành.';
                 }
 
                 toast.error(errorMessage);
@@ -148,7 +150,9 @@ const ManageSTITests = () => {
     const handleViewDetails = (test) => {
         setSelectedTest(test);
         setShowModal(true);
-    }; const handleAddResults = async (test) => {
+    };
+
+    const handleAddResults = async (test) => {
         setSelectedTest(test);
 
         // Xử lý khác nhau cho test lẻ và test package
@@ -163,8 +167,40 @@ const ManageSTITests = () => {
             return;
         }
 
+        // Nếu test đã ở trạng thái RESULTED, load kết quả hiện tại để cập nhật
+        if (test.status === 'RESULTED') {
+            try {
+                const response = await stiService.getTestResults(test.testId, () => {
+                    toast.error('Phiên đăng nhập hết hạn');
+                });
+
+                if (response.success && response.data) {
+                    // Map existing results to the loaded components
+                    const existingResults = response.data;
+                    setTestResults(prevResults => 
+                        prevResults.map(component => {
+                            const existingResult = existingResults.find(result => 
+                                result.componentId === component.componentId
+                            );
+                            return existingResult ? {
+                                ...component,
+                                resultValue: existingResult.resultValue || '',
+                                normalRange: existingResult.normalRange || component.normalRange || '',
+                                unit: existingResult.unit || component.unit || ''
+                            } : component;
+                        })
+                    );
+                }
+            } catch (error) {
+                console.error('Error loading existing test results:', error);
+                // Continue without existing results if there's an error
+            }
+        }
+
         setShowResultModal(true);
-    }; const handleViewResults = async (test) => {
+    };
+
+    const handleViewResults = async (test) => {
         try {
             setSelectedTest(test);
             const response = await stiService.getTestResults(test.testId, () => {
@@ -232,7 +268,9 @@ const ManageSTITests = () => {
             console.error('Error fetching test results:', error);
             toast.error('Có lỗi xảy ra khi tải kết quả');
         }
-    }; const loadTestComponents = async (serviceId) => {
+    };
+
+    const loadTestComponents = async (serviceId) => {
         try {
             const response = await stiService.getServiceDetails(serviceId);
 
@@ -253,7 +291,9 @@ const ManageSTITests = () => {
             console.error('Error loading test components:', error);
             toast.error('Không thể tải thông tin xét nghiệm');
         }
-    }; const loadTestComponentsForPackage = async (packageId) => {
+    };
+
+    const loadTestComponentsForPackage = async (packageId) => {
         try {
             // Import stiPackageService if not already imported
             const { default: stiPackageService } = await import('../../services/stiPackageService');
@@ -577,6 +617,19 @@ const ManageSTITests = () => {
                     </button>
                 )}                {status === 'RESULTED' && (
                     <>
+                        <button
+                            onClick={() => handleAddResults(test)}
+                            className={`${styles.actionBtn} ${styles.resultBtn}`}
+                            disabled={updating}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14,2 14,8 20,8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                            Cập nhật kết quả
+                        </button>
                         <button
                             onClick={() => handleViewResults(test)}
                             className={`${styles.actionBtn} ${styles.viewResultBtn}`}
