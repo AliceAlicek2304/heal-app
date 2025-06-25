@@ -30,6 +30,11 @@ const safeText = (pdf, text, x, y, options = {}) => {
     if (!text) return;
     
     try {
+        // Đảm bảo font được set đúng
+        if (!options.font) {
+            options.font = 'Roboto';
+        }
+        
         // Try original text first
         pdf.text(text, x, y, options);
     } catch (error) {
@@ -37,6 +42,24 @@ const safeText = (pdf, text, x, y, options = {}) => {
         // Fallback to ASCII
         const asciiText = vietnameseToASCII(text);
         pdf.text(asciiText, x, y, options);
+    }
+};
+
+// Helper: Safe text with better font handling
+const safeTextWithFont = (pdf, text, x, y, fontSize = 12, fontStyle = 'normal') => {
+    if (!text) return;
+    
+    try {
+        pdf.setFont('Roboto', fontStyle);
+        pdf.setFontSize(fontSize);
+        pdf.text(text, x, y);
+    } catch (error) {
+        console.warn('Text rendering failed, using ASCII fallback:', error);
+        // Fallback to ASCII
+        const asciiText = vietnameseToASCII(text);
+        pdf.setFont('Roboto', fontStyle);
+        pdf.setFontSize(fontSize);
+        pdf.text(asciiText, x, y);
     }
 };
 
@@ -397,20 +420,21 @@ export const exportToPDF = async (stats, additionalData = {}) => {
         
         summary.forEach(line => {
             if (line.trim()) {
-                safeText(pdf, line, margin, y);
+                safeTextWithFont(pdf, line, margin, y, 11, 'normal');
                 y += 18;
             } else {
                 y += 10;
             }
         });
         
-        // Footer
-        y = pdf.internal.pageSize.height - 60;
+        // Footer - đảm bảo không bị đè lên nội dung
+        const pageHeight = pdf.internal.pageSize.height;
+        const footerY = Math.max(y + 40, pageHeight - 80); // Đảm bảo footer cách nội dung ít nhất 40pt
+        
         pdf.setFontSize(10);
         pdf.setFont('Roboto', 'italic');
-        safeText(pdf, 'Báo cáo được tạo tự động bởi hệ thống HealApp', margin, y);
-        y += 15;
-        safeText(pdf, 'Để biết thêm thông tin chi tiết, vui lòng liên hệ admin@healapp.com', margin, y);
+        safeTextWithFont(pdf, 'Báo cáo được tạo tự động bởi hệ thống HealApp', margin, footerY, 10, 'italic');
+        safeTextWithFont(pdf, 'Để biết thêm thông tin chi tiết, vui lòng liên hệ admin@healapp.com', margin, footerY + 15, 10, 'italic');
         
         pdf.save(`HealApp_Dashboard_Report_${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (e) {
