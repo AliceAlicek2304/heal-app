@@ -3,7 +3,6 @@ import { FaEye, FaSearch, FaVial, FaUser, FaCalendarAlt, FaMoneyBillWave, FaCred
 import { useToast } from '../../../contexts/ToastContext';
 import { stiService } from '../../../services/stiService';
 import { formatDateTime } from '../../../utils/dateUtils';
-import { exportSTITestListToPDF, exportSTITestListToExcel } from '../../../utils/exportUtils';
 import STITestDetailModal from './STITestDetailModal';
 import Pagination from '../../common/Pagination/Pagination';
 import styles from './STITestManagement.module.css';
@@ -49,9 +48,6 @@ const STITestManagement = () => {
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedTest, setSelectedTest] = useState(null);
 
-    // Export state
-    const [exportLoading, setExportLoading] = useState({ pdf: false, excel: false });
-
     const { addToast } = useToast();
 
     useEffect(() => {
@@ -64,7 +60,9 @@ const STITestManagement = () => {
 
     useEffect(() => {
         setTotalPages(Math.ceil(filteredTests.length / ITEMS_PER_PAGE));
-    }, [filteredTests]); const loadTests = async () => {
+    }, [filteredTests]);
+
+    const loadTests = async () => {
         setLoading(true);
         try {
             const response = await stiService.getAllSTITests();
@@ -167,73 +165,6 @@ const STITestManagement = () => {
         }).format(price);
     };
 
-    // Export functions
-    const handleExportPDF = async () => {
-        if (!filteredTests.length) {
-            addToast('Không có dữ liệu để xuất', 'warning');
-            return;
-        }
-
-        try {
-            setExportLoading(prev => ({ ...prev, pdf: true }));
-            
-            const exportData = {
-                tests: filteredTests,
-                filters: {
-                    searchTerm,
-                    selectedStatus,
-                    selectedPaymentStatus
-                },
-                exportInfo: {
-                    totalTests: filteredTests.length,
-                    exportDate: new Date(),
-                    exportedBy: 'Admin'
-                }
-            };
-
-            await exportSTITestListToPDF(exportData);
-            addToast('Xuất PDF thành công!', 'success');
-        } catch (error) {
-            console.error('PDF Export Error:', error);
-            addToast('Có lỗi xảy ra khi xuất PDF', 'error');
-        } finally {
-            setExportLoading(prev => ({ ...prev, pdf: false }));
-        }
-    };
-
-    const handleExportExcel = async () => {
-        if (!filteredTests.length) {
-            addToast('Không có dữ liệu để xuất', 'warning');
-            return;
-        }
-
-        try {
-            setExportLoading(prev => ({ ...prev, excel: true }));
-            
-            const exportData = {
-                tests: filteredTests,
-                filters: {
-                    searchTerm,
-                    selectedStatus,
-                    selectedPaymentStatus
-                },
-                exportInfo: {
-                    totalTests: filteredTests.length,
-                    exportDate: new Date(),
-                    exportedBy: 'Admin'
-                }
-            };
-
-            await exportSTITestListToExcel(exportData);
-            addToast('Xuất Excel thành công!', 'success');
-        } catch (error) {
-            console.error('Excel Export Error:', error);
-            addToast('Có lỗi xảy ra khi xuất Excel', 'error');
-        } finally {
-            setExportLoading(prev => ({ ...prev, excel: false }));
-        }
-    };
-
     if (loading) {
         return (
             <div className={styles.loading}>
@@ -241,7 +172,8 @@ const STITestManagement = () => {
                 <p>Đang tải danh sách STI test...</p>
             </div>
         );
-    } return (
+    }
+    return (
         <div className={styles.testManagement}>
             <div className={styles.header}>
                 <div className={styles.headerLeft}>
@@ -259,34 +191,6 @@ const STITestManagement = () => {
                             <span className={styles.statNumber}>{filteredTests.length}</span>
                             <span className={styles.statLabel}>Tổng số test</span>
                         </div>
-                    </div>
-                    <div className={styles.exportButtons}>
-                        <button
-                            onClick={handleExportPDF}
-                            className={`${styles.exportBtn} ${styles.pdfBtn}`}
-                            disabled={loading || exportLoading.pdf || !filteredTests.length}
-                            title="Xuất PDF"
-                        >
-                            {exportLoading.pdf ? (
-                                <div className={styles.spinner}></div>
-                            ) : (
-                                <FaFilePdf />
-                            )}
-                            {exportLoading.pdf ? 'Đang xuất...' : 'PDF'}
-                        </button>
-                        <button
-                            onClick={handleExportExcel}
-                            className={`${styles.exportBtn} ${styles.excelBtn}`}
-                            disabled={loading || exportLoading.excel || !filteredTests.length}
-                            title="Xuất Excel"
-                        >
-                            {exportLoading.excel ? (
-                                <div className={styles.spinner}></div>
-                            ) : (
-                                <FaFileExcel />
-                            )}
-                            {exportLoading.excel ? 'Đang xuất...' : 'Excel'}
-                        </button>
                     </div>
                 </div>
             </div>
@@ -322,11 +226,13 @@ const STITestManagement = () => {
                     {Object.entries(PAYMENT_STATUS_CONFIG).map(([key, config]) => (
                         <option key={key} value={key}>{config.label}</option>
                     ))}
-                </select>            </div>
+                </select>
+            </div>
 
             {/* Tests Container */}
             <div className={styles.testsContainer}>
-                {/* Table */}                <div className={styles.tableContainer}>
+                {/* Table */}
+                <div className={styles.tableContainer}>
                     <table className={styles.table}>
                         <thead className={styles.tableHeader}>
                             <tr>
@@ -346,7 +252,8 @@ const STITestManagement = () => {
                             {getCurrentPageItems().length === 0 ? (
                                 <tr>
                                     <td colSpan="10" className={styles.emptyState}>
-                                        <FaVial className={styles.emptyIcon} />                                        <p>Không có STI test nào</p>
+                                        <FaVial className={styles.emptyIcon} />
+                                        <p>Không có STI test nào</p>
                                     </td>
                                 </tr>
                             ) : (
@@ -395,7 +302,8 @@ const STITestManagement = () => {
                                                     className={`${styles.statusBadge} ${styles[statusConfig.className]}`}
                                                     style={{ backgroundColor: statusConfig.color }}
                                                 >
-                                                    {statusConfig.label}                                                </span>
+                                                    {statusConfig.label}
+                                                </span>
                                             </td>
                                             <td>
                                                 <span
