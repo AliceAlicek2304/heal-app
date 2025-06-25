@@ -117,6 +117,12 @@ public class FileStorageService {
      * slashes
      */
     private String buildAvatarUrl(String fileName) {
+        // Nếu sử dụng GCS, trả về URL đầy đủ
+        if (isGcs()) {
+            return String.format("https://storage.googleapis.com/%s/avatar/%s", gcsBucketName, fileName);
+        }
+        
+        // Local storage: sử dụng pattern như cũ
         String base = avatarUrlPattern;
         if (!base.endsWith("/")) {
             base += "/";

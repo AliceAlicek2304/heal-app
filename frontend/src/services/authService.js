@@ -288,6 +288,10 @@ export const authService = {
         
         // Nếu không có avatarPath hoặc rỗng, trả về default
         if (!avatarPath || typeof avatarPath !== 'string' || !avatarPath.trim()) {
+            // Kiểm tra xem có phải đang deploy trên cloud không
+            if (API_BASE_URL.includes('run.app') || API_BASE_URL.includes('cloud') || process.env.NODE_ENV === 'production') {
+                return 'https://storage.googleapis.com/healapp-uploads/avatar/default.jpg';
+            }
             return `${API_BASE_URL}/uploads/avatar/default.jpg`;
         }
         
@@ -296,13 +300,8 @@ export const authService = {
             return avatarPath;
         }
         
-        // Nếu path bắt đầu bằng /uploads/avatar hoặc /img/avatar, thêm API_BASE_URL
-        if (avatarPath.startsWith('/uploads/avatar') || avatarPath.startsWith('/img/avatar')) {
-            return `${API_BASE_URL}${avatarPath}`;
-        }
-        
-        // Trường hợp còn lại: chỉ có tên file, thêm vào path uploads/avatar
-        return `${API_BASE_URL}/uploads/avatar/${avatarPath}`;
+        // Nếu path tương đối, thêm API_BASE_URL (chỉ cho local development)
+        return `${API_BASE_URL}${avatarPath}`;
     },
 
     // Forgot password - send reset code

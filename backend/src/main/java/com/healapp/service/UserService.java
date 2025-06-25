@@ -78,7 +78,19 @@ public class UserService {
     @Value("${app.avatar.url.pattern}")
     private String avatarUrlPattern;
 
+    @Value("${app.storage.type:local}")
+    private String storageType;
+
+    @Value("${gcs.bucket.name:}")
+    private String gcsBucketName;
+
     private String getDefaultAvatarUrl() {
+        // Nếu sử dụng GCS, trả về URL đầy đủ
+        if ("gcs".equalsIgnoreCase(storageType) && gcsBucketName != null && !gcsBucketName.isEmpty()) {
+            return String.format("https://storage.googleapis.com/%s/avatar/default.jpg", gcsBucketName);
+        }
+        
+        // Local storage: sử dụng pattern như cũ
         String base = avatarUrlPattern;
         if (!base.endsWith("/")) {
             base += "/";
