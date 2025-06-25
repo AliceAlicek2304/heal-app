@@ -429,7 +429,8 @@ public class STITestService {
                     return ApiResponse.error("Test results are required for RESULTED status");
                 }
 
-                if (!validateAndSaveTestResults(test, request.getResults(), userId)) {
+                // Allow partial results for RESULTED status - just save what's provided
+                if (!saveTestResults(test, request.getResults(), userId)) {
                     return ApiResponse.error("Some test results could not be saved. Please check and try again.");
                 }
 
@@ -438,6 +439,12 @@ public class STITestService {
             } // COMPLETED status
             else if (request.getStatus() == TestStatus.COMPLETED
                     && ("STAFF".equals(userRole) || "ADMIN".equals(userRole))) {
+                
+                // Check if all required test results are completed before allowing COMPLETED status
+                if (!validateAllTestResultsCompleted(test)) {
+                    return ApiResponse.error("Cannot complete test - all test results must be filled before marking as completed");
+                }
+                
                 test.setStatus(TestStatus.COMPLETED);
             }
 
@@ -578,6 +585,171 @@ public class STITestService {
         }
 
         return allResultsSaved;
+    }
+
+    /**
+     * Save test results without requiring all components to be filled
+     * This allows partial results when moving to RESULTED status
+     */
+    private boolean saveTestResults(STITest test, List<TestResultRequest> resultRequests, Long userId) {
+        List<ServiceTestComponent> serviceComponents;
+
+        // Get components based on whether this is a service or package test
+        if (test.getStiService() != null) {
+            // Individual service test - chỉ lấy components active
+            serviceComponents = test.getStiService().getTestComponents().stream()
+                    .filter(component -> component.getStatus())
+                    .collect(Collectors.toList());
+        } else if (test.getStiPackage() != null) {
+            // Package test - get all active components from all services in the package
+            serviceComponents = new ArrayList<>();
+            for (STIService service : test.getStiPackage().getServices()) {
+                List<ServiceTestComponent> activeComponents = service.getTestComponents().stream()
+                        .filter(component -> component.getStatus())
+                        .collect(Collectors.toList());
+                serviceComponents.addAll(activeComponents);
+            }
+        } else {
+            log.error("Test {} has neither service nor package", test.getTestId());
+            return false;
+        }
+
+        List<Long> activeComponentIds = serviceComponents.stream()
+                .map(ServiceTestComponent::getComponentId)
+                .collect(Collectors.toList());
+
+        // Allow partial results - don't validate that all components are provided
+        boolean allResultsSaved = true;
+        for (TestResultRequest resultReq : resultRequests) {
+            try {
+                if (!activeComponentIds.contains(resultReq.getComponentId())) {
+                    String serviceInfo = test.getStiService() != null ? "service " + test.getStiService().getServiceId()
+                            : "package " + test.getStiPackage().getPackageId();
+                    log.error("Component ID {} does not belong to active components in {}",
+                            resultReq.getComponentId(), serviceInfo);
+                    allResultsSaved = false;
+                    continue;
+                }
+                Optional<ServiceTestComponent> componentOpt = testComponentRepository
+                        .findById(resultReq.getComponentId());
+                if (componentOpt.isEmpty()) {
+                    log.error("Component ID {} not found", resultReq.getComponentId());
+                    allResultsSaved = false;
+                    continue;
+                }
+
+                ServiceTestComponent component = componentOpt.get();
+
+                // Tìm existing TestResult cho component này trong test này
+                Optional<TestResult> existingResultOpt = testResultRepository
+                        .findByStiTest_TestIdAndTestComponent_ComponentId(test.getTestId(), resultReq.getComponentId());
+
+                TestResult testResult;
+                if (existingResultOpt.isPresent()) {
+                    // UPDATE existing result
+                    testResult = existingResultOpt.get();
+                    log.info("Updating existing TestResult ID {} for component {} in test {}",
+                            testResult.getResultId(), resultReq.getComponentId(), test.getTestId());
+                } else {
+                    // CREATE new result
+                    testResult = new TestResult();
+                    testResult.setStiTest(test);
+                    testResult.setTestComponent(component);
+                    testResult.setCreatedAt(LocalDateTime.now()); // Set sourceService for package tests
+                    if (test.getStiPackage() != null) {
+                        testResult.setSourceService(component.getStiService());
+                    }
+
+                    log.info("Creating new TestResult for component {} in test {}",
+                            resultReq.getComponentId(), test.getTestId());
+                }
+
+                // Update/Set result values
+                testResult.setResultValue(resultReq.getResultValue());
+                testResult.setNormalRange(resultReq.getNormalRange());
+                testResult.setUnit(resultReq.getUnit());
+                testResult.setReviewedBy(userId);
+                testResult.setReviewedAt(LocalDateTime.now());
+
+                testResultRepository.save(testResult);
+            } catch (Exception e) {
+                log.error("Error saving result for component {}: {}",
+                        resultReq.getComponentId(), e.getMessage());
+                allResultsSaved = false;
+            }
+        }
+
+        return allResultsSaved;
+    }
+
+    /**
+     * Validate that all required test results are completed before allowing COMPLETED status
+     */
+    private boolean validateAllTestResultsCompleted(STITest test) {
+        try {
+            List<ServiceTestComponent> serviceComponents;
+
+            // Get components based on whether this is a service or package test
+            if (test.getStiService() != null) {
+                // Individual service test - chỉ lấy components active
+                serviceComponents = test.getStiService().getTestComponents().stream()
+                        .filter(component -> component.getStatus())
+                        .collect(Collectors.toList());
+            } else if (test.getStiPackage() != null) {
+                // Package test - get all active components from all services in the package
+                serviceComponents = new ArrayList<>();
+                for (STIService service : test.getStiPackage().getServices()) {
+                    List<ServiceTestComponent> activeComponents = service.getTestComponents().stream()
+                            .filter(component -> component.getStatus())
+                            .collect(Collectors.toList());
+                    serviceComponents.addAll(activeComponents);
+                }
+            } else {
+                log.error("Test {} has neither service nor package", test.getTestId());
+                return false;
+            }
+
+            List<Long> activeComponentIds = serviceComponents.stream()
+                    .map(ServiceTestComponent::getComponentId)
+                    .collect(Collectors.toList());
+
+            // Get all existing test results for this test
+            List<TestResult> existingResults = testResultRepository.findByStiTest_TestId(test.getTestId());
+            List<Long> existingComponentIds = existingResults.stream()
+                    .map(result -> result.getTestComponent().getComponentId())
+                    .collect(Collectors.toList());
+
+            // Check if all active components have results with values
+            for (Long componentId : activeComponentIds) {
+                if (!existingComponentIds.contains(componentId)) {
+                    log.warn("Missing test result for component {} in test {}", componentId, test.getTestId());
+                    return false;
+                }
+
+                // Check if the result has a value
+                Optional<TestResult> resultOpt = existingResults.stream()
+                        .filter(result -> result.getTestComponent().getComponentId().equals(componentId))
+                        .findFirst();
+
+                if (resultOpt.isPresent()) {
+                    TestResult result = resultOpt.get();
+                    if (result.getResultValue() == null || result.getResultValue().trim().isEmpty()) {
+                        log.warn("Test result for component {} in test {} has no value", componentId, test.getTestId());
+                        return false;
+                    }
+                } else {
+                    log.warn("No test result found for component {} in test {}", componentId, test.getTestId());
+                    return false;
+                }
+            }
+
+            log.info("All test results are completed for test {}", test.getTestId());
+            return true;
+
+        } catch (Exception e) {
+            log.error("Error validating test results completion for test {}: {}", test.getTestId(), e.getMessage(), e);
+            return false;
+        }
     }
 
     private boolean validateStatusTransition(STITest test, TestStatus newStatus, String userRole) {
@@ -951,7 +1123,7 @@ public class STITestService {
         // Chỉ tạo TestResult cho các components có status = true
         List<ServiceTestComponent> activeComponents = stiTest.getStiService().getTestComponents().stream()
                 .filter(component -> component.getStatus())
-                .toList();
+                .collect(Collectors.toList());
 
         for (ServiceTestComponent component : activeComponents) {
             TestResult result = new TestResult();
@@ -977,7 +1149,7 @@ public class STITestService {
                 // Chỉ tạo TestResult cho các components có status = true
                 List<ServiceTestComponent> activeComponents = service.getTestComponents().stream()
                         .filter(component -> component.getStatus())
-                        .toList();
+                        .collect(Collectors.toList());
 
                 for (ServiceTestComponent component : activeComponents) {
                     TestResult result = new TestResult();
