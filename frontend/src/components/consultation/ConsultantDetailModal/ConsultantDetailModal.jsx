@@ -11,11 +11,6 @@ const ConsultantDetailModal = ({ consultant, onClose, onBookConsultation }) => {
     };
 
     const getAvatarUrl = (avatar) => {
-        if (!avatar) return '/img/avatar/default.jpg';
-
-        if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
-            return avatar;
-        }
         return authService.getAvatarUrl(avatar);
     };
 

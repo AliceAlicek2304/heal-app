@@ -3,6 +3,7 @@ import { getTopConsultants, getDateRange } from '../../../services/adminStatsSer
 import Pagination from '../../common/Pagination/Pagination';
 import DateFilter from './DateFilter';
 import styles from './TopConsultants.module.css';
+import authService from '../../../services/authService';
 
 const TopConsultants = () => {
     const [consultants, setConsultants] = useState([]);
@@ -206,11 +207,5 @@ export default TopConsultants;
 
 // Helper function (add to this file or import from utils if shared)
 const getAvatarUrl = (avatarPath) => {
-    if (!avatarPath) return null;
-    const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-    if (avatarPath.startsWith('http')) return avatarPath;
-    if (avatarPath.startsWith('/uploads/avatar') || avatarPath.startsWith('/img/avatar')) {
-        return `${API_BASE_URL}${avatarPath}`;
-    }
-    return `${API_BASE_URL}/uploads/avatar/${avatarPath}`;
+    return authService.getAvatarUrl(avatarPath);
 };

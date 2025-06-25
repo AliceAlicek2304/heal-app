@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 import HomePage from "./pages/HomePage/HomePage";
@@ -20,8 +20,34 @@ import FAQ from './pages/FAQ/FAQ';
 import Guides from './pages/Guides/Guides';
 import Privacy from './pages/Privacy/Privacy';
 import Terms from './pages/Terms/Terms';
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ToastProvider } from './contexts/ToastContext';
+
+// Component để kiểm tra và redirect admin
+const AdminRedirect = () => {
+    const { user, isAuthenticated, isLoading } = useAuth();
+
+    useEffect(() => {
+        // Chỉ kiểm tra khi đã load xong và user đã đăng nhập
+        if (!isLoading && isAuthenticated && user) {
+            const isAdmin = (user?.roles && user.roles.includes('ROLE_ADMIN')) ||
+                           (user?.role && user.role === 'ADMIN');
+            
+            if (isAdmin) {
+                const currentPath = window.location.pathname;
+                // Chỉ redirect nếu không đang ở trang admin hoặc profile
+                if (!currentPath.startsWith('/admin') && !currentPath.startsWith('/profile')) {
+                    // Sử dụng setTimeout để đảm bảo component đã mount hoàn toàn
+                    setTimeout(() => {
+                        window.location.href = '/admin';
+                    }, 200);
+                }
+            }
+        }
+    }, [user, isAuthenticated, isLoading]);
+
+    return null;
+};
 
 function App() {
   return (
@@ -29,6 +55,7 @@ function App() {
       <ToastProvider>
         <Router>
           <div className="App">
+            <AdminRedirect />
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/blog" element={<Blog />} />

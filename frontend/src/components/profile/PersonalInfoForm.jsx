@@ -19,15 +19,7 @@ const PersonalInfoForm = () => {
 
     // Helper function to build avatar URL (dùng chung toàn app, giống authService)
     const getAvatarUrl = (avatarPath) => {
-        const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-        if (!avatarPath || typeof avatarPath !== 'string' || !avatarPath.trim()) {
-            return `${API_BASE_URL}/uploads/avatar/default.jpg`;
-        }
-        if (/^https?:\/\//.test(avatarPath)) return avatarPath;
-        if (avatarPath.startsWith('/uploads/avatar') || avatarPath.startsWith('/img/avatar')) {
-            return `${API_BASE_URL}${avatarPath}`;
-        }
-        return `${API_BASE_URL}/uploads/avatar/${avatarPath}`;
+        return authService.getAvatarUrl(avatarPath);
     };
 
     const setUserDataToForm = useCallback((userData) => {

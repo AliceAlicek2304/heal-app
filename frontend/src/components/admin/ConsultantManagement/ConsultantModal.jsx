@@ -4,6 +4,7 @@ import adminService from '../../../services/adminService';
 import { useToast } from '../../../contexts/ToastContext';
 import { parseDate } from '../../../utils/dateUtils';
 import styles from './ConsultantModal.module.css';
+import authService from '../../../services/authService';
 
 const ConsultantModal = ({ consultant, mode, onSave, onClose }) => {
     const [formData, setFormData] = useState({
@@ -25,19 +26,10 @@ const ConsultantModal = ({ consultant, mode, onSave, onClose }) => {
 
     // Helper function to build avatar URL
     const getAvatarUrl = (avatarPath) => {
-        if (!avatarPath) return null;
+        return authService.getAvatarUrl(avatarPath);
+    };
 
-        const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-
-        // Nếu đã là http thì trả về nguyên xi
-        if (avatarPath.startsWith('http')) return avatarPath;
-        // Nếu đã là /uploads/avatar hoặc /img/avatar thì render nguyên xi
-        if (avatarPath.startsWith('/uploads/avatar') || avatarPath.startsWith('/img/avatar')) {
-            return `${API_BASE_URL}${avatarPath}`;
-        }
-        // Còn lại thì nối như file
-        return `${API_BASE_URL}/uploads/avatar/${avatarPath}`;
-    }; useEffect(() => {
+    useEffect(() => {
         if (mode === 'create') {
             // Reset form for create mode
             setFormData({
@@ -65,7 +57,9 @@ const ConsultantModal = ({ consultant, mode, onSave, onClose }) => {
                 bio: consultant.bio || ''
             });
         }
-    }, [consultant, mode]); const validateForm = () => {
+    }, [consultant, mode]);
+
+    const validateForm = () => {
         const newErrors = {};
 
         if (mode === 'create') {
@@ -113,7 +107,8 @@ const ConsultantModal = ({ consultant, mode, onSave, onClose }) => {
 
         setLoading(true);
         try {
-            const submitData = { ...formData }; let result;
+            const submitData = { ...formData };
+            let result;
             if (mode === 'create') {
                 // Create full consultant account with user and profile
                 result = await adminService.consultants.create(submitData);
@@ -124,7 +119,8 @@ const ConsultantModal = ({ consultant, mode, onSave, onClose }) => {
                     qualifications: submitData.qualifications,
                     experience: submitData.experience,
                     bio: submitData.bio
-                }; result = await adminService.consultants.updateProfile(consultant.userId, profileData);
+                };
+                result = await adminService.consultants.updateProfile(consultant.userId, profileData);
                 addToast('Cập nhật thông tin chuyên viên tư vấn thành công', 'success');
             }
 
@@ -151,7 +147,9 @@ const ConsultantModal = ({ consultant, mode, onSave, onClose }) => {
                 [name]: ''
             }));
         }
-    }; const getModalTitle = () => {
+    };
+
+    const getModalTitle = () => {
         switch (mode) {
             case 'create':
                 return 'Tạo tài khoản chuyên viên tư vấn';
@@ -174,7 +172,9 @@ const ConsultantModal = ({ consultant, mode, onSave, onClose }) => {
                     <button className={styles.closeButton} onClick={onClose}>
                         <FaTimes />
                     </button>
-                </div>                {consultant && (
+                </div>
+
+                {consultant && (
                     <div className={styles.consultantInfo}>
                         <div className={styles.avatar}>
                             {consultant.avatar ? (
@@ -201,7 +201,9 @@ const ConsultantModal = ({ consultant, mode, onSave, onClose }) => {
                             {consultant.gender && <p>Giới tính: {consultant.gender}</p>}
                         </div>
                     </div>
-                )}                <form onSubmit={handleSubmit} className={styles.modalForm}>
+                )}
+
+                <form onSubmit={handleSubmit} className={styles.modalForm}>
                     <div className={styles.formScrollContent}>
                         {mode === 'create' && (
                             <>
@@ -308,7 +310,8 @@ const ConsultantModal = ({ consultant, mode, onSave, onClose }) => {
                             </>
                         )}
 
-                        <div className={styles.sectionTitle}>Thông tin chuyên môn</div><div className={styles.formGrid}>
+                        <div className={styles.sectionTitle}>Thông tin chuyên môn</div>
+                        <div className={styles.formGrid}>
                             {/* Qualifications */}
                             <div className={styles.formGroup}>
                                 <label className={styles.label}>
@@ -372,7 +375,9 @@ const ConsultantModal = ({ consultant, mode, onSave, onClose }) => {
                             disabled={loading}
                         >
                             {isReadOnly ? 'Đóng' : 'Hủy'}
-                        </button>                        {!isReadOnly && (
+                        </button>
+
+                        {!isReadOnly && (
                             <button
                                 type="submit"
                                 className={styles.saveButton}

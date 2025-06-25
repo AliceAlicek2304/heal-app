@@ -3,6 +3,7 @@ import { FaTimes, FaUser, FaEnvelope, FaPhone, FaCalendar, FaUserTag } from 'rea
 import adminService from '../../../services/adminService';
 import { useToast } from '../../../contexts/ToastContext';
 import { parseDate } from '../../../utils/dateUtils';
+import authService from '../../../services/authService';
 import styles from './UserModal.module.css';
 
 const UserModal = ({ user, mode, availableRoles, onSave, onClose }) => {
@@ -25,18 +26,7 @@ const UserModal = ({ user, mode, availableRoles, onSave, onClose }) => {
 
     // Helper function to build avatar URL
     const getAvatarUrl = (avatarPath) => {
-        if (!avatarPath) return null;
-
-        const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-
-        // Nếu đã là http thì trả về nguyên xi
-        if (avatarPath.startsWith('http')) return avatarPath;
-        // Nếu đã là /uploads/avatar hoặc /img/avatar thì render nguyên xi
-        if (avatarPath.startsWith('/uploads/avatar') || avatarPath.startsWith('/img/avatar')) {
-            return `${API_BASE_URL}${avatarPath}`;
-        }
-        // Còn lại thì nối như file
-        return `${API_BASE_URL}/uploads/avatar/${avatarPath}`;
+        return authService.getAvatarUrl(avatarPath);
     };
 
     // Helper function to convert date to yyyy-MM-dd format for input[type="date"]

@@ -14,7 +14,27 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [isAuthenticatedState, setIsAuthenticatedState] = useState(false); useEffect(() => {
+    const [isAuthenticatedState, setIsAuthenticatedState] = useState(false);
+
+    // Helper function to check if user is admin
+    const isUserAdmin = (userData) => {
+        return (userData?.roles && userData.roles.includes('ROLE_ADMIN')) ||
+               (userData?.role && userData.role === 'ADMIN');
+    };
+
+    // Helper function to redirect admin to dashboard
+    const redirectAdminToDashboard = () => {
+        // Only redirect if we're not already on admin page and not on a specific admin route
+        const currentPath = window.location.pathname;
+        if (!currentPath.startsWith('/admin') && !currentPath.startsWith('/profile')) {
+            // Use setTimeout to ensure this runs after the component mounts
+            setTimeout(() => {
+                window.location.href = '/admin';
+            }, 100);
+        }
+    };
+
+    useEffect(() => {
         const verifyAuth = async () => {
             setIsLoading(true);
             try {
@@ -26,6 +46,11 @@ export const AuthProvider = ({ children }) => {
                         const userData = JSON.parse(userStr);
                         setUser(userData);
                         setIsAuthenticatedState(true);
+
+                        // Check if user is admin and redirect if needed
+                        if (isUserAdmin(userData)) {
+                            redirectAdminToDashboard();
+                        }
                     }
 
                     // Check if token is expired and try to refresh
@@ -54,6 +79,11 @@ export const AuthProvider = ({ children }) => {
                                 setUser(result.data);
                                 setIsAuthenticatedState(true);
                                 localStorage.setItem('user', JSON.stringify(result.data));
+
+                                // Check if user is admin and redirect if needed
+                                if (isUserAdmin(result.data)) {
+                                    redirectAdminToDashboard();
+                                }
                             } else {
                                 // Server says we're not authenticated
                                 authService.logout();
@@ -83,16 +113,17 @@ export const AuthProvider = ({ children }) => {
 
         verifyAuth();
     }, []);
+
     const login = async (loginData) => {
         setIsLoading(true);
         try {
-            const response = await authService.loginUser(loginData); if (response.success && response.data?.user) {
+            const response = await authService.loginUser(loginData);
+            if (response.success && response.data?.user) {
                 setUser(response.data.user);
                 setIsAuthenticatedState(true);
 
                 // Check if user is admin - handle both role formats
-                const isAdmin = (response.data.user.roles && response.data.user.roles.includes('ROLE_ADMIN')) ||
-                    (response.data.user.role && response.data.user.role === 'ADMIN');
+                const isAdmin = isUserAdmin(response.data.user);
                 return { success: true, data: response.data, isAdmin: isAdmin };
             }
             setIsAuthenticatedState(false);
@@ -118,7 +149,7 @@ export const AuthProvider = ({ children }) => {
 
     const value = {
         user,
-        isLoading,  // Thêm isLoading vào context   
+        isLoading,
         login,
         logout,
         updateUser,

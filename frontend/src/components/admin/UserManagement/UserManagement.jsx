@@ -7,6 +7,7 @@ import UserModal from './UserModal';
 import ResetPasswordModal from './ResetPasswordModal';
 import Pagination from '../../common/Pagination/Pagination';
 import styles from './UserManagement.module.css';
+import authService from '../../../services/authService';
 
 const ITEMS_PER_PAGE = 15;
 
@@ -31,18 +32,7 @@ const UserManagement = () => {
 
     // Helper function to build avatar URL
     const getAvatarUrl = (avatarPath) => {
-        if (!avatarPath) return null;
-
-        const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-
-        // Nếu đã là http thì trả về nguyên xi
-        if (avatarPath.startsWith('http')) return avatarPath;
-        // Nếu đã là /uploads/avatar hoặc /img/avatar thì render nguyên xi
-        if (avatarPath.startsWith('/uploads/avatar') || avatarPath.startsWith('/img/avatar')) {
-            return `${API_BASE_URL}${avatarPath}`;
-        }
-        // Còn lại thì nối như file
-        return `${API_BASE_URL}/uploads/avatar/${avatarPath}`;
+        return authService.getAvatarUrl(avatarPath);
     };
 
     useEffect(() => {

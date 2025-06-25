@@ -284,10 +284,24 @@ export const authService = {
         }
     },// Generate avatar URL
     getAvatarUrl: (avatarPath) => {
-        if (!avatarPath) return `${API_BASE_URL}/uploads/avatar/default.jpg`;
-        if (avatarPath.startsWith('http')) return avatarPath;
-        // Nếu backend trả về path đã bắt đầu bằng /img/avatar hoặc /uploads/avatar thì render nguyên xi
-        if (avatarPath.startsWith('/uploads/avatar') || avatarPath.startsWith('/img/avatar')) return `${API_BASE_URL}${avatarPath}`;
+        const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+        
+        // Nếu không có avatarPath hoặc rỗng, trả về default
+        if (!avatarPath || typeof avatarPath !== 'string' || !avatarPath.trim()) {
+            return `${API_BASE_URL}/uploads/avatar/default.jpg`;
+        }
+        
+        // Nếu đã là URL đầy đủ (http/https), trả về nguyên xi
+        if (/^https?:\/\//.test(avatarPath)) {
+            return avatarPath;
+        }
+        
+        // Nếu path bắt đầu bằng /uploads/avatar hoặc /img/avatar, thêm API_BASE_URL
+        if (avatarPath.startsWith('/uploads/avatar') || avatarPath.startsWith('/img/avatar')) {
+            return `${API_BASE_URL}${avatarPath}`;
+        }
+        
+        // Trường hợp còn lại: chỉ có tên file, thêm vào path uploads/avatar
         return `${API_BASE_URL}/uploads/avatar/${avatarPath}`;
     },
 
