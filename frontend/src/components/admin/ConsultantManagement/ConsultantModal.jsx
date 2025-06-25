@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaUser, FaEnvelope, FaPhone, FaCalendar, FaGraduationCap, FaBriefcase } from 'react-icons/fa';
-import adminService from '../../../services/adminService';
+import { FaTimes, FaUser, FaEnvelope, FaPhone, FaCalendar, FaUserTag, FaStar, FaGraduationCap, FaBriefcase, FaFileAlt } from 'react-icons/fa';
 import { useToast } from '../../../contexts/ToastContext';
+import adminService from '../../../services/adminService';
 import { parseDate } from '../../../utils/dateUtils';
+import { authService } from '../../../services/authService';
 import styles from './ConsultantModal.module.css';
-import authService from '../../../services/authService';
 
 const ConsultantModal = ({ consultant, mode, onSave, onClose }) => {
     const [formData, setFormData] = useState({

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaUser, FaEnvelope, FaPhone, FaCalendar, FaUserTag } from 'react-icons/fa';
-import adminService from '../../../services/adminService';
 import { useToast } from '../../../contexts/ToastContext';
+import adminService from '../../../services/adminService';
 import { parseDate } from '../../../utils/dateUtils';
-import authService from '../../../services/authService';
+import { authService } from '../../../services/authService';
 import styles from './UserModal.module.css';
 
 const UserModal = ({ user, mode, availableRoles, onSave, onClose }) => {
@@ -39,7 +39,9 @@ const UserModal = ({ user, mode, availableRoles, onSave, onClose }) => {
         const day = String(date.getDate()).padStart(2, '0');
 
         return `${year}-${month}-${day}`;
-    }; useEffect(() => {
+    };
+
+    useEffect(() => {
         if (user && (mode === 'edit' || mode === 'view')) {
             if (mode === 'edit') {
                 // Edit mode: chỉ cho phép sửa role và status
@@ -75,7 +77,9 @@ const UserModal = ({ user, mode, availableRoles, onSave, onClose }) => {
                 isActive: true
             });
         }
-    }, [user, mode]); const validateForm = () => {
+    }, [user, mode]);
+
+    const validateForm = () => {
         const newErrors = {};
 
         if (mode === 'create') {
@@ -114,7 +118,9 @@ const UserModal = ({ user, mode, availableRoles, onSave, onClose }) => {
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
-    }; const handleSubmit = async (e) => {
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!validateForm()) {
@@ -189,33 +195,36 @@ const UserModal = ({ user, mode, availableRoles, onSave, onClose }) => {
                     <button className={styles.closeButton} onClick={onClose}>
                         <FaTimes />
                     </button>
-                </div>                <form onSubmit={handleSubmit} className={styles.modalForm}>
-                    <div className={styles.formScrollContent}>                        {mode === 'view' && user && (
-                        <div className={styles.userInfoSection}>
-                            <div className={styles.userAvatar}>
-                                {user.avatar ? (
-                                    <img
-                                        src={getAvatarUrl(user.avatar)}
-                                        alt={user.fullName || user.username}
-                                        onError={(e) => {
-                                            e.target.style.display = 'none';
-                                            e.target.nextSibling.style.display = 'flex';
-                                        }}
-                                    />
-                                ) : null}
-                                <div
-                                    className={styles.avatarPlaceholder}
-                                    style={{ display: user.avatar ? 'none' : 'flex' }}
-                                >
-                                    {user.fullName?.charAt(0)?.toUpperCase() || user.username?.charAt(0)?.toUpperCase()}
+                </div>
+                <form onSubmit={handleSubmit} className={styles.modalForm}>
+                    <div className={styles.formScrollContent}>
+                        {mode === 'view' && user && (
+                            <div className={styles.userInfoSection}>
+                                <div className={styles.userAvatar}>
+                                    {user.avatar ? (
+                                        <img
+                                            src={getAvatarUrl(user.avatar)}
+                                            alt={user.fullName || user.username}
+                                            onError={(e) => {
+                                                e.target.style.display = 'none';
+                                                e.target.nextSibling.style.display = 'flex';
+                                            }}
+                                        />
+                                    ) : null}
+                                    <div
+                                        className={styles.avatarPlaceholder}
+                                        style={{ display: user.avatar ? 'none' : 'flex' }}
+                                    >
+                                        {user.fullName?.charAt(0)?.toUpperCase() || user.username?.charAt(0)?.toUpperCase()}
+                                    </div>
+                                </div>
+                                <div className={styles.userDetails}>
+                                    <h4>{user.fullName || user.username}</h4>
+                                    <p>{user.email}</p>
+                                    {user.phone && <p>{user.phone}</p>}
                                 </div>
                             </div>
-                            <div className={styles.userDetails}>
-                                <h4>{user.fullName || user.username}</h4>
-                                <p>{user.email}</p>
-                                {user.phone && <p>{user.phone}</p>}                            </div>
-                        </div>
-                    )}
+                        )}
 
                         {mode === 'create' && (
                             <div className={styles.formGrid}>
@@ -333,7 +342,8 @@ const UserModal = ({ user, mode, availableRoles, onSave, onClose }) => {
                                         <option value="Khác">Khác</option>
                                     </select>
                                 </div>
-                            </div>)}
+                            </div>
+                        )}
 
                         {mode === 'view' && user && (
                             <div className={styles.viewGrid}>
@@ -353,7 +363,8 @@ const UserModal = ({ user, mode, availableRoles, onSave, onClose }) => {
                                     <strong>Ngày sinh:</strong> {user.birthDay ? formatDateForInput(user.birthDay) : 'Chưa có'}
                                 </div>
                             </div>
-                        )}                        {/* Role - hiển thị trong create và edit mode, hoặc view mode */}
+                        )}
+                        {/* Role - hiển thị trong create và edit mode, hoặc view mode */}
                         {(mode === 'create' || mode === 'edit' || mode === 'view') && (
                             <div className={styles.formGroup}>
                                 <label className={styles.label}>

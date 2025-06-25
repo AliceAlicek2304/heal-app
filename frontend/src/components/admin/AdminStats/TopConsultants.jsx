@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { FaStar, FaUser, FaCalendar, FaPhone, FaEnvelope, FaFilter } from 'react-icons/fa';
+import { useToast } from '../../../contexts/ToastContext';
 import { getTopConsultants, getDateRange } from '../../../services/adminStatsService';
-import Pagination from '../../common/Pagination/Pagination';
+import { formatDate } from '../../../utils/dateUtils';
 import DateFilter from './DateFilter';
+import { authService } from '../../../services/authService';
 import styles from './TopConsultants.module.css';
-import authService from '../../../services/authService';
+import Pagination from '../../common/Pagination/Pagination';
 
 const TopConsultants = () => {
     const [consultants, setConsultants] = useState([]);
@@ -14,9 +17,13 @@ const TopConsultants = () => {
     const [dateFilter, setDateFilter] = useState('30days');
     const [customStartDate, setCustomStartDate] = useState('');
     const [customEndDate, setCustomEndDate] = useState('');
-    const itemsPerPage = 10; useEffect(() => {
+    const itemsPerPage = 10;
+
+    useEffect(() => {
         fetchConsultants();
-    }, [dateFilter, customStartDate, customEndDate]); const fetchConsultants = async () => {
+    }, [dateFilter, customStartDate, customEndDate]);
+
+    const fetchConsultants = async () => {
         try {
             setLoading(true);
             setError(null);
@@ -62,7 +69,9 @@ const TopConsultants = () => {
         }
 
         return stars.join('') || '⭐'.repeat(0);
-    }; const handleDateFilterChange = (period) => {
+    };
+
+    const handleDateFilterChange = (period) => {
         setDateFilter(period);
         setCurrentPage(1); // Reset to first page when filter changes
     };
@@ -102,13 +111,14 @@ const TopConsultants = () => {
     return (<div className={styles.topConsultants}>
         <div className={styles.header}>
             <h3>Top Tư vấn viên</h3>
-            <div className={styles.headerActions}>                    <DateFilter
-                selectedPeriod={dateFilter}
-                onPeriodChange={handleDateFilterChange}
-                customStartDate={customStartDate}
-                customEndDate={customEndDate}
-                onCustomDateChange={handleCustomDateChange}
-            />
+            <div className={styles.headerActions}>
+                <DateFilter
+                    selectedPeriod={dateFilter}
+                    onPeriodChange={handleDateFilterChange}
+                    customStartDate={customStartDate}
+                    customEndDate={customEndDate}
+                    onCustomDateChange={handleCustomDateChange}
+                />
                 <button onClick={fetchConsultants} className={styles.refreshBtn} disabled={loading}>
                     🔄
                 </button>
@@ -148,7 +158,7 @@ const TopConsultants = () => {
                                     <td className={styles.consultantInfo}>
                                         <div className={styles.consultantDetails}>
                                             <img
-                                                src={consultant.avatar ? getAvatarUrl(consultant.avatar) : '/image/default-avatar.png'}
+                                                src={consultant.avatar ? authService.getAvatarUrl(consultant.avatar) : '/image/default-avatar.png'}
                                                 alt={consultant.fullName}
                                                 className={styles.avatar}
                                                 onError={(e) => {
@@ -204,8 +214,3 @@ const TopConsultants = () => {
 };
 
 export default TopConsultants;
-
-// Helper function (add to this file or import from utils if shared)
-const getAvatarUrl = (avatarPath) => {
-    return authService.getAvatarUrl(avatarPath);
-};

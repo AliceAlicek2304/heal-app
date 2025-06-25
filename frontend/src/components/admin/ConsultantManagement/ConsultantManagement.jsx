@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { FaPlus, FaEdit, FaEye, FaSearch, FaUserMd } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaEye, FaFilter, FaSearch, FaUserMd, FaStar, FaCalendar, FaPhone, FaEnvelope } from 'react-icons/fa';
 import { useToast } from '../../../contexts/ToastContext';
 import adminService from '../../../services/adminService';
 import { formatDate } from '../../../utils/dateUtils';
 import ConsultantModal from './ConsultantModal';
 import Pagination from '../../common/Pagination/Pagination';
+import { authService } from '../../../services/authService';
 import styles from './ConsultantManagement.module.css';
-import authService from '../../../services/authService';
 
 const ITEMS_PER_PAGE = 15;
 

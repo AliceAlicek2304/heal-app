@@ -1,7 +1,6 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
 import { addRobotoFonts } from './fonts';
 import { formatDateTime } from './dateUtils';
 
@@ -92,7 +91,6 @@ export const exportToPDF = async (stats, additionalData = {}) => {
         await addRobotoFonts(pdf);
         
         let y = 40;
-        const pageWidth = pdf.internal.pageSize.width;
         const margin = 40;
         
         // Header
@@ -446,7 +444,7 @@ export const exportToPDF = async (stats, additionalData = {}) => {
 // ==== EXPORT STI RESULT PDF ====
 export const exportSTIResultToPDF = async (data) => {
     try {
-        const { test, results, customerInfo, testInfo } = data;
+        const { results, customerInfo, testInfo } = data;
         const pdf = new jsPDF({ unit: 'pt', orientation: 'portrait', format: 'a4' });
         
         // Load Roboto font
@@ -699,7 +697,7 @@ export const exportToExcel = (stats, additionalData = {}) => {
 
 export const exportSTIResultToExcel = (data) => {
     try {
-        const { test, results, customerInfo, testInfo } = data;
+        const { results, customerInfo, testInfo } = data;
         const wb = XLSX.utils.book_new();
         const wsData = [
             ['Họ tên', customerInfo.name],

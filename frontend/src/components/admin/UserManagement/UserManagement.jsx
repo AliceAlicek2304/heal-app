@@ -6,8 +6,8 @@ import { formatDate } from '../../../utils/dateUtils';
 import UserModal from './UserModal';
 import ResetPasswordModal from './ResetPasswordModal';
 import Pagination from '../../common/Pagination/Pagination';
+import { authService } from '../../../services/authService';
 import styles from './UserManagement.module.css';
-import authService from '../../../services/authService';
 
 const ITEMS_PER_PAGE = 15;
 
@@ -180,7 +180,9 @@ const UserManagement = () => {
     const handlePasswordReset = () => {
         setShowPasswordModal(false);
         addToast('Đặt lại mật khẩu thành công', 'success');
-    }; const toggleUserStatus = async (user) => {
+    };
+
+    const toggleUserStatus = async (user) => {
         try {
             // Chỉ gửi role và isActive như backend yêu cầu
             const updatedData = {
@@ -198,7 +200,9 @@ const UserManagement = () => {
             console.error('Error toggling user status:', error);
             addToast('Không thể cập nhật trạng thái người dùng', 'error');
         }
-    };    // Pagination logic
+    };
+
+    // Pagination logic
     const paginateUsers = () => {
         setTotalPages(Math.ceil(filteredUsers.length / ITEMS_PER_PAGE));
     };
@@ -230,7 +234,8 @@ const UserManagement = () => {
                 <button className={styles.createButton} onClick={handleCreateUser}>
                     <FaPlus />
                     Thêm người dùng
-                </button>            </div>
+                </button>
+            </div>
 
             {/* Stats */}
             <div className={styles.statsContainer}>
@@ -314,24 +319,25 @@ const UserManagement = () => {
                             paginatedUsersData().map(user => (
                                 <tr key={user.id}>
                                     <td>
-                                        <div className={styles.userInfo}>                                            <div className={styles.avatar}>
-                                            {user.avatar ? (
-                                                <img
-                                                    src={getAvatarUrl(user.avatar)}
-                                                    alt={user.fullName || user.username}
-                                                    onError={(e) => {
-                                                        e.target.style.display = 'none';
-                                                        e.target.nextSibling.style.display = 'flex';
-                                                    }}
-                                                />
-                                            ) : null}
-                                            <div
-                                                className={styles.avatarPlaceholder}
-                                                style={{ display: user.avatar ? 'none' : 'flex' }}
-                                            >
-                                                {user.fullName?.charAt(0)?.toUpperCase() || user.username?.charAt(0)?.toUpperCase()}
+                                        <div className={styles.userInfo}>
+                                            <div className={styles.avatar}>
+                                                {user.avatar ? (
+                                                    <img
+                                                        src={getAvatarUrl(user.avatar)}
+                                                        alt={user.fullName || user.username}
+                                                        onError={(e) => {
+                                                            e.target.style.display = 'none';
+                                                            e.target.nextSibling.style.display = 'flex';
+                                                        }}
+                                                    />
+                                                ) : null}
+                                                <div
+                                                    className={styles.avatarPlaceholder}
+                                                    style={{ display: user.avatar ? 'none' : 'flex' }}
+                                                >
+                                                    {user.fullName?.charAt(0)?.toUpperCase() || user.username?.charAt(0)?.toUpperCase()}
+                                                </div>
                                             </div>
-                                        </div>
                                             <div className={styles.userDetails}>
                                                 <div className={styles.userName}>{user.fullName || user.username}</div>
                                                 <div className={styles.userContact}>
