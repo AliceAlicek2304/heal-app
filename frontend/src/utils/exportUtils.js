@@ -40,8 +40,28 @@ const safeText = (pdf, text, x, y, options = {}) => {
     }
 };
 
+// Helper: Format currency
+const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(amount || 0);
+};
+
+// Helper: Format number
+const formatNumber = (num) => {
+    return new Intl.NumberFormat('vi-VN').format(num || 0);
+};
+
+// Helper: Format percentage
+const formatPercentage = (value) => {
+    return `${value >= 0 ? '+' : ''}${value?.toFixed(1) || 0}%`;
+};
+
 // ==== EXPORT DASHBOARD PDF ====
-export const exportToPDF = async (stats) => {
+export const exportToPDF = async (stats, additionalData = {}) => {
     try {
         const pdf = new jsPDF({ unit: 'pt', orientation: 'portrait', format: 'a4' });
         
@@ -49,36 +69,350 @@ export const exportToPDF = async (stats) => {
         await addRobotoFonts(pdf);
         
         let y = 40;
-        pdf.setFontSize(20);
-        pdf.text('BÁO CÁO DASHBOARD HEALAPP', 40, y);
-        y += 30;
-        pdf.setFontSize(12);
-        pdf.text(`Báo cáo được tạo: ${new Date().toLocaleString('vi-VN')}`, 40, y);
-        y += 20;
-        pdf.text('Báo cáo tổng quan hiệu suất kinh doanh', 40, y);
-        y += 20;
+        const pageWidth = pdf.internal.pageSize.width;
+        const margin = 40;
         
-        // Table
+        // Header
+        pdf.setFontSize(24);
+        pdf.setFont('Roboto', 'bold');
+        safeText(pdf, 'BÁO CÁO DASHBOARD HEALAPP', margin, y);
+        y += 40;
+        
+        pdf.setFontSize(12);
+        pdf.setFont('Roboto', 'normal');
+        safeText(pdf, `Báo cáo được tạo: ${new Date().toLocaleString('vi-VN')}`, margin, y);
+        y += 25;
+        safeText(pdf, 'Báo cáo tổng quan hiệu suất kinh doanh và hoạt động hệ thống', margin, y);
+        y += 40;
+        
+        // 1. OVERVIEW STATISTICS
+        pdf.setFontSize(16);
+        pdf.setFont('Roboto', 'bold');
+        safeText(pdf, '1. THỐNG KÊ TỔNG QUAN', margin, y);
+        y += 25;
+        
         const overviewData = [
-            ['Chỉ số', 'Giá trị'],
-            ['Tổng người dùng', stats.totalUsers],
-            ['Tư vấn viên', stats.totalConsultants],
-            ['Khách hàng', stats.totalUsers - stats.totalConsultants],
-            ['Tổng buổi tư vấn', stats.totalConsultations],
-            ['Xét nghiệm STI', stats.totalSTITests],
-            ['Tổng doanh thu', stats.totalRevenue + ' VND']
+            ['Chỉ số', 'Giá trị', 'Mô tả'],
+            ['Tổng người dùng', formatNumber(stats.totalUsers), 'Tổng số tài khoản đăng ký'],
+            ['Tư vấn viên', formatNumber(stats.totalConsultants), 'Số lượng tư vấn viên hoạt động'],
+            ['Khách hàng', formatNumber(stats.totalUsers - stats.totalConsultants), 'Số lượng khách hàng sử dụng dịch vụ'],
+            ['Tổng buổi tư vấn', formatNumber(stats.totalConsultations), 'Tổng số buổi tư vấn đã thực hiện'],
+            ['Xét nghiệm STI', formatNumber(stats.totalSTITests), 'Tổng số lượt xét nghiệm STI'],
+            ['Tổng doanh thu', formatCurrency(stats.totalRevenue), 'Tổng doanh thu từ trước đến nay']
         ];
         
         pdf.autoTable({
-            startY: y + 20,
+            startY: y,
             head: [overviewData[0]],
             body: overviewData.slice(1),
             theme: 'grid',
-            headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold', fontSize: 10, font: 'Roboto' },
-            styles: { fontSize: 9, cellPadding: 8, font: 'Roboto' }
+            headStyles: { 
+                fillColor: [59, 130, 246], 
+                textColor: 255, 
+                fontStyle: 'bold', 
+                fontSize: 10, 
+                font: 'Roboto' 
+            },
+            styles: { 
+                fontSize: 9, 
+                cellPadding: 8, 
+                font: 'Roboto' 
+            }
         });
         
-        pdf.save(`HealApp_Dashboard_${new Date().toISOString().split('T')[0]}.pdf`);
+        y = pdf.lastAutoTable.finalY + 30;
+        
+        // 2. BUSINESS KPIs
+        pdf.setFontSize(16);
+        pdf.setFont('Roboto', 'bold');
+        safeText(pdf, '2. CHỈ SỐ KINH DOANH QUAN TRỌNG (KPIs)', margin, y);
+        y += 25;
+        
+        const kpiData = [
+            ['Chỉ số', 'Giá trị', 'Ý nghĩa'],
+            ['Giá trị đơn hàng TB', formatCurrency(stats.averageOrderValue), 'Trung bình giá trị mỗi giao dịch'],
+            ['Doanh thu/Người dùng', formatCurrency(stats.revenuePerUser), 'Doanh thu trung bình trên mỗi người dùng'],
+            ['Tỷ lệ giữ chân KH', formatPercentage(stats.customerRetentionRate), 'Tỷ lệ khách hàng quay lại sử dụng dịch vụ'],
+            ['Tăng trưởng doanh thu', formatPercentage(stats.revenueGrowthRate), 'Tỷ lệ tăng trưởng so với tháng trước'],
+            ['Tăng trưởng người dùng', formatPercentage(stats.userGrowthRate), 'Tỷ lệ tăng trưởng người dùng mới'],
+            ['Tăng trưởng đơn hàng', formatPercentage(stats.orderGrowthRate), 'Tỷ lệ tăng trưởng số lượng giao dịch']
+        ];
+        
+        pdf.autoTable({
+            startY: y,
+            head: [kpiData[0]],
+            body: kpiData.slice(1),
+            theme: 'grid',
+            headStyles: { 
+                fillColor: [16, 163, 127], 
+                textColor: 255, 
+                fontStyle: 'bold', 
+                fontSize: 10, 
+                font: 'Roboto' 
+            },
+            styles: { 
+                fontSize: 9, 
+                cellPadding: 8, 
+                font: 'Roboto' 
+            }
+        });
+        
+        y = pdf.lastAutoTable.finalY + 30;
+        
+        // 3. TOP CONSULTANTS (if available)
+        if (additionalData.topConsultants && additionalData.topConsultants.length > 0) {
+            pdf.setFontSize(16);
+            pdf.setFont('Roboto', 'bold');
+            safeText(pdf, '3. TOP TƯ VẤN VIÊN HOẠT ĐỘNG TỐT NHẤT', margin, y);
+            y += 25;
+            
+            const consultantsData = [
+                ['STT', 'Tên tư vấn viên', 'Email', 'Số buổi tư vấn', 'Đánh giá TB']
+            ];
+            
+            additionalData.topConsultants.slice(0, 10).forEach((consultant, index) => {
+                consultantsData.push([
+                    (index + 1).toString(),
+                    consultant.fullName || 'N/A',
+                    consultant.email || 'N/A',
+                    formatNumber(consultant.bookingCount || 0),
+                    `${(consultant.avgRating || 0).toFixed(1)}/5`
+                ]);
+            });
+            
+            pdf.autoTable({
+                startY: y,
+                head: [consultantsData[0]],
+                body: consultantsData.slice(1),
+                theme: 'grid',
+                headStyles: { 
+                    fillColor: [217, 119, 6], 
+                    textColor: 255, 
+                    fontStyle: 'bold', 
+                    fontSize: 10, 
+                    font: 'Roboto' 
+                },
+                styles: { 
+                    fontSize: 9, 
+                    cellPadding: 6, 
+                    font: 'Roboto' 
+                }
+            });
+            
+            y = pdf.lastAutoTable.finalY + 30;
+        }
+        
+        // 4. TOP STI SERVICES (if available)
+        if (additionalData.topSTIServices && additionalData.topSTIServices.length > 0) {
+            pdf.setFontSize(16);
+            pdf.setFont('Roboto', 'bold');
+            safeText(pdf, '4. TOP DỊCH VỤ XÉT NGHIỆM STI PHỔ BIẾN', margin, y);
+            y += 25;
+            
+            const servicesData = [
+                ['STT', 'Tên dịch vụ', 'Giá', 'Số lượt sử dụng', 'Đánh giá TB']
+            ];
+            
+            additionalData.topSTIServices.slice(0, 10).forEach((service, index) => {
+                servicesData.push([
+                    (index + 1).toString(),
+                    service.serviceName || 'N/A',
+                    formatCurrency(service.price || 0),
+                    formatNumber(service.bookingCount || 0),
+                    `${(service.avgRating || 0).toFixed(1)}/5`
+                ]);
+            });
+            
+            pdf.autoTable({
+                startY: y,
+                head: [servicesData[0]],
+                body: servicesData.slice(1),
+                theme: 'grid',
+                headStyles: { 
+                    fillColor: [139, 92, 246], 
+                    textColor: 255, 
+                    fontStyle: 'bold', 
+                    fontSize: 10, 
+                    font: 'Roboto' 
+                },
+                styles: { 
+                    fontSize: 9, 
+                    cellPadding: 6, 
+                    font: 'Roboto' 
+                }
+            });
+            
+            y = pdf.lastAutoTable.finalY + 30;
+        }
+        
+        // 5. TOP STI PACKAGES (if available)
+        if (additionalData.topSTIPackages && additionalData.topSTIPackages.length > 0) {
+            pdf.setFontSize(16);
+            pdf.setFont('Roboto', 'bold');
+            safeText(pdf, '5. TOP GÓI XÉT NGHIỆM STI PHỔ BIẾN', margin, y);
+            y += 25;
+            
+            const packagesData = [
+                ['STT', 'Tên gói', 'Giá', 'Số lượt sử dụng', 'Đánh giá TB']
+            ];
+            
+            additionalData.topSTIPackages.slice(0, 10).forEach((packageItem, index) => {
+                packagesData.push([
+                    (index + 1).toString(),
+                    packageItem.packageName || 'N/A',
+                    formatCurrency(packageItem.totalPrice || 0),
+                    formatNumber(packageItem.bookingCount || 0),
+                    `${(packageItem.avgRating || 0).toFixed(1)}/5`
+                ]);
+            });
+            
+            pdf.autoTable({
+                startY: y,
+                head: [packagesData[0]],
+                body: packagesData.slice(1),
+                theme: 'grid',
+                headStyles: { 
+                    fillColor: [236, 72, 153], 
+                    textColor: 255, 
+                    fontStyle: 'bold', 
+                    fontSize: 10, 
+                    font: 'Roboto' 
+                },
+                styles: { 
+                    fontSize: 9, 
+                    cellPadding: 6, 
+                    font: 'Roboto' 
+                }
+            });
+            
+            y = pdf.lastAutoTable.finalY + 30;
+        }
+        
+        // 6. REVENUE ANALYSIS (if available)
+        if (additionalData.revenueData && additionalData.revenueData.length > 0) {
+            pdf.setFontSize(16);
+            pdf.setFont('Roboto', 'bold');
+            safeText(pdf, '6. PHÂN TÍCH DOANH THU THEO THỜI GIAN', margin, y);
+            y += 25;
+            
+            const revenueData = [
+                ['Thời gian', 'Doanh thu', 'Số giao dịch', 'Trung bình/giao dịch']
+            ];
+            
+            additionalData.revenueData.forEach(item => {
+                const avgPerTransaction = item.transactions > 0 ? item.revenue / item.transactions : 0;
+                revenueData.push([
+                    item.period || 'N/A',
+                    formatCurrency(item.revenue || 0),
+                    formatNumber(item.transactions || 0),
+                    formatCurrency(avgPerTransaction)
+                ]);
+            });
+            
+            pdf.autoTable({
+                startY: y,
+                head: [revenueData[0]],
+                body: revenueData.slice(1),
+                theme: 'grid',
+                headStyles: { 
+                    fillColor: [239, 68, 68], 
+                    textColor: 255, 
+                    fontStyle: 'bold', 
+                    fontSize: 10, 
+                    font: 'Roboto' 
+                },
+                styles: { 
+                    fontSize: 9, 
+                    cellPadding: 6, 
+                    font: 'Roboto' 
+                }
+            });
+            
+            y = pdf.lastAutoTable.finalY + 30;
+        }
+        
+        // 7. REVENUE DISTRIBUTION (if available)
+        if (additionalData.revenueDistribution && additionalData.revenueDistribution.length > 0) {
+            pdf.setFontSize(16);
+            pdf.setFont('Roboto', 'bold');
+            safeText(pdf, '7. PHÂN BỔ DOANH THU THEO DỊCH VỤ', margin, y);
+            y += 25;
+            
+            const distributionData = [
+                ['Loại dịch vụ', 'Doanh thu', 'Tỷ lệ %']
+            ];
+            
+            additionalData.revenueDistribution.forEach(item => {
+                const percentage = item.percentage || 0;
+                distributionData.push([
+                    item.name || 'N/A',
+                    formatCurrency(item.revenue || 0),
+                    `${percentage.toFixed(1)}%`
+                ]);
+            });
+            
+            pdf.autoTable({
+                startY: y,
+                head: [distributionData[0]],
+                body: distributionData.slice(1),
+                theme: 'grid',
+                headStyles: { 
+                    fillColor: [34, 197, 94], 
+                    textColor: 255, 
+                    fontStyle: 'bold', 
+                    fontSize: 10, 
+                    font: 'Roboto' 
+                },
+                styles: { 
+                    fontSize: 9, 
+                    cellPadding: 6, 
+                    font: 'Roboto' 
+                }
+            });
+            
+            y = pdf.lastAutoTable.finalY + 30;
+        }
+        
+        // 8. SUMMARY AND RECOMMENDATIONS
+        pdf.setFontSize(16);
+        pdf.setFont('Roboto', 'bold');
+        safeText(pdf, '8. TÓM TẮT VÀ KHUYẾN NGHỊ', margin, y);
+        y += 25;
+        
+        pdf.setFontSize(11);
+        pdf.setFont('Roboto', 'normal');
+        
+        const summary = [
+            `• Tổng doanh thu: ${formatCurrency(stats.totalRevenue)}`,
+            `• Tỷ lệ tăng trưởng doanh thu: ${formatPercentage(stats.revenueGrowthRate)}`,
+            `• Tỷ lệ giữ chân khách hàng: ${formatPercentage(stats.customerRetentionRate)}`,
+            `• Giá trị đơn hàng trung bình: ${formatCurrency(stats.averageOrderValue)}`,
+            '',
+            'KHUYẾN NGHỊ:',
+            `• ${stats.revenueGrowthRate >= 0 ? 'Duy trì' : 'Cải thiện'} chiến lược marketing để tăng doanh thu`,
+            `• ${stats.customerRetentionRate >= 70 ? 'Tuyệt vời' : 'Cần cải thiện'} dịch vụ khách hàng để tăng tỷ lệ giữ chân`,
+            `• ${stats.averageOrderValue >= 500000 ? 'Tốt' : 'Cần tối ưu'} chiến lược giá để tăng giá trị đơn hàng`,
+            `• Tập trung vào ${stats.totalConsultations > stats.totalSTITests ? 'dịch vụ xét nghiệm STI' : 'dịch vụ tư vấn'} để tăng doanh thu`
+        ];
+        
+        summary.forEach(line => {
+            if (line.trim()) {
+                safeText(pdf, line, margin, y);
+                y += 18;
+            } else {
+                y += 10;
+            }
+        });
+        
+        // Footer
+        y = pdf.internal.pageSize.height - 60;
+        pdf.setFontSize(10);
+        pdf.setFont('Roboto', 'italic');
+        safeText(pdf, 'Báo cáo được tạo tự động bởi hệ thống HealApp', margin, y);
+        y += 15;
+        safeText(pdf, 'Để biết thêm thông tin chi tiết, vui lòng liên hệ admin@healapp.com', margin, y);
+        
+        pdf.save(`HealApp_Dashboard_Report_${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (e) {
         console.error('PDF Export Error:', e);
         alert('Có lỗi khi xuất PDF!');
@@ -171,22 +505,170 @@ export const exportSTIResultToPDF = async (data) => {
 };
 
 // ==== EXPORT EXCEL ====
-export const exportToExcel = (stats) => {
+export const exportToExcel = (stats, additionalData = {}) => {
     try {
         const wb = XLSX.utils.book_new();
-        const wsData = [
-            ['Chỉ số', 'Giá trị'],
-            ['Tổng người dùng', stats.totalUsers],
-            ['Tư vấn viên', stats.totalConsultants],
-            ['Khách hàng', stats.totalUsers - stats.totalConsultants],
-            ['Tổng buổi tư vấn', stats.totalConsultations],
-            ['Xét nghiệm STI', stats.totalSTITests],
-            ['Tổng doanh thu', stats.totalRevenue + ' VND']
+        
+        // 1. Overview Statistics Sheet
+        const overviewData = [
+            ['BÁO CÁO DASHBOARD HEALAPP'],
+            [`Báo cáo được tạo: ${new Date().toLocaleString('vi-VN')}`],
+            [''],
+            ['1. THỐNG KÊ TỔNG QUAN'],
+            ['Chỉ số', 'Giá trị', 'Mô tả'],
+            ['Tổng người dùng', stats.totalUsers, 'Tổng số tài khoản đăng ký'],
+            ['Tư vấn viên', stats.totalConsultants, 'Số lượng tư vấn viên hoạt động'],
+            ['Khách hàng', stats.totalUsers - stats.totalConsultants, 'Số lượng khách hàng sử dụng dịch vụ'],
+            ['Tổng buổi tư vấn', stats.totalConsultations, 'Tổng số buổi tư vấn đã thực hiện'],
+            ['Xét nghiệm STI', stats.totalSTITests, 'Tổng số lượt xét nghiệm STI'],
+            ['Tổng doanh thu', stats.totalRevenue, 'Tổng doanh thu từ trước đến nay']
         ];
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
-        XLSX.utils.book_append_sheet(wb, ws, 'Dashboard');
-        XLSX.writeFile(wb, `HealApp_Dashboard_${new Date().toISOString().split('T')[0]}.xlsx`);
+        
+        const overviewWs = XLSX.utils.aoa_to_sheet(overviewData);
+        XLSX.utils.book_append_sheet(wb, overviewWs, 'Tổng quan');
+        
+        // 2. Business KPIs Sheet
+        const kpiData = [
+            ['2. CHỈ SỐ KINH DOANH QUAN TRỌNG (KPIs)'],
+            ['Chỉ số', 'Giá trị', 'Ý nghĩa'],
+            ['Giá trị đơn hàng TB', stats.averageOrderValue, 'Trung bình giá trị mỗi giao dịch'],
+            ['Doanh thu/Người dùng', stats.revenuePerUser, 'Doanh thu trung bình trên mỗi người dùng'],
+            ['Tỷ lệ giữ chân KH', stats.customerRetentionRate, 'Tỷ lệ khách hàng quay lại sử dụng dịch vụ'],
+            ['Tăng trưởng doanh thu', stats.revenueGrowthRate, 'Tỷ lệ tăng trưởng so với tháng trước'],
+            ['Tăng trưởng người dùng', stats.userGrowthRate, 'Tỷ lệ tăng trưởng người dùng mới'],
+            ['Tăng trưởng đơn hàng', stats.orderGrowthRate, 'Tỷ lệ tăng trưởng số lượng giao dịch']
+        ];
+        
+        const kpiWs = XLSX.utils.aoa_to_sheet(kpiData);
+        XLSX.utils.book_append_sheet(wb, kpiWs, 'KPIs');
+        
+        // 3. Top Consultants Sheet (if available)
+        if (additionalData.topConsultants && additionalData.topConsultants.length > 0) {
+            const consultantsData = [
+                ['3. TOP TƯ VẤN VIÊN HOẠT ĐỘNG TỐT NHẤT'],
+                ['STT', 'Tên tư vấn viên', 'Email', 'Số buổi tư vấn', 'Đánh giá TB']
+            ];
+            
+            additionalData.topConsultants.forEach((consultant, index) => {
+                consultantsData.push([
+                    index + 1,
+                    consultant.fullName || 'N/A',
+                    consultant.email || 'N/A',
+                    consultant.bookingCount || 0,
+                    consultant.avgRating || 0
+                ]);
+            });
+            
+            const consultantsWs = XLSX.utils.aoa_to_sheet(consultantsData);
+            XLSX.utils.book_append_sheet(wb, consultantsWs, 'Top Consultants');
+        }
+        
+        // 4. Top STI Services Sheet (if available)
+        if (additionalData.topSTIServices && additionalData.topSTIServices.length > 0) {
+            const servicesData = [
+                ['4. TOP DỊCH VỤ XÉT NGHIỆM STI PHỔ BIẾN'],
+                ['STT', 'Tên dịch vụ', 'Giá', 'Số lượt sử dụng', 'Đánh giá TB']
+            ];
+            
+            additionalData.topSTIServices.forEach((service, index) => {
+                servicesData.push([
+                    index + 1,
+                    service.serviceName || 'N/A',
+                    service.price || 0,
+                    service.bookingCount || 0,
+                    service.avgRating || 0
+                ]);
+            });
+            
+            const servicesWs = XLSX.utils.aoa_to_sheet(servicesData);
+            XLSX.utils.book_append_sheet(wb, servicesWs, 'Top STI Services');
+        }
+        
+        // 5. Top STI Packages Sheet (if available)
+        if (additionalData.topSTIPackages && additionalData.topSTIPackages.length > 0) {
+            const packagesData = [
+                ['5. TOP GÓI XÉT NGHIỆM STI PHỔ BIẾN'],
+                ['STT', 'Tên gói', 'Giá', 'Số lượt sử dụng', 'Đánh giá TB']
+            ];
+            
+            additionalData.topSTIPackages.forEach((packageItem, index) => {
+                packagesData.push([
+                    index + 1,
+                    packageItem.packageName || 'N/A',
+                    packageItem.totalPrice || 0,
+                    packageItem.bookingCount || 0,
+                    packageItem.avgRating || 0
+                ]);
+            });
+            
+            const packagesWs = XLSX.utils.aoa_to_sheet(packagesData);
+            XLSX.utils.book_append_sheet(wb, packagesWs, 'Top STI Packages');
+        }
+        
+        // 6. Revenue Analysis Sheet (if available)
+        if (additionalData.revenueData && additionalData.revenueData.length > 0) {
+            const revenueData = [
+                ['6. PHÂN TÍCH DOANH THU THEO THỜI GIAN'],
+                ['Thời gian', 'Doanh thu', 'Số giao dịch', 'Trung bình/giao dịch']
+            ];
+            
+            additionalData.revenueData.forEach(item => {
+                const avgPerTransaction = item.transactions > 0 ? item.revenue / item.transactions : 0;
+                revenueData.push([
+                    item.period || 'N/A',
+                    item.revenue || 0,
+                    item.transactions || 0,
+                    avgPerTransaction
+                ]);
+            });
+            
+            const revenueWs = XLSX.utils.aoa_to_sheet(revenueData);
+            XLSX.utils.book_append_sheet(wb, revenueWs, 'Phân tích doanh thu');
+        }
+        
+        // 7. Revenue Distribution Sheet (if available)
+        if (additionalData.revenueDistribution && additionalData.revenueDistribution.length > 0) {
+            const distributionData = [
+                ['7. PHÂN BỔ DOANH THU THEO DỊCH VỤ'],
+                ['Loại dịch vụ', 'Doanh thu', 'Tỷ lệ %']
+            ];
+            
+            additionalData.revenueDistribution.forEach(item => {
+                const percentage = item.percentage || 0;
+                distributionData.push([
+                    item.name || 'N/A',
+                    item.revenue || 0,
+                    percentage
+                ]);
+            });
+            
+            const distributionWs = XLSX.utils.aoa_to_sheet(distributionData);
+            XLSX.utils.book_append_sheet(wb, distributionWs, 'Phân bổ doanh thu');
+        }
+        
+        // 8. Summary Sheet
+        const summaryData = [
+            ['8. TÓM TẮT VÀ KHUYẾN NGHỊ'],
+            [''],
+            ['TÓM TẮT:'],
+            ['Tổng doanh thu', stats.totalRevenue],
+            ['Tỷ lệ tăng trưởng doanh thu', `${stats.revenueGrowthRate}%`],
+            ['Tỷ lệ giữ chân khách hàng', `${stats.customerRetentionRate}%`],
+            ['Giá trị đơn hàng trung bình', stats.averageOrderValue],
+            [''],
+            ['KHUYẾN NGHỊ:'],
+            [stats.revenueGrowthRate >= 0 ? 'Duy trì' : 'Cải thiện', 'chiến lược marketing để tăng doanh thu'],
+            [stats.customerRetentionRate >= 70 ? 'Tuyệt vời' : 'Cần cải thiện', 'dịch vụ khách hàng để tăng tỷ lệ giữ chân'],
+            [stats.averageOrderValue >= 500000 ? 'Tốt' : 'Cần tối ưu', 'chiến lược giá để tăng giá trị đơn hàng'],
+            [stats.totalConsultations > stats.totalSTITests ? 'Tập trung vào dịch vụ xét nghiệm STI' : 'Tập trung vào dịch vụ tư vấn', 'để tăng doanh thu']
+        ];
+        
+        const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+        XLSX.utils.book_append_sheet(wb, summaryWs, 'Tóm tắt');
+        
+        XLSX.writeFile(wb, `HealApp_Dashboard_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
     } catch (e) {
+        console.error('Excel Export Error:', e);
         alert('Có lỗi khi xuất Excel!');
     }
 };
