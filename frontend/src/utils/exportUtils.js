@@ -3,6 +3,7 @@ import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { addRobotoFonts } from './fonts';
+import { formatDateTime } from './dateUtils';
 
 // Helper: Chuyển tiếng Việt có dấu sang không dấu (fallback nếu PDF không render được Unicode)
 const vietnameseToASCII = (str) => {
@@ -129,8 +130,8 @@ export const exportSTIResultToPDF = async (data) => {
             ['Mã xét nghiệm', testInfo.id],
             ['Tên dịch vụ', testInfo.serviceName],
             ['Mô tả', testInfo.serviceDescription],
-            ['Ngày hẹn', testInfo.appointmentDate ? new Date(testInfo.appointmentDate).toLocaleString('vi-VN') : ''],
-            ['Ngày có kết quả', testInfo.resultDate ? new Date(testInfo.resultDate).toLocaleString('vi-VN') : ''],
+            ['Ngày hẹn', formatDateTime(testInfo.appointmentDate)],
+            ['Ngày có kết quả', formatDateTime(testInfo.resultDate)],
             ['Nhân viên thực hiện', testInfo.staffName]
         ];
         
@@ -203,8 +204,8 @@ export const exportSTIResultToExcel = (data) => {
             ['Mã xét nghiệm', testInfo.id],
             ['Tên dịch vụ', testInfo.serviceName],
             ['Mô tả', testInfo.serviceDescription],
-            ['Ngày hẹn', testInfo.appointmentDate ? new Date(testInfo.appointmentDate).toLocaleString('vi-VN') : ''],
-            ['Ngày có kết quả', testInfo.resultDate ? new Date(testInfo.resultDate).toLocaleString('vi-VN') : ''],
+            ['Ngày hẹn', formatDateTime(testInfo.appointmentDate)],
+            ['Ngày có kết quả', formatDateTime(testInfo.resultDate)],
             ['Nhân viên thực hiện', testInfo.staffName],
             [],
             ['Thành phần', 'Kết quả', 'Khoảng bình thường', 'Đơn vị'],
