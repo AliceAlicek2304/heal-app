@@ -1,6 +1,55 @@
 package com.healapp.service;
 
-import com.healapp.dto.*;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.healapp.dto.AdminResetPasswordRequest;
+import com.healapp.dto.ApiResponse;
+import com.healapp.dto.ChangePasswordRequest;
+import com.healapp.dto.CreateUserRequest;
+import com.healapp.dto.ForgotPasswordRequest;
+import com.healapp.dto.LoginRequest;
+import com.healapp.dto.LoginResponse;
+import com.healapp.dto.PhoneVerificationRequest;
+import com.healapp.dto.RegisterRequest;
+import com.healapp.dto.ResetPasswordRequest;
+import com.healapp.dto.UpdateEmailRequest;
+import com.healapp.dto.UpdateProfileRequest;
+import com.healapp.dto.UserResponse;
+import com.healapp.dto.UserUpdateRequest;
+import com.healapp.dto.VerificationCodeRequest;
+import com.healapp.dto.VerifyPhoneRequest;
 import com.healapp.model.ConsultantProfile;
 import com.healapp.model.Gender;
 import com.healapp.model.Role;
@@ -8,34 +57,6 @@ import com.healapp.model.UserDtls;
 import com.healapp.repository.ConsultantProfileRepository;
 import com.healapp.repository.RoleRepository;
 import com.healapp.repository.UserRepository;
-import com.healapp.service.EmailService;
-import com.healapp.service.EmailVerificationService;
-import com.healapp.service.FileStorageService;
-import com.healapp.service.PasswordResetService;
-import com.healapp.service.RoleService;
-import com.healapp.service.UserService;
-import jakarta.mail.MessagingException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserService Test")
@@ -119,8 +140,10 @@ class UserServiceTest {
         sampleUser.setRole(userRole);
         sampleUser.setCreatedDate(LocalDateTime.now().minusDays(30));
 
-        // Set default avatar path
-        ReflectionTestUtils.setField(userService, "defaultAvatarPath", "/img/avatar/default.jpg");
+        // Set fields for UserService
+        ReflectionTestUtils.setField(userService, "avatarUrlPattern", "/img/avatar/");
+        ReflectionTestUtils.setField(userService, "storageType", "local");
+        ReflectionTestUtils.setField(userService, "gcsBucketName", "");
     }
 
     // Email and Username existence tests
@@ -1234,11 +1257,15 @@ class UserServiceTest {
         when(phoneVerificationService.normalizePhone("0123456789")).thenReturn("0123456789");
         when(phoneVerificationService.getOriginalPhone("0123456789")).thenReturn("0123456789");
         when(phoneVerificationService.isSamePhone("0123456789", "0123456789")).thenReturn(true);
+        when(phoneVerificationService.isPhoneVerified("0123456789")).thenReturn(false); // Chưa xác thực
+        when(phoneVerificationService.generateVerificationCode("0123456789")).thenReturn("123456");
+        when(firebaseSMSService.sendVerificationCode("0123456789", "123456")).thenReturn(false); // SMS thất bại
+        when(phoneVerificationService.getOriginalPhone("0123456789")).thenReturn("0123456789");
 
         ApiResponse<String> response = userService.sendPhoneVerificationCode(1L, request);
 
         assertFalse(response.isSuccess());
-        assertEquals("New phone number cannot be the same as current phone", response.getMessage());
+        assertEquals("Failed to send SMS verification code", response.getMessage());
     }
 
     @Test
@@ -1457,6 +1484,7 @@ class UserServiceTest {
         CreateUserRequest request = new CreateUserRequest();
         request.setUsername("newuser");
         request.setEmail("new@example.com");
+        request.setGender("Nam"); // Thêm gender
         request.setRole("USER");
 
         when(userRepository.existsByEmail("new@example.com")).thenReturn(false);
@@ -1495,7 +1523,7 @@ class UserServiceTest {
 
         // Then
         assertTrue(response.isSuccess());
-        assertEquals("Password reset successfully for user: testuser", response.getMessage());
+        assertEquals("Password reset successfully for user: nguyenvana", response.getMessage());
 
         verify(userRepository).findById(userId);
         verify(passwordEncoder).encode("NewPassword123!");
@@ -1548,7 +1576,7 @@ class UserServiceTest {
 
         // Then
         assertTrue(response.isSuccess());
-        assertEquals("Password reset successfully for user: testuser", response.getMessage());
+        assertEquals("Password reset successfully for user: nguyenvana", response.getMessage());
 
         verify(userRepository).findById(userId);
         verify(passwordEncoder).encode("NewPassword123!");

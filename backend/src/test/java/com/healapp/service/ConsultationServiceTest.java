@@ -1,36 +1,45 @@
 package com.healapp.service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
+
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.AvailableTimeSlot;
 import com.healapp.dto.ConsultationRequest;
 import com.healapp.dto.ConsultationResponse;
-import com.healapp.model.Consultation;
 import com.healapp.model.ConsultantProfile;
+import com.healapp.model.Consultation;
 import com.healapp.model.ConsultationStatus;
 import com.healapp.model.Role;
 import com.healapp.model.UserDtls;
 import com.healapp.repository.ConsultantProfileRepository;
 import com.healapp.repository.ConsultationRepository;
 import com.healapp.repository.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ConsultationService Test")
@@ -586,16 +595,16 @@ class ConsultationServiceTest {
     void getAllConsultantMembers_Success() {
         List<UserDtls> consultants = Arrays.asList(consultant);
         
-        when(userRepository.findByRoleName("CONSULTANT")).thenReturn(consultants);
+        when(userRepository.findByRoleNameAndIsActive("CONSULTANT", true)).thenReturn(consultants);
 
         ApiResponse<List<UserDtls>> response = consultationService.getAllConsultantMembers();
 
         assertTrue(response.isSuccess());
-        assertEquals("Consultant members retrieved successfully", response.getMessage());
+        assertEquals("Active consultant members retrieved successfully", response.getMessage());
         assertEquals(1, response.getData().size());
         assertEquals("consultant", response.getData().get(0).getUsername());
 
-        verify(userRepository).findByRoleName("CONSULTANT");
+        verify(userRepository).findByRoleNameAndIsActive("CONSULTANT", true);
     }
 
     // Test getConsultationsForConsultant method    @Test

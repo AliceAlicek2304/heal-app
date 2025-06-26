@@ -1,27 +1,54 @@
 package com.healapp.service;
 
-import com.healapp.dto.*;
-import com.healapp.model.*;
-import com.healapp.repository.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import com.healapp.dto.ApiResponse;
+import com.healapp.dto.CreateRatingRequest;
+import com.healapp.dto.RatingResponse;
+import com.healapp.dto.RatingSummaryResponse;
+import com.healapp.dto.StaffReplyRequest;
+import com.healapp.dto.UpdateRatingRequest;
+import com.healapp.model.Consultation;
+import com.healapp.model.ConsultationStatus;
+import com.healapp.model.Rating;
+import com.healapp.model.RatingSummary;
+import com.healapp.model.Role;
+import com.healapp.model.STITest;
+import com.healapp.model.TestStatus;
+import com.healapp.model.UserDtls;
+import com.healapp.repository.ConsultationRepository;
+import com.healapp.repository.RatingRepository;
+import com.healapp.repository.RatingSummaryRepository;
+import com.healapp.repository.STITestRepository;
+import com.healapp.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Rating Service Test")
@@ -888,21 +915,18 @@ public class RatingServiceTest {
     @DisplayName("Update Staff Reply - Success")
     void updateStaffReply_Success() {
         // Arrange
-        Rating ratingWithReply = new Rating();
-        ratingWithReply.setRatingId(1L);
-        ratingWithReply.setUser(customer);
-        ratingWithReply.setStaffReply("Previous reply");
-        ratingWithReply.setRepliedBy(staff);
-        ratingWithReply.setRepliedAt(LocalDateTime.now().minusDays(1));
+        consultantRating.setStaffReply("Previous reply");
+        consultantRating.setRepliedBy(staff);
+        consultantRating.setRepliedAt(LocalDateTime.now().minusDays(1));
 
         when(userRepository.findById(staff.getId())).thenReturn(Optional.of(staff));
-        when(ratingRepository.findById(ratingWithReply.getRatingId())).thenReturn(Optional.of(ratingWithReply));
-        when(ratingRepository.save(any(Rating.class))).thenReturn(ratingWithReply);
+        when(ratingRepository.findById(consultantRating.getRatingId())).thenReturn(Optional.of(consultantRating));
+        when(ratingRepository.save(any(Rating.class))).thenReturn(consultantRating);
 
         // Act
         ApiResponse<RatingResponse> response = ratingService.updateStaffReply(
                 staff.getId(),
-                ratingWithReply.getRatingId(),
+                consultantRating.getRatingId(),
                 staffReplyRequest);
 
         // Assert
@@ -912,7 +936,7 @@ public class RatingServiceTest {
 
         // Verify
         verify(userRepository).findById(staff.getId());
-        verify(ratingRepository).findById(ratingWithReply.getRatingId());
+        verify(ratingRepository).findById(consultantRating.getRatingId());
         verify(ratingRepository).save(any(Rating.class));
     }
 
@@ -942,21 +966,18 @@ public class RatingServiceTest {
     @DisplayName("Delete Staff Reply - Success")
     void deleteStaffReply_Success() {
         // Arrange
-        Rating ratingWithReply = new Rating();
-        ratingWithReply.setRatingId(1L);
-        ratingWithReply.setUser(customer);
-        ratingWithReply.setStaffReply("Previous reply");
-        ratingWithReply.setRepliedBy(staff);
-        ratingWithReply.setRepliedAt(LocalDateTime.now().minusDays(1));
+        consultantRating.setStaffReply("Previous reply");
+        consultantRating.setRepliedBy(staff);
+        consultantRating.setRepliedAt(LocalDateTime.now().minusDays(1));
 
         when(userRepository.findById(staff.getId())).thenReturn(Optional.of(staff));
-        when(ratingRepository.findById(ratingWithReply.getRatingId())).thenReturn(Optional.of(ratingWithReply));
-        when(ratingRepository.save(any(Rating.class))).thenReturn(ratingWithReply);
+        when(ratingRepository.findById(consultantRating.getRatingId())).thenReturn(Optional.of(consultantRating));
+        when(ratingRepository.save(any(Rating.class))).thenReturn(consultantRating);
 
         // Act
         ApiResponse<String> response = ratingService.deleteStaffReply(
                 staff.getId(),
-                ratingWithReply.getRatingId());
+                consultantRating.getRatingId());
 
         // Assert
         assertTrue(response.isSuccess());
@@ -964,7 +985,7 @@ public class RatingServiceTest {
 
         // Verify
         verify(userRepository).findById(staff.getId());
-        verify(ratingRepository).findById(ratingWithReply.getRatingId());
+        verify(ratingRepository).findById(consultantRating.getRatingId());
         verify(ratingRepository).save(any(Rating.class));
     }
 

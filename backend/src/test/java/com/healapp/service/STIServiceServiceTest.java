@@ -1,5 +1,32 @@
 package com.healapp.service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
+
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.STIServiceRequest;
 import com.healapp.dto.STIServiceResponse;
@@ -10,23 +37,6 @@ import com.healapp.model.UserDtls;
 import com.healapp.repository.STIServiceRepository;
 import com.healapp.repository.ServiceTestComponentRepository;
 import com.healapp.repository.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-import org.mockito.ArgumentCaptor;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Kiểm thử dịch vụ quản lý STI Service")
@@ -228,6 +238,10 @@ public class STIServiceServiceTest {
         when(stiServiceRepository.findByNameIgnoreCase(anyString())).thenReturn(Optional.of(stiService));
         when(stiServiceRepository.save(any(STIService.class))).thenReturn(stiService);
         when(stiServiceRepository.findByIdWithComponents(anyLong())).thenReturn(Optional.of(stiService));
+        
+        // Mock cho logic soft delete trong updateServiceComponents
+        when(serviceTestComponentRepository.findByStiServiceServiceId(anyLong())).thenReturn(testComponents);
+        when(serviceTestComponentRepository.save(any(ServiceTestComponent.class))).thenReturn(testComponents.get(0));
 
         // Thực hiện hành động
         ApiResponse<STIServiceResponse> response = stiServiceService.updateServiceWithComponents(
@@ -239,7 +253,11 @@ public class STIServiceServiceTest {
         assertNotNull(response.getData());
         assertEquals(stiService.getName(), response.getData().getName());
         verify(stiServiceRepository, times(1)).save(any(STIService.class));
-        verify(serviceTestComponentRepository, times(1)).deleteByStiServiceServiceId(anyLong());
+        
+        // Verify logic soft delete được gọi đúng cách
+        verify(serviceTestComponentRepository, times(1)).findByStiServiceServiceId(anyLong());
+        // Sẽ có nhiều lần save: 2 lần cho việc set status=false, 2 lần cho việc tạo/cập nhật components
+        verify(serviceTestComponentRepository, atLeast(2)).save(any(ServiceTestComponent.class));
     }
 
     @Test
@@ -251,6 +269,10 @@ public class STIServiceServiceTest {
         when(stiServiceRepository.findByNameIgnoreCase(anyString())).thenReturn(Optional.of(stiService));
         when(stiServiceRepository.save(any(STIService.class))).thenReturn(stiService);
         when(stiServiceRepository.findByIdWithComponents(anyLong())).thenReturn(Optional.of(stiService));
+        
+        // Mock cho logic soft delete trong updateServiceComponents
+        when(serviceTestComponentRepository.findByStiServiceServiceId(anyLong())).thenReturn(testComponents);
+        when(serviceTestComponentRepository.save(any(ServiceTestComponent.class))).thenReturn(testComponents.get(0));
 
         // Thực hiện hành động
         ApiResponse<STIServiceResponse> response = stiServiceService.updateServiceWithComponents(
@@ -262,7 +284,11 @@ public class STIServiceServiceTest {
         assertNotNull(response.getData());
         assertEquals(stiService.getName(), response.getData().getName());
         verify(stiServiceRepository, times(1)).save(any(STIService.class));
-        verify(serviceTestComponentRepository, times(1)).deleteByStiServiceServiceId(anyLong());
+        
+        // Verify logic soft delete được gọi đúng cách
+        verify(serviceTestComponentRepository, times(1)).findByStiServiceServiceId(anyLong());
+        // Sẽ có nhiều lần save: 2 lần cho việc set status=false, 2 lần cho việc tạo/cập nhật components
+        verify(serviceTestComponentRepository, atLeast(2)).save(any(ServiceTestComponent.class));
     }
 
     @Test

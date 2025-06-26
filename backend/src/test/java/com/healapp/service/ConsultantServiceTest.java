@@ -1,5 +1,34 @@
 package com.healapp.service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
+
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.ConsultantProfileRequest;
 import com.healapp.dto.ConsultantProfileResponse;
@@ -10,27 +39,6 @@ import com.healapp.model.UserDtls;
 import com.healapp.repository.ConsultantProfileRepository;
 import com.healapp.repository.RoleRepository;
 import com.healapp.repository.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Kiểm thử dịch vụ quản lý Consultant")
@@ -132,8 +140,10 @@ class ConsultantServiceTest {
         createAccountRequest.setExperience("5 years experience");
         createAccountRequest.setBio("Mental health specialist");
 
-        // Set default avatar path
-        ReflectionTestUtils.setField(consultantService, "defaultAvatarPath", "default.jpg");
+        // Set fields for ConsultantService
+        ReflectionTestUtils.setField(consultantService, "avatarUrlPattern", "/img/avatar/");
+        ReflectionTestUtils.setField(consultantService, "storageType", "local");
+        ReflectionTestUtils.setField(consultantService, "gcsBucketName", "");
     }
 
     // ========== CREATE CONSULTANT ACCOUNT TESTS ==========

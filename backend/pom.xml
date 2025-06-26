@@ -137,6 +137,14 @@
 			<artifactId>google-cloud-storage</artifactId>
 			<version>2.38.0</version>
 		</dependency>
+
+		<!-- Mockito Inline for static method mocking -->
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-inline</artifactId>
+			<version>5.2.0</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>

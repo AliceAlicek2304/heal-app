@@ -1,11 +1,39 @@
 package com.healapp.service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import static org.mockito.ArgumentMatchers.any;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.BlogPostRequest;
 import com.healapp.dto.BlogPostResponse;
 import com.healapp.dto.BlogPostStatusRequest;
 import com.healapp.dto.BlogSectionRequest;
-import com.healapp.dto.BlogSectionResponse;
 import com.healapp.model.BlogPost;
 import com.healapp.model.BlogPostStatus;
 import com.healapp.model.BlogSection;
@@ -16,28 +44,6 @@ import com.healapp.repository.BlogPostRepository;
 import com.healapp.repository.BlogSectionRepository;
 import com.healapp.repository.CategoryRepository;
 import com.healapp.repository.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class BlogPostServiceTest {
@@ -567,8 +573,8 @@ public class BlogPostServiceTest {
     }
 
     @Test
-    @DisplayName("Cập nhật blog post thất bại khi bài viết đã được duyệt (CONFIRMED)")
-    void updatePost_ConfirmedPost_ShouldFail() {
+    @DisplayName("Cập nhật blog post thành công khi bài viết đã được duyệt (CONFIRMED) - chuyển về PROCESSING")
+    void updatePost_ConfirmedPost_ShouldResetToProcessing() {
         // Arrange
         BlogPost confirmedPost = new BlogPost();
         confirmedPost.setPostId(1L);
@@ -581,22 +587,48 @@ public class BlogPostServiceTest {
         confirmedPost.setReviewedAt(LocalDateTime.now().minusDays(1));
 
         BlogPostRequest updateRequest = new BlogPostRequest();
-        updateRequest.setTitle("Try to Update Confirmed Post");
-        updateRequest.setContent("Trying to update confirmed post");
+        updateRequest.setTitle("Updated Confirmed Post");
+        updateRequest.setContent("Updated content for confirmed post");
         updateRequest.setCategoryId(1L);
 
         when(blogPostRepository.findById(1L)).thenReturn(Optional.of(confirmedPost));
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+
+        BlogPost updatedPost = new BlogPost();
+        updatedPost.setPostId(1L);
+        updatedPost.setTitle("Updated Confirmed Post");
+        updatedPost.setContent("Updated content for confirmed post");
+        updatedPost.setCategory(category);
+        updatedPost.setAuthor(regularUser);
+        updatedPost.setCreatedAt(confirmedPost.getCreatedAt());
+        updatedPost.setUpdatedAt(LocalDateTime.now());
+        updatedPost.setStatus(BlogPostStatus.PROCESSING); // Chuyển về PROCESSING
+        updatedPost.setReviewer(null); // Xóa reviewer
+        updatedPost.setReviewedAt(null); // Xóa reviewedAt
+
+        when(blogPostRepository.save(any(BlogPost.class))).thenReturn(updatedPost);
 
         // Act - tác giả cập nhật bài đã được duyệt
         ApiResponse<BlogPostResponse> response = blogPostService.updatePost(1L, updateRequest, 3L);
 
         // Assert
-        assertFalse(response.isSuccess());
-        assertEquals("Confirmed posts cannot be edited", response.getMessage());
-        assertNull(response.getData());
+        assertTrue(response.isSuccess());
+        assertEquals("Blog post updated successfully", response.getMessage());
+        assertNotNull(response.getData());
+        assertEquals("Updated Confirmed Post", response.getData().getTitle());
+        assertEquals(BlogPostStatus.PROCESSING, response.getData().getStatus());
+        assertNull(response.getData().getReviewerId());
+        assertNull(response.getData().getReviewedAt());
 
         // Verify
-        verify(blogPostRepository, never()).save(any(BlogPost.class));
+        ArgumentCaptor<BlogPost> blogPostCaptor = ArgumentCaptor.forClass(BlogPost.class);
+        verify(blogPostRepository).save(blogPostCaptor.capture());
+
+        BlogPost savedPost = blogPostCaptor.getValue();
+        assertEquals(BlogPostStatus.PROCESSING, savedPost.getStatus());
+        assertNull(savedPost.getReviewer());
+        assertNull(savedPost.getReviewedAt());
+        assertEquals("Updated Confirmed Post", savedPost.getTitle());
     }
 
     @Test

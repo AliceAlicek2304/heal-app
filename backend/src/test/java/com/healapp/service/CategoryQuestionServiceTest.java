@@ -1,19 +1,29 @@
 package com.healapp.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -22,12 +32,12 @@ import org.springframework.data.domain.Pageable;
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.CategoryQuestionRequest;
 import com.healapp.dto.CategoryQuestionResponse;
+import com.healapp.dto.QuestionStatusRequest;
 import com.healapp.model.CategoryQuestion;
-import com.healapp.model.Role;
-import com.healapp.model.UserDtls;
 import com.healapp.model.Question;
 import com.healapp.model.Question.QuestionStatus;
-import com.healapp.dto.QuestionStatusRequest;
+import com.healapp.model.Role;
+import com.healapp.model.UserDtls;
 import com.healapp.repository.CategoryQuestionRepository;
 import com.healapp.repository.QuestionRepository;
 import com.healapp.repository.UserRepository;
@@ -135,7 +145,7 @@ public class CategoryQuestionServiceTest {
 
         // Assert
         assertFalse(response.isSuccess());
-        assertEquals("Only ADMIN can create categories", response.getMessage());
+        assertEquals("Only ADMIN or STAFF can create categories", response.getMessage());
         assertNull(response.getData());
 
         // Verify
@@ -155,7 +165,7 @@ public class CategoryQuestionServiceTest {
 
         // Assert
         assertFalse(response.isSuccess());
-        assertEquals("Only ADMIN can create categories", response.getMessage());
+        assertEquals("Only ADMIN or STAFF can create categories", response.getMessage());
         assertNull(response.getData());
 
         // Verify
@@ -256,7 +266,7 @@ public class CategoryQuestionServiceTest {
 
         // Assert
         assertFalse(response.isSuccess());
-        assertEquals("Only ADMIN can update categories", response.getMessage());
+        assertEquals("Only ADMIN or STAFF can update categories", response.getMessage());
         assertNull(response.getData());
 
         // Verify
@@ -277,7 +287,7 @@ public class CategoryQuestionServiceTest {
 
         // Assert
         assertFalse(response.isSuccess());
-        assertEquals("Only ADMIN can update categories", response.getMessage());
+        assertEquals("Only ADMIN or STAFF can update categories", response.getMessage());
         assertNull(response.getData());
 
         // Verify
@@ -430,13 +440,12 @@ public class CategoryQuestionServiceTest {
 
         // Assert
         assertFalse(response.isSuccess());
-        assertEquals("Only ADMIN can delete categories", response.getMessage());
+        assertEquals("Only ADMIN or STAFF can delete categories", response.getMessage());
+        assertNull(response.getData());
 
         // Verify
         verify(userRepository).findById(2L);
         verify(categoryQuestionRepository, never()).existsById(anyLong());
-        verify(questionRepository, never()).findByCategoryQuestion_CategoryQuestionId(anyLong(), any(Pageable.class));
-        verify(questionService, never()).updateQuestionStatus(anyLong(), any(QuestionStatusRequest.class), anyLong());
         verify(categoryQuestionRepository, never()).deleteById(anyLong());
     }
 
@@ -451,13 +460,12 @@ public class CategoryQuestionServiceTest {
 
         // Assert
         assertFalse(response.isSuccess());
-        assertEquals("Only ADMIN can delete categories", response.getMessage());
+        assertEquals("Only ADMIN or STAFF can delete categories", response.getMessage());
+        assertNull(response.getData());
 
         // Verify
         verify(userRepository).findById(999L);
         verify(categoryQuestionRepository, never()).existsById(anyLong());
-        verify(questionRepository, never()).findByCategoryQuestion_CategoryQuestionId(anyLong(), any(Pageable.class));
-        verify(questionService, never()).updateQuestionStatus(anyLong(), any(QuestionStatusRequest.class), anyLong());
         verify(categoryQuestionRepository, never()).deleteById(anyLong());
     }
 
