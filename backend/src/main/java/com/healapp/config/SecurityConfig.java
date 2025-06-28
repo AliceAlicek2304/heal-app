@@ -286,7 +286,8 @@ public class SecurityConfig {
         org.springframework.web.cors.CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
         configuration.setAllowedOrigins(java.util.List.of(
                 "http://localhost:3000",
-                "https://AliceAlicek2304.github.io"
+                "https://AliceAlicek2304.github.io",
+                "https://alicealicek2304.github.io"
         ));
         configuration.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(java.util.List.of("*"));
