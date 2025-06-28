@@ -264,7 +264,7 @@ const CategoryManagement = () => {
                                         )}
                                         <div className={styles.categoryStats}>
                                             <span className={styles.postCount}>
-                                                {category.posts?.length || 0} bài viết
+                                                {category.postCount || 0} bài viết
                                             </span>
                                         </div>
                                     </div>

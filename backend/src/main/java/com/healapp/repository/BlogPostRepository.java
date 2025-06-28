@@ -54,6 +54,22 @@ public interface BlogPostRepository extends JpaRepository<BlogPost, Long> {
     Page<BlogPost> findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(
             String title, String content, Pageable pageable);
 
+    // Tìm kiếm bài viết theo tiêu đề, nội dung hoặc tên danh mục
+    Page<BlogPost> findByTitleContainingIgnoreCaseOrContentContainingIgnoreCaseOrCategoryNameContainingIgnoreCase(
+            String title, String content, String categoryName, Pageable pageable);
+
+    // Tìm kiếm bài viết CONFIRMED theo tiêu đề, nội dung hoặc tên danh mục
+    Page<BlogPost> findByStatusAndTitleContainingIgnoreCaseOrStatusAndContentContainingIgnoreCaseOrStatusAndCategoryNameContainingIgnoreCase(
+            BlogPostStatus status, String title, BlogPostStatus status2, String content, BlogPostStatus status3, String categoryName, Pageable pageable);
+
+    // Tìm kiếm bài viết trong category cụ thể theo tiêu đề, nội dung hoặc tên danh mục
+    Page<BlogPost> findByCategoryAndTitleContainingIgnoreCaseOrCategoryAndContentContainingIgnoreCaseOrCategoryAndCategoryNameContainingIgnoreCase(
+            Category category, String title, Category category2, String content, Category category3, String categoryName, Pageable pageable);
+
+    // Tìm kiếm bài viết CONFIRMED trong category cụ thể theo tiêu đề, nội dung hoặc tên danh mục
+    Page<BlogPost> findByCategoryAndStatusAndTitleContainingIgnoreCaseOrCategoryAndStatusAndContentContainingIgnoreCaseOrCategoryAndStatusAndCategoryNameContainingIgnoreCase(
+            Category category, BlogPostStatus status, String title, Category category2, BlogPostStatus status2, String content, Category category3, BlogPostStatus status3, String categoryName, Pageable pageable);
+
     // Lấy các bài viết mới nhất theo trạng thái
     List<BlogPost> findByStatusOrderByCreatedAtDesc(BlogPostStatus status, Pageable pageable);
 }

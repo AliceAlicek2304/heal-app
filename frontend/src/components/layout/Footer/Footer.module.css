@@ -125,6 +125,70 @@
   flex-shrink: 0;
 }
 
+/* Map and Payment Methods Row */
+.mapPaymentRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.mapContainer {
+  width: 100%;
+  max-width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.paymentSection {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Payment Methods */
+.paymentMethods {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.paymentMethod {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+}
+
+.paymentMethod:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+  transform: translateY(-1px);
+}
+
+.paymentMethod svg {
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+.paymentMethod span {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #e2e8f0;
+}
+
+.paymentNote {
+  color: #64748b;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin: 0;
+  font-style: italic;
+}
+
 /* Bottom Footer */
 .footerBottom {
   border-top: 1px solid #334155;
@@ -189,6 +253,15 @@
     grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
   }
+  
+  .mapPaymentRow {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .paymentMethods {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
@@ -198,8 +271,16 @@
   
   .footerContent {
     grid-template-columns: 1fr;
-    gap: 2rem;
-    text-align: center;
+    gap: 1.5rem;
+  }
+  
+  .mapPaymentRow {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .paymentMethods {
+    grid-template-columns: repeat(3, 1fr);
   }
   
   .footerBottomContent {
@@ -226,6 +307,19 @@
 @media (max-width: 576px) {
   .footerContainer {
     padding: 0 0.75rem;
+  }
+  
+  .paymentMethods {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+  
+  .paymentMethod {
+    padding: 0.4rem;
+  }
+  
+  .paymentMethod span {
+    font-size: 0.7rem;
   }
   
   .trustBadges {

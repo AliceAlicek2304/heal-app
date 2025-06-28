@@ -1,10 +1,10 @@
 package com.healapp.service;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Arrays;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -335,8 +335,13 @@ public class AIKnowledgeService {
                                                 "4. Lọc đánh giá theo số sao hoặc từ khóa\n" +
                                                 "5. Đọc các nhận xét để tham khảo trước khi đặt dịch vụ");
 
-                // Thêm các chủ đề khác của HealApp
-                // ...
+                // === BỔ SUNG GIỚI HẠN HỖ TRỢ ===
+                knowledgeBase.put("limitations",
+                        "# Giới hạn hỗ trợ của AI HealApp\n" +
+                        "- AI chỉ hỗ trợ trả lời về quy trình sử dụng HealApp, sức khỏe sinh sản, xét nghiệm, tư vấn, thanh toán, hỏi đáp, blog, đánh giá.\n" +
+                        "- Không cung cấp chẩn đoán y tế cá nhân hóa, không thay thế tư vấn trực tiếp từ bác sĩ.\n" +
+                        "- Không trả lời các câu hỏi ngoài phạm vi sức khỏe sinh sản hoặc ngoài chức năng của HealApp.\n" +
+                        "- Nếu gặp vấn đề kỹ thuật hoặc khẩn cấp, hãy liên hệ bộ phận hỗ trợ hoặc cơ sở y tế gần nhất.\n");
 
                 // Từ khóa liên quan đến các chủ đề để tìm kiếm
                 topicKeywords = new HashMap<>();
@@ -344,68 +349,79 @@ public class AIKnowledgeService {
                 // Từ khóa cho đăng ký
                 topicKeywords.put("registration", new String[] {
                                 "đăng ký", "tạo tài khoản", "sign up", "register", "tài khoản mới",
-                                "xác minh email", "mã xác thực", "verification code", "mật khẩu", "quên mật khẩu"
+                                "xác minh email", "mã xác thực", "verification code", "mật khẩu", "quên mật khẩu",
+                                "register account", "email verification", "forgot password", "reset password"
                 });
 
                 // Từ khóa cho đặt lịch tư vấn
                 topicKeywords.put("consultation", new String[] {
                                 "tư vấn", "đặt lịch", "chuyên gia", "consultant", "booking",
-                                "hỏi đáp", "expert", "consultation", "tư vấn viên", "phòng chat"
+                                "hỏi đáp", "expert", "consultation", "tư vấn viên", "phòng chat",
+                                "book consultation", "medical advice", "doctor appointment", "health expert"
                 });
 
                 // Từ khóa cho xét nghiệm STI đơn lẻ
                 topicKeywords.put("sti_service", new String[] {
                                 "xét nghiệm", "STI", "dịch vụ", "đặt lịch xét nghiệm", "kết quả xét nghiệm",
-                                "test", "bệnh lây truyền", "lây nhiễm", "kiểm tra sức khỏe", "sexually transmitted"
+                                "test", "bệnh lây truyền", "lây nhiễm", "kiểm tra sức khỏe", "sexually transmitted",
+                                "sti test", "single test", "lab test", "health check"
                 });
 
                 // Từ khóa cho gói combo STI
                 topicKeywords.put("sti_package", new String[] {
                                 "gói", "combo", "package", "gói xét nghiệm", "combo STI",
-                                "ưu đãi", "tiết kiệm", "nhiều xét nghiệm", "bundle", "trọn gói"
+                                "ưu đãi", "tiết kiệm", "nhiều xét nghiệm", "bundle", "trọn gói",
+                                "sti package", "test bundle", "combo package"
                 });
 
                 // Từ khóa cho thanh toán QR Code
                 topicKeywords.put("payment_qr", new String[] {
                                 "QR", "quét mã", "thanh toán QR", "QR Code", "QR_CODE",
-                                "quét", "banking", "ngân hàng", "chuyển khoản", "thanh toán di động"
+                                "quét", "banking", "ngân hàng", "chuyển khoản", "thanh toán di động",
+                                "qr payment", "scan qr", "mobile banking", "qr code payment"
                 });
 
                 // Từ khóa cho thanh toán VISA
                 topicKeywords.put("payment_visa", new String[] {
                                 "VISA", "thẻ tín dụng", "credit card", "master card", "JCB",
-                                "thanh toán thẻ", "card payment", "cổng thanh toán", "payment gateway", "trực tuyến"
+                                "thanh toán thẻ", "card payment", "cổng thanh toán", "payment gateway", "trực tuyến",
+                                "visa payment", "mastercard", "online payment"
                 });
 
                 // Từ khóa cho thanh toán COD
                 topicKeywords.put("payment_cod", new String[] {
                                 "COD", "tiền mặt", "thanh toán tại chỗ", "cash", "thanh toán sau",
-                                "thanh toán khi nhận", "cash on delivery", "trả tiền mặt", "trả sau", "tiền mặt"
+                                "thanh toán khi nhận", "cash on delivery", "trả tiền mặt", "trả sau", "tiền mặt",
+                                "cod payment", "pay at clinic", "pay on site"
                 });
 
                 // Từ khóa cho chu kỳ kinh nguyệt
                 topicKeywords.put("menstrual-cycle", new String[] {
                                 "chu kỳ", "kinh nguyệt", "ngày an toàn", "rụng trứng", "period",
                                 "tính ngày", "dự đoán", "kinh nguyệt không đều", "theo dõi chu kỳ",
-                                "nhắc nhở chu kỳ", "ngày an toàn", "ngày nguy hiểm", "kỳ kinh"
+                                "nhắc nhở chu kỳ", "ngày an toàn", "ngày nguy hiểm", "kỳ kinh",
+                                "menstrual cycle", "fertile window", "ovulation", "cycle tracking"
                 });
 
                 // Từ khóa cho blog
                 topicKeywords.put("blog", new String[] {
                                 "blog", "bài viết", "chia sẻ", "kiến thức", "thông tin",
-                                "đọc", "tác giả", "bài báo", "article", "health tips"
+                                "đọc", "tác giả", "bài báo", "article", "health tips",
+                                "blog post", "health blog", "medical article"
                 });
 
                 // Từ khóa cho hỏi đáp
                 topicKeywords.put("questions", new String[] {
                                 "câu hỏi", "hỏi đáp", "giải đáp", "thắc mắc", "FAQs",
-                                "trả lời", "hỏi", "Q&A", "chuyên gia trả lời", "hỏi bác sĩ"
+                                "trả lời", "hỏi", "Q&A", "chuyên gia trả lời", "hỏi bác sĩ",
+                                "question", "ask doctor", "faq", "answer"
                 });
 
                 // Từ khóa cho đánh giá
                 topicKeywords.put("rating", new String[] {
                                 "đánh giá", "review", "rating", "nhận xét", "feedback",
-                                "sao", "stars", "phản hồi", "comment", "bình luận"
+                                "sao", "stars", "phản hồi", "comment", "bình luận",
+                                "review", "rate", "feedback", "testimonial"
                 });
         }
 

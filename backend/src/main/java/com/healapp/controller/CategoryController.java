@@ -1,18 +1,26 @@
 package com.healapp.controller;
 
-import com.healapp.dto.ApiResponse;
-import com.healapp.dto.CategoryRequest;
-import com.healapp.model.Category;
-import com.healapp.dto.CategoryResponse;
-import com.healapp.service.CategoryService;
-import jakarta.validation.Valid;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import com.healapp.dto.ApiResponse;
+import com.healapp.dto.CategoryRequest;
+import com.healapp.dto.CategoryResponse;
+import com.healapp.model.Category;
+import com.healapp.service.CategoryService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/categories")
@@ -73,24 +81,12 @@ public class CategoryController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<CategoryResponse>>> getAllCategories() {
-        try {
-            ApiResponse<List<Category>> serviceResponse = categoryService.getAllCategories();
+        ApiResponse<List<CategoryResponse>> response = categoryService.getAllCategoriesWithPostCount();
 
-            if (serviceResponse.isSuccess() && serviceResponse.getData() != null) {
-                List<CategoryResponse> categoryResponses = serviceResponse.getData().stream()
-                        .map(CategoryResponse::new)
-                        .collect(Collectors.toList());
-
-                return ResponseEntity.ok(
-                        ApiResponse.success("Categories retrieved successfully", categoryResponses));
-            } else {
-                return ResponseEntity.status(500)
-                        .body(ApiResponse.error(serviceResponse.getMessage() != null ? serviceResponse.getMessage()
-                                : "Error retrieving categories"));
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(500)
-                    .body(ApiResponse.error("Error retrieving categories: " + e.getMessage()));
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
         }
     }
 }

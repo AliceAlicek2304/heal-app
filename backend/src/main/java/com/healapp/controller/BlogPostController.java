@@ -345,12 +345,21 @@ public class BlogPostController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir) {
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(required = false) Long categoryId) {
 
         Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        ApiResponse<Page<BlogPostResponse>> response = blogPostService.searchPosts(query, pageable);
+        ApiResponse<Page<BlogPostResponse>> response;
+        
+        // Nếu có categoryId, tìm kiếm trong category cụ thể
+        if (categoryId != null) {
+            response = blogPostService.searchPostsInCategory(query, categoryId, pageable);
+        } else {
+            // Tìm kiếm tổng quát
+            response = blogPostService.searchPosts(query, pageable);
+        }
 
         if (response.isSuccess()) {
             return ResponseEntity.ok(response);

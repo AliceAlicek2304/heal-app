@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { searchService } from '../../services/searchService';
 import { useToast } from '../../contexts/ToastContext';
+import { formatDate } from '../../utils/dateUtils';
+import { blogService } from '../../services/blogService';
 import Navbar from '../../components/layout/Navbar/Navbar';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
 import styles from './SearchResults.module.css';
@@ -128,15 +130,6 @@ const SearchResults = () => {
         handleSearch(query, activeTab, newPage);
     };
 
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('vi-VN', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-    };
-
     const highlightSearchTerm = (text, searchTerm) => {
         if (!text || !searchTerm) return text;
 
@@ -235,7 +228,7 @@ const SearchResults = () => {
                                         <div key={blog.id} className={styles.blogCard}>
                                             <div className={styles.blogThumbnail}>
                                                 <img
-                                                    src={blog.thumbnailUrl || '/image/img1.jpg'}
+                                                    src={blogService.getBlogImageUrl(blog.thumbnailImage)}
                                                     alt={blog.title}
                                                     onError={(e) => {
                                                         e.target.src = '/image/img1.jpg';

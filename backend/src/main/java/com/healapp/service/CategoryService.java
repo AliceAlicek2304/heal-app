@@ -1,17 +1,20 @@
 package com.healapp.service;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.CategoryRequest;
+import com.healapp.dto.CategoryResponse;
 import com.healapp.model.BlogPost;
 import com.healapp.model.BlogPostStatus;
 import com.healapp.model.Category;
 import com.healapp.repository.CategoryRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 public class CategoryService {
@@ -110,6 +113,19 @@ public class CategoryService {
         try {
             List<Category> categories = categoryRepository.findAll();
             return ApiResponse.success("Categories retrieved successfully", categories);
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to retrieve categories: " + e.getMessage());
+        }
+    }
+
+    // Thêm method mới để trả về categories với số lượng bài viết
+    public ApiResponse<List<CategoryResponse>> getAllCategoriesWithPostCount() {
+        try {
+            List<Category> categories = categoryRepository.findAll();
+            List<CategoryResponse> categoryResponses = categories.stream()
+                    .map(CategoryResponse::new)
+                    .collect(Collectors.toList());
+            return ApiResponse.success("Categories retrieved successfully", categoryResponses);
         } catch (Exception e) {
             return ApiResponse.error("Failed to retrieve categories: " + e.getMessage());
         }

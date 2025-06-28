@@ -77,7 +77,7 @@ const Footer = () => {
                                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                                     <circle cx="12" cy="10" r="3"></circle>
                                 </svg>
-                                <span>123 Đường ABC, Quận 1, TP.HCM</span>
+                                <span>7 Đ. D1, Long Thạnh Mỹ, Thủ Đức, Hồ Chí Minh</span>
                             </div>
                             <div className={styles.contactItem}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -100,6 +100,57 @@ const Footer = () => {
                                 <span>24/7 Hỗ trợ khách hàng</span>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                {/* Map and Payment Methods Row */}
+                <div className={styles.mapPaymentRow}>
+                    {/* Google Map Embed */}
+                    <div className={styles.mapContainer}>
+                        <iframe
+                            src="https://www.google.com/maps?q=7+Đ.+D1,+Long+Thạnh+Mỹ,+Thủ+Đức,+Hồ+Chí+Minh&output=embed"
+                            width="100%"
+                            height="180"
+                            style={{ border: 0, borderRadius: '8px' }}
+                            allowFullScreen=""
+                            loading="lazy"
+                            referrerPolicy="no-referrer-when-downgrade"
+                            title="HealApp Location"
+                        ></iframe>
+                    </div>
+
+                    {/* Payment Methods */}
+                    <div className={styles.paymentSection}>
+                        <h3 className={styles.sectionTitle}>Phương thức thanh toán</h3>
+                        <div className={styles.paymentMethods}>
+                            <div className={styles.paymentMethod}>
+                                <svg width="40" height="25" viewBox="0 0 40 25" fill="none">
+                                    <rect width="40" height="25" rx="4" fill="#1A1F71"/>
+                                    <path d="M15 8h10v2H15V8zm0 4h8v2h-8v-2zm0 4h6v2h-6v-2z" fill="white"/>
+                                    <path d="M8 12h4v6H8v-6z" fill="#F7B600"/>
+                                </svg>
+                                <span>Visa</span>
+                            </div>
+                            <div className={styles.paymentMethod}>
+                                <svg width="40" height="25" viewBox="0 0 40 25" fill="none">
+                                    <rect width="40" height="25" rx="4" fill="#EB001B"/>
+                                    <circle cx="12" cy="12.5" r="6" fill="#F79E1B"/>
+                                    <circle cx="28" cy="12.5" r="6" fill="#FF5F00"/>
+                                    <path d="M16 12.5c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4z" fill="white"/>
+                                </svg>
+                                <span>Mastercard</span>
+                            </div>
+                            <div className={styles.paymentMethod}>
+                                <svg width="40" height="25" viewBox="0 0 40 25" fill="none">
+                                    <rect width="40" height="25" rx="4" fill="#1E3A8A"/>
+                                    <path d="M12 8h16v2H12V8zm0 4h14v2H12v-2zm0 4h12v2H12v-2zm0 4h10v2H12v-2z" fill="white"/>
+                                </svg>
+                                <span>VNPay</span>
+                            </div>
+                        </div>
+                        <p className={styles.paymentNote}>
+                            Chúng tôi chấp nhận các phương thức thanh toán phổ biến
+                        </p>
                     </div>
                 </div>
 

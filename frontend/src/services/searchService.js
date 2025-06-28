@@ -48,7 +48,8 @@ export const searchService = {    // Tìm kiếm tổng hợp - sử dụng các
                 page = 0,
                 size = 10,
                 sortBy = 'createdAt',
-                sortDir = 'desc'
+                sortDir = 'desc',
+                categoryId = null // Thêm filter theo category
             } = filters;
 
             const queryParams = new URLSearchParams({
@@ -58,6 +59,11 @@ export const searchService = {    // Tìm kiếm tổng hợp - sử dụng các
                 sortBy: sortBy,
                 sortDir: sortDir
             });
+
+            // Thêm categoryId vào query params nếu có
+            if (categoryId) {
+                queryParams.append('categoryId', categoryId.toString());
+            }
 
             const response = await fetch(`${API_BASE_URL}/blog/search?${queryParams}`, {
                 method: 'GET',
@@ -81,7 +87,50 @@ export const searchService = {    // Tìm kiếm tổng hợp - sử dụng các
             console.error('Error in searchBlogs:', error);
             return { success: false, message: 'Có lỗi xảy ra khi tìm kiếm bài viết' };
         }
-    },    // Tìm kiếm câu hỏi - sử dụng API search mới
+    },
+
+    // Tìm kiếm blog theo category
+    searchBlogsByCategory: async (categoryId, filters = {}) => {
+        try {
+            const {
+                page = 0,
+                size = 10,
+                sortBy = 'createdAt',
+                sortDir = 'desc'
+            } = filters;
+
+            const queryParams = new URLSearchParams({
+                page: page.toString(),
+                size: size.toString(),
+                sortBy: sortBy,
+                sortDir: sortDir
+            });
+
+            const response = await fetch(`${API_BASE_URL}/blog/category/${categoryId}?${queryParams}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                return { success: true, data: data.data };
+            } else {
+                return { success: false, message: data.message || 'Không tìm thấy bài viết trong danh mục này' };
+            }
+        } catch (error) {
+            console.error('Error in searchBlogsByCategory:', error);
+            return { success: false, message: 'Có lỗi xảy ra khi tìm kiếm bài viết theo danh mục' };
+        }
+    },
+
+    // Tìm kiếm câu hỏi - sử dụng API search mới
     searchQuestions: async (query, filters = {}) => {
         try {
             if (!query || query.trim().length < 2) {

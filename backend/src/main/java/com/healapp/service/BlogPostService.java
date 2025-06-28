@@ -356,13 +356,34 @@ public class BlogPostService {
 
     public ApiResponse<Page<BlogPostResponse>> searchPosts(String query, Pageable pageable) {
         try {
-            Page<BlogPost> posts = blogPostRepository.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(
-                    query, query, pageable);
+            // Tìm kiếm theo title, content và category name, chỉ lấy bài viết CONFIRMED
+            Page<BlogPost> posts = blogPostRepository.findByStatusAndTitleContainingIgnoreCaseOrStatusAndContentContainingIgnoreCaseOrStatusAndCategoryNameContainingIgnoreCase(
+                    BlogPostStatus.CONFIRMED, query, BlogPostStatus.CONFIRMED, query, BlogPostStatus.CONFIRMED, query, pageable);
             Page<BlogPostResponse> responses = posts.map(this::convertToResponse);
 
             return ApiResponse.success("Blog posts retrieved successfully", responses);
         } catch (Exception e) {
             return ApiResponse.error("Failed to search blog posts: " + e.getMessage());
+        }
+    }
+
+    // Tìm kiếm bài viết trong một category cụ thể
+    public ApiResponse<Page<BlogPostResponse>> searchPostsInCategory(String query, Long categoryId, Pageable pageable) {
+        try {
+            // Kiểm tra category có tồn tại không
+            Optional<Category> category = categoryRepository.findById(categoryId);
+            if (category.isEmpty()) {
+                return ApiResponse.error("Category not found");
+            }
+
+            // Tìm kiếm bài viết trong category cụ thể theo title, content hoặc category name, chỉ lấy CONFIRMED
+            Page<BlogPost> posts = blogPostRepository.findByCategoryAndStatusAndTitleContainingIgnoreCaseOrCategoryAndStatusAndContentContainingIgnoreCaseOrCategoryAndStatusAndCategoryNameContainingIgnoreCase(
+                    category.get(), BlogPostStatus.CONFIRMED, query, category.get(), BlogPostStatus.CONFIRMED, query, category.get(), BlogPostStatus.CONFIRMED, query, pageable);
+            Page<BlogPostResponse> responses = posts.map(this::convertToResponse);
+
+            return ApiResponse.success("Blog posts retrieved successfully", responses);
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to search blog posts in category: " + e.getMessage());
         }
     }
 
