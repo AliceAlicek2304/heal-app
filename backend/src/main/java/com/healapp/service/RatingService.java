@@ -970,6 +970,25 @@ public class RatingService {
         }
     }
 
+    // Lấy testimonials cho homepage
+    public ApiResponse<List<RatingResponse>> getTestimonials(int limit) {
+        try {
+            // Lấy top testimonials từ tất cả các loại dịch vụ
+            List<Rating> testimonials = ratingRepository.findTopTestimonials(
+                PageRequest.of(0, limit)
+            );
+            
+            List<RatingResponse> responses = testimonials.stream()
+                .map(this::mapRatingToResponse)
+                .collect(Collectors.toList());
+            
+            return ApiResponse.success("Testimonials retrieved successfully", responses);
+        } catch (Exception e) {
+            log.error("Error retrieving testimonials: {}", e.getMessage(), e);
+            return ApiResponse.error("Unable to retrieve testimonials: " + e.getMessage());
+        }
+    }
+
     private Sort createSort(String sort) {
         if (sort == null)
             sort = "newest";

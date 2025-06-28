@@ -1,16 +1,17 @@
 package com.healapp.repository;
 
-import com.healapp.model.BlogPost;
-import com.healapp.model.BlogPostStatus;
-import com.healapp.model.Category;
-import com.healapp.model.UserDtls;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import com.healapp.model.BlogPost;
+import com.healapp.model.BlogPostStatus;
+import com.healapp.model.Category;
+import com.healapp.model.UserDtls;
 
 @Repository
 public interface BlogPostRepository extends JpaRepository<BlogPost, Long> {
@@ -52,4 +53,7 @@ public interface BlogPostRepository extends JpaRepository<BlogPost, Long> {
     // Tìm kiếm bài viết theo tiêu đề hoặc nội dung
     Page<BlogPost> findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(
             String title, String content, Pageable pageable);
+
+    // Lấy các bài viết mới nhất theo trạng thái
+    List<BlogPost> findByStatusOrderByCreatedAtDesc(BlogPostStatus status, Pageable pageable);
 }

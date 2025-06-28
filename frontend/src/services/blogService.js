@@ -340,6 +340,30 @@ export const blogService = {
         if (imagePath.startsWith('http')) return imagePath;
         if (imagePath.startsWith('/img/')) return `${API_BASE_URL}${imagePath}`;
         return `${API_BASE_URL}/img/blog/${imagePath}`;
+    },
+
+    // Lấy bài viết mới nhất cho homepage
+    getLatestBlogPosts: async (limit = 3) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/blog/latest?limit=${limit}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                return { success: true, data: data.data };
+            } else {
+                return { success: false, message: data.message || 'Không thể tải bài viết mới nhất' };
+            }
+        } catch (error) {
+            return { success: false, message: 'Không thể tải bài viết mới nhất' };
+        }
     }
 };
 

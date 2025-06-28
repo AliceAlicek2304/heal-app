@@ -1,6 +1,8 @@
 package com.healapp.repository;
 
-import com.healapp.model.Rating;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,8 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import com.healapp.model.Rating;
 
 @Repository
 public interface RatingRepository extends JpaRepository<Rating, Long> {
@@ -158,6 +159,11 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
                         +
                         "(LOWER(r.comment) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
                         "OR LOWER(r.staffReply) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-        Page<Rating> searchSTIPackageWithRatingFilter(@Param("keyword") String keyword, @Param("rating") Integer rating,
-                        Pageable pageable);
+        Page<Rating> searchSTIPackageWithRatingFilter(@Param("keyword") String keyword,
+                        @Param("rating") Integer rating, Pageable pageable);
+
+        // Lấy top testimonials cho homepage
+        @Query("SELECT r FROM Rating r WHERE r.isActive = true AND r.comment IS NOT NULL AND LENGTH(r.comment) > 10 " +
+                        "ORDER BY r.rating DESC, r.createdAt DESC")
+        List<Rating> findTopTestimonials(Pageable pageable);
 }

@@ -1,19 +1,35 @@
 package com.healapp.controller;
 
-import com.healapp.dto.*;
-import com.healapp.model.Rating;
-import com.healapp.service.RatingService;
-import com.healapp.service.UserService;
-import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
+import com.healapp.dto.ApiResponse;
+import com.healapp.dto.CreateRatingRequest;
+import com.healapp.dto.RatingResponse;
+import com.healapp.dto.RatingSummaryResponse;
+import com.healapp.dto.StaffReplyRequest;
+import com.healapp.dto.UpdateRatingRequest;
+import com.healapp.model.Rating;
+import com.healapp.service.RatingService;
+import com.healapp.service.UserService;
+
+import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
@@ -725,6 +741,28 @@ public class RatingController {
 
         } catch (Exception e) {
             log.error("Error deleting staff reply: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("Internal server error"));
+        }
+    }
+
+    /**
+     * Public - Lấy testimonials cho homepage
+     */
+    @GetMapping("/testimonials")
+    public ResponseEntity<ApiResponse<List<RatingResponse>>> getTestimonials(
+            @RequestParam(defaultValue = "5") int limit) {
+        try {
+            ApiResponse<List<RatingResponse>> response = ratingService.getTestimonials(limit);
+
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body(response);
+            }
+
+        } catch (Exception e) {
+            log.error("Error getting testimonials: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError()
                     .body(ApiResponse.error("Internal server error"));
         }

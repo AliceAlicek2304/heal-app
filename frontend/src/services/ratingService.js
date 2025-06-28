@@ -1099,6 +1099,30 @@ const ratingService = {
                 message: 'Có lỗi xảy ra khi ẩn đánh giá'
             };
         }
+    },
+
+    // Lấy testimonials cho homepage
+    getTestimonials: async (limit = 5) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/ratings/testimonials?limit=${limit}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                return { success: true, data: data.data };
+            } else {
+                return { success: false, message: data.message || 'Không thể tải testimonials' };
+            }
+        } catch (error) {
+            return { success: false, message: 'Không thể tải testimonials' };
+        }
     }
 };
 
@@ -1128,5 +1152,6 @@ export const {
     replyToRatingAsStaff,
     updateStaffReply,
     deleteStaffReply,
-    deleteRatingAsStaff
+    deleteRatingAsStaff,
+    getTestimonials
 } = ratingService;

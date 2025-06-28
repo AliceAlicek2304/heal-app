@@ -127,11 +127,11 @@ public class BlogPostService {
             if (category.isEmpty()) {
                 return ApiResponse.error("Category not found");
             }
-            
+
             // Cập nhật bài viết
             blogPost.setTitle(request.getTitle());
             blogPost.setContent(request.getContent());
-            
+
             // Xử lý thumbnail: nếu có ảnh mới thì dùng, không thì giữ ảnh cũ
             if (request.getThumbnailImage() != null) {
                 blogPost.setThumbnailImage(request.getThumbnailImage());
@@ -139,10 +139,10 @@ public class BlogPostService {
                 blogPost.setThumbnailImage(request.getExistingThumbnail());
             }
             // Nếu cả hai đều null thì giữ nguyên thumbnailImage hiện tại
-            
+
             blogPost.setCategory(category.get());
             blogPost.setUpdatedAt(LocalDateTime.now());
-            
+
             // Chuyển về PROCESSING sau khi cập nhật
             blogPost.setStatus(BlogPostStatus.PROCESSING);
             blogPost.setReviewer(null);
@@ -155,13 +155,13 @@ public class BlogPostService {
                 // Get existing sections to preserve images
                 List<BlogSection> existingSections = blogSectionRepository
                         .findByBlogPostPostIdOrderByDisplayOrder(postId);
-                
+
                 // Create a map of existing sections by display order for easy lookup
                 Map<Integer, BlogSection> existingSectionsMap = new HashMap<>();
                 for (BlogSection existingSection : existingSections) {
                     existingSectionsMap.put(existingSection.getDisplayOrder(), existingSection);
                 }
-                
+
                 // Delete existing sections
                 blogSectionRepository.deleteAll(existingSections);
 
@@ -171,8 +171,9 @@ public class BlogPostService {
                     section.setBlogPost(updatedPost);
                     section.setSectionTitle(sectionRequest.getSectionTitle());
                     section.setSectionContent(sectionRequest.getSectionContent());
-                    
-                    // Xử lý sectionImage: ưu tiên ảnh mới, sau đó ảnh cũ từ request, cuối cùng là ảnh cũ từ database
+
+                    // Xử lý sectionImage: ưu tiên ảnh mới, sau đó ảnh cũ từ request, cuối cùng là
+                    // ảnh cũ từ database
                     if (sectionRequest.getSectionImage() != null) {
                         section.setSectionImage(sectionRequest.getSectionImage());
                     } else if (sectionRequest.getExistingSectionImage() != null) {
@@ -184,7 +185,7 @@ public class BlogPostService {
                             section.setSectionImage(existingSection.getSectionImage());
                         }
                     }
-                    
+
                     section.setDisplayOrder(sectionRequest.getDisplayOrder());
                     blogSectionRepository.save(section);
                 }
@@ -365,6 +366,23 @@ public class BlogPostService {
         }
     }
 
+    // Lấy các bài viết mới nhất đã được xác nhận
+    public ApiResponse<List<BlogPostResponse>> getLatestPosts(int limit) {
+        try {
+            List<BlogPost> posts = blogPostRepository.findByStatusOrderByCreatedAtDesc(
+                    BlogPostStatus.CONFIRMED,
+                    org.springframework.data.domain.PageRequest.of(0, limit));
+
+            List<BlogPostResponse> responses = posts.stream()
+                    .map(this::convertToResponse)
+                    .toList();
+
+            return ApiResponse.success("Latest blog posts retrieved successfully", responses);
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to retrieve latest blog posts: " + e.getMessage());
+        }
+    }
+
     private BlogPostResponse convertToResponse(BlogPost blogPost) {
         BlogPostResponse response = new BlogPostResponse();
         response.setId(blogPost.getPostId());
@@ -397,7 +415,7 @@ public class BlogPostService {
                 sectionResponse.setDisplayOrder(section.getDisplayOrder());
                 // Set existingSectionImage để frontend biết ảnh cũ
                 sectionResponse.setExistingSectionImage(section.getSectionImage());
-                
+
                 sectionResponses.add(sectionResponse);
             }
             response.setSections(sectionResponses);
