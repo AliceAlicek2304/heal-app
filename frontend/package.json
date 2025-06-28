@@ -2,7 +2,7 @@
   "name": "healapp-frontend",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://AliceAlicek2304.github.io/healapp",
+  "homepage": "https://AliceAlicek2304.github.io/heal-app",
   "dependencies": {
     "@craco/craco": "^7.1.0",
     "@fontsource/roboto": "^5.2.6",

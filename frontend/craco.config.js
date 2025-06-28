@@ -4,7 +4,7 @@ module.exports = {
   webpack: {
     configure: (webpackConfig, { env, paths }) => {
       if (env === 'production') {
-        webpackConfig.output.publicPath = '/healapp/';
+        webpackConfig.output.publicPath = '/heal-app/';
       }
       return webpackConfig;
     },
