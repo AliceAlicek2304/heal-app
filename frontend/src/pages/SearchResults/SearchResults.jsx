@@ -231,7 +231,7 @@ const SearchResults = () => {
                                                     src={blogService.getBlogImageUrl(blog.thumbnailImage)}
                                                     alt={blog.title}
                                                     onError={(e) => {
-                                                        e.target.src = '/image/img1.jpg';
+                                                        e.target.src = '%PUBLIC_URL%/image/img1.jpg';
                                                     }}
                                                 />
                                             </div>

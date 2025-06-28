@@ -72,7 +72,7 @@ const Hero = () => {
 
                 <div className={styles.heroImage}>
                     <div className={styles.imageWrapper}>
-                        <img src="/image/img1.jpg" alt="Healthcare Services" className={styles.heroImg} />
+                        <img src="%PUBLIC_URL%/image/img1.jpg" alt="Healthcare Services" className={styles.heroImg} />
                         <div className={styles.imageOverlay}>
                             <div className={styles.playButton}>
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
