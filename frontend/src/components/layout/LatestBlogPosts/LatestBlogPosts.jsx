@@ -136,7 +136,7 @@ const LatestBlogPosts = () => {
                                     alt={post.title} 
                                     className={styles.blogImage}
                                     onError={(e) => {
-                                        e.target.src = "%PUBLIC_URL%/image/img1.jpg";
+                                        e.target.src = `${process.env.PUBLIC_URL}/image/img1.jpg`;
                                     }}
                                 />
                                 <div className={styles.categoryBadge}>{post.categoryName}</div>

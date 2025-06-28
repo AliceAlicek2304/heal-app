@@ -13,7 +13,7 @@ const Footer = () => {
                     {/* Company Info */}
                     <div className={styles.footerSection}>
                         <div className={styles.footerLogo}>
-                            <img src="%PUBLIC_URL%/logo.png" alt="HealApp" className={styles.logoImg} />
+                            <img src={`${process.env.PUBLIC_URL}/logo.png`} alt="HealApp" className={styles.logoImg} />
                             <span className={styles.logoText}>HealApp</span>
                         </div>
                         <p className={styles.footerDescription}>

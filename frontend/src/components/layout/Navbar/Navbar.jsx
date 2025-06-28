@@ -165,7 +165,7 @@ const Navbar = () => {
                     {/* Logo */}
                     <div className={styles.navbarLogo}>
                         <Link to="/" className={styles.logoLink}>
-                            <img src="%PUBLIC_URL%/logo.png" alt="HealApp" className={styles.logoImg} />
+                            <img src={`${process.env.PUBLIC_URL}/logo.png`} alt="HealApp" className={styles.logoImg} />
                             <span className={styles.logoText}>HealApp</span>
                         </Link>
                     </div>                    {/* Search Bar */}
