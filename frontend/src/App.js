@@ -53,7 +53,7 @@ function App() {
   return (
     <AuthProvider>
       <ToastProvider>
-        <Router>
+        <Router basename="/heal-app">
           <div className="App">
             <AdminRedirect />
             <Routes>
