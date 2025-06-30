@@ -1,7 +1,7 @@
 package com.healapp.mcp.dto;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -62,7 +62,7 @@ public class ChatRequest {
 
         GenerationConfig config = new GenerationConfig();
         config.setTemperature(0.7);
-        config.setMaxOutputTokens(800);
+        config.setMaxOutputTokens(2048);
 
         ChatRequest request = new ChatRequest();
         request.setContents(contents);
@@ -94,7 +94,7 @@ public class ChatRequest {
 
         GenerationConfig config = new GenerationConfig();
         config.setTemperature(0.7);
-        config.setMaxOutputTokens(800);
+        config.setMaxOutputTokens(2048);
 
         ChatRequest request = new ChatRequest();
         request.setContents(contents);
