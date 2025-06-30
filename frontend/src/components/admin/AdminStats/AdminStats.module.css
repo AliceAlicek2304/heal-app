@@ -532,3 +532,156 @@
         gap: 1.5rem;
     }
 }
+
+.aiBtn {
+    background: #8b5cf6;
+    color: white;
+}
+
+.aiBtn:hover:not(:disabled) {
+    background: #7c3aed;
+    transform: translateY(-1px);
+}
+
+.aiPdfBtn {
+    background: #f59e0b;
+    color: white;
+}
+
+.aiPdfBtn:hover:not(:disabled) {
+    background: #d97706;
+    transform: translateY(-1px);
+}
+
+/* AI Analysis Modal */
+.aiAnalysisModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.aiAnalysisContent {
+    background: white;
+    border-radius: 12px;
+    max-width: 800px;
+    width: 100%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.aiAnalysisHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 24px 0 24px;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 16px;
+}
+
+.aiAnalysisHeader h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.closeBtn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.closeBtn:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.aiAnalysisBody {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    max-height: 60vh;
+}
+
+.aiAnalysisText {
+    line-height: 1.6;
+    color: #374151;
+    font-size: 14px;
+}
+
+.aiAnalysisText h1,
+.aiAnalysisText h2,
+.aiAnalysisText h3 {
+    color: #1f2937;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.aiAnalysisText h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.aiAnalysisText h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.aiAnalysisText h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.aiAnalysisText ul,
+.aiAnalysisText ol {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.aiAnalysisText li {
+    margin: 5px 0;
+}
+
+.aiAnalysisText strong {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.aiAnalysisFooter {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px 24px 24px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.closeModalBtn {
+    background: #6b7280;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.closeModalBtn:hover {
+    background: #4b5563;
+}

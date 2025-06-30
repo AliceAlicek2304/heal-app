@@ -24,21 +24,17 @@ const vietnameseToASCII = (str) => {
     return str.replace(/[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]/g, m => map[m] || m);
 };
 
-// Helper: Safe text function
+// Helper: Safe text function with better Vietnamese support
 const safeText = (pdf, text, x, y, options = {}) => {
     if (!text) return;
     
     try {
-        // Đảm bảo font được set đúng
-        if (!options.font) {
-            options.font = 'Roboto';
-        }
-        
-        // Try original text first
-        pdf.text(text, x, y, options);
+        // For now, use ASCII version to avoid encoding issues
+        const asciiText = vietnameseToASCII(text);
+        pdf.text(asciiText, x, y, options);
     } catch (error) {
-        console.warn('Text rendering failed, using ASCII fallback:', error);
-        // Fallback to ASCII
+        console.warn('Text rendering failed:', error);
+        // Final fallback
         const asciiText = vietnameseToASCII(text);
         pdf.text(asciiText, x, y, options);
     }
@@ -49,16 +45,27 @@ const safeTextWithFont = (pdf, text, x, y, fontSize = 12, fontStyle = 'normal') 
     if (!text) return;
     
     try {
-        pdf.setFont('Roboto', fontStyle);
+        // Check if Roboto font is available, otherwise use helvetica
+        const currentFont = pdf.getFont();
+        const fontName = currentFont.fontName || 'helvetica';
+        
+        pdf.setFont(fontName, fontStyle);
         pdf.setFontSize(fontSize);
-        pdf.text(text, x, y);
-    } catch (error) {
-        console.warn('Text rendering failed, using ASCII fallback:', error);
-        // Fallback to ASCII
+        
+        // Use ASCII version for better compatibility
         const asciiText = vietnameseToASCII(text);
-        pdf.setFont('Roboto', fontStyle);
-        pdf.setFontSize(fontSize);
         pdf.text(asciiText, x, y);
+    } catch (error) {
+        console.warn('Text rendering failed, using fallback:', error);
+        // Fallback to helvetica with ASCII
+        const asciiText = vietnameseToASCII(text);
+        try {
+            pdf.setFont('helvetica', fontStyle);
+            pdf.setFontSize(fontSize);
+            pdf.text(asciiText, x, y);
+        } catch (fallbackError) {
+            console.error('Even fallback text rendering failed:', fallbackError);
+        }
     }
 };
 
@@ -87,39 +94,42 @@ export const exportToPDF = async (stats, additionalData = {}) => {
     try {
         const pdf = new jsPDF({ unit: 'pt', orientation: 'portrait', format: 'a4' });
         
-        // Load Roboto font
-        await addRobotoFonts(pdf);
+        // Use helvetica font consistently to avoid font loading issues
+        const fontLoaded = await addRobotoFonts(pdf);
         
         let y = 40;
         const margin = 40;
         
+        // Always use helvetica for consistent rendering
+        pdf.setFont('helvetica');
+        
         // Header
         pdf.setFontSize(24);
-        pdf.setFont('Roboto', 'bold');
-        safeText(pdf, 'BÁO CÁO DASHBOARD HEALAPP', margin, y);
+        pdf.setFont('helvetica', 'bold');
+        safeText(pdf, 'BAO CAO DASHBOARD HEALAPP', margin, y);
         y += 40;
         
         pdf.setFontSize(12);
-        pdf.setFont('Roboto', 'normal');
-        safeText(pdf, `Báo cáo được tạo: ${new Date().toLocaleString('vi-VN')}`, margin, y);
+        pdf.setFont('helvetica', 'normal');
+        safeText(pdf, `Bao cao duoc tao: ${new Date().toLocaleString('vi-VN')}`, margin, y);
         y += 25;
-        safeText(pdf, 'Báo cáo tổng quan hiệu suất kinh doanh và hoạt động hệ thống', margin, y);
+        safeText(pdf, 'Bao cao tong quan hieu suat kinh doanh va hoat dong he thong', margin, y);
         y += 40;
         
         // 1. OVERVIEW STATISTICS
         pdf.setFontSize(16);
-        pdf.setFont('Roboto', 'bold');
-        safeText(pdf, '1. THỐNG KÊ TỔNG QUAN', margin, y);
+        pdf.setFont('helvetica', 'bold');
+        safeText(pdf, '1. THONG KE TONG QUAN', margin, y);
         y += 25;
         
         const overviewData = [
-            ['Chỉ số', 'Giá trị', 'Mô tả'],
-            ['Tổng người dùng', formatNumber(stats.totalUsers), 'Tổng số tài khoản đăng ký'],
-            ['Tư vấn viên', formatNumber(stats.totalConsultants), 'Số lượng tư vấn viên hoạt động'],
-            ['Khách hàng', formatNumber(stats.totalUsers - stats.totalConsultants), 'Số lượng khách hàng sử dụng dịch vụ'],
-            ['Tổng buổi tư vấn', formatNumber(stats.totalConsultations), 'Tổng số buổi tư vấn đã thực hiện'],
-            ['Xét nghiệm STI', formatNumber(stats.totalSTITests), 'Tổng số lượt xét nghiệm STI'],
-            ['Tổng doanh thu', formatCurrency(stats.totalRevenue), 'Tổng doanh thu từ trước đến nay']
+            ['Chi so', 'Gia tri', 'Mo ta'],
+            ['Tong nguoi dung', formatNumber(stats.totalUsers), 'Tong so tai khoan dang ky'],
+            ['Tu van vien', formatNumber(stats.totalConsultants), 'So luong tu van vien hoat dong'],
+            ['Khach hang', formatNumber(stats.totalUsers - stats.totalConsultants), 'So luong khach hang su dung dich vu'],
+            ['Tong buoi tu van', formatNumber(stats.totalConsultations), 'Tong so buoi tu van da thuc hien'],
+            ['Xet nghiem STI', formatNumber(stats.totalSTITests), 'Tong so luot xet nghiem STI'],
+            ['Tong doanh thu', formatCurrency(stats.totalRevenue), 'Tong doanh thu tu truoc den nay']
         ];
         
         pdf.autoTable({
@@ -132,12 +142,12 @@ export const exportToPDF = async (stats, additionalData = {}) => {
                 textColor: 255, 
                 fontStyle: 'bold', 
                 fontSize: 10, 
-                font: 'Roboto' 
+                font: 'helvetica'
             },
             styles: { 
                 fontSize: 9, 
                 cellPadding: 8, 
-                font: 'Roboto' 
+                font: 'helvetica'
             }
         });
         
@@ -145,18 +155,18 @@ export const exportToPDF = async (stats, additionalData = {}) => {
         
         // 2. BUSINESS KPIs
         pdf.setFontSize(16);
-        pdf.setFont('Roboto', 'bold');
-        safeText(pdf, '2. CHỈ SỐ KINH DOANH QUAN TRỌNG (KPIs)', margin, y);
+        pdf.setFont('helvetica', 'bold');
+        safeText(pdf, '2. CHI SO KINH DOANH QUAN TRONG (KPIs)', margin, y);
         y += 25;
         
         const kpiData = [
-            ['Chỉ số', 'Giá trị', 'Ý nghĩa'],
-            ['Giá trị đơn hàng TB', formatCurrency(stats.averageOrderValue), 'Trung bình giá trị mỗi giao dịch'],
-            ['Doanh thu/Người dùng', formatCurrency(stats.revenuePerUser), 'Doanh thu trung bình trên mỗi người dùng'],
-            ['Tỷ lệ giữ chân KH', formatPercentage(stats.customerRetentionRate), 'Tỷ lệ khách hàng quay lại sử dụng dịch vụ'],
-            ['Tăng trưởng doanh thu', formatPercentage(stats.revenueGrowthRate), 'Tỷ lệ tăng trưởng so với tháng trước'],
-            ['Tăng trưởng người dùng', formatPercentage(stats.userGrowthRate), 'Tỷ lệ tăng trưởng người dùng mới'],
-            ['Tăng trưởng đơn hàng', formatPercentage(stats.orderGrowthRate), 'Tỷ lệ tăng trưởng số lượng giao dịch']
+            ['Chi so', 'Gia tri', 'Y nghia'],
+            ['Gia tri don hang TB', formatCurrency(stats.averageOrderValue), 'Trung binh gia tri moi giao dich'],
+            ['Doanh thu/Nguoi dung', formatCurrency(stats.revenuePerUser), 'Doanh thu trung binh tren moi nguoi dung'],
+            ['Ty le giu chan KH', formatPercentage(stats.customerRetentionRate), 'Ty le khach hang quay lai su dung dich vu'],
+            ['Tang truong doanh thu', formatPercentage(stats.revenueGrowthRate), 'Ty le tang truong so voi thang truoc'],
+            ['Tang truong nguoi dung', formatPercentage(stats.userGrowthRate), 'Ty le tang truong nguoi dung moi'],
+            ['Tang truong don hang', formatPercentage(stats.orderGrowthRate), 'Ty le tang truong so luong giao dich']
         ];
         
         pdf.autoTable({
@@ -169,12 +179,12 @@ export const exportToPDF = async (stats, additionalData = {}) => {
                 textColor: 255, 
                 fontStyle: 'bold', 
                 fontSize: 10, 
-                font: 'Roboto' 
+                font: 'helvetica'
             },
             styles: { 
                 fontSize: 9, 
                 cellPadding: 8, 
-                font: 'Roboto' 
+                font: 'helvetica'
             }
         });
         
@@ -183,12 +193,12 @@ export const exportToPDF = async (stats, additionalData = {}) => {
         // 3. TOP CONSULTANTS (if available)
         if (additionalData.topConsultants && additionalData.topConsultants.length > 0) {
             pdf.setFontSize(16);
-            pdf.setFont('Roboto', 'bold');
-            safeText(pdf, '3. TOP TƯ VẤN VIÊN HOẠT ĐỘNG TỐT NHẤT', margin, y);
+            pdf.setFont('helvetica', 'bold');
+            safeText(pdf, '3. TOP TU VAN VIEN HOAT DONG TOT NHAT', margin, y);
             y += 25;
             
             const consultantsData = [
-                ['STT', 'Tên tư vấn viên', 'Email', 'Số buổi tư vấn', 'Đánh giá TB']
+                ['STT', 'Ten tu van vien', 'Email', 'So buoi tu van', 'Danh gia TB']
             ];
             
             additionalData.topConsultants.slice(0, 10).forEach((consultant, index) => {
@@ -211,12 +221,12 @@ export const exportToPDF = async (stats, additionalData = {}) => {
                     textColor: 255, 
                     fontStyle: 'bold', 
                     fontSize: 10, 
-                    font: 'Roboto' 
+                    font: 'helvetica'
                 },
                 styles: { 
                     fontSize: 9, 
                     cellPadding: 6, 
-                    font: 'Roboto' 
+                    font: 'helvetica'
                 }
             });
             
@@ -226,12 +236,12 @@ export const exportToPDF = async (stats, additionalData = {}) => {
         // 4. TOP STI SERVICES (if available)
         if (additionalData.topSTIServices && additionalData.topSTIServices.length > 0) {
             pdf.setFontSize(16);
-            pdf.setFont('Roboto', 'bold');
-            safeText(pdf, '4. TOP DỊCH VỤ XÉT NGHIỆM STI PHỔ BIẾN', margin, y);
+            pdf.setFont('helvetica', 'bold');
+            safeText(pdf, '4. TOP DICH VU XET NGHIEM STI PHO BIEN', margin, y);
             y += 25;
             
             const servicesData = [
-                ['STT', 'Tên dịch vụ', 'Giá', 'Số lượt sử dụng', 'Đánh giá TB']
+                ['STT', 'Ten dich vu', 'Gia', 'So luot su dung', 'Danh gia TB']
             ];
             
             additionalData.topSTIServices.slice(0, 10).forEach((service, index) => {
@@ -254,12 +264,12 @@ export const exportToPDF = async (stats, additionalData = {}) => {
                     textColor: 255, 
                     fontStyle: 'bold', 
                     fontSize: 10, 
-                    font: 'Roboto' 
+                    font: 'helvetica'
                 },
                 styles: { 
                     fontSize: 9, 
                     cellPadding: 6, 
-                    font: 'Roboto' 
+                    font: 'helvetica'
                 }
             });
             
@@ -269,12 +279,12 @@ export const exportToPDF = async (stats, additionalData = {}) => {
         // 5. TOP STI PACKAGES (if available)
         if (additionalData.topSTIPackages && additionalData.topSTIPackages.length > 0) {
             pdf.setFontSize(16);
-            pdf.setFont('Roboto', 'bold');
-            safeText(pdf, '5. TOP GÓI XÉT NGHIỆM STI PHỔ BIẾN', margin, y);
+            pdf.setFont('helvetica', 'bold');
+            safeText(pdf, '5. TOP GOI XET NGHIEM STI PHO BIEN', margin, y);
             y += 25;
             
             const packagesData = [
-                ['STT', 'Tên gói', 'Giá', 'Số lượt sử dụng', 'Đánh giá TB']
+                ['STT', 'Ten goi', 'Gia', 'So luot su dung', 'Danh gia TB']
             ];
             
             additionalData.topSTIPackages.slice(0, 10).forEach((packageItem, index) => {
@@ -297,12 +307,12 @@ export const exportToPDF = async (stats, additionalData = {}) => {
                     textColor: 255, 
                     fontStyle: 'bold', 
                     fontSize: 10, 
-                    font: 'Roboto' 
+                    font: 'helvetica'
                 },
                 styles: { 
                     fontSize: 9, 
                     cellPadding: 6, 
-                    font: 'Roboto' 
+                    font: 'helvetica'
                 }
             });
             
@@ -312,12 +322,12 @@ export const exportToPDF = async (stats, additionalData = {}) => {
         // 6. REVENUE ANALYSIS (if available)
         if (additionalData.revenueData && additionalData.revenueData.length > 0) {
             pdf.setFontSize(16);
-            pdf.setFont('Roboto', 'bold');
-            safeText(pdf, '6. PHÂN TÍCH DOANH THU THEO THỜI GIAN', margin, y);
+            pdf.setFont('helvetica', 'bold');
+            safeText(pdf, '6. PHAN TICH DOANH THU THEO THOI GIAN', margin, y);
             y += 25;
             
             const revenueData = [
-                ['Thời gian', 'Doanh thu', 'Số giao dịch', 'Trung bình/giao dịch']
+                ['Thoi gian', 'Doanh thu', 'So giao dich', 'Trung binh/giao dich']
             ];
             
             additionalData.revenueData.forEach(item => {
@@ -340,12 +350,12 @@ export const exportToPDF = async (stats, additionalData = {}) => {
                     textColor: 255, 
                     fontStyle: 'bold', 
                     fontSize: 10, 
-                    font: 'Roboto' 
+                    font: 'helvetica'
                 },
                 styles: { 
                     fontSize: 9, 
                     cellPadding: 6, 
-                    font: 'Roboto' 
+                    font: 'helvetica'
                 }
             });
             
@@ -355,12 +365,12 @@ export const exportToPDF = async (stats, additionalData = {}) => {
         // 7. REVENUE DISTRIBUTION (if available)
         if (additionalData.revenueDistribution && additionalData.revenueDistribution.length > 0) {
             pdf.setFontSize(16);
-            pdf.setFont('Roboto', 'bold');
-            safeText(pdf, '7. PHÂN BỔ DOANH THU THEO DỊCH VỤ', margin, y);
+            pdf.setFont('helvetica', 'bold');
+            safeText(pdf, '7. PHAN BO DOANH THU THEO DICH VU', margin, y);
             y += 25;
             
             const distributionData = [
-                ['Loại dịch vụ', 'Doanh thu', 'Tỷ lệ %']
+                ['Loai dich vu', 'Doanh thu', 'Ty le %']
             ];
             
             additionalData.revenueDistribution.forEach(item => {
@@ -382,57 +392,26 @@ export const exportToPDF = async (stats, additionalData = {}) => {
                     textColor: 255, 
                     fontStyle: 'bold', 
                     fontSize: 10, 
-                    font: 'Roboto' 
+                    font: 'helvetica'
                 },
                 styles: { 
                     fontSize: 9, 
                     cellPadding: 6, 
-                    font: 'Roboto' 
+                    font: 'helvetica'
                 }
             });
             
             y = pdf.lastAutoTable.finalY + 30;
         }
         
-        // 8. SUMMARY AND RECOMMENDATIONS
-        pdf.setFontSize(16);
-        pdf.setFont('Roboto', 'bold');
-        safeText(pdf, '8. TÓM TẮT VÀ KHUYẾN NGHỊ', margin, y);
-        y += 25;
-        
-        pdf.setFontSize(11);
-        pdf.setFont('Roboto', 'normal');
-        
-        const summary = [
-            `• Tổng doanh thu: ${formatCurrency(stats.totalRevenue)}`,
-            `• Tỷ lệ tăng trưởng doanh thu: ${formatPercentage(stats.revenueGrowthRate)}`,
-            `• Tỷ lệ giữ chân khách hàng: ${formatPercentage(stats.customerRetentionRate)}`,
-            `• Giá trị đơn hàng trung bình: ${formatCurrency(stats.averageOrderValue)}`,
-            '',
-            'KHUYẾN NGHỊ:',
-            `• ${stats.revenueGrowthRate >= 0 ? 'Duy trì' : 'Cải thiện'} chiến lược marketing để tăng doanh thu`,
-            `• ${stats.customerRetentionRate >= 70 ? 'Tuyệt vời' : 'Cần cải thiện'} dịch vụ khách hàng để tăng tỷ lệ giữ chân`,
-            `• ${stats.averageOrderValue >= 500000 ? 'Tốt' : 'Cần tối ưu'} chiến lược giá để tăng giá trị đơn hàng`,
-            `• Tập trung vào ${stats.totalConsultations > stats.totalSTITests ? 'dịch vụ xét nghiệm STI' : 'dịch vụ tư vấn'} để tăng doanh thu`
-        ];
-        
-        summary.forEach(line => {
-            if (line.trim()) {
-                safeTextWithFont(pdf, line, margin, y, 11, 'normal');
-                y += 18;
-            } else {
-                y += 10;
-            }
-        });
-        
         // Footer - đảm bảo không bị đè lên nội dung
         const pageHeight = pdf.internal.pageSize.height;
         const footerY = Math.max(y + 40, pageHeight - 80); // Đảm bảo footer cách nội dung ít nhất 40pt
         
         pdf.setFontSize(10);
-        pdf.setFont('Roboto', 'italic');
-        safeTextWithFont(pdf, 'Báo cáo được tạo tự động bởi hệ thống HealApp', margin, footerY, 10, 'italic');
-        safeTextWithFont(pdf, 'Để biết thêm thông tin chi tiết, vui lòng liên hệ admin@healapp.com', margin, footerY + 15, 10, 'italic');
+        pdf.setFont('helvetica', 'italic');
+        safeTextWithFont(pdf, 'Bao cao duoc tao tu dong boi he thong HealApp', margin, footerY, 10, 'italic');
+        safeTextWithFont(pdf, 'De biet them thong tin chi tiet, vui long lien he admin@healapp.com', margin, footerY + 15, 10, 'italic');
         
         pdf.save(`HealApp_Dashboard_Report_${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (e) {

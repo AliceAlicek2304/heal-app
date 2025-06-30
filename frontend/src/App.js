@@ -35,11 +35,14 @@ const AdminRedirect = () => {
             
             if (isAdmin) {
                 const currentPath = window.location.pathname;
+                const basename = process.env.NODE_ENV === 'production' ? '/heal-app' : '';
+                const adminPath = `${basename}/admin`;
+                
                 // Chỉ redirect nếu không đang ở trang admin hoặc profile
-                if (!currentPath.startsWith('/admin') && !currentPath.startsWith('/profile')) {
+                if (!currentPath.startsWith(adminPath) && !currentPath.startsWith('/profile')) {
                     // Sử dụng setTimeout để đảm bảo component đã mount hoàn toàn
                     setTimeout(() => {
-                        window.location.href = '/admin';
+                        window.location.href = adminPath;
                     }, 200);
                 }
             }
@@ -50,10 +53,13 @@ const AdminRedirect = () => {
 };
 
 function App() {
+  // Xác định basename dựa trên environment
+  const basename = process.env.NODE_ENV === 'production' ? '/heal-app' : '';
+
   return (
     <AuthProvider>
       <ToastProvider>
-        <Router basename="/heal-app">
+        <Router basename={basename}>
           <div className="App">
             <AdminRedirect />
             <Routes>
@@ -77,7 +83,7 @@ function App() {
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />
             </Routes>
-            {window.location.pathname !== '/admin' && <ChatBot />}
+            {!window.location.pathname.includes('/admin') && <ChatBot />}
           </div>
         </Router>
       </ToastProvider>

@@ -321,4 +321,29 @@ const adminService = {
     }
 };
 
+// AI Dashboard Analysis
+export const generateAIAnalysis = async () => {
+    try {
+        const response = await axios.get(`${API_BASE_URL}/admin/ai-dashboard/analysis`, {
+            headers: getAuthHeader()
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error generating AI analysis:', error);
+        throw error.response?.data || error.message;
+    }
+};
+
+export const generateDetailedReport = async () => {
+    try {
+        const response = await axios.get(`${API_BASE_URL}/admin/ai-dashboard/detailed-report`, {
+            headers: getAuthHeader()
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error generating detailed report:', error);
+        throw error.response?.data || error.message;
+    }
+};
+
 export default adminService;

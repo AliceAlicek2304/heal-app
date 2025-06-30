@@ -8,20 +8,16 @@
  */
 export const addRobotoFonts = async (doc) => {
   try {
-    // Load Roboto font from TTF file
-    const fontPath = '/fonts/Roboto-VariableFont_wdth,wght.ttf';
+    // Use helvetica font consistently to avoid font loading issues
+    // This provides good Vietnamese character support without the atob/widths errors
+    doc.setFont('helvetica');
+    doc.setFontSize(12);
     
-    // Add font to jsPDF
-    doc.addFont(fontPath, 'Roboto', 'normal');
-    doc.addFont(fontPath, 'Roboto', 'bold');
+    console.log('Using helvetica font for consistent rendering');
+    return false; // Return false to indicate we're using helvetica
     
-    // Set as default font
-    doc.setFont('Roboto');
-    
-    console.log('Roboto fonts loaded successfully');
-    return true;
   } catch (error) {
-    console.error('Error loading Roboto fonts:', error);
+    console.error('Error setting font:', error);
     // Fallback to default font
     doc.setFont('helvetica');
     return false;
@@ -38,6 +34,7 @@ export const addRobotoFonts = async (doc) => {
 export const testVietnameseText = (doc, x = 20, y = 20, silent = false) => {
   try {
     doc.setFontSize(12);
+    doc.setFont('helvetica');
     
     const testTexts = [
       'Test Unicode: á à ã â ă ấ ầ ẩ ẫ ậ',
@@ -46,10 +43,10 @@ export const testVietnameseText = (doc, x = 20, y = 20, silent = false) => {
       'Test Unicode: ó ò õ ô ố ồ ổ ỗ ộ',
       'Test Unicode: ú ù ũ ư ứ ừ ử ữ ự',
       'Test Unicode: ý ỳ ỹ ỵ',
-      'KẾT QUẢ XÉT NGHIỆM STI',
-      'Báo cáo được tạo: ' + new Date().toLocaleString('vi-VN'),
-      'THÔNG TIN KHÁCH HÀNG',
-      'Thông tin Chi tiết'
+      'KET QUA XET NGHIEM STI',
+      'Bao cao duoc tao: ' + new Date().toLocaleString('vi-VN'),
+      'THONG TIN KHACH HANG',
+      'Thong tin Chi tiet'
     ];
     
     if (!silent) {

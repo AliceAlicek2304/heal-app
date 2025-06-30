@@ -6,7 +6,8 @@ import ActivityFeed from './ActivityFeed';
 import TopConsultants from './TopConsultants';
 import TopSTIServices from './TopSTIServices';
 import TopSTIPackages from './TopSTIPackages';
-import { getStatsOverview } from '../../../services/adminStatsService';
+import { getStatsOverview, getTopConsultants, getTopSTIServices, getTopSTIPackages, getRevenueDistribution } from '../../../services/adminStatsService';
+import { generateAIAnalysis, generateDetailedReport } from '../../../services/adminService';
 import { exportToPDF, exportToExcel } from '../../../utils/exportUtils';
 import { useToast } from '../../../contexts/ToastContext';
 import styles from './AdminStats.module.css';
@@ -15,7 +16,13 @@ const AdminStats = () => {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [exportLoading, setExportLoading] = useState({ pdf: false, excel: false });
+    const [exportLoading, setExportLoading] = useState({ 
+        pdf: false, 
+        excel: false, 
+        aiAnalysis: false 
+    });
+    const [aiAnalysis, setAiAnalysis] = useState(null);
+    const [showAIAnalysis, setShowAIAnalysis] = useState(false);
     const toast = useToast();
 
     useEffect(() => {
@@ -28,35 +35,10 @@ const AdminStats = () => {
             setError(null);
 
             const statsData = await getStatsOverview();
-
-            // Transform data to match existing component structure
-            setStats({
-                totalUsers: statsData.totalUsers || 0,
-                totalConsultations: statsData.totalConsultations || 0,
-                totalSTITests: statsData.totalSTITests || 0,
-                totalConsultants: statsData.totalConsultants || 0,
-                totalRevenue: statsData.totalRevenue || 0,                // Thêm các KPI kinh doanh mới
-                averageOrderValue: statsData.averageOrderValue || 0,
-                revenuePerUser: statsData.revenuePerUser || 0,
-                revenueGrowthRate: statsData.revenueGrowthRate || 0,
-                userGrowthRate: statsData.userGrowthRate || 0,
-                orderGrowthRate: statsData.orderGrowthRate || 0,
-                customerRetentionRate: statsData.customerRetentionRate || 0,
-                // Keep some mock data for features not yet implemented
-                totalRatings: 0, // TODO: Implement rating stats
-                totalBlogPosts: 0, // TODO: Implement blog stats
-                monthlyGrowth: {
-                    users: 0, // TODO: Implement growth stats
-                    consultations: 0,
-                    stiTests: 0,
-                    ratings: 0
-                },
-                recentActivity: [] // TODO: Implement activity feed
-            });
-
+            setStats(statsData);
         } catch (error) {
             console.error('Error fetching stats:', error);
-            setError('Không thể tải thống kê. Vui lòng thử lại sau.');
+            setError('Có lỗi xảy ra khi tải thống kê');
         } finally {
             setLoading(false);
         }
@@ -64,7 +46,9 @@ const AdminStats = () => {
 
     const formatNumber = (num) => {
         return new Intl.NumberFormat('vi-VN').format(num || 0);
-    }; const formatCurrency = (amount) => {
+    };
+
+    const formatCurrency = (amount) => {
         return new Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND'
@@ -110,7 +94,9 @@ const AdminStats = () => {
             default:
                 return null;
         }
-    }; const getGrowthIcon = (value) => {
+    };
+
+    const getGrowthIcon = (value) => {
         if (value > 0) {
             return (
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={styles.growthIcon}>
@@ -131,7 +117,9 @@ const AdminStats = () => {
                 <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
         );
-    }; const handleExportPDF = async () => {
+    };
+
+    const handleExportPDF = async () => {
         if (stats) {
             try {
                 setExportLoading(prev => ({ ...prev, pdf: true }));
@@ -161,6 +149,27 @@ const AdminStats = () => {
         }
     };
 
+    // AI Analysis functions
+    const handleGenerateAIAnalysis = async () => {
+        try {
+            setExportLoading(prev => ({ ...prev, aiAnalysis: true }));
+            const response = await generateAIAnalysis();
+            
+            if (response.success) {
+                setAiAnalysis(response.data.aiAnalysis);
+                setShowAIAnalysis(true);
+                toast.addToast('Phân tích AI đã được tạo thành công', 'success');
+            } else {
+                toast.addToast(response.message || 'Không thể tạo phân tích AI', 'error');
+            }
+        } catch (error) {
+            console.error('AI Analysis failed:', error);
+            toast.addToast('Có lỗi xảy ra khi tạo phân tích AI', 'error');
+        } finally {
+            setExportLoading(prev => ({ ...prev, aiAnalysis: false }));
+        }
+    };
+
     if (loading) {
         return (
             <div className={styles.loadingContainer}>
@@ -179,7 +188,9 @@ const AdminStats = () => {
                 </button>
             </div>
         );
-    } return (
+    }
+
+    return (
         <div className={styles.adminStats}>
             {/* Dashboard Header */}
             <div className={styles.dashboardHeader}>
@@ -190,9 +201,27 @@ const AdminStats = () => {
                     </span>
                 </div>
                 <div className={styles.exportButtons}>
+                    {/* AI Analysis Button */}
+                    <button
+                        onClick={handleGenerateAIAnalysis}
+                        className={`${styles.exportBtn} ${styles.aiBtn}`}
+                        disabled={loading || exportLoading.aiAnalysis}
+                    >
+                        {exportLoading.aiAnalysis ? (
+                            <div className={styles.spinner}></div>
+                        ) : (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                            </svg>
+                        )}
+                        {exportLoading.aiAnalysis ? 'Đang phân tích...' : 'AI Analysis'}
+                    </button>
+
+                    {/* Regular PDF Button */}
                     <button
                         onClick={handleExportPDF}
-                        className={`${styles.exportBtn} ${styles.pdfBtn}`} disabled={loading || exportLoading.pdf}
+                        className={`${styles.exportBtn} ${styles.pdfBtn}`}
+                        disabled={loading || exportLoading.pdf}
                     >
                         {exportLoading.pdf ? (
                             <div className={styles.spinner}></div>
@@ -207,6 +236,8 @@ const AdminStats = () => {
                         )}
                         {exportLoading.pdf ? 'Đang xuất...' : 'Xuất PDF'}
                     </button>
+
+                    {/* Excel Button */}
                     <button
                         onClick={handleExportExcel}
                         className={`${styles.exportBtn} ${styles.excelBtn}`}
@@ -226,6 +257,39 @@ const AdminStats = () => {
                 </div>
             </div>
 
+            {/* AI Analysis Modal */}
+            {showAIAnalysis && aiAnalysis && (
+                <div className={styles.aiAnalysisModal}>
+                    <div className={styles.aiAnalysisContent}>
+                        <div className={styles.aiAnalysisHeader}>
+                            <h2>Phân tích AI</h2>
+                            <button 
+                                onClick={() => setShowAIAnalysis(false)}
+                                className={styles.closeBtn}
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <div className={styles.aiAnalysisBody}>
+                            <div 
+                                className={styles.aiAnalysisText}
+                                dangerouslySetInnerHTML={{ 
+                                    __html: aiAnalysis.replace(/\n/g, '<br>') 
+                                }}
+                            />
+                        </div>
+                        <div className={styles.aiAnalysisFooter}>
+                            <button
+                                onClick={() => setShowAIAnalysis(false)}
+                                className={styles.closeModalBtn}
+                            >
+                                Đóng
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Overview Cards */}
             <div className={styles.statsGrid}>
                 <div className={styles.statCard}>
@@ -237,7 +301,8 @@ const AdminStats = () => {
                                 <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                                 <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                             </svg>
-                        </div>                        <div className={styles.cardTitle}>Tổng người dùng</div>
+                        </div>
+                        <div className={styles.cardTitle}>Tổng người dùng</div>
                     </div>
                     <div className={styles.cardValue}>{formatNumber(stats.totalUsers)}</div>
                     <div className={styles.cardSubtitle}>
@@ -251,7 +316,8 @@ const AdminStats = () => {
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                             </svg>
-                        </div>                        <div className={styles.cardTitle}>Tư vấn</div>
+                        </div>
+                        <div className={styles.cardTitle}>Tư vấn</div>
                     </div>
                     <div className={styles.cardValue}>{formatNumber(stats.totalConsultations)}</div>
                     <div className={styles.cardSubtitle}>
@@ -285,11 +351,14 @@ const AdminStats = () => {
                         </div>
                         <div className={styles.cardTitle}>Tổng doanh thu</div>
                     </div>
-                    <div className={styles.cardValue}>{formatCurrency(stats.totalRevenue)}</div>                    <div className={styles.cardSubtitle}>
+                    <div className={styles.cardValue}>{formatCurrency(stats.totalRevenue)}</div>
+                    <div className={styles.cardSubtitle}>
                         Doanh thu từ trước đến nay
                     </div>
                 </div>
-            </div>            {/* Business KPIs Section */}
+            </div>
+
+            {/* Business KPIs Section */}
             <div className={styles.businessKPIsSection}>
                 <div className={styles.sectionHeader}>
                     <h3>Chỉ số kinh doanh quan trọng</h3>
@@ -324,7 +393,8 @@ const AdminStats = () => {
                             <div className={styles.kpiTitle}>Doanh thu/Người dùng</div>
                         </div>
                         <div className={styles.kpiValue}>{formatCurrency(stats.revenuePerUser)}</div>
-                        <div className={styles.kpiDescription}>Revenue Per User</div>                    </div>
+                        <div className={styles.kpiDescription}>Revenue Per User</div>
+                    </div>
 
                     <div className={styles.kpiCard}>
                         <div className={styles.kpiHeader}>
@@ -337,7 +407,9 @@ const AdminStats = () => {
                         </div>
                         <div className={styles.kpiValue}>{formatPercentage(stats.customerRetentionRate)}</div>
                         <div className={styles.kpiDescription}>Customer Retention (30d)</div>
-                    </div>                    <div className={styles.kpiCard}>
+                    </div>
+
+                    <div className={styles.kpiCard}>
                         <div className={styles.kpiHeader}>
                             <div className={styles.kpiIcon} style={{ backgroundColor: '#bee3f8', color: '#3182ce' }}>
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

@@ -216,6 +216,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/admin/stats/top-sti-services").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/admin/stats/top-sti-packages").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/admin/stats/revenue-distribution").hasRole("ADMIN")
+                // AI Dashboard Analysis APIs
+                .requestMatchers(HttpMethod.GET, "/admin/ai-dashboard/analysis").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/admin/ai-dashboard/detailed-report").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/admin/config").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/admin/config").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/admin/config").hasRole("ADMIN")
