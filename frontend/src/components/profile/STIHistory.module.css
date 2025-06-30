@@ -1154,3 +1154,138 @@
     font-size: 13px;
   }
 }
+
+/* Modal nhập lại thông tin thẻ VISA khi retry - Đẹp, nhỏ gọn, vừa modal */
+.retryModalContent {
+  max-width: 400px;
+  width: 100%;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.09);
+  padding: 1.5rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.retryModalContent form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.formGroup label {
+  font-size: 0.92rem;
+  color: #444;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.formGroup input,
+.formGroup select {
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.97rem;
+  color: #222;
+  font-family: inherit;
+  transition: border 0.2s;
+}
+
+.formGroup input:focus,
+.formGroup select:focus {
+  outline: none;
+  border-color: #4285f4;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+.modalFooter {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: row;
+  gap: 0.8rem;
+  justify-content: flex-end;
+}
+
+.btnPrimary, .btnSecondary {
+  min-width: 120px;
+  border-radius: 6px;
+  font-size: 1rem;
+  padding: 0.5rem 1.2rem;
+}
+
+@media (max-width: 600px) {
+  .retryModalContent {
+    max-width: 98vw;
+    padding: 1rem 0.3rem;
+  }
+  .modalFooter {
+    gap: 0.5rem;
+  }
+  .btnPrimary, .btnSecondary {
+    min-width: 90px;
+    font-size: 0.97rem;
+    padding: 0.45rem 0.7rem;
+  }
+}
+
+.paymentSuccessSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f6fff7;
+  border-radius: 12px;
+  padding: 2rem 1.5rem 1.5rem 1.5rem;
+  margin: 1.5rem 0 0 0;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.08);
+  border: 1.5px solid #e0f7e9;
+}
+
+.paymentSuccessSection .successIcon {
+  color: #4caf50;
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.paymentSuccessSection h5 {
+  color: #388e3c;
+  font-size: 1.3rem;
+  margin: 0.5rem 0 0.25rem 0;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.paymentSuccessSection p {
+  color: #333;
+  font-size: 1rem;
+  margin: 0 0 0.75rem 0;
+  text-align: center;
+}
+
+.transactionId {
+  background: #e8f5e9;
+  color: #256029;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 1.05rem;
+  padding: 0.5rem 1.2rem;
+  border-radius: 8px;
+  margin-top: 0.5rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  box-shadow: 0 1px 3px rgba(76, 175, 80, 0.07);
+  word-break: break-all;
+}

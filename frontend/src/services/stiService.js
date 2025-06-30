@@ -781,4 +781,34 @@ export const stiService = {
             return { success: false, message: 'Không thể tải thông tin thanh toán' };
         }
     },
+
+    // Thanh toán lại Stripe cho booking thất bại
+    retryStripePayment: async (testId, cardInfo, onAuthRequired) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            if (!token && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+            const response = await fetch(`${API_BASE_URL}/payments/stripe/${testId}/retry`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(cardInfo)
+            });
+            if (response.status === 401 && onAuthRequired) {
+                onAuthRequired();
+                return { success: false, message: 'Authentication required' };
+            }
+            const data = await response.json();
+            if (!response.ok) {
+                return { success: false, message: data.message || 'Failed to retry Stripe payment' };
+            }
+            return data;
+        } catch (error) {
+            return { success: false, message: 'Network error occurred' };
+        }
+    },
 };

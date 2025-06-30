@@ -558,9 +558,47 @@ const ManageSTITests = () => {
         return 'Thanh toán chưa hoàn tất. Vui lòng kiểm tra lại trước khi xác nhận xét nghiệm.';
     };
 
+    // Thêm hàm xác nhận thủ công thanh toán QR
+    const handleManualConfirmQR = async (test) => {
+        try {
+            setUpdating(true);
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                toast.error('Bạn cần đăng nhập lại');
+                return;
+            }
+            if (!test.qrPaymentReference) {
+                toast.error('Không tìm thấy mã QR để xác nhận');
+                return;
+            }
+            const response = await fetch(
+                `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/payments/qr/${test.qrPaymentReference}/simulate-success`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
+            const data = await response.json();
+            if (response.ok && data.success) {
+                toast.success('Đã xác nhận thanh toán QR thành công!');
+                loadTests();
+            } else {
+                toast.error(data.message || 'Xác nhận thanh toán thất bại');
+            }
+        } catch (error) {
+            toast.error('Có lỗi khi xác nhận thanh toán QR');
+        } finally {
+            setUpdating(false);
+        }
+    };
+
     const renderActionButtons = (test) => {
         const status = test.status;
-
+        const isQR = test.paymentMethod === 'QR_CODE' || test.paymentMethod === 'QR';
+        const canManualConfirmQR = status === 'PENDING' && isQR && test.paymentStatus === 'PENDING' && test.qrPaymentReference;
         return (
             <div className={styles.actionButtons}>
                 <button
@@ -669,6 +707,23 @@ const ManageSTITests = () => {
                             <line x1="16" y1="17" x2="8" y2="17"></line>
                         </svg>
                         Xem kết quả
+                    </button>
+                )}
+
+                {canManualConfirmQR && (
+                    <button
+                        onClick={() => handleManualConfirmQR(test)}
+                        className={`${styles.actionBtn} ${styles.confirmBtn}`}
+                        disabled={updating}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="3" width="5" height="5"></rect>
+                            <rect x="16" y="3" width="5" height="5"></rect>
+                            <rect x="3" y="16" width="5" height="5"></rect>
+                            <line x1="21" y1="15" x2="21" y2="18"></line>
+                            <line x1="21" y1="21" x2="21" y2="21.01"></line>
+                        </svg>
+                        Xác nhận đã thanh toán QR
                     </button>
                 )}
             </div>

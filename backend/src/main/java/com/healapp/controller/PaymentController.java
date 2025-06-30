@@ -1,20 +1,25 @@
 package com.healapp.controller;
 
-import com.healapp.dto.ApiResponse;
-import com.healapp.model.Payment;
-import com.healapp.service.PaymentService;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
-import org.springframework.security.access.prepost.PreAuthorize;
+import com.healapp.dto.ApiResponse;
+import com.healapp.model.Payment;
+import com.healapp.service.PaymentService;
 
-import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/payments")
@@ -116,6 +121,24 @@ public class PaymentController {
             log.error(" Error checking payment status: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body(
                     ApiResponse.error("Failed to check payment status: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/stripe/{testId}/retry")
+    public ResponseEntity<ApiResponse<Payment>> retryStripePayment(@PathVariable Long testId, @RequestBody Map<String, String> cardInfo) {
+        try {
+            ApiResponse<Payment> response = paymentService.retryStripePayment(
+                testId,
+                cardInfo.get("cardNumber"),
+                cardInfo.get("expiryMonth"),
+                cardInfo.get("expiryYear"),
+                cardInfo.get("cvc"),
+                cardInfo.get("cardHolderName")
+            );
+            return getResponseEntity(response);
+        } catch (Exception e) {
+            log.error("Error retrying Stripe payment for test {}: {}", testId, e.getMessage(), e);
+            return ResponseEntity.badRequest().body(ApiResponse.error("Failed to retry Stripe payment: " + e.getMessage()));
         }
     }
 

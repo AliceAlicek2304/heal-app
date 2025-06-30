@@ -153,11 +153,30 @@ public class STITestService {
             createTestResultsForService(savedTest);
         }
 
-        ApiResponse<Payment> paymentResult = processPaymentForTest(savedTest, paymentMethod, request);
+        ApiResponse<Payment> paymentResult = null;
+        try {
+            paymentResult = processPaymentForTest(savedTest, paymentMethod, request);
+        } catch (PaymentException e) {
+            // Nếu lỗi thanh toán, tạo payment FAILED và trả về booking đã tạo
+            log.warn("Payment failed for user {}: {}", customerId, e.getMessage());
+            // Tạo bản ghi payment FAILED nếu chưa có
+            paymentResult = paymentService.createFailedPayment(
+                savedTest.getCustomer().getId(),
+                "STI",
+                savedTest.getTestId(),
+                savedTest.getTotalPrice(),
+                paymentMethod,
+                e.getMessage()
+            );
+        }
 
-        if (!paymentResult.isSuccess()) {
-            log.warn("Payment failed for user {}: {}", customerId, paymentResult.getMessage());
-            throw new PaymentException("Payment failed: " + paymentResult.getMessage());
+        if (paymentResult == null || !paymentResult.isSuccess()) {
+            log.warn("Payment failed for user {}: {}", customerId, paymentResult != null ? paymentResult.getMessage() : "Unknown error");
+            STITestResponse response = convertToResponse(savedTest);
+            String message = (request.isPackageBooking() ? "STI package test scheduled (payment failed)" : "STI test scheduled (payment failed)")
+                + ". Lỗi thanh toán: " + (paymentResult != null ? paymentResult.getMessage() : "Unknown error");
+            // Trả về HTTP 200 với success=true, FE sẽ nhận được booking + payment FAILED
+            return ApiResponse.success(message, response);
         }
 
         Payment payment = paymentResult.getData();
@@ -192,42 +211,28 @@ public class STITestService {
 
         ApiResponse<Payment> paymentResult;
 
-        try {
-            switch (paymentMethod) {
-                case COD:
-                    paymentResult = paymentService.processCODPayment(
-                            stiTest.getCustomer().getId(),
-                            "STI",
-                            stiTest.getTestId(),
-                            stiTest.getTotalPrice(),
-                            description);
-                    break;
+        switch (paymentMethod) {
+            case COD:
+                paymentResult = paymentService.processCODPayment(
+                        stiTest.getCustomer().getId(),
+                        "STI",
+                        stiTest.getTestId(),
+                        stiTest.getTotalPrice(),
+                        description);
+                break;
 
-                case VISA:
-                    paymentResult = processVisaPaymentWithValidation(stiTest, request);
-                    break;
+            case VISA:
+                paymentResult = processVisaPaymentWithValidation(stiTest, request);
+                break;
 
-                case QR_CODE:
-                    paymentResult = processQRPaymentWithValidation(stiTest, request, description);
-                    break;
+            case QR_CODE:
+                paymentResult = processQRPaymentWithValidation(stiTest, request, description);
+                break;
 
-                default:
-                    throw new PaymentException("Unsupported payment method: " + paymentMethod);
-            }
-
-            if (!paymentResult.isSuccess()) {
-                throw new PaymentException(paymentResult.getMessage());
-            }
-
-            return paymentResult;
-
-        } catch (PaymentException e) {
-            // Re-throw PaymentException
-            throw e;
-        } catch (Exception e) {
-            log.error("Unexpected error processing payment: {}", e.getMessage(), e);
-            throw new PaymentException("Payment processing failed: " + e.getMessage());
+            default:
+                return ApiResponse.error("Unsupported payment method: " + paymentMethod);
         }
+        return paymentResult;
     }
 
     private ApiResponse<Payment> processVisaPaymentWithValidation(STITest stiTest, STITestRequest request) {

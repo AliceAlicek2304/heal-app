@@ -750,4 +750,80 @@ public class PaymentService {
             return ApiResponse.error("Failed to get payments: " + e.getMessage());
         }
     }
+
+    public ApiResponse<Payment> retryStripePayment(Long testId, String cardNumber, String expMonth, String expYear, String cvc, String cardHolderName) {
+        try {
+            // Kiểm tra hợp lệ các trường thông tin thẻ
+            if (cardNumber == null || cardNumber.trim().isEmpty() ||
+                expMonth == null || expMonth.trim().isEmpty() ||
+                expYear == null || expYear.trim().isEmpty() ||
+                cvc == null || cvc.trim().isEmpty() ||
+                cardHolderName == null || cardHolderName.trim().isEmpty()) {
+                return ApiResponse.error("Thiếu thông tin thẻ thanh toán. Vui lòng nhập đầy đủ số thẻ, tháng/năm hết hạn, CVC và tên chủ thẻ.");
+            }
+
+            // Tìm payment PENDING/FAILED gần nhất cho booking này
+            List<Payment> payments = paymentRepository.findByServiceTypeAndServiceIdOrderByCreatedAtDesc("STI", testId);
+            Optional<Payment> paymentOpt = payments.stream()
+                .filter(p -> p.getPaymentMethod() == PaymentMethod.VISA &&
+                             (p.getPaymentStatus() == PaymentStatus.PENDING || p.getPaymentStatus() == PaymentStatus.FAILED))
+                .findFirst();
+            if (paymentOpt.isEmpty()) {
+                return ApiResponse.error("Không tìm thấy payment VISA nào ở trạng thái PENDING/FAILED cho booking này");
+            }
+            Payment payment = paymentOpt.get();
+            // Reset trạng thái
+            payment.setPaymentStatus(PaymentStatus.PROCESSING);
+            payment.setNotes(null);
+            payment.setStripePaymentIntentId(null);
+            payment.setTransactionId(null);
+            payment.setPaidAt(null);
+            paymentRepository.save(payment);
+            // Tạo lại PaymentIntent mới
+            STITest tempSTITest = createTempSTITestForPayment(payment, "STI", testId);
+            ApiResponse<String> stripeResponse = stripeService.processPaymentForSTITest(
+                tempSTITest, cardNumber, expMonth, expYear, cvc, cardHolderName);
+            if (stripeResponse.isSuccess()) {
+                payment.setPaymentStatus(PaymentStatus.COMPLETED);
+                payment.setStripePaymentIntentId(stripeResponse.getData());
+                payment.setTransactionId(stripeResponse.getData());
+                payment.setPaidAt(LocalDateTime.now());
+                paymentRepository.save(payment);
+                return ApiResponse.success("Thanh toán lại thành công", payment);
+            } else {
+                payment.setPaymentStatus(PaymentStatus.FAILED);
+                payment.setNotes("Stripe error: " + stripeResponse.getMessage());
+                paymentRepository.save(payment);
+                return ApiResponse.error("Thanh toán lại thất bại: " + stripeResponse.getMessage());
+            }
+        } catch (Exception e) {
+            log.error("Error retrying Stripe payment: {}", e.getMessage(), e);
+            return ApiResponse.error("Lỗi khi thanh toán lại: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Tạo bản ghi payment FAILED khi thanh toán thất bại (Stripe, QR, ...)
+     */
+    public ApiResponse<Payment> createFailedPayment(Long userId, String serviceType, Long serviceId, BigDecimal amount, PaymentMethod paymentMethod, String errorMessage) {
+        try {
+            Payment payment = Payment.builder()
+                    .userId(userId)
+                    .serviceType(serviceType)
+                    .serviceId(serviceId)
+                    .paymentMethod(paymentMethod)
+                    .paymentStatus(PaymentStatus.FAILED)
+                    .amount(amount)
+                    .currency("VND")
+                    .description("Thanh toán thất bại: " + (errorMessage != null ? errorMessage : "Unknown error"))
+                    .notes(errorMessage)
+                    .build();
+            Payment saved = paymentRepository.save(payment);
+            log.warn("Created FAILED payment record for user {} - service {} - id {}: {}", userId, serviceType, serviceId, errorMessage);
+            return ApiResponse.error("Payment failed: " + (errorMessage != null ? errorMessage : "Unknown error"), saved);
+        } catch (Exception e) {
+            log.error("Error creating FAILED payment record: {}", e.getMessage(), e);
+            return ApiResponse.error("Failed to create FAILED payment record: " + e.getMessage());
+        }
+    }
 }

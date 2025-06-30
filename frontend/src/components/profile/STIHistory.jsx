@@ -11,6 +11,7 @@ import AdvancedFilter from '../common/AdvancedFilter/AdvancedFilter';
 import Pagination from '../common/Pagination/Pagination';
 import RatingModal from '../common/RatingModal/RatingModal';
 import RatingDetailModal from '../common/RatingDetailModal/RatingDetailModal';
+import Modal from '../../components/ui/Modal';
 import styles from './STIHistory.module.css';
 
 // Status configuration
@@ -111,6 +112,15 @@ const STIHistory = () => {
     const [filteredTests, setFilteredTests] = useState([]); // Filtered tests state// Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10); // Items per page (constant)
+    const [showRetryModal, setShowRetryModal] = useState(false);
+    const [retryCardInfo, setRetryCardInfo] = useState({
+        cardNumber: '',
+        expiryMonth: '',
+        expiryYear: '',
+        cvc: '',
+        cardHolderName: ''
+    });
+    const [retryLoading, setRetryLoading] = useState(false);
 
     // Ref for scrolling to tests list
     const testsListRef = useRef(null); useEffect(() => {
@@ -1240,6 +1250,41 @@ const STIHistory = () => {
         }
     };
 
+    // Thêm các hàm formatCardNumber, handleRetryCardNumberChange, validateRetryCardInfo vào trong component
+    const formatCardNumber = (value) => {
+        const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+        const matches = v.match(/\d{4,16}/g);
+        const match = matches && matches[0] || '';
+        const parts = [];
+        for (let i = 0, len = match.length; i < len; i += 4) {
+            parts.push(match.substring(i, i + 4));
+        }
+        if (parts.length) {
+            return parts.join(' ');
+        } else {
+            return v;
+        }
+    };
+    const handleRetryCardNumberChange = (e) => {
+        const formattedValue = formatCardNumber(e.target.value);
+        setRetryCardInfo(prev => ({ ...prev, cardNumber: formattedValue }));
+    };
+    const validateRetryCardInfo = () => {
+        if (!retryCardInfo.cardNumber || !retryCardInfo.expiryMonth || !retryCardInfo.expiryYear || !retryCardInfo.cvc || !retryCardInfo.cardHolderName) {
+            toast.error('Vui lòng điền đầy đủ thông tin thẻ');
+            return false;
+        }
+        if (!/^\d{16}$/.test(retryCardInfo.cardNumber.replace(/\s/g, ''))) {
+            toast.error('Số thẻ không hợp lệ');
+            return false;
+        }
+        if (!/^\d{3,4}$/.test(retryCardInfo.cvc)) {
+            toast.error('Mã CVC không hợp lệ');
+            return false;
+        }
+        return true;
+    };
+
     if (loading) {
         return (
             <div className={styles.loadingContainer}>
@@ -1356,7 +1401,8 @@ const STIHistory = () => {
                                 >
                                     {renderSVGIcon('info-circle')}
                                     Chi tiết
-                                </button>                                    {needsPayment(test) && (() => {
+                                </button>
+                                {needsPayment(test) && (() => {
                                     const buttonConfig = getPaymentButtonConfig(test);
                                     const isExpired = isQRExpiredFromTestData(test);
                                     const isLoading = loadingPayment || regeneratingQR;
@@ -1371,7 +1417,17 @@ const STIHistory = () => {
                                             {isLoading && !buttonConfig.disabled ? (isExpired ? 'Đang tạo QR mới...' : 'Đang tải...') : buttonConfig.text}
                                         </button>
                                     );
-                                })()}                                    {hasResults(test) && (
+                                })()}
+                                {/* Nút Thanh toán lại cho VISA FAILED */}
+                                {test.paymentMethod === 'VISA' && test.paymentStatus === 'FAILED' && (
+                                    <button
+                                        className={`${styles.btn} ${styles.btnPrimary}`}
+                                        onClick={() => { setSelectedTest(test); setShowRetryModal(true); }}
+                                    >
+                                        {renderSVGIcon('refresh')} Thanh toán lại
+                                    </button>
+                                )}
+                                {hasResults(test) && (
                                     <button
                                         className={`${styles.btn} ${styles.btnSuccess}`}
                                         onClick={() => handleViewResults(test)}
@@ -1910,6 +1966,31 @@ const STIHistory = () => {
                             <button className={`${styles.btn} ${styles.btnSecondary}`} onClick={handleClosePayment}>
                                 Đóng
                             </button>
+                            {/* Stripe retry button for FAILED payment */}
+                            {paymentInfo.paymentMethod === 'VISA' && (paymentInfo.status === 'FAILED' || paymentInfo.paymentStatus === 'FAILED') && (
+                                <button
+                                    className={`${styles.btn} ${styles.btnPrimary}`}
+                                    onClick={async () => {
+                                        // Hiển thị trạng thái loading
+                                        setLoadingPayment(true);
+                                        const response = await stiService.retryStripePayment(selectedTest.testId, () => {
+                                            window.location.href = '/login';
+                                        });
+                                        setLoadingPayment(false);
+                                        if (response.success) {
+                                            toast.success('Tạo lại thanh toán Stripe thành công!');
+                                            // Reload payment info/modal
+                                            await handleViewPayment(selectedTest);
+                                        } else {
+                                            toast.error(response.message || 'Không thể tạo lại thanh toán Stripe');
+                                        }
+                                    }}
+                                    disabled={loadingPayment}
+                                >
+                                    {renderSVGIcon(loadingPayment ? 'spinner' : 'refresh')}
+                                    {loadingPayment ? 'Đang xử lý...' : 'Thanh toán lại'}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -2078,6 +2159,126 @@ const STIHistory = () => {
                     onClose={handleCloseRatingModal}
                     onSuccess={handleRatingSubmitted}
                 />
+            )}
+            {selectedTest && (
+                <Modal isOpen={showRetryModal} onClose={() => setShowRetryModal(false)} title="Thanh toán lại bằng thẻ VISA">
+                    {showRetryModal && (
+                        <form
+                            className={styles.visaFields}
+                            onSubmit={async (e) => {
+                                e.preventDefault();
+                                if (!validateRetryCardInfo()) return;
+                                setRetryLoading(true);
+                                const cleanCardInfo = {
+                                    cardNumber: retryCardInfo.cardNumber ? retryCardInfo.cardNumber.replace(/\s/g, '') : '',
+                                    expiryMonth: retryCardInfo.expiryMonth ? String(retryCardInfo.expiryMonth) : '',
+                                    expiryYear: retryCardInfo.expiryYear ? String(retryCardInfo.expiryYear) : '',
+                                    cvc: retryCardInfo.cvc ? String(retryCardInfo.cvc) : '',
+                                    cardHolderName: retryCardInfo.cardHolderName ? String(retryCardInfo.cardHolderName) : ''
+                                };
+                                const response = await stiService.retryStripePayment(selectedTest.testId, cleanCardInfo, () => window.location.href = '/login');
+                                setRetryLoading(false);
+                                if (response.success) {
+                                    toast.success('Thanh toán lại thành công!');
+                                    setShowRetryModal(false);
+                                    await handleViewPayment(selectedTest);
+                                    fetchUserTests();
+                                } else {
+                                    toast.error(response.message || 'Thanh toán lại thất bại. Vui lòng thử lại hoặc dùng thẻ khác.');
+                                }
+                            }}
+                        >
+                            <h4 className={styles.sectionTitle}>Thông tin thẻ VISA</h4>
+                            <div className={styles.formGroup}>
+                                <label htmlFor="retryCardNumber">Số thẻ *</label>
+                                <input
+                                    type="text"
+                                    id="retryCardNumber"
+                                    name="cardNumber"
+                                    value={retryCardInfo.cardNumber}
+                                    onChange={handleRetryCardNumberChange}
+                                    placeholder="1234 5678 9012 3456"
+                                    maxLength="19"
+                                    required
+                                    disabled={retryLoading}
+                                />
+                            </div>
+                            <div className={styles.formRow}>
+                                <div className={styles.formGroup}>
+                                    <label htmlFor="retryExpiryMonth">Tháng hết hạn *</label>
+                                    <select
+                                        id="retryExpiryMonth"
+                                        name="expiryMonth"
+                                        value={retryCardInfo.expiryMonth}
+                                        onChange={e => setRetryCardInfo({ ...retryCardInfo, expiryMonth: e.target.value })}
+                                        required
+                                        disabled={retryLoading}
+                                    >
+                                        <option value="">Tháng</option>
+                                        {[...Array(12)].map((_, i) => (
+                                            <option key={i + 1} value={String(i + 1).padStart(2, '0')}>
+                                                {String(i + 1).padStart(2, '0')}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label htmlFor="retryExpiryYear">Năm hết hạn *</label>
+                                    <select
+                                        id="retryExpiryYear"
+                                        name="expiryYear"
+                                        value={retryCardInfo.expiryYear}
+                                        onChange={e => setRetryCardInfo({ ...retryCardInfo, expiryYear: e.target.value })}
+                                        required
+                                        disabled={retryLoading}
+                                    >
+                                        <option value="">Năm</option>
+                                        {[...Array(10)].map((_, i) => {
+                                            const year = new Date().getFullYear() + i;
+                                            return (
+                                                <option key={year} value={year}>{year}</option>
+                                            );
+                                        })}
+                                    </select>
+                                </div>
+                                <div className={styles.formGroup}>
+                                    <label htmlFor="retryCvc">CVC *</label>
+                                    <input
+                                        type="text"
+                                        id="retryCvc"
+                                        name="cvc"
+                                        value={retryCardInfo.cvc}
+                                        onChange={e => setRetryCardInfo({ ...retryCardInfo, cvc: e.target.value })}
+                                        placeholder="123"
+                                        maxLength="4"
+                                        required
+                                        disabled={retryLoading}
+                                    />
+                                </div>
+                            </div>
+                            <div className={styles.formGroup}>
+                                <label htmlFor="retryCardHolderName">Tên chủ thẻ *</label>
+                                <input
+                                    type="text"
+                                    id="retryCardHolderName"
+                                    name="cardHolderName"
+                                    value={retryCardInfo.cardHolderName}
+                                    onChange={e => setRetryCardInfo({ ...retryCardInfo, cardHolderName: e.target.value })}
+                                    placeholder="Nhập tên như trên thẻ"
+                                    required
+                                    disabled={retryLoading}
+                                />
+                            </div>
+                            <div className={styles.modalFooter}>
+                                <button type="button" className={`${styles.btn} ${styles.btnSecondary}`} onClick={() => setShowRetryModal(false)} disabled={retryLoading}>Hủy</button>
+                                <button type="submit" className={`${styles.btn} ${styles.btnPrimary}`} disabled={retryLoading}>
+                                    {retryLoading ? renderSVGIcon('spinner') : renderSVGIcon('refresh')}
+                                    {retryLoading ? 'Đang xử lý...' : 'Thanh toán lại'}
+                                </button>
+                            </div>
+                        </form>
+                    )}
+                </Modal>
             )}
         </div>
     );
