@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "/heal-app/static/css/main.af818188.css",
-    "main.js": "/heal-app/static/js/main.eadd65c9.js",
+    "main.js": "/heal-app/static/js/main.52e31b09.js",
     "static/js/239.dd615c77.chunk.js": "/heal-app/static/js/239.dd615c77.chunk.js",
     "static/js/213.bf2bb1fa.chunk.js": "/heal-app/static/js/213.bf2bb1fa.chunk.js",
     "static/js/455.728e8123.chunk.js": "/heal-app/static/js/455.728e8123.chunk.js",
     "static/js/453.2fc9953f.chunk.js": "/heal-app/static/js/453.2fc9953f.chunk.js",
     "index.html": "/heal-app/index.html",
     "main.af818188.css.map": "/heal-app/static/css/main.af818188.css.map",
-    "main.eadd65c9.js.map": "/heal-app/static/js/main.eadd65c9.js.map",
+    "main.52e31b09.js.map": "/heal-app/static/js/main.52e31b09.js.map",
     "239.dd615c77.chunk.js.map": "/heal-app/static/js/239.dd615c77.chunk.js.map",
     "213.bf2bb1fa.chunk.js.map": "/heal-app/static/js/213.bf2bb1fa.chunk.js.map",
     "455.728e8123.chunk.js.map": "/heal-app/static/js/455.728e8123.chunk.js.map",
@@ -16,6 +16,6 @@
   },
   "entrypoints": [
     "static/css/main.af818188.css",
-    "static/js/main.eadd65c9.js"
+    "static/js/main.52e31b09.js"
   ]
 }
