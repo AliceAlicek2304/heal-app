@@ -25,11 +25,10 @@ export const AuthProvider = ({ children }) => {
     // Helper function to redirect admin to dashboard
     const redirectAdminToDashboard = () => {
         // Only redirect if we're not already on admin page and not on a specific admin route
-        const currentPath = window.location.pathname;
-        if (!currentPath.startsWith('/admin') && !currentPath.startsWith('/profile')) {
-            // Use setTimeout to ensure this runs after the component mounts
+        const currentHash = window.location.hash;
+        if (!currentHash.startsWith('#/admin') && !currentHash.startsWith('#/profile')) {
             setTimeout(() => {
-                window.location.href = '/admin';
+                window.location.hash = '/admin';
             }, 100);
         }
     };
