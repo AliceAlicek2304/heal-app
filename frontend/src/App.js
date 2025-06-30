@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { HashRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 import HomePage from "./pages/HomePage/HomePage";
 import Blog from "./pages/Blog/Blog";
@@ -34,15 +34,14 @@ const AdminRedirect = () => {
                            (user?.role && user.role === 'ADMIN');
             
             if (isAdmin) {
-                const currentPath = window.location.pathname;
-                const basename = process.env.NODE_ENV === 'production' ? '/heal-app' : '';
-                const adminPath = `${basename}/admin`;
+                const currentPath = window.location.hash;
+                const adminPath = '#/admin';
                 
                 // Chỉ redirect nếu không đang ở trang admin hoặc profile
-                if (!currentPath.startsWith(adminPath) && !currentPath.startsWith('/profile')) {
+                if (!currentPath.startsWith(adminPath) && !currentPath.startsWith('#/profile')) {
                     // Sử dụng setTimeout để đảm bảo component đã mount hoàn toàn
                     setTimeout(() => {
-                        window.location.href = adminPath;
+                        window.location.hash = '/admin';
                     }, 200);
                 }
             }
@@ -53,13 +52,10 @@ const AdminRedirect = () => {
 };
 
 function App() {
-  // Xác định basename dựa trên environment
-  const basename = process.env.NODE_ENV === 'production' ? '/heal-app' : '';
-
   return (
     <AuthProvider>
       <ToastProvider>
-        <Router basename={basename}>
+        <Router>
           <div className="App">
             <AdminRedirect />
             <Routes>
@@ -83,7 +79,7 @@ function App() {
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />
             </Routes>
-            {!window.location.pathname.includes('/admin') && <ChatBot />}
+            {!window.location.hash.includes('/admin') && <ChatBot />}
           </div>
         </Router>
       </ToastProvider>
