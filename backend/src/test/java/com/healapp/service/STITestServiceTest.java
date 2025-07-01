@@ -1,31 +1,53 @@
 package com.healapp.service;
 
-import com.healapp.dto.ApiResponse;
-import com.healapp.dto.STITestRequest;
-import com.healapp.dto.STITestResponse;
-import com.healapp.dto.STITestStatusUpdateRequest;
-import com.healapp.dto.TestResultRequest;
-import com.healapp.dto.TestResultResponse;
-import com.healapp.exception.PaymentException;
-import com.healapp.model.*;
-import com.healapp.repository.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.healapp.dto.ApiResponse;
+import com.healapp.dto.STITestRequest;
+import com.healapp.dto.STITestResponse;
+import com.healapp.dto.STITestStatusUpdateRequest;
+import com.healapp.dto.TestResultResponse;
+import com.healapp.model.Payment;
+import com.healapp.model.PaymentMethod;
+import com.healapp.model.PaymentStatus;
+import com.healapp.model.Role;
+import com.healapp.model.STIPackage;
+import com.healapp.model.STIService;
+import com.healapp.model.STITest;
+import com.healapp.model.ServiceTestComponent;
+import com.healapp.model.TestResult;
+import com.healapp.model.TestStatus;
+import com.healapp.model.UserDtls;
+import com.healapp.repository.STIPackageRepository;
+import com.healapp.repository.STIServiceRepository;
+import com.healapp.repository.STITestRepository;
+import com.healapp.repository.ServiceTestComponentRepository;
+import com.healapp.repository.TestResultRepository;
+import com.healapp.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Kiểm thử dịch vụ quản lý STI Test")
@@ -424,18 +446,14 @@ class STITestServiceTest {
                 anyString()))
                 .thenReturn(ApiResponse.error("Payment failed"));
 
-        // Act & Assert - Expect PaymentException to be thrown
-        PaymentException exception = assertThrows(PaymentException.class, () -> {
-            stiTestService.bookTest(validRequest, customer.getId());
-        });
+        // Act
+        ApiResponse<STITestResponse> response = stiTestService.bookTest(validRequest, customer.getId());
 
-        // ✅ FIX: Update expected message to match actual exception message
-        assertEquals("Payment failed", exception.getMessage());
-
-        // ✅ Verify test was saved (before payment failed)
+        // Assert
+        assertTrue(response.isSuccess());
+        assertNotNull(response.getData());
+        assertTrue(response.getMessage().toLowerCase().contains("payment failed"));
         verify(stiTestRepository).save(any(STITest.class));
-
-        // ✅ Verify payment was attempted
         verify(paymentService).generateQRPayment(
                 eq(customer.getId()),
                 eq("STI"),
