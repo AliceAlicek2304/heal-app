@@ -450,6 +450,55 @@ public class EmailService {
         }
     }
 
+    @Async("asyncExecutor")
+    public void sendConsultationReminderAsync(Consultation consultation) {
+        try {
+            UserDtls customer = consultation.getCustomer();
+            UserDtls consultant = consultation.getConsultant();
+            String subject = "[Nhắc nhở] Bạn có lịch tư vấn vào ngày mai - HealApp";
+            String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
+                + "<h2 style='color: #4a6ee0;'>Nhắc nhở lịch tư vấn</h2>"
+                + "<p>Xin chào " + customer.getFullName() + ",</p>"
+                + "<p>Đây là email nhắc nhở bạn có một cuộc tư vấn đã được xác nhận sẽ diễn ra vào <strong>ngày mai</strong>:</p>"
+                + "<div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;'>"
+                + "<p><strong>Nhân viên tư vấn:</strong> " + consultant.getFullName() + "</p>"
+                + "<p><strong>Ngày tư vấn:</strong> " + consultation.getStartTime().format(DATE_FORMATTER) + "</p>"
+                + "<p><strong>Thời gian:</strong> " + consultation.getStartTime().format(TIME_FORMATTER)
+                + " - " + consultation.getEndTime().format(TIME_FORMATTER) + "</p>"
+                + "</div>"
+                + (consultation.getMeetUrl() != null ? "<p>Tham gia tư vấn trực tuyến qua link: <a href='" + consultation.getMeetUrl() + "'>" + consultation.getMeetUrl() + "</a></p>" : "")
+                + "<p>Vui lòng chuẩn bị và tham gia đúng giờ để đảm bảo chất lượng dịch vụ.</p>"
+                + "<p>Trân trọng,<br/>HealApp Team</p>"
+                + "</div>";
+            sendEmail(customer.getEmail(), subject, htmlContent);
+        } catch (Exception e) {
+            logger.error("Lỗi khi gửi email nhắc nhở lịch tư vấn: {}", e.getMessage(), e);
+        }
+    }
+
+    @Async("asyncExecutor")
+    public void sendSTITestReminderAsync(String email, String fullName, String serviceName, String packageName, LocalDateTime appointmentDate) {
+        try {
+            String subject = "[Nhắc nhở] Bạn có lịch xét nghiệm STI vào ngày mai - HealApp";
+            String htmlContent = "<div style='font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;'>"
+                + "<h2 style='color: #4a6ee0;'>Nhắc nhở lịch xét nghiệm STI</h2>"
+                + "<p>Xin chào " + fullName + ",</p>"
+                + "<p>Đây là email nhắc nhở bạn có một lịch xét nghiệm STI đã được xác nhận sẽ diễn ra vào <strong>ngày mai</strong>:</p>"
+                + "<div style='background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;'>"
+                + (serviceName != null ? "<p><strong>Dịch vụ:</strong> " + serviceName + "</p>" : "")
+                + (packageName != null ? "<p><strong>Gói xét nghiệm:</strong> " + packageName + "</p>" : "")
+                + "<p><strong>Ngày xét nghiệm:</strong> " + appointmentDate.format(DATE_FORMATTER) + "</p>"
+                + "<p><strong>Thời gian:</strong> " + appointmentDate.format(TIME_FORMATTER) + "</p>"
+                + "</div>"
+                + "<p>Vui lòng đến đúng giờ để đảm bảo quy trình xét nghiệm diễn ra thuận lợi.</p>"
+                + "<p>Trân trọng,<br/>HealApp Team</p>"
+                + "</div>";
+            sendEmail(email, subject, htmlContent);
+        } catch (Exception e) {
+            logger.error("Lỗi khi gửi email nhắc nhở lịch xét nghiệm STI: {}", e.getMessage(), e);
+        }
+    }
+
     private void sendEmail(String to, String subject, String htmlContent) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");

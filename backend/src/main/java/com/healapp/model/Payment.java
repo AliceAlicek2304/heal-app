@@ -51,7 +51,7 @@ public class Payment {
     @Column(name = "qr_payment_reference", length = 50)
     private String qrPaymentReference;
 
-    @Column(name = "qr_code_url", length = 500)
+    @Column(name = "qr_code_url", columnDefinition = "NVARCHAR(MAX)")
     private String qrCodeUrl;
 
     @Column(name = "transaction_id", length = 100)

@@ -1,9 +1,9 @@
 package com.healapp.repository;
 
-import com.healapp.model.STITest;
-import com.healapp.model.TestStatus;
-import com.healapp.model.UserDtls;
-import com.healapp.model.STIService;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,9 +11,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import com.healapp.model.STIService;
+import com.healapp.model.STITest;
+import com.healapp.model.TestStatus;
+import com.healapp.model.UserDtls;
 
 @Repository
 public interface STITestRepository extends JpaRepository<STITest, Long> {
@@ -135,4 +136,13 @@ public interface STITestRepository extends JpaRepository<STITest, Long> {
 
         // Admin methods
         List<STITest> findAllByOrderByCreatedAtDesc();
+
+        @Query("SELECT t FROM STITest t " +
+               "JOIN FETCH t.customer " +
+               "LEFT JOIN FETCH t.stiService " +
+               "LEFT JOIN FETCH t.stiPackage " +
+               "WHERE t.status = :status AND t.appointmentDate BETWEEN :start AND :end")
+        List<STITest> findConfirmedTestsWithDetails(@Param("status") TestStatus status,
+                                                    @Param("start") java.time.LocalDateTime start,
+                                                    @Param("end") java.time.LocalDateTime end);
 }
