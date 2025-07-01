@@ -1103,17 +1103,19 @@ public class STITestService {
         response.setTestId(result.getStiTest().getTestId());
         response.setComponentId(result.getTestComponent().getComponentId());
         response.setComponentName(result.getTestComponent().getTestName());
+        response.setTestName(result.getTestComponent().getTestName());
+        response.setReferenceRange(result.getTestComponent().getReferenceRange());
         response.setResultValue(result.getResultValue());
-        response.setNormalRange(result.getNormalRange());
+        response.setNormalRange(result.getTestComponent().getReferenceRange());
         response.setUnit(result.getUnit());
         response.setReviewedBy(result.getReviewedBy());
         response.setReviewedAt(result.getReviewedAt());
-
+        response.setCreatedAt(result.getCreatedAt());
+        response.setUpdatedAt(result.getUpdatedAt());
         if (result.getReviewedBy() != null) {
             userRepository.findById(result.getReviewedBy())
                     .ifPresent(user -> response.setReviewerName(user.getFullName()));
         }
-
         return response;
     }
 
@@ -1269,15 +1271,20 @@ public class STITestService {
         response.setResultId(result.getResultId());
         response.setTestId(result.getStiTest().getTestId());
         response.setComponentId(result.getTestComponent().getComponentId());
+        response.setComponentName(result.getTestComponent().getTestName());
         response.setTestName(result.getTestComponent().getTestName());
         response.setReferenceRange(result.getTestComponent().getReferenceRange());
         response.setResultValue(result.getResultValue());
-        response.setNormalRange(result.getNormalRange());
+        response.setNormalRange(result.getTestComponent().getReferenceRange());
         response.setUnit(result.getUnit());
         response.setReviewedBy(result.getReviewedBy());
         response.setReviewedAt(result.getReviewedAt());
         response.setCreatedAt(result.getCreatedAt());
         response.setUpdatedAt(result.getUpdatedAt());
+        if (result.getReviewedBy() != null) {
+            userRepository.findById(result.getReviewedBy())
+                    .ifPresent(user -> response.setReviewerName(user.getFullName()));
+        }
         return response;
     }
 

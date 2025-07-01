@@ -175,17 +175,16 @@ const ManageSTITests = () => {
                 });
 
                 if (response.success && response.data) {
-                    // Map existing results to the loaded components
                     const existingResults = response.data;
-                    setTestResults(prevResults => 
+                    setTestResults(prevResults =>
                         prevResults.map(component => {
-                            const existingResult = existingResults.find(result => 
+                            const existingResult = existingResults.find(result =>
                                 result.componentId === component.componentId
                             );
                             return existingResult ? {
                                 ...component,
                                 resultValue: existingResult.resultValue || '',
-                                normalRange: existingResult.normalRange || component.normalRange || '',
+                                referenceRange: component.referenceRange || existingResult.referenceRange || '',
                                 unit: existingResult.unit || component.unit || ''
                             } : component;
                         })
@@ -273,13 +272,12 @@ const ManageSTITests = () => {
     const loadTestComponents = async (serviceId) => {
         try {
             const response = await stiService.getServiceDetails(serviceId);
-
             if (response.success && response.data.testComponents) {
                 const initialResults = response.data.testComponents.map(component => ({
                     componentId: component.componentId,
                     componentName: component.testName,
                     resultValue: '',
-                    normalRange: component.normalRange || '',
+                    referenceRange: component.referenceRange || '',
                     unit: component.unit || ''
                 }));
                 setTestResults(initialResults);
@@ -295,29 +293,24 @@ const ManageSTITests = () => {
 
     const loadTestComponentsForPackage = async (packageId) => {
         try {
-            // Import stiPackageService if not already imported
             const { default: stiPackageService } = await import('../../services/stiPackageService');
-
             const response = await stiPackageService.getPackageById(packageId);
-
             if (response.success && response.data.services) {
-                // Combine all components from all services in the package
-                const allComponents = [];                // Load detailed info for each service to get testComponents
+                const allComponents = [];
                 for (const service of response.data.services) {
                     try {
                         const serviceDetails = await stiService.getServiceDetails(service.serviceId);
-
                         if (serviceDetails.success && serviceDetails.data.testComponents) {
-                            serviceDetails.data.testComponents.forEach(component => {                                // Kiểm tra duplicate componentId trước khi thêm
+                            serviceDetails.data.testComponents.forEach(component => {
                                 const existingComponent = allComponents.find(c => c.componentId === component.componentId);
                                 if (!existingComponent) {
                                     allComponents.push({
                                         componentId: component.componentId,
                                         componentName: component.testName,
                                         resultValue: '',
-                                        normalRange: component.normalRange || '',
+                                        referenceRange: component.referenceRange || '',
                                         unit: component.unit || '',
-                                        serviceName: service.name || service.serviceName, // Từ package data
+                                        serviceName: service.name || service.serviceName,
                                         serviceId: service.serviceId
                                     });
                                 } else {
@@ -352,21 +345,19 @@ const ManageSTITests = () => {
     };
 
     const handleSubmitResults = () => {
-        const validResults = testResults.filter(result => result.resultValue.trim() !== ''); if (validResults.length === 0) {
+        const validResults = testResults.filter(result => result.resultValue.trim() !== '');
+        if (validResults.length === 0) {
             toast.error('Vui lòng nhập ít nhất một kết quả');
             return;
         }
-
         const resultData = {
             status: 'RESULTED',
             results: validResults.map(result => ({
                 componentId: result.componentId,
                 resultValue: result.resultValue,
-                normalRange: result.normalRange,
                 unit: result.unit
             }))
         };
-
         handleStatusUpdate(selectedTest.testId, 'RESULTED', resultData);
     };
 
@@ -1161,8 +1152,9 @@ const ManageSTITests = () => {
                                                                 <label>Khoảng bình thường</label>
                                                                 <input
                                                                     type="text"
-                                                                    value={result.normalRange}
-                                                                    onChange={(e) => handleResultChange(result.originalIndex, 'normalRange', e.target.value)}
+                                                                    value={result.referenceRange}
+                                                                    readOnly
+                                                                    disabled
                                                                     placeholder="Khoảng bình thường..."
                                                                 />
                                                             </div>
@@ -1200,8 +1192,9 @@ const ManageSTITests = () => {
                                                     <label>Khoảng bình thường</label>
                                                     <input
                                                         type="text"
-                                                        value={result.normalRange}
-                                                        onChange={(e) => handleResultChange(index, 'normalRange', e.target.value)}
+                                                        value={result.referenceRange}
+                                                        readOnly
+                                                        disabled
                                                         placeholder="Khoảng bình thường..."
                                                     />
                                                 </div>
