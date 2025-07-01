@@ -37,9 +37,7 @@ const AdminRedirect = () => {
                 const currentPath = window.location.hash;
                 const adminPath = '#/admin';
                 
-                // Chỉ redirect nếu không đang ở trang admin hoặc profile
                 if (!currentPath.startsWith(adminPath) && !currentPath.startsWith('#/profile')) {
-                    // Sử dụng setTimeout để đảm bảo component đã mount hoàn toàn
                     setTimeout(() => {
                         window.location.hash = '/admin';
                     }, 200);
