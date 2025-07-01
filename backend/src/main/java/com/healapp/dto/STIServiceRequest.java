@@ -48,6 +48,9 @@ public class STIServiceRequest {
         @Size(max = 100, message = "Reference range must not exceed 100 characters")
         private String referenceRange;
 
+        @Size(max = 20, message = "Unit must not exceed 20 characters")
+        private String unit;
+
         private Boolean status = true;
     }
 }

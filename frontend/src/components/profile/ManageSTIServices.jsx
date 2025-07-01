@@ -213,8 +213,8 @@ const ManageSTIServices = () => {
     };
 
     const handleAddComponent = () => {
-        if (!newComponent.testName.trim() || !newComponent.referenceRange.trim() || !newComponent.unit.trim()) {
-            toast.error('Vui lòng nhập đầy đủ thông tin test component (tên, giá trị tham chiếu, đơn vị)');
+        if (!newComponent.testName.trim() || !newComponent.referenceRange.trim()) {
+            toast.error('Vui lòng nhập đầy đủ thông tin test component (tên và giá trị tham chiếu)');
             return;
         }
         
@@ -274,8 +274,8 @@ const ManageSTIServices = () => {
 
     // Hàm lưu component đã edit
     const handleSaveComponent = async () => {
-        if (!editingComponent.testName.trim() || !editingComponent.referenceRange.trim() || !editingComponent.unit.trim()) {
-            toast.error('Vui lòng nhập đầy đủ thông tin test component (tên, giá trị tham chiếu, đơn vị)');
+        if (!editingComponent.testName.trim() || !editingComponent.referenceRange.trim()) {
+            toast.error('Vui lòng nhập đầy đủ thông tin test component (tên và giá trị tham chiếu)');
             return;
         }
 
@@ -297,7 +297,7 @@ const ManageSTIServices = () => {
                 {
                     testName: editingComponent.testName,
                     referenceRange: editingComponent.referenceRange,
-                    unit: editingComponent.unit,
+                    unit: editingComponent.unit || '', // Cho phép blank
                     status: true
                 },
                 handleAuthRequired
@@ -316,7 +316,7 @@ const ManageSTIServices = () => {
                                 ...component,
                                 testName: editingComponent.testName,
                                 referenceRange: editingComponent.referenceRange,
-                                unit: editingComponent.unit
+                                unit: editingComponent.unit || ''
                             } : component
                         )
                     }));
@@ -618,7 +618,7 @@ const ManageSTIServices = () => {
                                                     type="text"
                                                     value={newComponent.unit}
                                                     onChange={(e) => setNewComponent(prev => ({ ...prev, unit: e.target.value }))}
-                                                    placeholder="Đơn vị (mg/dL, ng/mL...)"
+                                                    placeholder="Đơn vị (tùy chọn)"
                                                 />
                                             </div>
                                             <button
@@ -671,7 +671,7 @@ const ManageSTIServices = () => {
                                                                             type="text"
                                                                             value={editingComponent.unit}
                                                                             onChange={(e) => setEditingComponent(prev => ({ ...prev, unit: e.target.value }))}
-                                                                            placeholder="Đơn vị"
+                                                                            placeholder="Đơn vị (tùy chọn)"
                                                                         />
                                                                     </div>
                                                                     <div className={styles.editActions}>

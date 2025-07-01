@@ -13,7 +13,6 @@ public class ComponentUpdateRequest {
     @NotBlank(message = "Reference range is required")
     private String referenceRange;
     
-    @NotBlank(message = "Unit is required")
     private String unit;
     
     @NotNull(message = "Status is required")
