@@ -4,6 +4,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { useNavigate } from 'react-router-dom';
 import { stiServiceManagementService } from '../../services/stiServiceManagementService';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
+import { formatDateTime } from '../../utils/dateUtils';
 import styles from './ManageSTIServices.module.css';
 
 const ManageSTIServices = () => {
@@ -27,9 +28,19 @@ const ManageSTIServices = () => {
         price: '',
         isActive: true,
         testComponents: []
-    });    const [newComponent, setNewComponent] = useState({
+    });
+    const [newComponent, setNewComponent] = useState({
         testName: '',
-        referenceRange: ''
+        referenceRange: '',
+        unit: ''
+    });
+    
+    // State để quản lý edit component
+    const [editingComponentIndex, setEditingComponentIndex] = useState(-1);
+    const [editingComponent, setEditingComponent] = useState({
+        testName: '',
+        referenceRange: '',
+        unit: ''
     });
 
     useEffect(() => {
@@ -78,6 +89,9 @@ const ManageSTIServices = () => {
 
             if (response.success) {
                 const service = response.data;
+                console.log('Service details loaded:', service); // Debug log
+                console.log('Components loaded:', service.testComponents); // Debug log
+                
                 setSelectedService(service);
                 setFormData({
                     name: service.name || '',
@@ -199,10 +213,12 @@ const ManageSTIServices = () => {
     };
 
     const handleAddComponent = () => {
-        if (!newComponent.testName.trim() || !newComponent.referenceRange.trim()) {
-            toast.error('Vui lòng nhập đầy đủ thông tin test component');
+        if (!newComponent.testName.trim() || !newComponent.referenceRange.trim() || !newComponent.unit.trim()) {
+            toast.error('Vui lòng nhập đầy đủ thông tin test component (tên, giá trị tham chiếu, đơn vị)');
             return;
-        } setFormData(prev => ({
+        }
+        
+        setFormData(prev => ({
             ...prev,
             testComponents: [
                 ...prev.testComponents,
@@ -210,14 +226,121 @@ const ManageSTIServices = () => {
             ]
         }));
 
-        setNewComponent({ testName: '', referenceRange: '' });
+        setNewComponent({ testName: '', referenceRange: '', unit: '' });
     };
 
     const handleRemoveComponent = (index) => {
+        // Tìm component trong danh sách đã filter (chỉ active components)
+        const activeComponents = formData.testComponents.filter(comp => comp.status !== false);
+        const componentToRemove = activeComponents[index];
+        
+        if (!componentToRemove) {
+            toast.error('Không tìm thấy component để xóa');
+            return;
+        }
+        
+        // Tìm index thực tế trong danh sách gốc
+        const actualIndex = formData.testComponents.findIndex(comp => comp.componentId === componentToRemove.componentId);
+        
+        if (actualIndex === -1) {
+            toast.error('Không tìm thấy component trong danh sách');
+            return;
+        }
+        
         setFormData(prev => ({
             ...prev,
-            testComponents: prev.testComponents.filter((_, i) => i !== index)
+            testComponents: prev.testComponents.filter((_, i) => i !== actualIndex)
         }));
+    };
+
+    // Hàm bắt đầu edit component
+    const handleEditComponent = (index) => {
+        // Tìm component trong danh sách đã filter (chỉ active components)
+        const activeComponents = formData.testComponents.filter(comp => comp.status !== false);
+        const component = activeComponents[index];
+        
+        if (!component) {
+            toast.error('Không tìm thấy component để chỉnh sửa');
+            return;
+        }
+        
+        setEditingComponentIndex(index);
+        setEditingComponent({
+            testName: component.testName || '',
+            referenceRange: component.referenceRange || '',
+            unit: component.unit || ''
+        });
+    };
+
+    // Hàm lưu component đã edit
+    const handleSaveComponent = async () => {
+        if (!editingComponent.testName.trim() || !editingComponent.referenceRange.trim() || !editingComponent.unit.trim()) {
+            toast.error('Vui lòng nhập đầy đủ thông tin test component (tên, giá trị tham chiếu, đơn vị)');
+            return;
+        }
+
+        try {
+            setActionLoading(prev => ({ ...prev, componentEdit: true }));
+
+            // Tìm component trong danh sách đã filter (chỉ active components)
+            const activeComponents = formData.testComponents.filter(comp => comp.status !== false);
+            const componentToEdit = activeComponents[editingComponentIndex];
+            
+            if (!componentToEdit || !componentToEdit.componentId) {
+                toast.error('Không tìm thấy thông tin component để cập nhật');
+                return;
+            }
+
+            // Gửi request update lên backend
+            const response = await stiServiceManagementService.updateComponent(
+                componentToEdit.componentId,
+                {
+                    testName: editingComponent.testName,
+                    referenceRange: editingComponent.referenceRange,
+                    unit: editingComponent.unit,
+                    status: true
+                },
+                handleAuthRequired
+            );
+
+            if (response.success) {
+                // Tìm index thực tế trong danh sách gốc
+                const actualIndex = formData.testComponents.findIndex(comp => comp.componentId === componentToEdit.componentId);
+                
+                if (actualIndex !== -1) {
+                    // Cập nhật state local với dữ liệu từ backend
+                    setFormData(prev => ({
+                        ...prev,
+                        testComponents: prev.testComponents.map((component, index) =>
+                            index === actualIndex ? {
+                                ...component,
+                                testName: editingComponent.testName,
+                                referenceRange: editingComponent.referenceRange,
+                                unit: editingComponent.unit
+                            } : component
+                        )
+                    }));
+                }
+
+                // Reset editing state
+                setEditingComponentIndex(-1);
+                setEditingComponent({ testName: '', referenceRange: '', unit: '' });
+                toast.success('Cập nhật component thành công');
+            } else {
+                toast.error(response.message || 'Cập nhật component thất bại');
+            }
+        } catch (error) {
+            console.error('Error updating component:', error);
+            toast.error('Có lỗi xảy ra khi cập nhật component');
+        } finally {
+            setActionLoading(prev => ({ ...prev, componentEdit: false }));
+        }
+    };
+
+    // Hàm hủy edit component
+    const handleCancelEdit = () => {
+        setEditingComponentIndex(-1);
+        setEditingComponent({ testName: '', referenceRange: '', unit: '' });
     };
 
     const formatPrice = (price) => {
@@ -225,15 +348,6 @@ const ManageSTIServices = () => {
             style: 'currency',
             currency: 'VND'
         }).format(price || 0);
-    };    const formatDate = (dateString) => {
-        if (!dateString) return 'N/A';
-        return new Date(dateString).toLocaleDateString('vi-VN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
     };
 
     if (loading) {
@@ -299,7 +413,8 @@ const ManageSTIServices = () => {
                                 className={`${styles.serviceCard} ${!service.isActive ? styles.inactive : ''}`}
                             >
                                 <div className={styles.serviceHeader}>
-                                    <h3>{service.name}</h3>                                    <div className={styles.serviceStatus}>
+                                    <h3>{service.name}</h3>
+                                    <div className={styles.serviceStatus}>
                                         <span className={`${styles.statusBadge} ${service.isActive ? styles.active : styles.inactive}`}>
                                             {service.isActive ? (
                                                 <>
@@ -335,7 +450,7 @@ const ManageSTIServices = () => {
                                         </div>
                                         <div className={styles.infoItem}>
                                             <span className={styles.label}>Ngày tạo:</span>
-                                            <span className={styles.date}>{formatDate(service.createdAt)}</span>
+                                            <span className={styles.date}>{formatDateTime(service.createdAt)}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -455,7 +570,8 @@ const ManageSTIServices = () => {
                                             required
                                             disabled={modalMode === 'view'}
                                         />
-                                    </div>                                    {modalMode !== 'create' && (
+                                    </div>
+                                    {modalMode !== 'create' && (
                                         <div className={styles.formGroup}>
                                             <div className={styles.checkboxWrapper}>
                                                 <span>Dịch vụ hoạt động</span>
@@ -479,68 +595,162 @@ const ManageSTIServices = () => {
                                 <h3>Test Components</h3>
 
                                 {modalMode !== 'view' && (
-                                    <div className={styles.componentForm}>                                        <div className={styles.formRow}>
-                                        <div className={styles.formGroup}>
-                                            <input
-                                                type="text"
-                                                value={newComponent.testName}
-                                                onChange={(e) => setNewComponent(prev => ({ ...prev, testName: e.target.value }))}
-                                                placeholder="Tên test"
-                                            />
+                                    <div className={styles.componentForm}>
+                                        <div className={styles.formRow}>
+                                            <div className={styles.formGroup}>
+                                                <input
+                                                    type="text"
+                                                    value={newComponent.testName}
+                                                    onChange={(e) => setNewComponent(prev => ({ ...prev, testName: e.target.value }))}
+                                                    placeholder="Tên test"
+                                                />
+                                            </div>
+                                            <div className={styles.formGroup}>
+                                                <input
+                                                    type="text"
+                                                    value={newComponent.referenceRange}
+                                                    onChange={(e) => setNewComponent(prev => ({ ...prev, referenceRange: e.target.value }))}
+                                                    placeholder="Giá trị tham chiếu"
+                                                />
+                                            </div>
+                                            <div className={styles.formGroup}>
+                                                <input
+                                                    type="text"
+                                                    value={newComponent.unit}
+                                                    onChange={(e) => setNewComponent(prev => ({ ...prev, unit: e.target.value }))}
+                                                    placeholder="Đơn vị (mg/dL, ng/mL...)"
+                                                />
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className={styles.addComponentBtn}
+                                                onClick={handleAddComponent}
+                                            >
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                                </svg>
+                                                Thêm
+                                            </button>
                                         </div>
-                                        <div className={styles.formGroup}>
-                                            <input
-                                                type="text"
-                                                value={newComponent.referenceRange}
-                                                onChange={(e) => setNewComponent(prev => ({ ...prev, referenceRange: e.target.value }))}
-                                                placeholder="Giá trị tham chiếu"
-                                            />
-                                        </div>
-                                        <button
-                                            type="button"
-                                            className={styles.addComponentBtn}
-                                            onClick={handleAddComponent}
-                                        >
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                                            </svg>
-                                            Thêm
-                                        </button>
-                                    </div>
                                     </div>
                                 )}
 
                                 <div className={styles.componentsList}>
-                                    {formData.testComponents.length === 0 ? (
+                                    {formData.testComponents.filter(comp => comp.status !== false).length === 0 ? (
                                         <p className={styles.emptyComponents}>Chưa có test component nào</p>
                                     ) : (
-                                        formData.testComponents.map((component, index) => (<div key={index} className={styles.componentItem}>                                            <div className={styles.componentInfo}>
-                                                <strong>{component.testName}</strong>
-                                                <div className={styles.componentDetails}>
-                                                    <span className={styles.referenceRange}>{component.referenceRange}</span>
-                                                </div>
-                                            </div>
-                                            {modalMode !== 'view' && (
-                                                <button
-                                                    type="button"
-                                                    className={styles.removeComponentBtn}
-                                                    onClick={() => handleRemoveComponent(index)}
-                                                >
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                                                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                                                    </svg>
-                                                </button>
-                                            )}
-                                        </div>
-                                        ))
+                                        formData.testComponents
+                                            .filter(comp => comp.status !== false) // Chỉ hiển thị active components
+                                            .map((component, index) => {
+                                                console.log(`Component ${index}:`, component); // Debug log
+                                                return (
+                                                    <div key={component.componentId || index} className={styles.componentItem}>
+                                                        {editingComponentIndex === index ? (
+                                                            // Edit mode
+                                                            <div className={styles.componentEditForm}>
+                                                                <div className={styles.formRow}>
+                                                                    <div className={styles.formGroup}>
+                                                                        <input
+                                                                            type="text"
+                                                                            value={editingComponent.testName}
+                                                                            onChange={(e) => setEditingComponent(prev => ({ ...prev, testName: e.target.value }))}
+                                                                            placeholder="Tên test"
+                                                                        />
+                                                                    </div>
+                                                                    <div className={styles.formGroup}>
+                                                                        <input
+                                                                            type="text"
+                                                                            value={editingComponent.referenceRange}
+                                                                            onChange={(e) => setEditingComponent(prev => ({ ...prev, referenceRange: e.target.value }))}
+                                                                            placeholder="Giá trị tham chiếu"
+                                                                        />
+                                                                    </div>
+                                                                    <div className={styles.formGroup}>
+                                                                        <input
+                                                                            type="text"
+                                                                            value={editingComponent.unit}
+                                                                            onChange={(e) => setEditingComponent(prev => ({ ...prev, unit: e.target.value }))}
+                                                                            placeholder="Đơn vị"
+                                                                        />
+                                                                    </div>
+                                                                    <div className={styles.editActions}>
+                                                                        <button
+                                                                            type="button"
+                                                                            className={styles.saveEditBtn}
+                                                                            onClick={handleSaveComponent}
+                                                                            disabled={actionLoading.componentEdit}
+                                                                        >
+                                                                            {actionLoading.componentEdit ? (
+                                                                                <LoadingSpinner size="small" />
+                                                                            ) : (
+                                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                                    <polyline points="20,6 9,17 4,12"></polyline>
+                                                                                </svg>
+                                                                            )}
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            className={styles.cancelEditBtn}
+                                                                            onClick={handleCancelEdit}
+                                                                            disabled={actionLoading.componentEdit}
+                                                                        >
+                                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                                            </svg>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            // View mode
+                                                            <>
+                                                                <div className={styles.componentInfo}>
+                                                                    <strong>{component.testName}</strong>
+                                                                    <div className={styles.componentDetails}>
+                                                                        <span className={styles.referenceRange}>
+                                                                            {component.referenceRange} {component.unit && `(${component.unit})`}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                                {modalMode !== 'view' && (
+                                                                    <div className={styles.componentActions}>
+                                                                        <button
+                                                                            type="button"
+                                                                            className={styles.editComponentBtn}
+                                                                            onClick={() => handleEditComponent(index)}
+                                                                            title="Chỉnh sửa"
+                                                                        >
+                                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                                            </svg>
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            className={styles.removeComponentBtn}
+                                                                            onClick={() => handleRemoveComponent(index)}
+                                                                            title="Xóa"
+                                                                        >
+                                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                                            </svg>
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })
                                     )}
                                 </div>
                             </div>
 
                             {/* Marketing Value Section - Hiển thị chỉ trong chế độ view */}
-                            {modalMode === 'view' && formData.testComponents && formData.testComponents.length > 0 && (
+                            {modalMode === 'view' && formData.testComponents && formData.testComponents.filter(comp => comp.status !== false).length > 0 && (
                                 <div className={styles.formSection}>
                                     <h3>Giá trị gói dịch vụ</h3>
 
@@ -551,12 +761,15 @@ const ManageSTIServices = () => {
                                                 <span>Giá lẻ</span>
                                             </div>
 
-                                            {formData.testComponents.map((component, index) => (
-                                                <div key={index} className={styles.comparisonRow}>
-                                                    <span>{component.testName}</span>
-                                                    <span>{component.price ? formatPrice(component.price) : '-'}</span>
-                                                </div>
-                                            ))}                                        </div>
+                                            {formData.testComponents
+                                                .filter(comp => comp.status !== false) // Chỉ hiển thị active components
+                                                .map((component, index) => (
+                                                    <div key={component.componentId || index} className={styles.comparisonRow}>
+                                                        <span>{component.testName}</span>
+                                                        <span>{component.price ? formatPrice(component.price) : '-'}</span>
+                                                    </div>
+                                                ))}
+                                        </div>
 
                                         <div className={styles.marketingPoints}>
                                             <h4>🎯 Lợi ích của gói dịch vụ:</h4>

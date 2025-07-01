@@ -138,6 +138,78 @@ class STIServiceManagementService {
             };
         }
     }
+
+    // ========= INDIVIDUAL COMPONENT MANAGEMENT =========
+
+    // Cập nhật từng component
+    async updateComponent(componentId, componentData, onAuthRequired) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/staff/components/${componentId}`, {
+                method: 'PUT',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify(componentData)
+            });
+
+            if (response.status === 401) {
+                return this.handleAuthError(onAuthRequired);
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error updating component:', error);
+            return { 
+                success: false, 
+                message: 'Không thể cập nhật component' 
+            };
+        }
+    }
+
+    // Toggle trạng thái component
+    async toggleComponentStatus(componentId, onAuthRequired) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/staff/components/${componentId}/toggle-status`, {
+                method: 'PATCH',
+                headers: this.getAuthHeaders()
+            });
+
+            if (response.status === 401) {
+                return this.handleAuthError(onAuthRequired);
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error toggling component status:', error);
+            return { 
+                success: false, 
+                message: 'Không thể thay đổi trạng thái component' 
+            };
+        }
+    }
+
+    // Xóa component (soft delete)
+    async deleteComponent(componentId, onAuthRequired) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/staff/components/${componentId}`, {
+                method: 'DELETE',
+                headers: this.getAuthHeaders()
+            });
+
+            if (response.status === 401) {
+                return this.handleAuthError(onAuthRequired);
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error deleting component:', error);
+            return { 
+                success: false, 
+                message: 'Không thể xóa component' 
+            };
+        }
+    }
 }
 
 export const stiServiceManagementService = new STIServiceManagementService();

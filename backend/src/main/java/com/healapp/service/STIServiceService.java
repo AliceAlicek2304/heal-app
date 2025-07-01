@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.healapp.dto.ApiResponse;
+import com.healapp.dto.ComponentUpdateRequest;
 import com.healapp.dto.STIServiceRequest;
 import com.healapp.dto.STIServiceResponse;
 import com.healapp.model.STIService;
@@ -344,7 +345,9 @@ public class STIServiceService {
      * Convert STIService to Response with Components
      */
     private STIServiceResponse convertToResponseWithComponents(STIService stiService) {
-        STIServiceResponse response = convertToResponse(stiService);        // Thêm thông tin components (chỉ hiển thị active components)
+        STIServiceResponse response = convertToResponse(stiService);
+        
+        // Thêm thông tin components (chỉ hiển thị active components)
         if (stiService.getTestComponents() != null) {
             List<STIServiceResponse.TestComponentResponse> componentResponses = stiService.getTestComponents().stream()
                     .filter(component -> component.getStatus()) // Chỉ lấy components active
@@ -353,6 +356,8 @@ public class STIServiceService {
                         compResp.setComponentId(component.getComponentId());
                         compResp.setTestName(component.getTestName());
                         compResp.setReferenceRange(component.getReferenceRange());
+                        compResp.setUnit(component.getUnit()); // Thêm unit
+                        compResp.setStatus(component.getStatus()); // Thêm status
                         return compResp;
                     })
                     .toList();
@@ -479,6 +484,7 @@ public class STIServiceService {
                         compResp.setComponentId(component.getComponentId());
                         compResp.setTestName(component.getTestName());
                         compResp.setReferenceRange(component.getReferenceRange());
+                        compResp.setUnit(component.getUnit());
                         compResp.setStatus(component.getStatus());
                         return compResp;
                     })
@@ -488,5 +494,162 @@ public class STIServiceService {
         }
 
         return response;
+    }
+
+    // ========= INDIVIDUAL COMPONENT MANAGEMENT =========
+
+    /**
+     * Update individual component
+     */
+    @Transactional
+    public ApiResponse<STIServiceResponse.TestComponentResponse> updateComponent(Long componentId, 
+            ComponentUpdateRequest request, Long userId) {
+        try {
+            log.info("Updating component {} by user {}", componentId, userId);
+
+            // Kiểm tra quyền user
+            Optional<UserDtls> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ApiResponse.error("User not found");
+            }
+
+            UserDtls user = userOpt.get();
+            String roleName = user.getRole() != null ? user.getRole().getRoleName() : null;
+
+            if (!"ADMIN".equals(roleName) && !"STAFF".equals(roleName)) {
+                return ApiResponse.error("Only ADMIN and STAFF can update components");
+            }
+
+            // Tìm component
+            Optional<ServiceTestComponent> componentOpt = serviceTestComponentRepository.findById(componentId);
+            if (componentOpt.isEmpty()) {
+                return ApiResponse.error("Component not found");
+            }
+
+            ServiceTestComponent component = componentOpt.get();
+
+            // Kiểm tra xem có component khác cùng tên trong cùng service không
+            Optional<ServiceTestComponent> duplicateOpt = serviceTestComponentRepository
+                    .findByStiServiceAndTestNameIgnoreCase(component.getStiService(), request.getTestName());
+            
+            if (duplicateOpt.isPresent() && !duplicateOpt.get().getComponentId().equals(componentId)) {
+                return ApiResponse.error("Component with this name already exists in this service");
+            }
+
+            // Cập nhật component
+            component.setTestName(request.getTestName());
+            component.setReferenceRange(request.getReferenceRange());
+            component.setUnit(request.getUnit());
+            component.setStatus(request.getStatus());
+
+            ServiceTestComponent savedComponent = serviceTestComponentRepository.save(component);
+
+            // Convert to response
+            STIServiceResponse.TestComponentResponse response = new STIServiceResponse.TestComponentResponse();
+            response.setComponentId(savedComponent.getComponentId());
+            response.setTestName(savedComponent.getTestName());
+            response.setReferenceRange(savedComponent.getReferenceRange());
+            response.setUnit(savedComponent.getUnit());
+            response.setStatus(savedComponent.getStatus());
+
+            log.info("Component {} updated successfully", componentId);
+            return ApiResponse.success("Component updated successfully", response);
+
+        } catch (Exception e) {
+            log.error("Error updating component {}: {}", componentId, e.getMessage(), e);
+            return ApiResponse.error("Failed to update component: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Toggle component status
+     */
+    @Transactional
+    public ApiResponse<STIServiceResponse.TestComponentResponse> toggleComponentStatus(Long componentId, Long userId) {
+        try {
+            log.info("Toggling component {} status by user {}", componentId, userId);
+
+            // Kiểm tra quyền user
+            Optional<UserDtls> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ApiResponse.error("User not found");
+            }
+
+            UserDtls user = userOpt.get();
+            String roleName = user.getRole() != null ? user.getRole().getRoleName() : null;
+
+            if (!"ADMIN".equals(roleName) && !"STAFF".equals(roleName)) {
+                return ApiResponse.error("Only ADMIN and STAFF can toggle component status");
+            }
+
+            // Tìm component
+            Optional<ServiceTestComponent> componentOpt = serviceTestComponentRepository.findById(componentId);
+            if (componentOpt.isEmpty()) {
+                return ApiResponse.error("Component not found");
+            }
+
+            ServiceTestComponent component = componentOpt.get();
+
+            // Toggle status
+            component.setStatus(!component.getStatus());
+            ServiceTestComponent savedComponent = serviceTestComponentRepository.save(component);
+
+            // Convert to response
+            STIServiceResponse.TestComponentResponse response = new STIServiceResponse.TestComponentResponse();
+            response.setComponentId(savedComponent.getComponentId());
+            response.setTestName(savedComponent.getTestName());
+            response.setReferenceRange(savedComponent.getReferenceRange());
+            response.setUnit(savedComponent.getUnit());
+            response.setStatus(savedComponent.getStatus());
+
+            log.info("Component {} status toggled to {}", componentId, savedComponent.getStatus());
+            return ApiResponse.success("Component status updated successfully", response);
+
+        } catch (Exception e) {
+            log.error("Error toggling component {} status: {}", componentId, e.getMessage(), e);
+            return ApiResponse.error("Failed to toggle component status: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Delete component (soft delete)
+     */
+    @Transactional
+    public ApiResponse<String> deleteComponent(Long componentId, Long userId) {
+        try {
+            log.info("Deleting component {} by user {}", componentId, userId);
+
+            // Kiểm tra quyền user
+            Optional<UserDtls> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ApiResponse.error("User not found");
+            }
+
+            UserDtls user = userOpt.get();
+            String roleName = user.getRole() != null ? user.getRole().getRoleName() : null;
+
+            if (!"ADMIN".equals(roleName) && !"STAFF".equals(roleName)) {
+                return ApiResponse.error("Only ADMIN and STAFF can delete components");
+            }
+
+            // Tìm component
+            Optional<ServiceTestComponent> componentOpt = serviceTestComponentRepository.findById(componentId);
+            if (componentOpt.isEmpty()) {
+                return ApiResponse.error("Component not found");
+            }
+
+            ServiceTestComponent component = componentOpt.get();
+
+            // Soft delete
+            component.setStatus(false);
+            serviceTestComponentRepository.save(component);
+
+            log.info("Component {} deleted successfully", componentId);
+            return ApiResponse.success("Component deleted successfully", "Component has been deactivated");
+
+        } catch (Exception e) {
+            log.error("Error deleting component {}: {}", componentId, e.getMessage(), e);
+            return ApiResponse.error("Failed to delete component: " + e.getMessage());
+        }
     }
 }

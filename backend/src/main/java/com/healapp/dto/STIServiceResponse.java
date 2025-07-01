@@ -32,6 +32,7 @@ public class STIServiceResponse {
         private Long componentId;
         private String testName;
         private String referenceRange;
+        private String unit;
         private Boolean status;
     }
 }

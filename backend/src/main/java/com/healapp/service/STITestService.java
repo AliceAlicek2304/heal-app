@@ -597,94 +597,57 @@ public class STITestService {
      * This allows partial results when moving to RESULTED status
      */
     private boolean saveTestResults(STITest test, List<TestResultRequest> resultRequests, Long userId) {
-        List<ServiceTestComponent> serviceComponents;
-
-        // Get components based on whether this is a service or package test
-        if (test.getStiService() != null) {
-            // Individual service test - chỉ lấy components active
-            serviceComponents = test.getStiService().getTestComponents().stream()
-                    .filter(component -> component.getStatus())
-                    .collect(Collectors.toList());
-        } else if (test.getStiPackage() != null) {
-            // Package test - get all active components from all services in the package
-            serviceComponents = new ArrayList<>();
-            for (STIService service : test.getStiPackage().getServices()) {
-                List<ServiceTestComponent> activeComponents = service.getTestComponents().stream()
-                        .filter(component -> component.getStatus())
-                        .collect(Collectors.toList());
-                serviceComponents.addAll(activeComponents);
-            }
-        } else {
-            log.error("Test {} has neither service nor package", test.getTestId());
-            return false;
-        }
-
-        List<Long> activeComponentIds = serviceComponents.stream()
-                .map(ServiceTestComponent::getComponentId)
-                .collect(Collectors.toList());
-
-        // Allow partial results - don't validate that all components are provided
-        boolean allResultsSaved = true;
-        for (TestResultRequest resultReq : resultRequests) {
-            try {
-                if (!activeComponentIds.contains(resultReq.getComponentId())) {
-                    String serviceInfo = test.getStiService() != null ? "service " + test.getStiService().getServiceId()
-                            : "package " + test.getStiPackage().getPackageId();
-                    log.error("Component ID {} does not belong to active components in {}",
-                            resultReq.getComponentId(), serviceInfo);
-                    allResultsSaved = false;
-                    continue;
-                }
-                Optional<ServiceTestComponent> componentOpt = testComponentRepository
-                        .findById(resultReq.getComponentId());
+        try {
+            for (TestResultRequest resultRequest : resultRequests) {
+                Optional<ServiceTestComponent> componentOpt = testComponentRepository.findById(resultRequest.getComponentId());
                 if (componentOpt.isEmpty()) {
-                    log.error("Component ID {} not found", resultReq.getComponentId());
-                    allResultsSaved = false;
-                    continue;
+                    log.error("Component not found: {}", resultRequest.getComponentId());
+                    return false;
                 }
 
                 ServiceTestComponent component = componentOpt.get();
+                Optional<TestResult> existingResultOpt = testResultRepository.findByStiTest_TestIdAndTestComponent_ComponentId(test.getTestId(), resultRequest.getComponentId());
 
-                // Tìm existing TestResult cho component này trong test này
-                Optional<TestResult> existingResultOpt = testResultRepository
-                        .findByStiTest_TestIdAndTestComponent_ComponentId(test.getTestId(), resultReq.getComponentId());
-
-                TestResult testResult;
                 if (existingResultOpt.isPresent()) {
-                    // UPDATE existing result
-                    testResult = existingResultOpt.get();
-                    log.info("Updating existing TestResult ID {} for component {} in test {}",
-                            testResult.getResultId(), resultReq.getComponentId(), test.getTestId());
+                    // Update existing result
+                    TestResult existingResult = existingResultOpt.get();
+                    existingResult.setResultValue(resultRequest.getResultValue());
+                    existingResult.setUnit(component.getUnit()); // Lấy unit từ component
+                    existingResult.setReviewedBy(userId);
+                    existingResult.setReviewedAt(LocalDateTime.now());
+                    testResultRepository.save(existingResult);
                 } else {
-                    // CREATE new result
-                    testResult = new TestResult();
-                    testResult.setStiTest(test);
-                    testResult.setTestComponent(component);
-                    testResult.setCreatedAt(LocalDateTime.now()); // Set sourceService for package tests
+                    // Create new result
+                    TestResult newResult = new TestResult();
+                    newResult.setStiTest(test);
+                    newResult.setTestComponent(component);
+                    newResult.setResultValue(resultRequest.getResultValue());
+                    newResult.setUnit(component.getUnit()); // Lấy unit từ component
+                    newResult.setReviewedBy(userId);
+                    newResult.setReviewedAt(LocalDateTime.now());
+                    
+                    // Set source service for package tests
                     if (test.getStiPackage() != null) {
-                        testResult.setSourceService(component.getStiService());
+                        // Find which service this component belongs to in the package
+                        for (STIService service : test.getStiPackage().getServices()) {
+                            if (service.getTestComponents().stream()
+                                    .anyMatch(comp -> comp.getComponentId().equals(component.getComponentId()))) {
+                                newResult.setSourceService(service);
+                                break;
+                            }
+                        }
+                    } else {
+                        newResult.setSourceService(test.getStiService());
                     }
-
-                    log.info("Creating new TestResult for component {} in test {}",
-                            resultReq.getComponentId(), test.getTestId());
+                    
+                    testResultRepository.save(newResult);
                 }
-
-                // Update/Set result values
-                testResult.setResultValue(resultReq.getResultValue());
-                testResult.setNormalRange(resultReq.getNormalRange());
-                testResult.setUnit(resultReq.getUnit());
-                testResult.setReviewedBy(userId);
-                testResult.setReviewedAt(LocalDateTime.now());
-
-                testResultRepository.save(testResult);
-            } catch (Exception e) {
-                log.error("Error saving result for component {}: {}",
-                        resultReq.getComponentId(), e.getMessage());
-                allResultsSaved = false;
             }
+            return true;
+        } catch (Exception e) {
+            log.error("Error saving test results: {}", e.getMessage(), e);
+            return false;
         }
-
-        return allResultsSaved;
     }
 
     /**

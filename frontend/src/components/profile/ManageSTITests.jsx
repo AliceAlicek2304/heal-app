@@ -354,8 +354,7 @@ const ManageSTITests = () => {
             status: 'RESULTED',
             results: validResults.map(result => ({
                 componentId: result.componentId,
-                resultValue: result.resultValue,
-                unit: result.unit
+                resultValue: result.resultValue
             }))
         };
         handleStatusUpdate(selectedTest.testId, 'RESULTED', resultData);
@@ -1163,7 +1162,8 @@ const ManageSTITests = () => {
                                                                 <input
                                                                     type="text"
                                                                     value={result.unit}
-                                                                    onChange={(e) => handleResultChange(result.originalIndex, 'unit', e.target.value)}
+                                                                    readOnly
+                                                                    disabled
                                                                     placeholder="Đơn vị..."
                                                                 />
                                                             </div>
@@ -1203,7 +1203,8 @@ const ManageSTITests = () => {
                                                     <input
                                                         type="text"
                                                         value={result.unit}
-                                                        onChange={(e) => handleResultChange(index, 'unit', e.target.value)}
+                                                        readOnly
+                                                        disabled
                                                         placeholder="Đơn vị..."
                                                     />
                                                 </div>

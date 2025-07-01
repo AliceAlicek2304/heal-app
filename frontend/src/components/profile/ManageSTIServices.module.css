@@ -542,19 +542,23 @@
 
 .componentItem {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid #f1f5f9;
-    transition: all 0.2s ease;
+    justify-content: space-between;
+    padding: 1rem;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    margin-bottom: 0.75rem;
+    transition: all 0.3s ease;
 }
 
 .componentItem:last-child {
-    border-bottom: none;
+    margin-bottom: 0;
 }
 
 .componentItem:hover {
-    background: #f8fafc;
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .componentInfo {
@@ -565,6 +569,7 @@
 }
 
 .componentInfo strong {
+    font-size: 1rem;
     color: #1e293b;
     font-weight: 600;
 }
@@ -581,16 +586,16 @@
     width: 32px;
     height: 32px;
     border: none;
-    background: #fee2e2;
-    color: #dc2626;
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
+    background: transparent;
 }
 
 .removeComponentBtn:hover {
-    background: #fecaca;
-    transform: scale(1.05);
+    background: #fef2f2;
+    color: #dc2626;
+    transform: scale(1.1);
 }
 
 /* Modal Actions */
@@ -730,13 +735,15 @@
 .componentDetails {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    margin-top: 0.25rem;
+    gap: 0.5rem;
 }
 
 .referenceRange {
-    color: #64748b;
     font-size: 0.9rem;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
 }
 
 /* Value Proposition Styling */
@@ -933,4 +940,123 @@
         width: 100%;
         justify-content: center;
     }
+}
+
+/* Component Edit Form */
+.componentEditForm {
+    width: 100%;
+    padding: 1rem;
+    background: #f8fafc;
+    border: 2px solid #3b82f6;
+    border-radius: 12px;
+    margin: 0.5rem 0;
+}
+
+.componentEditForm .formRow {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.componentEditForm .formGroup {
+    flex: 1;
+    min-width: 150px;
+}
+
+.componentEditForm input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.componentEditForm input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.editActions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.saveEditBtn,
+.cancelEditBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.saveEditBtn {
+    background: #10b981;
+    color: white;
+}
+
+.saveEditBtn:hover {
+    background: #059669;
+    transform: scale(1.05);
+}
+
+.cancelEditBtn {
+    background: #ef4444;
+    color: white;
+}
+
+.cancelEditBtn:hover {
+    background: #dc2626;
+    transform: scale(1.05);
+}
+
+/* Component Actions */
+.componentActions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-left: auto;
+}
+
+.editComponentBtn,
+.removeComponentBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: transparent;
+}
+
+.editComponentBtn {
+    color: #3b82f6;
+}
+
+.editComponentBtn:hover {
+    background: #eff6ff;
+    color: #1d4ed8;
+    transform: scale(1.1);
+}
+
+.removeComponentBtn {
+    color: #ef4444;
+}
+
+.removeComponentBtn:hover {
+    background: #fef2f2;
+    color: #dc2626;
+    transform: scale(1.1);
 }

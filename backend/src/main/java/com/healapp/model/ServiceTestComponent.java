@@ -41,6 +41,9 @@ public class ServiceTestComponent {
     @Column(name = "reference_range", length = 100)
     private String referenceRange;
 
+    @Column(name = "unit", length = 20)
+    private String unit;
+
     @Column(name = "status", nullable = false)
     private Boolean status = true;
 
