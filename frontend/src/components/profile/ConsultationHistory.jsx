@@ -60,16 +60,10 @@ const ConsultationHistory = () => {
             setLoading(true);
             const response = await consultationService.getMyConsultations();
             if (response.success && response.data) {
-                const sortedConsultations = response.data.sort((a, b) => {
-                    const dateA = parseDate(b.createdAt);
-                    const dateB = parseDate(a.createdAt);
-                    if (!dateA || !dateB) return 0;
-                    return dateB.getTime() - dateA.getTime();
-                });
-                setConsultations(sortedConsultations);
+                setConsultations(response.data);
 
                 // Load rating status for completed consultations
-                await loadRatingStatuses(sortedConsultations);
+                await loadRatingStatuses(response.data);
             } else {
                 const errorMsg = response.message || 'Không thể tải lịch sử tư vấn';
                 toast.error(errorMsg);
@@ -219,7 +213,7 @@ const ConsultationHistory = () => {
         const message = isEdit ? 'Đã cập nhật đánh giá thành công!' : 'Cảm ơn bạn đã đánh giá consultant!';
         toast.success(message);
         handleCloseRatingModal();
-        
+
         // Refresh rating status for this consultation  
         if (selectedConsultation) {
             await loadRatingStatuses([selectedConsultation]);
@@ -246,7 +240,7 @@ const ConsultationHistory = () => {
                 toast.success('Đã xóa đánh giá thành công!');
                 setShowCurrentRating(false);
                 setCurrentRating(null);
-                
+
                 // Refresh rating status for this consultation
                 if (selectedConsultation) {
                     await loadRatingStatuses([selectedConsultation]);
@@ -553,8 +547,8 @@ const ConsultationHistory = () => {
                                                     )}                                                    {canRateConsultation(consultation) && (
                                                         <button
                                                             className={
-                                                                getRatingButtonInfo(consultation).className === styles.viewRatingBtn 
-                                                                    ? styles.viewRatingBtnTable 
+                                                                getRatingButtonInfo(consultation).className === styles.viewRatingBtn
+                                                                    ? styles.viewRatingBtnTable
                                                                     : styles.rateBtnTable
                                                             }
                                                             onClick={() => handleRateConsultant(consultation)}
@@ -649,7 +643,14 @@ const ConsultationHistory = () => {
                                         <a href={selectedConsultation.meetUrl} target="_blank" rel="noopener noreferrer" className={styles.meetLink}>
                                             {selectedConsultation.meetUrl}
                                         </a>
-                                    </div>)}
+                                    </div>
+                                )}
+                                {selectedConsultation.note && (
+                                    <div className={styles.detailRow}>
+                                        <strong>Ghi chú:</strong>
+                                        <span>{selectedConsultation.note}</span>
+                                    </div>
+                                )}
                             </div>
                             <div className={styles.detailSection}>
                                 <h4>Thông tin khác</h4>
@@ -687,7 +688,8 @@ const ConsultationHistory = () => {
                             </button>
                         </div>
                     </div>
-                </div>)}            {/* Rating Modal */}
+                </div>)}
+            {/* Rating Modal */}
             {showRatingModal && selectedConsultation && (
                 <RatingModal
                     isOpen={showRatingModal}

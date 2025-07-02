@@ -74,7 +74,8 @@ const ConsultationManagement = () => {
             filtered = filtered.filter(consultation =>
                 consultation.consultationId?.toString().includes(term) ||
                 consultation.customerName?.toLowerCase().includes(term) ||
-                consultation.consultantName?.toLowerCase().includes(term)
+                consultation.consultantName?.toLowerCase().includes(term) ||
+                consultation.note?.toLowerCase().includes(term)
             );
         }
 
@@ -83,12 +84,8 @@ const ConsultationManagement = () => {
             filtered = filtered.filter(consultation => consultation.status === selectedStatus);
         }
 
-        // Sort by newest first
-        filtered.sort((a, b) => {
-            const aDate = new Date(a.createdAt || 0);
-            const bDate = new Date(b.createdAt || 0);
-            return bDate.getTime() - aDate.getTime();
-        });
+        // Sort by ID DESC (newest first)
+        filtered.sort((a, b) => b.consultationId - a.consultationId);
 
         setFilteredConsultations(filtered);
         setCurrentPage(1);
@@ -96,24 +93,16 @@ const ConsultationManagement = () => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         const end = start + ITEMS_PER_PAGE;
         return filteredConsultations.slice(start, end);
-    }; const handleViewDetail = async (consultation) => {
+    }; const handleViewDetail = (consultation) => {
         // Validate consultation object
         if (!consultation || !consultation.consultationId) {
             addToast('Dữ liệu cuộc tư vấn không hợp lệ', 'error');
             return;
         }
 
-        try {
-            const response = await consultationService.getConsultationById(consultation.consultationId);
-            if (response.success) {
-                setSelectedConsultation(response.data);
-                setShowDetailModal(true);
-            } else {
-                addToast(response.message || 'Không thể tải chi tiết tư vấn', 'error');
-            }
-        } catch (error) {
-            addToast('Có lỗi xảy ra khi tải chi tiết tư vấn', 'error');
-        }
+        // Use data directly from the list (like ConsultationHistory)
+        setSelectedConsultation(consultation);
+        setShowDetailModal(true);
     };
 
     const getStatusConfig = (status) => {
@@ -146,6 +135,7 @@ const ConsultationManagement = () => {
                         <span className={styles.statNumber}>{filteredConsultations.length}</span>
                         <span className={styles.statLabel}>Tổng số</span>
                     </div>
+
                 </div>
             </div>
 
@@ -154,7 +144,7 @@ const ConsultationManagement = () => {
                 <div className={styles.searchBox}>
                     <FaSearch className={styles.searchIcon} />                    <input
                         type="text"
-                        placeholder="Tìm kiếm theo ID, tên khách hàng, tư vấn viên..."
+                        placeholder="Tìm kiếm theo ID, tên khách hàng, tư vấn viên, ghi chú..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className={styles.searchInput}
@@ -181,6 +171,7 @@ const ConsultationManagement = () => {
                             <th>Tư vấn viên</th>
                             <th>Thời gian</th>
                             <th>Trạng thái</th>
+                            <th>Ghi chú</th>
                             <th>Ngày tạo</th>
                             <th>Thao tác</th>
                         </tr>
@@ -188,7 +179,7 @@ const ConsultationManagement = () => {
                     <tbody>
                         {getCurrentPageItems().length === 0 ? (
                             <tr>
-                                <td colSpan="7" className={styles.emptyState}>
+                                <td colSpan="8" className={styles.emptyState}>
                                     <FaCalendarAlt className={styles.emptyIcon} />
                                     <p>Không có cuộc tư vấn nào</p>
                                 </td>
@@ -228,6 +219,19 @@ const ConsultationManagement = () => {
                                                 {statusConfig.label}
                                             </span>
                                         </td>
+                                        <td className={styles.noteCell}>
+                                            {consultation.note ? (
+                                                <div className={styles.notePreview}>
+                                                    <span className={styles.noteText}>
+                                                        {consultation.note.length > 50
+                                                            ? `${consultation.note.substring(0, 50)}...`
+                                                            : consultation.note}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <span className={styles.noNote}>Không có ghi chú</span>
+                                            )}
+                                        </td>
                                         <td className={styles.dateCell}>
                                             {formatDateTime(consultation.createdAt)}
                                         </td>
@@ -255,7 +259,8 @@ const ConsultationManagement = () => {
                     totalPages={totalPages}
                     onPageChange={setCurrentPage}
                 />
-            )}            {/* Detail Modal */}
+            )}
+            {/* Detail Modal */}
             {showDetailModal && selectedConsultation && (
                 <ConsultationDetailModal
                     consultation={selectedConsultation}

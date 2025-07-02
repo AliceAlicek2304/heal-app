@@ -20,6 +20,7 @@ const BookingModal = ({
     // Form data
     const [selectedDate, setSelectedDate] = useState('');
     const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
+    const [note, setNote] = useState('');
     const [availableSlots, setAvailableSlots] = useState([]);
     const [loadingSlots, setLoadingSlots] = useState(false);
 
@@ -123,7 +124,8 @@ const BookingModal = ({
             const bookingData = {
                 consultantId: consultant.userId || consultant.id,
                 date: selectedDate,
-                timeSlot: selectedTimeSlot
+                timeSlot: selectedTimeSlot,
+                note: note.trim()
             };
 
             console.log('Booking consultation with data:', bookingData);
@@ -275,6 +277,23 @@ const BookingModal = ({
                                     )}
                                 </div>
                             )}
+
+                            {/* Note Field */}
+                            <div className={styles.formGroup}>
+                                <label htmlFor="consultationNote">Ghi chú (tùy chọn)</label>
+                                <textarea
+                                    id="consultationNote"
+                                    value={note}
+                                    onChange={(e) => setNote(e.target.value)}
+                                    placeholder="Nhập ghi chú về vấn đề cần tư vấn, triệu chứng, hoặc thông tin khác..."
+                                    className={styles.noteInput}
+                                    rows="4"
+                                    maxLength="1000"
+                                />
+                                <div className={styles.charCount}>
+                                    {note.length}/1000 ký tự
+                                </div>
+                            </div>
                         </div>
                     )}
 
@@ -296,6 +315,13 @@ const BookingModal = ({
                                 <span className={styles.label}>Chuyên gia tư vấn:</span>
                                 <span className={styles.value}>{consultant.fullName}</span>
                             </div>
+
+                            {note.trim() && (
+                                <div className={styles.detailItem}>
+                                    <span className={styles.label}>Ghi chú:</span>
+                                    <span className={styles.value}>{note}</span>
+                                </div>
+                            )}
 
                             <div className={styles.importantNote}>
                                 <div className={styles.noteIcon}>

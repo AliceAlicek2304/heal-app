@@ -66,6 +66,8 @@
     margin-top: 4px;
 }
 
+
+
 .filters {
     display: flex;
     gap: 16px;
@@ -197,6 +199,28 @@
     font-size: 13px;
 }
 
+.noteCell {
+    max-width: 200px;
+}
+
+.notePreview {
+    display: flex;
+    align-items: center;
+}
+
+.noteText {
+    color: #374151;
+    font-size: 13px;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.noNote {
+    color: #9ca3af;
+    font-size: 13px;
+    font-style: italic;
+}
+
 .statusBadge {
     display: inline-block;
     padding: 4px 12px;
@@ -312,3 +336,5 @@
         padding: 8px 6px;
     }
 }
+
+

@@ -1,21 +1,5 @@
 package com.healapp.service;
 
-import com.healapp.dto.ApiResponse;
-import com.healapp.dto.AvailableTimeSlot;
-import com.healapp.dto.ConsultationRequest;
-import com.healapp.dto.ConsultationResponse;
-import com.healapp.model.Consultation;
-import com.healapp.model.ConsultantProfile;
-import com.healapp.model.ConsultationStatus;
-import com.healapp.model.UserDtls;
-import com.healapp.repository.ConsultantProfileRepository;
-import com.healapp.repository.ConsultationRepository;
-import com.healapp.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -25,6 +9,23 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.healapp.dto.ApiResponse;
+import com.healapp.dto.AvailableTimeSlot;
+import com.healapp.dto.ConsultationRequest;
+import com.healapp.dto.ConsultationResponse;
+import com.healapp.model.ConsultantProfile;
+import com.healapp.model.Consultation;
+import com.healapp.model.ConsultationStatus;
+import com.healapp.model.UserDtls;
+import com.healapp.repository.ConsultantProfileRepository;
+import com.healapp.repository.ConsultationRepository;
+import com.healapp.repository.UserRepository;
 
 @Service
 public class ConsultationService {
@@ -162,6 +163,7 @@ public class ConsultationService {
             consultation.setStartTime(consultationStartTime);
             consultation.setEndTime(consultationEndTime);
             consultation.setStatus(ConsultationStatus.PENDING);
+            consultation.setNote(request.getNote());
 
             Consultation savedConsultation = consultationRepository.save(consultation);
             ConsultationResponse response = convertToResponse(savedConsultation);
@@ -327,7 +329,7 @@ public class ConsultationService {
         }
     }
 
-    // Get consultation by ID
+        // Get consultation by ID
     public ApiResponse<ConsultationResponse> getConsultationById(Long consultationId) {
         try {
             Optional<Consultation> consultationOpt = consultationRepository.findById(consultationId);
@@ -335,7 +337,8 @@ public class ConsultationService {
                 return ApiResponse.error("Consultation not found");
             }
 
-            ConsultationResponse response = convertToResponse(consultationOpt.get());
+            Consultation consultation = consultationOpt.get();
+            ConsultationResponse response = convertToResponse(consultation);
             return ApiResponse.success("Consultation retrieved successfully", response);
         } catch (Exception e) {
             log.error("Error retrieving consultation by ID {}: {}", consultationId, e.getMessage());
@@ -411,6 +414,7 @@ public class ConsultationService {
         response.setEndTime(consultation.getEndTime());
         response.setStatus(consultation.getStatus());
         response.setMeetUrl(consultation.getMeetUrl());
+        response.setNote(consultation.getNote());
 
         response.setCreatedAt(consultation.getCreatedAt());
         response.setUpdatedAt(consultation.getUpdatedAt());

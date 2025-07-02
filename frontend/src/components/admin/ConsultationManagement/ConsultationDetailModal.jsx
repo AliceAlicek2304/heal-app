@@ -14,7 +14,9 @@ const STATUS_CONFIG = {
 const ConsultationDetailModal = ({ consultation, onClose }) => {
     if (!consultation) return null;
 
-    const statusConfig = STATUS_CONFIG[consultation.status] || { label: consultation.status, color: '#6b7280' }; return (
+    const statusConfig = STATUS_CONFIG[consultation.status] || { label: consultation.status, color: '#6b7280' };
+    
+    return (
         <Modal isOpen={true} onClose={onClose} size="large">
             <div className={styles.modal}>
                 <div className={styles.header}>
@@ -97,7 +99,8 @@ const ConsultationDetailModal = ({ consultation, onClose }) => {
                                 </div>
                             ) : (
                                 <p className={styles.noSchedule}>Chưa có lịch hẹn cụ thể</p>
-                            )}                        </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Meeting Link */}
@@ -114,6 +117,19 @@ const ConsultationDetailModal = ({ consultation, onClose }) => {
                                 >
                                     {consultation.meetUrl}
                                 </a>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Note */}
+                    {consultation.note && (
+                        <div className={styles.section}>
+                            <h3 className={styles.sectionTitle}>
+                                <FaComment className={styles.sectionIcon} />
+                                Ghi chú từ khách hàng
+                            </h3>
+                            <div className={styles.noteContent}>
+                                <p>{consultation.note}</p>
                             </div>
                         </div>
                     )}
@@ -140,4 +156,4 @@ const ConsultationDetailModal = ({ consultation, onClose }) => {
     );
 };
 
-export default ConsultationDetailModal;
+export default ConsultationDetailModal; 

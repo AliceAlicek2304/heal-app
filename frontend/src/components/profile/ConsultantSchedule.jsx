@@ -74,12 +74,7 @@ const ConsultantSchedule = () => {
             // Backend trả về data trong response.data
             const consultationsData = response.data || response;
 
-            // Sắp xếp theo thời gian mới nhất
-            const sortedConsultations = consultationsData.sort((a, b) =>
-                new Date(b.startTime) - new Date(a.startTime)
-            );
-
-            setConsultations(sortedConsultations);
+            setConsultations(consultationsData);
             setError('');
         } catch (error) {
             setError('Có lỗi xảy ra khi tải lịch tư vấn');
@@ -589,6 +584,12 @@ const ConsultantSchedule = () => {
                                     <div className={styles.infoRow}>
                                         <span className={styles.label}>Mô tả:</span>
                                         <span className={styles.value}>{selectedConsultation.description}</span>
+                                    </div>
+                                )}
+                                {selectedConsultation.note && (
+                                    <div className={styles.infoRow}>
+                                        <span className={styles.label}>Ghi chú từ khách hàng:</span>
+                                        <span className={styles.value}>{selectedConsultation.note}</span>
                                     </div>
                                 )}
                             </div>

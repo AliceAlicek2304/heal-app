@@ -1,12 +1,13 @@
 package com.healapp.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.time.LocalDate;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import java.time.LocalDate;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
@@ -20,4 +21,7 @@ public class ConsultationRequest {
 
     @NotEmpty(message = "Time slot is required")
     private String timeSlot;
+
+    @Size(max = 1000, message = "Note must not exceed 1000 characters")
+    private String note;
 }

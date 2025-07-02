@@ -1,28 +1,26 @@
 .modal {
-    width: 100%;
-    max-width: 800px;
-    max-height: 90vh;
     background: white;
     border-radius: 12px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+    max-width: 800px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 24px;
+    padding: 24px 24px 0 24px;
     border-bottom: 1px solid #e5e7eb;
-    background: #f8fafc;
+    margin-bottom: 24px;
 }
 
 .title {
-    font-size: 24px;
-    font-weight: 700;
-    color: #1e293b;
     margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #1e293b;
 }
 
 .closeBtn {
@@ -31,8 +29,8 @@
     font-size: 20px;
     color: #6b7280;
     cursor: pointer;
-    padding: 8px;
-    border-radius: 6px;
+    padding: 4px;
+    border-radius: 4px;
     transition: all 0.2s;
 }
 
@@ -42,25 +40,21 @@
 }
 
 .content {
-    padding: 24px;
-    overflow-y: auto;
-    flex: 1;
+    padding: 0 24px 24px 24px;
 }
 
 .statusSection {
+    margin-bottom: 24px;
     text-align: center;
-    margin-bottom: 32px;
 }
 
 .statusBadge {
     display: inline-block;
-    padding: 8px 24px;
+    padding: 8px 16px;
     border-radius: 20px;
-    font-size: 14px;
-    font-weight: 600;
     color: white;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    font-weight: 500;
+    font-size: 14px;
 }
 
 .section {
@@ -68,12 +62,19 @@
 }
 
 .sectionTitle {
-    font-size: 18px;
-    font-weight: 600;
-    color: #374151;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e293b;
     padding-bottom: 8px;
     border-bottom: 2px solid #e5e7eb;
+}
+
+.sectionIcon {
+    color: #6b7280;
 }
 
 .participants {
@@ -84,134 +85,107 @@
 
 .participant {
     display: flex;
-    gap: 16px;
-    padding: 20px;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
     background: #f8fafc;
-    border-radius: 12px;
+    border-radius: 8px;
     border: 1px solid #e5e7eb;
 }
 
 .participantIcon {
-    width: 48px;
-    height: 48px;
-    background: #3b82f6;
-    color: white;
-    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    width: 40px;
+    height: 40px;
+    background: #3b82f6;
+    color: white;
+    border-radius: 50%;
     flex-shrink: 0;
 }
 
 .participantInfo h4 {
-    font-size: 16px;
+    margin: 0 0 8px 0;
+    font-size: 14px;
     font-weight: 600;
     color: #374151;
-    margin: 0 0 8px 0;
 }
 
 .participantInfo p {
     margin: 0 0 4px 0;
+    font-size: 14px;
     color: #1e293b;
-    font-weight: 500;
 }
 
 .contactInfo {
+    font-size: 12px !important;
     color: #6b7280 !important;
-    font-size: 14px !important;
-    font-weight: 400 !important;
 }
 
 .schedule {
-    padding: 20px;
     background: #f8fafc;
-    border-radius: 12px;
+    border-radius: 8px;
+    padding: 16px;
     border: 1px solid #e5e7eb;
 }
 
 .timeInfo {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 24px;
+    gap: 16px;
 }
 
 .timeItem {
     display: flex;
+    align-items: center;
     gap: 12px;
-    align-items: flex-start;
 }
 
 .timeIcon {
     color: #3b82f6;
-    font-size: 18px;
-    margin-top: 4px;
+    font-size: 16px;
 }
 
 .timeLabel {
-    font-size: 14px;
-    color: #6b7280;
     margin: 0 0 4px 0;
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 500;
 }
 
 .timeValue {
-    font-size: 16px;
-    font-weight: 600;
-    color: #1e293b;
     margin: 0;
+    font-size: 14px;
+    color: #1e293b;
+    font-weight: 500;
 }
 
 .noSchedule {
     text-align: center;
-    color: #9ca3af;
+    color: #6b7280;
     font-style: italic;
     margin: 0;
-}
-
-.field {
-    margin-bottom: 20px;
-}
-
-.field label {
-    display: block;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 8px;
-}
-
-.field p {
-    margin: 0;
-    color: #1e293b;
-    line-height: 1.6;
-}
-
-.description {
-    background: #f8fafc;
-    padding: 16px;
-    border-radius: 8px;
-    border: 1px solid #e5e7eb;
-    white-space: pre-wrap;
 }
 
 .meetLink {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 16px;
+    gap: 8px;
+    padding: 12px;
     background: #f0f9ff;
-    border: 1px solid #bae6fd;
-    border-radius: 8px;
+    border: 1px solid #0ea5e9;
+    border-radius: 6px;
 }
 
 .linkIcon {
     color: #0ea5e9;
-    font-size: 18px;
+    flex-shrink: 0;
 }
 
 .linkUrl {
     color: #0ea5e9;
     text-decoration: none;
-    font-weight: 500;
     word-break: break-all;
 }
 
@@ -219,41 +193,51 @@
     text-decoration: underline;
 }
 
+.noteContent {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 6px;
+    padding: 16px;
+}
+
+.noteContent p {
+    margin: 0;
+    color: #92400e;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
 .timestamps {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
 }
 
 .timestamp {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 16px;
-    background: #f8fafc;
-    border-radius: 8px;
-    border: 1px solid #e5e7eb;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.timestamp:last-child {
+    border-bottom: none;
 }
 
 .timestamp label {
+    font-weight: 600;
+    color: #374151;
     font-size: 14px;
-    color: #6b7280;
-    font-weight: 500;
 }
 
 .timestamp span {
-    font-size: 14px;
     color: #1e293b;
-    font-weight: 600;
+    font-size: 14px;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
-    .modal {
-        max-width: 95vw;
-        margin: 10px;
-    }
-    
     .participants {
         grid-template-columns: 1fr;
     }
@@ -262,12 +246,9 @@
         grid-template-columns: 1fr;
     }
     
-    .timestamps {
-        grid-template-columns: 1fr;
-    }
-    
-    .participant {
+    .timestamp {
         flex-direction: column;
-        text-align: center;
+        align-items: flex-start;
+        gap: 4px;
     }
-}
+} 
