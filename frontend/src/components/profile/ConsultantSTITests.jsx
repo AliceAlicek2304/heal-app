@@ -491,6 +491,7 @@ const ConsultantSTITests = () => {
                             <div>Kết quả</div>
                             <div>Khoảng bình thường</div>
                             <div>Đơn vị</div>
+                            <div>Kết luận</div>
                         </div>                            {testResults.map((result, index) => {
                             return (
                                 <div key={index} className={styles.tableRow}>
@@ -498,6 +499,7 @@ const ConsultantSTITests = () => {
                                     <div className={styles.resultValue}>{result.resultValue}</div>
                                     <div>{result.normalRange || 'N/A'}</div>
                                     <div>{result.unit || 'N/A'}</div>
+                                    <div>{result.conclusionDisplayName || result.conclusion || 'N/A'}</div>
                                 </div>
                             );
                         })}

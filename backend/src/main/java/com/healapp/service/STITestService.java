@@ -578,6 +578,7 @@ public class STITestService {
                 testResult.setResultValue(resultReq.getResultValue());
                 testResult.setNormalRange(resultReq.getNormalRange());
                 testResult.setUnit(resultReq.getUnit());
+                testResult.setConclusion(resultReq.getConclusion());
                 testResult.setReviewedBy(userId);
                 testResult.setReviewedAt(LocalDateTime.now());
 
@@ -613,6 +614,7 @@ public class STITestService {
                     TestResult existingResult = existingResultOpt.get();
                     existingResult.setResultValue(resultRequest.getResultValue());
                     existingResult.setUnit(component.getUnit()); // Lấy unit từ component
+                    existingResult.setConclusion(resultRequest.getConclusion());
                     existingResult.setReviewedBy(userId);
                     existingResult.setReviewedAt(LocalDateTime.now());
                     testResultRepository.save(existingResult);
@@ -623,6 +625,7 @@ public class STITestService {
                     newResult.setTestComponent(component);
                     newResult.setResultValue(resultRequest.getResultValue());
                     newResult.setUnit(component.getUnit()); // Lấy unit từ component
+                    newResult.setConclusion(resultRequest.getConclusion());
                     newResult.setReviewedBy(userId);
                     newResult.setReviewedAt(LocalDateTime.now());
                     
@@ -734,6 +737,10 @@ public class STITestService {
                 return true;
             }
             if (currentStatus == TestStatus.RESULTED && newStatus == TestStatus.COMPLETED) {
+                return true;
+            }
+            // Cho phép STAFF cập nhật kết quả cho test đã ở trạng thái RESULTED
+            if (currentStatus == TestStatus.RESULTED && newStatus == TestStatus.RESULTED) {
                 return true;
             }
         } else if ("ADMIN".equals(userRole)) {
@@ -1071,6 +1078,8 @@ public class STITestService {
         response.setResultValue(result.getResultValue());
         response.setNormalRange(result.getTestComponent().getReferenceRange());
         response.setUnit(result.getUnit());
+        response.setConclusion(result.getConclusion());
+        response.setConclusionDisplayName(result.getConclusion() != null ? result.getConclusion().getDisplayName() : null);
         response.setReviewedBy(result.getReviewedBy());
         response.setReviewedAt(result.getReviewedAt());
         response.setCreatedAt(result.getCreatedAt());

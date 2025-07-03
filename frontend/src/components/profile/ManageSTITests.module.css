@@ -477,6 +477,23 @@
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+.selectInput {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    background-color: white;
+    color: #374151;
+    transition: all 0.2s ease;
+}
+
+.selectInput:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
 .modalFooter {
     display: flex;
     justify-content: flex-end;
@@ -645,9 +662,13 @@
     color: #374151;
 }
 
-.normalRange, .unit {
+.normalRange, .unit, .conclusion {
     color: #6b7280;
     font-size: 14px;
+}
+
+.conclusion {
+    font-weight: 500;
 }
 
 .reviewerName {

@@ -423,7 +423,7 @@
 
 .tableHeader {
     display: grid;
-    grid-template-columns: 2fr 1.5fr 1.5fr 1fr 1fr;
+    grid-template-columns: 2fr 1.5fr 1.5fr 1fr 1fr 1fr;
     gap: 16px;
     padding: 16px;
     background: #f9fafb;
@@ -435,7 +435,7 @@
 
 .tableRow {
     display: grid;
-    grid-template-columns: 2fr 1.5fr 1.5fr 1fr 1fr;
+    grid-template-columns: 2fr 1.5fr 1.5fr 1fr 1fr 1fr;
     gap: 16px;
     padding: 16px;
     border-bottom: 1px solid #f3f4f6;
@@ -502,5 +502,9 @@
         color: #4b5563;
         display: inline-block;
         min-width: 100px;
+    }
+    
+    .tableRow > div:nth-child(5)::before {
+        content: 'Kết luận: ';
     }
 }

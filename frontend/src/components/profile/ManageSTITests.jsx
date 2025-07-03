@@ -350,11 +350,20 @@ const ManageSTITests = () => {
             toast.error('Vui lòng nhập ít nhất một kết quả');
             return;
         }
+        
+        // Kiểm tra xem tất cả kết quả có conclusion chưa
+        const resultsWithoutConclusion = validResults.filter(result => !result.conclusion);
+        if (resultsWithoutConclusion.length > 0) {
+            toast.error('Vui lòng chọn kết luận cho tất cả các kết quả');
+            return;
+        }
+        
         const resultData = {
             status: 'RESULTED',
             results: validResults.map(result => ({
                 componentId: result.componentId,
-                resultValue: result.resultValue
+                resultValue: result.resultValue,
+                conclusion: result.conclusion
             }))
         };
         handleStatusUpdate(selectedTest.testId, 'RESULTED', resultData);
@@ -1167,6 +1176,19 @@ const ManageSTITests = () => {
                                                                     placeholder="Đơn vị..."
                                                                 />
                                                             </div>
+                                                            <div className={styles.inputGroup}>
+                                                                <label>Kết luận</label>
+                                                                <select
+                                                                    value={result.conclusion || ''}
+                                                                    onChange={(e) => handleResultChange(result.originalIndex, 'conclusion', e.target.value)}
+                                                                    className={styles.selectInput}
+                                                                >
+                                                                    <option value="">Chọn kết luận...</option>
+                                                                    <option value="INFECTED">Bị nhiễm</option>
+                                                                    <option value="NOT_INFECTED">Không bị nhiễm</option>
+                                                                    <option value="ABNORMAL">Bất thường</option>
+                                                                </select>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -1207,6 +1229,19 @@ const ManageSTITests = () => {
                                                         disabled
                                                         placeholder="Đơn vị..."
                                                     />
+                                                </div>
+                                                <div className={styles.inputGroup}>
+                                                    <label>Kết luận</label>
+                                                    <select
+                                                        value={result.conclusion || ''}
+                                                        onChange={(e) => handleResultChange(index, 'conclusion', e.target.value)}
+                                                        className={styles.selectInput}
+                                                    >
+                                                        <option value="">Chọn kết luận...</option>
+                                                        <option value="INFECTED">Bị nhiễm</option>
+                                                        <option value="NOT_INFECTED">Không bị nhiễm</option>
+                                                        <option value="ABNORMAL">Bất thường</option>
+                                                    </select>
                                                 </div>
                                             </div>
                                         </div>
@@ -1297,6 +1332,7 @@ const ManageSTITests = () => {
                                                                 <div>Kết quả</div>
                                                                 <div>Khoảng bình thường</div>
                                                                 <div>Đơn vị</div>
+                                                                <div>Kết luận</div>
                                                                 <div>Nhân viên xét nghiệm</div>
                                                                 <div>Ngày xét nghiệm</div>
                                                             </div>
@@ -1313,6 +1349,9 @@ const ManageSTITests = () => {
                                                                     </div>
                                                                     <div className={styles.unit}>
                                                                         {result.unit || 'N/A'}
+                                                                    </div>
+                                                                    <div className={styles.conclusion}>
+                                                                        {result.conclusionDisplayName || result.conclusion || 'N/A'}
                                                                     </div>
                                                                     <div className={styles.reviewerName}>
                                                                         {result.reviewerName || 'N/A'}
@@ -1334,6 +1373,7 @@ const ManageSTITests = () => {
                                                             <div>Kết quả</div>
                                                             <div>Khoảng bình thường</div>
                                                             <div>Đơn vị</div>
+                                                            <div>Kết luận</div>
                                                             <div>Nhân viên xét nghiệm</div>
                                                             <div>Ngày xét nghiệm</div>
                                                         </div>
@@ -1350,6 +1390,9 @@ const ManageSTITests = () => {
                                                                 </div>
                                                                 <div className={styles.unit}>
                                                                     {result.unit || 'N/A'}
+                                                                </div>
+                                                                <div className={styles.conclusion}>
+                                                                    {result.conclusionDisplayName || result.conclusion || 'N/A'}
                                                                 </div>
                                                                 <div className={styles.reviewerName}>
                                                                     {result.reviewerName || 'N/A'}

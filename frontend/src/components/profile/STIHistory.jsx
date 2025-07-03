@@ -2058,6 +2058,7 @@ const STIHistory = () => {
                                                                     <th>Chỉ số</th>
                                                                     <th>Kết quả</th>
                                                                     <th>Giá trị tham chiếu</th>
+                                                                    <th>Kết luận</th>
                                                                 </tr>
                                                             </thead>
                                                             <tbody>
@@ -2097,6 +2098,7 @@ const STIHistory = () => {
                                                                 {result.unit && <span className={styles.unit}> {result.unit}</span>}
                                                             </td>
                                                             <td>{result.normalRange || result.referenceRange || 'N/A'}</td>
+                                                            <td>{result.conclusionDisplayName || result.conclusion || 'N/A'}</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
