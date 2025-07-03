@@ -388,20 +388,7 @@ const EditBlog = () => {
 
                         {/* Sections */}
                         <div className={styles.sectionsContainer}>
-                            <div className={styles.sectionsHeader}>
-                                <h3 className={styles.sectionsTitle}>Các phần nội dung (tùy chọn)</h3>
-                                <button
-                                    type="button"
-                                    onClick={addSection}
-                                    className={styles.addSectionBtn}
-                                >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                                    </svg>
-                                    Thêm phần
-                                </button>
-                            </div>
+                            <h3 className={styles.sectionsTitle}>Các phần nội dung (tùy chọn)</h3>
 
                             {formData.sections.map((section, index) => (
                                 <div key={index} className={styles.section}>
@@ -467,6 +454,17 @@ const EditBlog = () => {
                                     </div>
                                 </div>
                             ))}
+                            <button
+                                type="button"
+                                onClick={addSection}
+                                className={styles.addSectionBtn}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                Thêm phần
+                            </button>
                         </div>
 
                         {/* Form Actions */}

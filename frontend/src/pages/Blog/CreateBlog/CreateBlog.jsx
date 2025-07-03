@@ -312,20 +312,7 @@ const CreateBlog = () => {
 
                     {/* Sections */}
                     <div className={styles.formSection}>
-                        <div className={styles.sectionHeader}>
-                            <h3>Nội dung chi tiết</h3>
-                            <button
-                                type="button"
-                                className={styles.btnSecondary}
-                                onClick={addSection}
-                            >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
-                                Thêm phần
-                            </button>
-                        </div>
+                        <h3>Nội dung chi tiết</h3>
 
                         {formData.sections.map((section, index) => (
                             <div key={index} className={styles.blogSection}>
@@ -409,6 +396,17 @@ const CreateBlog = () => {
                                 </div>
                             </div>
                         ))}
+                        <button
+                            type="button"
+                            className={styles.btnSecondary}
+                            onClick={addSection}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Thêm phần
+                        </button>
                     </div>
 
                     {/* Form Actions */}
