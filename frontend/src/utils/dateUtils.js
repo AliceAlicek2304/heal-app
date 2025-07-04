@@ -52,9 +52,10 @@ export const parseDate = (dateInput) => {
             return isNaN(date.getTime()) ? null : date;
         }
 
-        // Handle date only format (e.g., "2024-12-10")
+        // Handle date only format (e.g., "2024-12-10") - LocalDate from Java
         const dateOnlyRegex = /^\d{4}-\d{2}-\d{2}$/;
         if (dateOnlyRegex.test(dateInput)) {
+            // Add time component to make it a valid date
             const date = new Date(dateInput + 'T00:00:00');
             return isNaN(date.getTime()) ? null : date;
         }

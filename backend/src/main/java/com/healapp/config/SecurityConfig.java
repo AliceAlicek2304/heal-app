@@ -132,6 +132,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/menstrual-cycle/{id}").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/menstrual-cycle/{id}/reminder").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/menstrual-cycle/{id}").authenticated()
+                // AI Analysis endpoints
+                .requestMatchers(HttpMethod.GET, "/menstrual-cycle/ai/personal-analysis").authenticated()
+                .requestMatchers(HttpMethod.GET, "/menstrual-cycle/ai/health-analysis").authenticated()
+                .requestMatchers(HttpMethod.GET, "/menstrual-cycle/ai/comparative-analysis").authenticated()
                 // API Chatbot History (Authenticated user endpoints)
                 .requestMatchers(HttpMethod.GET, "/chatbot/history").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/chatbot/history").authenticated()

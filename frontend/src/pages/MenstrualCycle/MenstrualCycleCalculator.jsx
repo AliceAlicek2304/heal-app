@@ -7,10 +7,12 @@ import { vi } from 'date-fns/locale';
 import Navbar from '../../components/layout/Navbar/Navbar';
 import Footer from '../../components/layout/Footer/Footer';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
-import { formatDate } from '../../utils/dateUtils';
+import { formatDate, formatDateTime, parseDate } from '../../utils/dateUtils';
 import { useAuthModal } from '../../hooks/useAuthModal';
 import LoginForm from '../../components/auth/Login/LoginForm';
 import RegisterForm from '../../components/auth/Register/RegisterForm';
+import AIAnalysisModal from '../../components/menstrual/AIAnalysisModal';
+
 import styles from './MenstrualCycleCalculator.module.css';
 
 const MenstrualCycleCalculator = () => {
@@ -41,6 +43,10 @@ const MenstrualCycleCalculator = () => {
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const cyclesPerPage = 5;
+    
+    // AI Analysis state
+    const [showAIAnalysis, setShowAIAnalysis] = useState(false);
+    const [aiAnalysisType, setAiAnalysisType] = useState('personal');
 
     const fetchCycles = useCallback(async () => {
         try {
@@ -51,8 +57,14 @@ const MenstrualCycleCalculator = () => {
 
             if (response.success && response.data) {
                 const sortedCycles = response.data.sort((a, b) => {
-                    const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
-                    const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+                    const dateA = a.createdAt ? parseDate(a.createdAt) : new Date(0);
+                    const dateB = b.createdAt ? parseDate(b.createdAt) : new Date(0);
+                    
+                    if (!dateA || !dateB) {
+                        console.warn('Invalid dates for sorting:', a.createdAt, b.createdAt);
+                        return 0;
+                    }
+                    
                     return dateB - dateA;
                 }); 
                 setCycles(sortedCycles);
@@ -240,23 +252,20 @@ const MenstrualCycleCalculator = () => {
 
     const formatCreatedAt = (dateTimeString) => {
         try {
-            if (!dateTimeString) return 'N/A';
-
-            let date;
-            if (Array.isArray(dateTimeString)) {
-                // Backend trả về LocalDateTime dạng [year, month, day, hour, minute, second]
-                const [year, month, day, hour = 0, minute = 0, second = 0] = dateTimeString;
-                date = new Date(year, month - 1, day, hour, minute, second);
-            } else {
-                date = new Date(dateTimeString);
-            }
-
-            if (!isValid(date)) {
-                console.warn('Invalid datetime:', dateTimeString);
+            if (!dateTimeString) {
                 return 'N/A';
             }
 
-            return format(date, 'dd/MM/yyyy HH:mm', { locale: vi });
+            // Sử dụng formatDateTime từ dateUtils thay vì date-fns
+            const result = formatDateTime(dateTimeString, {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            return result;
         } catch (error) {
             console.error('Error formatting datetime:', error, dateTimeString);
             return 'N/A';
@@ -266,13 +275,11 @@ const MenstrualCycleCalculator = () => {
     const getDaysUntilNextCycle = (cycle) => {
         try {
             const today = new Date();
-            let startDate;
+            const startDate = parseDate(cycle.startDate);
 
-            if (Array.isArray(cycle.startDate)) {
-                const [year, month, day] = cycle.startDate;
-                startDate = new Date(year, month - 1, day);
-            } else {
-                startDate = new Date(cycle.startDate);
+            if (!startDate) {
+                console.warn('Invalid start date:', cycle.startDate);
+                return 0;
             }
 
             const nextCycleDate = addDays(startDate, cycle.cycleLength);
@@ -349,6 +356,15 @@ const MenstrualCycleCalculator = () => {
         if (currentPage < totalPages) {
             setCurrentPage(currentPage + 1);
         }
+    };
+
+    const handleOpenAIAnalysis = (type) => {
+        setAiAnalysisType(type);
+        setShowAIAnalysis(true);
+    };
+
+    const handleCloseAIAnalysis = () => {
+        setShowAIAnalysis(false);
     };
 
     return (
@@ -642,10 +658,48 @@ const MenstrualCycleCalculator = () => {
                     {/* Lịch sử chu kỳ */}
                     {isAuthenticated && cycles.length > 0 && (
                         <div className={styles.historyCard}>
-                            <h2 className={styles.cardTitle}>
-                                Lịch sử chu kỳ kinh nguyệt
-                                <span className={styles.cycleCount}>({cycles.length} chu kỳ)</span>
-                            </h2>
+                            <div className={styles.historyHeader}>
+                                <h2 className={styles.cardTitle}>
+                                    Lịch sử chu kỳ kinh nguyệt
+                                    <span className={styles.cycleCount}>({cycles.length} chu kỳ)</span>
+                                </h2>
+                                
+                                {/* AI Analysis Buttons */}
+                                <div className={styles.aiAnalysisButtons}>
+                                    <button
+                                        className={styles.aiAnalysisBtn}
+                                        onClick={() => handleOpenAIAnalysis('personal')}
+                                        title="Phân tích chu kỳ cá nhân"
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                        </svg>
+                                        Phân tích AI
+                                    </button>
+                                    
+                                    <button
+                                        className={styles.aiAnalysisBtn}
+                                        onClick={() => handleOpenAIAnalysis('health')}
+                                        title="Phân tích sức khỏe chi tiết"
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                        </svg>
+                                        Sức khỏe
+                                    </button>
+                                    
+                                    <button
+                                        className={styles.aiAnalysisBtn}
+                                        onClick={() => handleOpenAIAnalysis('comparative')}
+                                        title="So sánh với chuẩn y tế"
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                        </svg>
+                                        So sánh
+                                    </button>
+                                </div>
+                            </div>
 
                             <div className={styles.cyclesList}>
                                 {currentCycles.map((cycle, index) => {
@@ -968,6 +1022,15 @@ const MenstrualCycleCalculator = () => {
                     </div>
                 </div>
             )}
+
+            {/* AI Analysis Modal */}
+            <AIAnalysisModal
+                isOpen={showAIAnalysis}
+                onClose={handleCloseAIAnalysis}
+                analysisType={aiAnalysisType}
+            />
+
+
         </div>
     );
 };

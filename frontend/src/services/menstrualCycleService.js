@@ -1,4 +1,5 @@
 import { authService } from './authService';
+import { parseDate } from '../utils/dateUtils';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -152,7 +153,13 @@ export const menstrualCycleService = {
         if (!ovulationDate) return 0.5;
         
         const today = new Date();
-        const ovulation = new Date(ovulationDate);
+        const ovulation = parseDate(ovulationDate);
+        
+        if (!ovulation) {
+            console.warn('Invalid ovulation date:', ovulationDate);
+            return 0.5;
+        }
+        
         const daysDiff = Math.round((today - ovulation) / (1000 * 60 * 60 * 24));
 
         if (daysDiff >= -5 && daysDiff <= 1) {
@@ -183,7 +190,13 @@ export const menstrualCycleService = {
         if (!ovulationDate) return false;
         
         const today = new Date();
-        const ovulation = new Date(ovulationDate);
+        const ovulation = parseDate(ovulationDate);
+        
+        if (!ovulation) {
+            console.warn('Invalid ovulation date:', ovulationDate);
+            return false;
+        }
+        
         const daysDiff = Math.round((today - ovulation) / (1000 * 60 * 60 * 24));
         
         // Thời kỳ dễ thụ thai: 5 ngày trước đến 1 ngày sau rụng trứng
@@ -196,8 +209,13 @@ export const menstrualCycleService = {
             return null;
         }
 
-        const startDate = new Date(cycle.startDate);
-        const ovulationDate = new Date(cycle.ovulationDate);
+        const startDate = parseDate(cycle.startDate);
+        const ovulationDate = parseDate(cycle.ovulationDate);
+        
+        if (!startDate || !ovulationDate) {
+            console.warn('Invalid dates in cycle:', cycle);
+            return null;
+        }
         
         // Ngày kết thúc kinh nguyệt
         const endDate = new Date(startDate);

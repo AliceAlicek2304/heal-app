@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { menstrualCycleService } from '../../services/menstrualCycleService';
 import LoadingSpinner from '../common/LoadingSpinner/LoadingSpinner';
-import { formatDate } from '../../utils/dateUtils';
+import { formatDate, parseDate } from '../../utils/dateUtils';
 import styles from './MenstrualHistoryComponent.module.css';
 
 const MenstrualHistoryComponent = () => {
@@ -43,7 +43,15 @@ const MenstrualHistoryComponent = () => {
             if (response.success) {
                 // Sắp xếp chu kỳ theo thời gian bắt đầu giảm dần (mới nhất lên đầu)
                 const sortedCycles = (response.data || []).sort((a, b) => {
-                    return new Date(b.startDate) - new Date(a.startDate);
+                    const dateA = parseDate(a.startDate);
+                    const dateB = parseDate(b.startDate);
+                    
+                    if (!dateA || !dateB) {
+                        console.warn('Invalid dates for sorting:', a.startDate, b.startDate);
+                        return 0;
+                    }
+                    
+                    return dateB - dateA;
                 });
 
                 setCycles(sortedCycles);
