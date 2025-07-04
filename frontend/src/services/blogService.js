@@ -364,6 +364,24 @@ export const blogService = {
         } catch (error) {
             return { success: false, message: 'Không thể tải bài viết mới nhất' };
         }
+    },
+
+    // Lấy blog liên quan
+    getRelatedPosts: async (postId, limit = 3) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/blog/${postId}/related?limit=${limit}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return response.json();
+        } catch (error) {
+            return { success: false, message: 'Không thể tải blog liên quan' };
+        }
     }
 };
 

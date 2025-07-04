@@ -380,4 +380,18 @@ public class BlogPostController {
             return ResponseEntity.badRequest().body(response);
         }
     }
+
+    @GetMapping("/{postId}/related")
+    public ResponseEntity<ApiResponse<List<BlogPostResponse>>> getRelatedPosts(
+            @PathVariable Long postId,
+            @RequestParam(defaultValue = "3") int limit) {
+
+        ApiResponse<List<BlogPostResponse>> response = blogPostService.getRelatedPosts(postId, limit);
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
 }

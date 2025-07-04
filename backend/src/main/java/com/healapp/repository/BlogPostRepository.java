@@ -72,4 +72,12 @@ public interface BlogPostRepository extends JpaRepository<BlogPost, Long> {
 
     // Lấy các bài viết mới nhất theo trạng thái
     List<BlogPost> findByStatusOrderByCreatedAtDesc(BlogPostStatus status, Pageable pageable);
+
+    List<BlogPost> findByCategoryAndStatusAndPostIdNotOrderByCreatedAtDesc(Category category, BlogPostStatus status, Long postId, Pageable pageable);
+    
+    List<BlogPost> findByAuthorAndStatusAndPostIdNotOrderByCreatedAtDesc(UserDtls author, BlogPostStatus status, Long postId, Pageable pageable);
+    
+    List<BlogPost> findByStatusAndPostIdNotOrderByCreatedAtDesc(BlogPostStatus status, Long postId, Pageable pageable);
+
+    List<BlogPost> findByCategoryOrAuthorAndStatusAndPostIdNotOrderByCreatedAtDesc(Category category, UserDtls author, BlogPostStatus status, Long postId, Pageable pageable);
 }

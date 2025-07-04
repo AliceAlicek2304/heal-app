@@ -62,6 +62,7 @@ public class SecurityConfig {
                 // API Blog (Public GET endpoints)
                 .requestMatchers(HttpMethod.GET, "/blog").permitAll()
                 .requestMatchers(HttpMethod.GET, "/blog/{postId}").permitAll()
+                .requestMatchers(HttpMethod.GET, "/blog/{postId}/related").permitAll()
                 .requestMatchers(HttpMethod.GET, "/blog/category/{categoryId}").permitAll()
                 .requestMatchers(HttpMethod.GET, "/blog/search").permitAll()
                 .requestMatchers(HttpMethod.GET, "/blog/latest").permitAll()

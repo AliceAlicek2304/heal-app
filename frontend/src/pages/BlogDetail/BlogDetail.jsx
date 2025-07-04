@@ -9,16 +9,21 @@ import { authService } from '../../services/authService';
 import { blogService } from '../../services/blogService';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
 import styles from './BlogDetail.module.css';
+import RelatedBlogs from '../../components/blog/RelatedBlogs/RelatedBlogs';
 
 const BlogDetail = () => {
     const { id } = useParams();
     const toast = useToast();
     const [blogPost, setBlogPost] = useState(null);
+    const [relatedPosts, setRelatedPosts] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchBlogPost();
-    }, [id]); const fetchBlogPost = async () => {
+        fetchRelatedPosts();
+    }, [id]);
+
+    const fetchBlogPost = async () => {
         try {
             setLoading(true);
 
@@ -34,6 +39,17 @@ const BlogDetail = () => {
             console.error('Error fetching blog post:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchRelatedPosts = async () => {
+        try {
+            const response = await blogService.getRelatedPosts(id, 3);
+            if (response.success && response.data) {
+                setRelatedPosts(response.data);
+            }
+        } catch (error) {
+            console.error('Error fetching related posts:', error);
         }
     };
 
@@ -177,6 +193,9 @@ const BlogDetail = () => {
                             })}
                     </div>
                 )}
+
+                {/* Related Blogs */}
+                <RelatedBlogs relatedPosts={relatedPosts} />
 
                 {/* Navigation */}
                 <div className={styles.blogDetailNavigation}>

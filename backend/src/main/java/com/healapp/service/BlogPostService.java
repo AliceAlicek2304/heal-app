@@ -9,6 +9,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -401,6 +402,74 @@ public class BlogPostService {
             return ApiResponse.success("Latest blog posts retrieved successfully", responses);
         } catch (Exception e) {
             return ApiResponse.error("Failed to retrieve latest blog posts: " + e.getMessage());
+        }
+    }
+
+    // Lấy blog liên quan (cùng category HOẶC cùng tác giả) - chỉ lấy CONFIRMED
+    public ApiResponse<List<BlogPostResponse>> getRelatedPosts(Long postId, int limit) {
+        try {
+            Optional<BlogPost> currentPost = blogPostRepository.findById(postId);
+            if (currentPost.isEmpty()) {
+                return ApiResponse.error("Blog post not found");
+            }
+
+            BlogPost post = currentPost.get();
+            List<BlogPost> relatedPosts = new ArrayList<>();
+
+            // Lấy blog cùng category (CONFIRMED)
+            List<BlogPost> sameCategoryPosts = blogPostRepository
+                    .findByCategoryAndStatusAndPostIdNotOrderByCreatedAtDesc(
+                            post.getCategory(), 
+                            BlogPostStatus.CONFIRMED, 
+                            postId, 
+                            PageRequest.of(0, limit));
+
+            relatedPosts.addAll(sameCategoryPosts);
+
+            // Lấy blog cùng tác giả (CONFIRMED) nếu chưa đủ
+            if (relatedPosts.size() < limit) {
+                int remainingLimit = limit - relatedPosts.size();
+                List<BlogPost> sameAuthorPosts = blogPostRepository
+                        .findByAuthorAndStatusAndPostIdNotOrderByCreatedAtDesc(
+                                post.getAuthor(), 
+                                BlogPostStatus.CONFIRMED, 
+                                postId, 
+                                PageRequest.of(0, remainingLimit));
+                
+                // Loại bỏ trùng lặp
+                for (BlogPost authorPost : sameAuthorPosts) {
+                    if (relatedPosts.stream().noneMatch(p -> p.getPostId().equals(authorPost.getPostId()))) {
+                        relatedPosts.add(authorPost);
+                        if (relatedPosts.size() >= limit) break;
+                    }
+                }
+            }
+
+            // Nếu vẫn chưa đủ, lấy thêm blog mới nhất (CONFIRMED)
+            if (relatedPosts.size() < limit) {
+                int remainingLimit = limit - relatedPosts.size();
+                List<BlogPost> latestPosts = blogPostRepository
+                        .findByStatusAndPostIdNotOrderByCreatedAtDesc(
+                                BlogPostStatus.CONFIRMED, 
+                                postId, 
+                                PageRequest.of(0, remainingLimit));
+                
+                // Loại bỏ trùng lặp
+                for (BlogPost latestPost : latestPosts) {
+                    if (relatedPosts.stream().noneMatch(p -> p.getPostId().equals(latestPost.getPostId()))) {
+                        relatedPosts.add(latestPost);
+                        if (relatedPosts.size() >= limit) break;
+                    }
+                }
+            }
+
+            List<BlogPostResponse> response = relatedPosts.stream()
+                    .map(this::convertToResponse)
+                    .toList();
+
+            return ApiResponse.success("Related posts retrieved successfully", response);
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to get related posts: " + e.getMessage());
         }
     }
 
