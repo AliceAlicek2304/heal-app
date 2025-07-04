@@ -64,13 +64,10 @@ public class CategoryService {
 
     public ApiResponse<String> deleteCategory(Long categoryId) {
         try {
-            // Kiểm tra category có tồn tại không
-            Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
-            if (categoryOpt.isEmpty()) {
-                return ApiResponse.error("Category not found");
-            }
-
-            Category category = categoryOpt.get();
+            Category category = categoryRepository.findById(categoryId)
+                    .orElseThrow(() -> new RuntimeException("Category not found"));
+            category.setIsActive(false);
+            categoryRepository.save(category);
 
             // Cập nhật trạng thái của tất cả các bài viết thuộc category này thành CANCELED
             List<BlogPost> affectedPosts = category.getPosts();
@@ -87,11 +84,8 @@ public class CategoryService {
             // Do có cascade = CascadeType.ALL trong mối quan hệ @OneToMany nên việc cập nhật các bài viếtsẽ được thực hiện khi category được cập nhật
             categoryRepository.save(category);
 
-            // Xóa category
-            categoryRepository.deleteById(categoryId);
-
-            return ApiResponse.success("Category deleted successfully and " + affectedPosts.size() +
-                    " related blog posts have been canceled", null);
+            return ApiResponse.success("Category deleted (soft delete) successfully and " + affectedPosts.size() +
+                    " related blog posts have been canceled");
         } catch (Exception e) {
             return ApiResponse.error("Failed to delete category: " + e.getMessage());
         }
@@ -111,7 +105,7 @@ public class CategoryService {
 
     public ApiResponse<List<Category>> getAllCategories() {
         try {
-            List<Category> categories = categoryRepository.findAll();
+            List<Category> categories = categoryRepository.findAllByIsActiveTrue();
             return ApiResponse.success("Categories retrieved successfully", categories);
         } catch (Exception e) {
             return ApiResponse.error("Failed to retrieve categories: " + e.getMessage());
@@ -121,7 +115,7 @@ public class CategoryService {
     // Thêm method mới để trả về categories với số lượng bài viết
     public ApiResponse<List<CategoryResponse>> getAllCategoriesWithPostCount() {
         try {
-            List<Category> categories = categoryRepository.findAll();
+            List<Category> categories = categoryRepository.findAllByIsActiveTrue();
             List<CategoryResponse> categoryResponses = categories.stream()
                     .map(CategoryResponse::new)
                     .collect(Collectors.toList());

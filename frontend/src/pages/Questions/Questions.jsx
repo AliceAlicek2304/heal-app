@@ -172,7 +172,7 @@ const Questions = () => {
 
                                             <div className={styles.questionMeta}>
                                                 <span className={styles.questionCategory}>
-                                                    {question.categoryName || 'Chưa phân loại'}
+                                                    {question.categoryName || 'Danh mục đã bị xoá'}
                                                 </span>
                                                 <span className={styles.questionDate}>
                                                     {formatDate(question.createdAt)}
@@ -246,7 +246,7 @@ const Questions = () => {
                                 <div className={styles.detailRow}>
                                     <strong>Danh mục:</strong>
                                     <span className={styles.questionCategoryTag}>
-                                        {selectedQuestion.categoryName || 'Chưa phân loại'}
+                                        {selectedQuestion.categoryName || 'Danh mục đã bị xoá'}
                                     </span>
                                 </div>
 
