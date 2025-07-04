@@ -28,44 +28,34 @@ const MenstrualCycleCalculator = () => {
     } = useAuthModal();
 
     const [formData, setFormData] = useState({
-        startDate: new Date().toISOString().split('T')[0],
+        startDate: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         numberOfDays: 5,
         cycleLength: 28,
-    }); const [cycles, setCycles] = useState([]);
+    });
+    const [cycles, setCycles] = useState([]);
     const [selectedCycle, setSelectedCycle] = useState(null);
     const [loading, setLoading] = useState(false);
     const [calculationResult, setCalculationResult] = useState(null);
+    const [showSaveOptions, setShowSaveOptions] = useState(false);
+    
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const cyclesPerPage = 5;
 
     const fetchCycles = useCallback(async () => {
         try {
             setLoading(true);
-            const userId = user?.userId || user?.id;
 
-            if (!userId) {
-                // Fallback: sử dụng endpoint dựa trên authentication context
-                // Backend sẽ tự động lấy user từ JWT token
-                const response = await menstrualCycleService.getCurrentUserCycles();
+            // Sử dụng endpoint mới để lấy chu kỳ của current user
+            const response = await menstrualCycleService.getCurrentUserCycles();
 
-                if (response.success && response.data) {
-                    const sortedCycles = response.data.sort((a, b) => {
-                        const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
-                        const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
-                        return dateB - dateA;
-                    }); setCycles(sortedCycles);
-                } else {
-                    toast.error(response.message || "Không thể tải lịch sử chu kỳ kinh nguyệt");
-                }
-                return;
-            }
-
-            const response = await menstrualCycleService.getCyclesByUserId(userId);
             if (response.success && response.data) {
-                // Sắp xếp theo ngày tạo mới nhất
                 const sortedCycles = response.data.sort((a, b) => {
                     const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
                     const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
                     return dateB - dateA;
-                }); setCycles(sortedCycles);
+                }); 
+                setCycles(sortedCycles);
             } else {
                 toast.error(response.message || "Không thể tải lịch sử chu kỳ kinh nguyệt");
             }
@@ -75,7 +65,9 @@ const MenstrualCycleCalculator = () => {
         } finally {
             setLoading(false);
         }
-    }, [user, toast]); useEffect(() => {
+    }, [toast]);
+
+    useEffect(() => {
         if (isAuthenticated && user) {
             fetchCycles();
         }
@@ -102,31 +94,29 @@ const MenstrualCycleCalculator = () => {
                 return;
             }
 
-            setLoading(true); const cycleData = {
+            setLoading(true);
+            const cycleData = {
                 startDate: formData.startDate,
                 numberOfDays: parseInt(formData.numberOfDays),
                 cycleLength: parseInt(formData.cycleLength)
             };
 
-            const response = await menstrualCycleService.addCycle(cycleData);
+            // Sử dụng API tính toán mới (tự động phân tích lịch sử nếu đã đăng nhập)
+            const response = await menstrualCycleService.calculateCycle(cycleData);
 
             if (response.success && response.data) {
                 const result = response.data;
 
-                // Tính toán các ngày quan trọng
-                const calculatedDates = menstrualCycleService.calculateCycleDates(result);
-
-                setCalculationResult({
-                    ...result,
-                    ...calculatedDates
-                });
-
-                // Refresh danh sách chu kỳ
-                if (isAuthenticated) {
-                    await fetchCycles();
+                // Sử dụng dữ liệu từ backend thay vì tính toán ở frontend
+                setCalculationResult(result);
+                setShowSaveOptions(true);
+                
+                // Hiển thị thông báo khác nhau tùy theo trạng thái đăng nhập
+                if (result.hasHistoricalData) {
+                    toast.success(`Tính toán chu kỳ kinh nguyệt thành công! (Phân tích dựa trên ${result.totalCycles} chu kỳ)`);
+                } else {
+                    toast.success("Tính toán chu kỳ kinh nguyệt thành công!");
                 }
-
-                toast.success("Đã tính toán chu kỳ kinh nguyệt thành công!");
             } else {
                 toast.error(response.message || "Không thể tính toán chu kỳ kinh nguyệt");
             }
@@ -138,12 +128,59 @@ const MenstrualCycleCalculator = () => {
         }
     };
 
+    const handleSaveCycle = async () => {
+        if (!calculationResult) {
+            toast.error("Không có kết quả tính toán để lưu");
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const cycleData = {
+                startDate: calculationResult.startDate,
+                numberOfDays: calculationResult.numberOfDays,
+                cycleLength: calculationResult.cycleLength
+            };
+
+            const response = await menstrualCycleService.addCycle(cycleData);
+
+            if (response.success && response.data) {
+                toast.success("Đã lưu chu kỳ kinh nguyệt thành công!");
+                setShowSaveOptions(false);
+                setCalculationResult(null);
+                
+                // Refresh danh sách chu kỳ và reset về trang 1
+                if (isAuthenticated) {
+                    await fetchCycles();
+                    setCurrentPage(1);
+                }
+            } else {
+                toast.error(response.message || "Không thể lưu chu kỳ kinh nguyệt");
+            }
+        } catch (err) {
+            console.error("Error saving cycle:", err);
+            toast.error("Đã xảy ra lỗi khi lưu chu kỳ");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleRecalculate = () => {
+        setCalculationResult(null);
+        setShowSaveOptions(false);
+    };
+
     const handleViewCycleDetails = (cycle) => {
-        const enhancedCycle = menstrualCycleService.calculateCycleDates(cycle);
-        setSelectedCycle({
-            ...cycle,
-            ...enhancedCycle
-        });
+        // Sử dụng dữ liệu từ backend nếu có, nếu không thì tính toán ở frontend
+        if (cycle.endDate && cycle.nextCycleDate && cycle.fertileStart && cycle.fertileEnd) {
+            setSelectedCycle(cycle);
+        } else {
+            const enhancedCycle = menstrualCycleService.calculateCycleDates(cycle);
+            setSelectedCycle({
+                ...cycle,
+                ...enhancedCycle
+            });
+        }
     };
 
     const handleToggleReminder = async (cycleId, isEnabled) => {
@@ -154,6 +191,7 @@ const MenstrualCycleCalculator = () => {
             if (response.success) {
                 toast.success(response.message || "Đã cập nhật cài đặt nhắc nhở");
                 await fetchCycles();
+                // Giữ nguyên trang hiện tại khi chỉ cập nhật nhắc nhở
             } else {
                 toast.error(response.message || "Không thể cập nhật cài đặt nhắc nhở");
             }
@@ -174,15 +212,21 @@ const MenstrualCycleCalculator = () => {
                 setLoading(true);
                 const response = await menstrualCycleService.deleteCycle(cycleId);
 
-                if (response.success) {
-                    toast.success("Đã xóa chu kỳ kinh nguyệt thành công!");
-                    await fetchCycles();
+                            if (response.success) {
+                toast.success("Đã xóa chu kỳ kinh nguyệt thành công!");
+                await fetchCycles();
+                
+                // Reset về trang 1 nếu trang hiện tại không còn dữ liệu
+                const newTotalPages = Math.ceil((cycles.length - 1) / cyclesPerPage);
+                if (currentPage > newTotalPages && newTotalPages > 0) {
+                    setCurrentPage(newTotalPages);
+                }
 
-                    // Đóng modal nếu đang xem chu kỳ bị xóa
-                    if (selectedCycle && selectedCycle.id === cycleId) {
-                        setSelectedCycle(null);
-                    }
-                } else {
+                // Đóng modal nếu đang xem chu kỳ bị xóa
+                if (selectedCycle && selectedCycle.id === cycleId) {
+                    setSelectedCycle(null);
+                }
+            } else {
                     toast.error(response.message || "Không thể xóa chu kỳ kinh nguyệt");
                 }
             } catch (err) {
@@ -250,7 +294,7 @@ const MenstrualCycleCalculator = () => {
 
     const getStatusText = (cycle) => {
         const daysUntil = getDaysUntilNextCycle(cycle);
-        const isInFertile = menstrualCycleService.isInFertilePeriod(cycle.ovulationDate);
+        const isInFertile = cycle.inFertilePeriod || menstrualCycleService.isInFertilePeriod(cycle.ovulationDate);
 
         if (daysUntil <= 0) {
             return { text: 'Chu kỳ mới đã bắt đầu', color: '#e74c3c' };
@@ -269,51 +313,43 @@ const MenstrualCycleCalculator = () => {
             ...prev,
             [name]: value
         }));
-    }; if (!isAuthenticated) {
-        return (
-            <div className={styles.authRequired} style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-                <Navbar />
-                <div className={styles.authMessage} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    <h2>Đăng nhập để sử dụng tính năng này</h2>
-                    <p>Vui lòng đăng nhập để theo dõi chu kỳ kinh nguyệt của bạn.</p>
-                    <button
-                        className={styles.loginBtn}
-                        onClick={openLoginModal}
-                    >
-                        Đăng nhập
-                    </button>
-                </div>
-                <Footer />
+    }; 
 
-                {/* Login Modal */}
-                {showLoginModal && (
-                    <div className={styles.modalOverlay} onClick={closeModals}>
-                        <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-                            <LoginForm
-                                onClose={closeModals}
-                                onSwitchToRegister={switchToRegister} onLoginSuccess={() => {
-                                    closeModals();
-                                    // Không cần toast ở đây vì LoginForm đã có toast
-                                }}
-                            />
-                        </div>
-                    </div>
-                )}
+    const getConfidenceLevelClass = (confidenceLevel) => {
+        if (!confidenceLevel) return '';
+        switch (confidenceLevel.toLowerCase()) {
+            case 'cao':
+                return styles.confidenceLevelHigh;
+            case 'trung bình':
+                return styles.confidenceLevelMedium;
+            case 'thấp':
+                return styles.confidenceLevelLow;
+            default:
+                return '';
+        }
+    };
 
-                {/* Register Modal */}
-                {showRegisterModal && (
-                    <div className={styles.modalOverlay} onClick={closeModals}>
-                        <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-                            <RegisterForm
-                                onClose={closeModals}
-                                onSwitchToLogin={switchToLogin}
-                            />
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
-    }
+    // Pagination logic
+    const indexOfLastCycle = currentPage * cyclesPerPage;
+    const indexOfFirstCycle = indexOfLastCycle - cyclesPerPage;
+    const currentCycles = cycles.slice(indexOfFirstCycle, indexOfLastCycle);
+    const totalPages = Math.ceil(cycles.length / cyclesPerPage);
+
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+    };
+
+    const handlePreviousPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+    };
+
+    const handleNextPage = () => {
+        if (currentPage < totalPages) {
+            setCurrentPage(currentPage + 1);
+        }
+    };
 
     return (
         <div className={styles.menstrualCalculator}>
@@ -340,6 +376,35 @@ const MenstrualCycleCalculator = () => {
                     <div className={styles.calculatorCard}>
                         <h2 className={styles.cardTitle}>Nhập thông tin chu kỳ</h2>
 
+                        {/* Thông báo khuyến khích đăng nhập */}
+                        {!isAuthenticated && (
+                            <div className={styles.loginPrompt}>
+                                <div className={styles.loginPromptIcon}>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                                        <polyline points="10,17 15,12 10,7"></polyline>
+                                        <line x1="15" y1="12" x2="3" y2="12"></line>
+                                    </svg>
+                                </div>
+                                <div className={styles.loginPromptContent}>
+                                    <h4>Đăng nhập để có kết quả chính xác hơn!</h4>
+                                    <p>Khi đăng nhập, hệ thống sẽ phân tích lịch sử chu kỳ của bạn để đưa ra dự đoán chính xác hơn dựa trên pattern thực tế.</p>
+                                    <button
+                                        type="button"
+                                        className={styles.loginPromptBtn}
+                                        onClick={openLoginModal}
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                                            <polyline points="10,17 15,12 10,7"></polyline>
+                                            <line x1="15" y1="12" x2="3" y2="12"></line>
+                                        </svg>
+                                        Đăng nhập ngay
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         <form onSubmit={handleCalculate} className={styles.calculatorForm}>
                             <div className={styles.formRow}>
                                 <div className={styles.formGroup}>
@@ -350,9 +415,10 @@ const MenstrualCycleCalculator = () => {
                                         name="startDate"
                                         value={formData.startDate}
                                         onChange={handleInputChange}
-                                        max={new Date().toISOString().split('T')[0]}
+                                        max={new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
                                         required
                                     />
+                                    <small>Chỉ chọn ngày trong quá khứ</small>
                                 </div>
 
                                 <div className={styles.formGroup}>
@@ -412,6 +478,42 @@ const MenstrualCycleCalculator = () => {
                     {calculationResult && (
                         <div className={styles.resultCard}>
                             <h2 className={styles.cardTitle}>Kết quả tính toán</h2>
+
+                            {/* Thông tin phân tích lịch sử */}
+                            {calculationResult.hasHistoricalData && (
+                                <div className={styles.historicalAnalysis}>
+                                    <div className={styles.analysisHeader}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14,2 14,8 20,8"></polyline>
+                                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                                            <polyline points="10,9 9,9 8,9"></polyline>
+                                        </svg>
+                                        <span>Phân tích dựa trên {calculationResult.totalCycles} chu kỳ</span>
+                                    </div>
+                                    <div className={styles.analysisDetails}>
+                                        <div className={styles.analysisItem}>
+                                            <span className={styles.analysisLabel}>Độ dài chu kỳ trung bình:</span>
+                                            <span className={styles.analysisValue}>{calculationResult.averageCycleLength?.toFixed(1)} ngày</span>
+                                        </div>
+                                        <div className={styles.analysisItem}>
+                                            <span className={styles.analysisLabel}>Độ tin cậy:</span>
+                                            <span className={`${styles.analysisValue} ${getConfidenceLevelClass(calculationResult.confidenceLevel)}`}>
+                                                {calculationResult.confidenceLevel}
+                                            </span>
+                                        </div>
+                                        {calculationResult.predictedNextCycle && (
+                                            <div className={styles.analysisItem}>
+                                                <span className={styles.analysisLabel}>Dự đoán chu kỳ tiếp theo:</span>
+                                                <span className={styles.analysisValue}>
+                                                    {formatDate(calculationResult.predictedNextCycle)}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
 
                             <div className={styles.resultGrid}>
                                 <div className={styles.resultItem}>
@@ -478,7 +580,7 @@ const MenstrualCycleCalculator = () => {
                                 </div>
                             </div>
 
-                            {calculationResult.isInFertilePeriod && (
+                            {calculationResult.inFertilePeriod && (
                                 <div className={styles.fertileAlert}>
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
@@ -488,11 +590,57 @@ const MenstrualCycleCalculator = () => {
                                     <span>Bạn đang trong thời kỳ dễ thụ thai!</span>
                                 </div>
                             )}
+
+                            {/* Nút lưu và tính toán lại */}
+                            {showSaveOptions && (
+                                <div className={styles.saveOptions}>
+                                    <div className={styles.saveOptionsContent}>
+                                        <p>Bạn có muốn lưu kết quả tính toán này không?</p>
+                                        <div className={styles.saveButtons}>
+                                            <button
+                                                type="button"
+                                                className={styles.btnSecondary}
+                                                onClick={handleRecalculate}
+                                                disabled={loading}
+                                            >
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <polyline points="23,4 23,10 17,10"></polyline>
+                                                    <polyline points="1,20 1,14 7,14"></polyline>
+                                                    <path d="M20.49,9A9,9,0,0,0,5.64,5.64L1,10m22,4a9,9,0,0,1-14.85,4.36L23,14"></path>
+                                                </svg>
+                                                Tính toán lại
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={styles.btnPrimary}
+                                                onClick={handleSaveCycle}
+                                                disabled={loading}
+                                            >
+                                                {loading ? (
+                                                    <>
+                                                        <LoadingSpinner size="small" />
+                                                        Đang lưu...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                                            <polyline points="17,21 17,13 7,13 7,21"></polyline>
+                                                            <polyline points="7,3 7,8 15,8"></polyline>
+                                                        </svg>
+                                                        Lưu chu kỳ
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
                     {/* Lịch sử chu kỳ */}
-                    {cycles.length > 0 && (
+                    {isAuthenticated && cycles.length > 0 && (
                         <div className={styles.historyCard}>
                             <h2 className={styles.cardTitle}>
                                 Lịch sử chu kỳ kinh nguyệt
@@ -500,17 +648,20 @@ const MenstrualCycleCalculator = () => {
                             </h2>
 
                             <div className={styles.cyclesList}>
-                                {cycles.map((cycle, index) => {
+                                {currentCycles.map((cycle, index) => {
                                     const status = getStatusText(cycle);
                                     const daysUntil = getDaysUntilNextCycle(cycle);
-                                    const probability = menstrualCycleService.calculateCurrentPregnancyProbability(cycle.ovulationDate);
+                                    // Sử dụng dữ liệu từ backend thay vì tính toán ở frontend
+                                    const probability = cycle.currentPregnancyProbability || menstrualCycleService.calculateCurrentPregnancyProbability(cycle.ovulationDate);
+                                    // Tính index thực tế trong toàn bộ danh sách
+                                    const actualIndex = indexOfFirstCycle + index;
 
                                     return (
                                         <div key={cycle.id} className={styles.cycleItem}>
                                             <div className={styles.cycleHeader}>
                                                 <div className={styles.cycleInfo}>
                                                     <span className={styles.cycleName}>
-                                                        Chu kỳ #{cycles.length - index}
+                                                        Chu kỳ #{cycles.length - actualIndex}
                                                     </span>
                                                     <span className={styles.cycleDate}>
                                                         {formatDate(cycle.startDate)}
@@ -603,11 +754,79 @@ const MenstrualCycleCalculator = () => {
                                     );
                                 })}
                             </div>
+
+                            {/* Pagination */}
+                            {totalPages > 1 && (
+                                <div className={styles.pagination}>
+                                    <div className={styles.paginationInfo}>
+                                        <span>
+                                            Hiển thị {indexOfFirstCycle + 1}-{Math.min(indexOfLastCycle, cycles.length)} trong tổng số {cycles.length} chu kỳ
+                                        </span>
+                                    </div>
+                                    <div className={styles.paginationControls}>
+                                        <button
+                                            className={`${styles.paginationBtn} ${currentPage === 1 ? styles.disabled : ''}`}
+                                            onClick={handlePreviousPage}
+                                            disabled={currentPage === 1}
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <polyline points="15,18 9,12 15,6"></polyline>
+                                            </svg>
+                                            Trước
+                                        </button>
+
+                                        <div className={styles.pageNumbers}>
+                                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNumber => {
+                                                // Hiển thị tối đa 5 trang, với logic thông minh
+                                                if (totalPages <= 5) {
+                                                    return (
+                                                        <button
+                                                            key={pageNumber}
+                                                            className={`${styles.pageBtn} ${currentPage === pageNumber ? styles.active : ''}`}
+                                                            onClick={() => handlePageChange(pageNumber)}
+                                                        >
+                                                            {pageNumber}
+                                                        </button>
+                                                    );
+                                                } else {
+                                                    // Logic hiển thị trang thông minh cho nhiều trang
+                                                    if (pageNumber === 1 || pageNumber === totalPages || 
+                                                        (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)) {
+                                                        return (
+                                                            <button
+                                                                key={pageNumber}
+                                                                className={`${styles.pageBtn} ${currentPage === pageNumber ? styles.active : ''}`}
+                                                                onClick={() => handlePageChange(pageNumber)}
+                                                            >
+                                                                {pageNumber}
+                                                            </button>
+                                                        );
+                                                    } else if (pageNumber === currentPage - 2 || pageNumber === currentPage + 2) {
+                                                        return <span key={pageNumber} className={styles.pageEllipsis}>...</span>;
+                                                    }
+                                                    return null;
+                                                }
+                                            })}
+                                        </div>
+
+                                        <button
+                                            className={`${styles.paginationBtn} ${currentPage === totalPages ? styles.disabled : ''}`}
+                                            onClick={handleNextPage}
+                                            disabled={currentPage === totalPages}
+                                        >
+                                            Sau
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <polyline points="9,18 15,12 9,6"></polyline>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
                     {/* Empty state */}
-                    {!loading && cycles.length === 0 && (
+                    {!loading && isAuthenticated && cycles.length === 0 && (
                         <div className={styles.emptyState}>
                             <div className={styles.emptyIcon}>
                                 <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -621,6 +840,8 @@ const MenstrualCycleCalculator = () => {
                             <p>Hãy nhập thông tin chu kỳ kinh nguyệt đầu tiên để bắt đầu theo dõi!</p>
                         </div>
                     )}
+
+
                 </div>
 
                 {/* Modal chi tiết chu kỳ */}
@@ -693,7 +914,7 @@ const MenstrualCycleCalculator = () => {
                                     </div>
                                 </div>
 
-                                {selectedCycle.isInFertilePeriod && (
+                                {selectedCycle.inFertilePeriod && (
                                     <div className={styles.fertileAlert}>
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
@@ -716,6 +937,37 @@ const MenstrualCycleCalculator = () => {
                 )}
             </div>
             <Footer />
+
+            {/* Login Modal */}
+            {showLoginModal && (
+                <div className={styles.modalOverlay} onClick={closeModals}>
+                    <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+                        <LoginForm
+                            onClose={closeModals}
+                            onSwitchToRegister={switchToRegister}
+                            onLoginSuccess={() => {
+                                closeModals();
+                                // Refresh data after login
+                                if (isAuthenticated) {
+                                    fetchCycles();
+                                }
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* Register Modal */}
+            {showRegisterModal && (
+                <div className={styles.modalOverlay} onClick={closeModals}>
+                    <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+                        <RegisterForm
+                            onClose={closeModals}
+                            onSwitchToLogin={switchToLogin}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

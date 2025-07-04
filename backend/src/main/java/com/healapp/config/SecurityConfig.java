@@ -126,6 +126,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/sti-services/tests/{testId}/cancel").authenticated()
                 .requestMatchers(HttpMethod.GET, "/sti-services/tests/{testId}/results").authenticated()
                 .requestMatchers(HttpMethod.POST, "/menstrual-cycle/addCycle").authenticated()
+                .requestMatchers(HttpMethod.POST, "/menstrual-cycle/calculate").permitAll()
                 .requestMatchers(HttpMethod.GET, "/menstrual-cycle/my-cycles").authenticated()
                 .requestMatchers(HttpMethod.GET, "/menstrual-cycle/{userId}").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/menstrual-cycle/{id}").authenticated()

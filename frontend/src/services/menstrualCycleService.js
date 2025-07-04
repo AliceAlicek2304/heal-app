@@ -24,6 +24,27 @@ export const menstrualCycleService = {
         }
     },
 
+    // Tính toán chu kỳ kinh nguyệt không lưu vào database
+    calculateCycle: async (cycleData) => {
+        try {
+            const response = await authService.apiCall(`${API_BASE_URL}/menstrual-cycle/calculate`, {
+                method: 'POST',
+                body: JSON.stringify(cycleData)
+            });
+
+            if (response.status === 401) {
+                authService.logout();
+                return { success: false, message: 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại' };
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error calculating menstrual cycle:', error);
+            return { success: false, message: 'Không thể kết nối đến server' };
+        }
+    },
+
     // Lấy tất cả chu kỳ của user
     getCyclesByUserId: async (userId) => {
         try {
@@ -40,6 +61,26 @@ export const menstrualCycleService = {
             return data;
         } catch (error) {
             console.error('Error fetching menstrual cycles:', error);
+            return { success: false, message: 'Không thể kết nối đến server' };
+        }
+    },
+
+    // Lấy chu kỳ của current user (giống như STI /my-tests)
+    getCurrentUserCycles: async () => {
+        try {
+            const response = await authService.apiCall(`${API_BASE_URL}/menstrual-cycle/my-cycles`, {
+                method: 'GET'
+            });
+
+            if (response.status === 401) {
+                authService.logout();
+                return { success: false, message: 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại' };
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error fetching current user cycles:', error);
             return { success: false, message: 'Không thể kết nối đến server' };
         }
     },
@@ -108,21 +149,32 @@ export const menstrualCycleService = {
 
     // Tính xác suất mang thai hiện tại dựa trên ngày rụng trứng
     calculateCurrentPregnancyProbability: (ovulationDate) => {
-        if (!ovulationDate) return 1.0;
+        if (!ovulationDate) return 0.5;
         
         const today = new Date();
         const ovulation = new Date(ovulationDate);
         const daysDiff = Math.round((today - ovulation) / (1000 * 60 * 60 * 24));
 
-        switch (daysDiff) {
-            case -5: return 6.4;   // 5 ngày trước rụng trứng
-            case -4: return 7.8;   // 4 ngày trước rụng trứng
-            case -3: return 10.7;  // 3 ngày trước rụng trứng
-            case -2: return 19.3;  // 2 ngày trước rụng trứng
-            case -1: return 23.5;  // 1 ngày trước rụng trứng
-            case 0: return 15.7;   // Ngày rụng trứng
-            case 1: return 5.7;    // 1 ngày sau rụng trứng
-            default: return 1.0;   // Các ngày khác
+        if (daysDiff >= -5 && daysDiff <= 1) {
+            // Thời kỳ dễ thụ thai: 5 ngày trước rụng trứng đến 1 ngày sau
+            switch (daysDiff) {
+                case -5: return 8.0;   // 5 ngày trước
+                case -4: return 12.0;  // 4 ngày trước
+                case -3: return 18.0;  // 3 ngày trước
+                case -2: return 25.0;  // 2 ngày trước
+                case -1: return 30.0;  // 1 ngày trước
+                case 0: return 28.0;   // Ngày rụng trứng
+                case 1: return 15.0;   // 1 ngày sau
+            }
+        } else if (daysDiff >= -7 && daysDiff <= -6) {
+            // Thời kỳ có thể thụ thai nhưng tỷ lệ thấp
+            return 3.0;
+        } else if (daysDiff >= 2 && daysDiff <= 3) {
+            // Vẫn có thể thụ thai nhưng tỷ lệ rất thấp
+            return 2.0;
+        } else {
+            // Thời kỳ khó thụ thai
+            return 0.5;
         }
     },
 
@@ -170,7 +222,7 @@ export const menstrualCycleService = {
             fertileStart,
             fertileEnd,
             currentPregnancyProbability: menstrualCycleService.calculateCurrentPregnancyProbability(ovulationDate),
-            isInFertilePeriod: menstrualCycleService.isInFertilePeriod(ovulationDate)
+            inFertilePeriod: menstrualCycleService.isInFertilePeriod(ovulationDate)
         };
     }
 };

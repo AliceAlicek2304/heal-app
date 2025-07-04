@@ -156,6 +156,71 @@ const MenstrualHistoryComponent = () => {
         fetchCycles();
     };
 
+    // Hàm lấy CSS class cho confidence level
+    const getConfidenceLevelClass = (confidenceLevel) => {
+        if (!confidenceLevel) return '';
+        switch (confidenceLevel.toLowerCase()) {
+            case 'cao':
+                return styles.confidenceLevelHigh;
+            case 'trung bình':
+                return styles.confidenceLevelMedium;
+            case 'thấp':
+                return styles.confidenceLevelLow;
+            default:
+                return '';
+        }
+    };
+
+    // Hàm lấy tên hiển thị tiếng Việt cho regularity
+    const getRegularityDisplayName = (regularity) => {
+        if (!regularity) return '';
+        
+        // Xử lý enum từ backend
+        const regularityStr = typeof regularity === 'string' ? regularity : regularity.name || regularity;
+        
+        switch (regularityStr.toUpperCase()) {
+            case 'VERY_REGULAR':
+                return 'Rất đều';
+            case 'REGULAR':
+                return 'Đều';
+            case 'SLIGHTLY_IRREGULAR':
+                return 'Hơi không đều';
+            case 'IRREGULAR':
+                return 'Không đều';
+            case 'VERY_IRREGULAR':
+                return 'Rất không đều';
+            case 'INSUFFICIENT_DATA':
+                return 'Không đủ dữ liệu';
+            default:
+                return regularityStr;
+        }
+    };
+
+    // Hàm lấy CSS class cho regularity
+    const getRegularityClass = (regularity) => {
+        if (!regularity) return '';
+        
+        // Xử lý enum từ backend
+        const regularityStr = typeof regularity === 'string' ? regularity : regularity.name || regularity;
+        
+        switch (regularityStr.toUpperCase()) {
+            case 'VERY_REGULAR':
+                return styles.regularityVeryRegular;
+            case 'REGULAR':
+                return styles.regularityRegular;
+            case 'SLIGHTLY_IRREGULAR':
+                return styles.regularitySlightlyIrregular;
+            case 'IRREGULAR':
+                return styles.regularityIrregular;
+            case 'VERY_IRREGULAR':
+                return styles.regularityVeryIrregular;
+            case 'INSUFFICIENT_DATA':
+                return styles.regularityInsufficient;
+            default:
+                return '';
+        }
+    };
+
     if (loading && cycles.length === 0) {
         return (
             <div className={styles.loadingContainer}>
@@ -195,7 +260,7 @@ const MenstrualHistoryComponent = () => {
                         </svg>
                     </button>
                     <a
-                        href="/menstrual-cycle"
+                        href="#/menstrual-cycle"
                         className={styles.newCycleBtn}
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -218,7 +283,7 @@ const MenstrualHistoryComponent = () => {
                     </div>
                     <h3>Chưa có chu kỳ nào được lưu</h3>
                     <p>Bạn chưa có chu kỳ kinh nguyệt nào được lưu trữ. Hãy bắt đầu tính chu kỳ để theo dõi sức khỏe của mình!</p>
-                    <a href="/menstrual-cycle" className={styles.createBtn}>
+                    <a href="#/menstrual-cycle" className={styles.createBtn}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -280,14 +345,28 @@ const MenstrualHistoryComponent = () => {
                                             className={styles.infoValue}
                                             style={{
                                                 color: getPregnancyProbabilityColor(
-                                                    menstrualCycleService.calculateCurrentPregnancyProbability(cycle.ovulationDate)
+                                                    cycle.currentPregnancyProbability || menstrualCycleService.calculateCurrentPregnancyProbability(cycle.ovulationDate)
                                                 ),
                                                 fontWeight: 'bold'
                                             }}
                                         >
-                                            {menstrualCycleService.calculateCurrentPregnancyProbability(cycle.ovulationDate).toFixed(1)}%
+                                            {(cycle.currentPregnancyProbability || menstrualCycleService.calculateCurrentPregnancyProbability(cycle.ovulationDate)).toFixed(1)}%
                                         </span>
                                     </div>
+                                    {cycle.regularity && (
+                                        <div className={styles.infoItem}>
+                                            <span className={styles.infoLabel}>Tính đều đặn:</span>
+                                            <span
+                                                className={styles.infoValue}
+                                                style={{
+                                                    color: getRegularityClass(cycle.regularity) ? '' : '#333',
+                                                    fontWeight: 'bold'
+                                                }}
+                                            >
+                                                {getRegularityDisplayName(cycle.regularity)}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}
@@ -340,13 +419,23 @@ const MenstrualHistoryComponent = () => {
                                                 <span
                                                     style={{
                                                         color: getPregnancyProbabilityColor(
-                                                            menstrualCycleService.calculateCurrentPregnancyProbability(cycle.ovulationDate)
+                                                            cycle.currentPregnancyProbability || menstrualCycleService.calculateCurrentPregnancyProbability(cycle.ovulationDate)
                                                         ),
                                                         fontWeight: 'bold'
                                                     }}
                                                 >
-                                                    Xác suất: {menstrualCycleService.calculateCurrentPregnancyProbability(cycle.ovulationDate).toFixed(1)}%
+                                                    Xác suất: {(cycle.currentPregnancyProbability || menstrualCycleService.calculateCurrentPregnancyProbability(cycle.ovulationDate)).toFixed(1)}%
                                                 </span>
+                                                {cycle.regularity && (
+                                                    <span
+                                                        style={{
+                                                            color: getRegularityClass(cycle.regularity) ? '' : '#333',
+                                                            fontWeight: 'bold'
+                                                        }}
+                                                    >
+                                                        {getRegularityDisplayName(cycle.regularity)}
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                     ))}
@@ -418,31 +507,73 @@ const MenstrualHistoryComponent = () => {
                                                             <span className={styles.detailValue}>
                                                                 {formatDate(selectedCycle.nextCycleDate)}
                                                             </span>
-                                                        </div>)}
+                                                        </div>
+                                                    )}
                                                     <div className={styles.detailItem}>
                                                         <span className={styles.detailLabel}>Xác suất mang thai hôm nay:</span>
                                                         <span
                                                             className={styles.detailValue}
                                                             style={{
                                                                 color: getPregnancyProbabilityColor(
-                                                                    menstrualCycleService.calculateCurrentPregnancyProbability(selectedCycle.ovulationDate)
+                                                                    selectedCycle.currentPregnancyProbability || menstrualCycleService.calculateCurrentPregnancyProbability(selectedCycle.ovulationDate)
                                                                 ),
                                                                 fontWeight: 'bold'
                                                             }}
                                                         >
-                                                            {menstrualCycleService.calculateCurrentPregnancyProbability(selectedCycle.ovulationDate).toFixed(1)}%
+                                                            {(selectedCycle.currentPregnancyProbability || menstrualCycleService.calculateCurrentPregnancyProbability(selectedCycle.ovulationDate)).toFixed(1)}%
                                                         </span>
                                                     </div>
-                                                    {selectedCycle.pregnancyProbability !== undefined && (
-                                                        <div className={styles.detailItem}>
-                                                            <span className={styles.detailLabel}>Xác suất mang thai:</span>
-                                                            <span className={styles.detailValue}>
-                                                                {selectedCycle.pregnancyProbability}%
-                                                            </span>
-                                                        </div>
-                                                    )}
                                                 </div>
                                             </div>
+
+                                            {/* Thêm section phân tích lịch sử nếu có */}
+                                            {selectedCycle.hasHistoricalData && (
+                                                <div className={styles.detailSection}>
+                                                    <h5>Phân tích lịch sử ({selectedCycle.totalCycles} chu kỳ)</h5>
+                                                    <div className={styles.detailGrid}>
+                                                        {selectedCycle.averageCycleLength && (
+                                                            <div className={styles.detailItem}>
+                                                                <span className={styles.detailLabel}>Độ dài chu kỳ trung bình:</span>
+                                                                <span className={styles.detailValue}>
+                                                                    {selectedCycle.averageCycleLength.toFixed(1)} ngày
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        {selectedCycle.confidenceLevel && (
+                                                            <div className={styles.detailItem}>
+                                                                <span className={styles.detailLabel}>Độ tin cậy dự đoán:</span>
+                                                                <span className={`${styles.detailValue} ${getConfidenceLevelClass(selectedCycle.confidenceLevel)}`}>
+                                                                    {selectedCycle.confidenceLevel}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        {selectedCycle.predictedNextCycle && (
+                                                            <div className={styles.detailItem}>
+                                                                <span className={styles.detailLabel}>Dự đoán chu kỳ tiếp theo:</span>
+                                                                <span className={`${styles.detailValue} ${styles.highlight}`}>
+                                                                    {formatDate(selectedCycle.predictedNextCycle)}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        {selectedCycle.cycleVariability !== null && selectedCycle.cycleVariability !== undefined && (
+                                                            <div className={styles.detailItem}>
+                                                                <span className={styles.detailLabel}>Độ biến động chu kỳ:</span>
+                                                                <span className={styles.detailValue}>
+                                                                    ±{selectedCycle.cycleVariability.toFixed(1)} ngày
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        {selectedCycle.regularity && (
+                                                            <div className={styles.detailItem}>
+                                                                <span className={styles.detailLabel}>Tính đều đặn:</span>
+                                                                <span className={`${styles.detailValue} ${getRegularityClass(selectedCycle.regularity)}`}>
+                                                                    {getRegularityDisplayName(selectedCycle.regularity)}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className={styles.detailsFooter}>

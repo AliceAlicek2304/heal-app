@@ -83,10 +83,14 @@ public class STIController {
     @GetMapping("/my-tests")
     @PreAuthorize("hasRole('ROLE_CUSTOMER') or hasRole('ROLE_CONSULTANT') or hasRole('ROLE_STAFF') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<ApiResponse<List<STITestResponse>>> getMySTITests() {
-
-        Long customerId = getCurrentUserId();
-        ApiResponse<List<STITestResponse>> response = stiTestService.getMyTests(customerId);
-        return getResponseEntity(response);
+        try {
+            Long customerId = getCurrentUserId();
+            ApiResponse<List<STITestResponse>> response = stiTestService.getMyTests(customerId);
+            return getResponseEntity(response);
+        } catch (Exception e) {
+            ApiResponse<List<STITestResponse>> errorResponse = ApiResponse.error("Failed to get STI tests: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
     }
 
     @GetMapping("/tests/{testId}")
@@ -222,9 +226,26 @@ public class STIController {
     }
 
     private Long getCurrentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        return userService.getUserIdFromUsername(username);
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                throw new RuntimeException("User not authenticated");
+            }
+            
+            String username = authentication.getName();
+            if (username == null || "anonymousUser".equals(username)) {
+                throw new RuntimeException("Invalid user session");
+            }
+            
+            Long userId = userService.getUserIdFromUsername(username);
+            if (userId == null) {
+                throw new RuntimeException("User not found in database");
+            }
+            
+            return userId;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to get current user ID: " + e.getMessage());
+        }
     }
 
     private <T> ResponseEntity<ApiResponse<T>> getResponseEntity(ApiResponse<T> response) {

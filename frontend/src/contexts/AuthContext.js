@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
         const currentHash = window.location.hash;
         if (!currentHash.startsWith('#/admin') && !currentHash.startsWith('#/profile')) {
             setTimeout(() => {
-                window.location.hash = '/admin';
+                window.location.hash = '#/admin';
             }, 100);
         }
     };

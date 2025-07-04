@@ -188,7 +188,7 @@ const STIHistory = () => {
             setLoading(true);
 
             const response = await stiService.getMyTests(null, () => {
-                window.location.href = '/login';
+                window.location.hash = '#/login';
             });
             if (response.success && response.data) {
                 if (Array.isArray(response.data)) {
@@ -323,7 +323,7 @@ const STIHistory = () => {
             setSelectedTest(test);
 
             const response = await stiService.getTestResults(test.testId, () => {
-                window.location.href = '/login';
+                window.location.hash = '#/login';
             });
 
             if (response.success && response.data) {
@@ -400,7 +400,7 @@ const STIHistory = () => {
             setSelectedTest(test);
 
             const response = await stiService.getPaymentInfo(test.testId, () => {
-                window.location.href = '/login';
+                window.location.hash = '#/login';
             }); if (response.success && response.data) {
                 // Map API data to expected format
                 const mappedPaymentInfo = {
@@ -450,7 +450,7 @@ const STIHistory = () => {
 
             const qrRef = paymentInfo.qrReference || paymentInfo.qrPaymentReference;
             const response = await stiService.checkQRPaymentStatus(qrRef, () => {
-                window.location.href = '/login';
+                window.location.hash = '#/login';
             }); if (response.success) {
                 // Refresh payment info         
                 await handleViewPayment(selectedTest);
@@ -505,7 +505,7 @@ const STIHistory = () => {
 
         try {
             const response = await stiService.cancelTest(testId, () => {
-                window.location.href = '/login';
+                window.location.hash = '#/login';
             });
 
             if (response.success) {
@@ -910,7 +910,7 @@ const STIHistory = () => {
             if (test) {
                 // Lấy payment info để có paymentId
                 const paymentResponse = await stiService.getPaymentInfo(test.testId, () => {
-                    window.location.href = '/login';
+                    window.location.hash = '#/login';
                 });
 
                 if (!paymentResponse.success) {
@@ -929,7 +929,7 @@ const STIHistory = () => {
             }
 
             const response = await stiService.regenerateQRCode(paymentId, () => {
-                window.location.href = '/login';
+                window.location.hash = '#/login';
             }); if (response.success) {
                 toast.success('Đã tạo lại mã QR thành công!');
 
@@ -942,7 +942,7 @@ const STIHistory = () => {
 
                 // Lấy test object mới nhất từ danh sách đã refresh
                 const refreshedTests = await stiService.getMyTests(null, () => {
-                    window.location.href = '/login';
+                    window.location.hash = '#/login';
                 });
 
                 if (refreshedTests.success && refreshedTests.data) {
@@ -2178,7 +2178,7 @@ const STIHistory = () => {
                                     cvc: retryCardInfo.cvc ? String(retryCardInfo.cvc) : '',
                                     cardHolderName: retryCardInfo.cardHolderName ? String(retryCardInfo.cardHolderName) : ''
                                 };
-                                const response = await stiService.retryStripePayment(selectedTest.testId, cleanCardInfo, () => window.location.href = '/login');
+                                const response = await stiService.retryStripePayment(selectedTest.testId, cleanCardInfo, () => window.location.hash = '#/login');
                                 setRetryLoading(false);
                                 if (response.success) {
                                     toast.success('Thanh toán lại thành công!');

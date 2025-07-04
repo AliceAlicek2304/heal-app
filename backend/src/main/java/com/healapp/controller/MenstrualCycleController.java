@@ -1,15 +1,5 @@
 package com.healapp.controller;
 
-import com.healapp.dto.ApiResponse;
-import com.healapp.dto.MenstrualCycleRequest;
-import com.healapp.dto.MenstrualCycleResponse;
-import com.healapp.dto.ReminderRequest;
-import com.healapp.model.UserDtls;
-import com.healapp.service.MenstrualCycleService;
-import com.healapp.service.UserService;
-
-import jakarta.validation.Valid;
-
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +8,24 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.healapp.dto.ApiResponse;
+import com.healapp.dto.MenstrualCycleRequest;
+import com.healapp.dto.MenstrualCycleResponse;
+import com.healapp.dto.ReminderRequest;
+import com.healapp.service.MenstrualCycleService;
+import com.healapp.service.UserService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/menstrual-cycle")
@@ -53,6 +60,46 @@ public class MenstrualCycleController {
 
             // Gọi service để xử lý
             ApiResponse<MenstrualCycleResponse> response = menstrualCycleService.addCycle(request, userId);
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Invalid request: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Internal server error: " + e.getMessage()));
+        }
+    }
+
+    // Endpoint tính toán chu kỳ kinh nguyệt không lưu vào database
+    @PostMapping("/calculate")
+    public ResponseEntity<ApiResponse<MenstrualCycleResponse>> calculateCycle(
+            @RequestBody @Valid MenstrualCycleRequest request) {
+        try {
+            // Kiểm tra xem user có đăng nhập không
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            Long userId = null;
+            
+            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
+                try {
+                    String username = auth.getName();
+                    userId = userService.getUserIdFromUsername(username);
+                } catch (Exception e) {
+                    // User đăng nhập nhưng không tìm thấy, tính toán như guest
+                    userId = null;
+                }
+            }
+
+            // Gọi service để tính toán (với userId nếu đã đăng nhập)
+            ApiResponse<MenstrualCycleResponse> response;
+            if (userId != null) {
+                // User đã đăng nhập - tính toán với phân tích lịch sử
+                response = menstrualCycleService.calculateCycleWithHistory(request, userId);
+            } else {
+                // User chưa đăng nhập - tính toán cơ bản
+                response = menstrualCycleService.calculateCycle(request);
+            }
+            
             return ResponseEntity.ok(response);
 
         } catch (IllegalArgumentException e) {

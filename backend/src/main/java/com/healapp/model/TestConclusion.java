@@ -1,5 +1,7 @@
 package com.healapp.model;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 public enum TestConclusion {
     INFECTED("Bị nhiễm"),
     NOT_INFECTED("Không bị nhiễm"),
@@ -13,5 +15,10 @@ public enum TestConclusion {
 
     public String getDisplayName() {
         return displayName;
+    }
+    
+    @JsonValue
+    public String getEnumName() {
+        return super.name();
     }
 } 

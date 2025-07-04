@@ -145,4 +145,15 @@ public interface STITestRepository extends JpaRepository<STITest, Long> {
         List<STITest> findConfirmedTestsWithDetails(@Param("status") TestStatus status,
                                                     @Param("start") java.time.LocalDateTime start,
                                                     @Param("end") java.time.LocalDateTime end);
+
+        // Method to get customer tests with all details loaded
+        @Query("SELECT t FROM STITest t " +
+               "LEFT JOIN FETCH t.customer " +
+               "LEFT JOIN FETCH t.stiService " +
+               "LEFT JOIN FETCH t.stiPackage " +
+               "LEFT JOIN FETCH t.staff " +
+               "LEFT JOIN FETCH t.consultant " +
+               "WHERE t.customer.id = :customerId " +
+               "ORDER BY t.createdAt DESC")
+        List<STITest> findByCustomerIdWithDetails(@Param("customerId") Long customerId);
 }

@@ -163,7 +163,7 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
                         @Param("rating") Integer rating, Pageable pageable);
 
         // Lấy top testimonials cho homepage
-        @Query("SELECT r FROM Rating r WHERE r.isActive = true AND r.comment IS NOT NULL AND LENGTH(r.comment) > 10 " +
+        @Query("SELECT r FROM Rating r WHERE r.isActive = true AND r.comment IS NOT NULL AND LENGTH(r.comment) > 5 " +
                         "ORDER BY r.rating DESC, r.createdAt DESC")
         List<Rating> findTopTestimonials(Pageable pageable);
 }

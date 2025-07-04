@@ -176,6 +176,7 @@ const ManageSTITests = () => {
 
                 if (response.success && response.data) {
                     const existingResults = response.data;
+                    
                     setTestResults(prevResults =>
                         prevResults.map(component => {
                             const existingResult = existingResults.find(result =>
@@ -185,7 +186,10 @@ const ManageSTITests = () => {
                                 ...component,
                                 resultValue: existingResult.resultValue || '',
                                 referenceRange: component.referenceRange || existingResult.referenceRange || '',
-                                unit: existingResult.unit || component.unit || ''
+                                unit: existingResult.unit || component.unit || '',
+                                conclusion: existingResult.conclusion ? 
+                                    (typeof existingResult.conclusion === 'string' ? existingResult.conclusion : 
+                                     (existingResult.conclusion.name || existingResult.conclusion || '')) : ''
                             } : component;
                         })
                     );
@@ -338,6 +342,23 @@ const ManageSTITests = () => {
         }
     };
 
+    // Helper function to get conclusion value for dropdown
+    const getConclusionValue = (result) => {
+        if (!result.conclusion) return '';
+        
+        // If conclusion is a string (enum name), return it directly
+        if (typeof result.conclusion === 'string') {
+            return result.conclusion;
+        }
+        
+        // If conclusion is an enum object, return its name
+        if (result.conclusion && typeof result.conclusion === 'object' && result.conclusion.name) {
+            return result.conclusion.name;
+        }
+        
+        return '';
+    };
+
     const handleResultChange = (index, field, value) => {
         setTestResults(prev => prev.map((result, i) =>
             i === index ? { ...result, [field]: value } : result
@@ -366,6 +387,7 @@ const ManageSTITests = () => {
                 conclusion: result.conclusion
             }))
         };
+        
         handleStatusUpdate(selectedTest.testId, 'RESULTED', resultData);
     };
 
@@ -1179,7 +1201,7 @@ const ManageSTITests = () => {
                                                             <div className={styles.inputGroup}>
                                                                 <label>Kết luận</label>
                                                                 <select
-                                                                    value={result.conclusion || ''}
+                                                                    value={getConclusionValue(result)}
                                                                     onChange={(e) => handleResultChange(result.originalIndex, 'conclusion', e.target.value)}
                                                                     className={styles.selectInput}
                                                                 >
@@ -1233,7 +1255,7 @@ const ManageSTITests = () => {
                                                 <div className={styles.inputGroup}>
                                                     <label>Kết luận</label>
                                                     <select
-                                                        value={result.conclusion || ''}
+                                                        value={getConclusionValue(result)}
                                                         onChange={(e) => handleResultChange(index, 'conclusion', e.target.value)}
                                                         className={styles.selectInput}
                                                     >

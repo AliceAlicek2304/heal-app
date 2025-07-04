@@ -92,7 +92,7 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
         try {
             setCheckingPayment(true);
             const response = await stiService.checkQRPaymentStatus(qrPaymentData.qrReference, () => {
-                window.location.href = '/login';
+                window.location.hash = '#/login';
             });
 
             if (response.success) {

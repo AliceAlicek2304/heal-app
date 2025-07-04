@@ -39,7 +39,7 @@ const AdminRedirect = () => {
                 
                 if (!currentPath.startsWith(adminPath) && !currentPath.startsWith('#/profile')) {
                     setTimeout(() => {
-                        window.location.hash = '/admin';
+                        window.location.hash = '#/admin';
                     }, 200);
                 }
             }

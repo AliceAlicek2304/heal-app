@@ -754,6 +754,7 @@ public class STITestService {
         return false;
     }
 
+    @Transactional(readOnly = true)
     public ApiResponse<List<STITestResponse>> getMyTests(Long customerId) {
         try {
             Optional<UserDtls> customerOpt = userRepository.findById(customerId);
@@ -761,7 +762,7 @@ public class STITestService {
                 return ApiResponse.error("Customer not found");
             }
 
-            List<STITest> tests = stiTestRepository.findByCustomerIdOrderByCreatedAtDesc(customerId);
+            List<STITest> tests = stiTestRepository.findByCustomerIdWithDetails(customerId);
             List<STITestResponse> responses = tests.stream()
                     .map(this::convertToResponse)
                     .toList();

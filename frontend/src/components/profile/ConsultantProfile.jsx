@@ -33,7 +33,7 @@ const ConsultantProfile = () => {
                 toast.error('Phiên đăng nhập hết hạn. Đang đăng xuất...');
                 setTimeout(() => {
                     logout();
-                    window.location.href = '/';
+                    window.location.hash = '#/';
                 }, 1500);
             });
 
@@ -74,7 +74,7 @@ const ConsultantProfile = () => {
                 // Just logout the user
                 setTimeout(() => {
                     logout();
-                    window.location.href = '/';
+                    window.location.hash = '#/';
                 }, 1000);
             } else {
                 toast.error('Có lỗi xảy ra khi tải thông tin hồ sơ');
