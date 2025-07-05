@@ -27,6 +27,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.AvailableTimeSlot;
@@ -246,7 +247,7 @@ class ConsultationServiceTest {
         ApiResponse<ConsultationResponse> response = consultationService.createConsultation(consultationRequest, 1L);
 
         assertTrue(response.isSuccess());
-        assertEquals("Consultation scheduled successfully", response.getMessage());
+        assertEquals("Đặt lịch tư vấn thành công!", response.getMessage());
         assertNotNull(response.getData());
         assertEquals(1L, response.getData().getConsultationId());
 
@@ -346,9 +347,166 @@ class ConsultationServiceTest {
         ApiResponse<ConsultationResponse> response = consultationService.createConsultation(consultationRequest, 1L);
 
         assertFalse(response.isSuccess());
-        assertEquals("The selected time slot is not available", response.getMessage());
+        assertEquals("Khung giờ này đã được đặt bởi người khác. Vui lòng chọn khung giờ khác.", response.getMessage());
 
         verify(consultationRepository, never()).save(any(Consultation.class));
+    }
+
+    // ===================== RACE CONDITION TESTS =====================
+    
+    @Test
+    @DisplayName("Tạo consultation - Race condition: Database constraint violation")
+    void createConsultation_RaceCondition_DatabaseConstraintViolation() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(consultant));
+        when(consultationRepository.findByConsultantAndTimeRange(
+                eq(2L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Arrays.asList()); // Slot appears available
+        when(consultationRepository.save(any(Consultation.class)))
+                .thenThrow(new DataIntegrityViolationException("Duplicate key value violates unique constraint 'idx_consultant_time_unique'"));
+
+        ApiResponse<ConsultationResponse> response = consultationService.createConsultation(consultationRequest, 1L);
+
+        assertFalse(response.isSuccess());
+        assertEquals("Khung giờ này đã được đặt bởi người khác. Vui lòng chọn khung giờ khác.", response.getMessage());
+
+        verify(userRepository).findById(1L);
+        verify(userRepository).findById(2L);
+        verify(consultationRepository).save(any(Consultation.class));
+    }
+
+    @Test
+    @DisplayName("Tạo consultation - Race condition: Generic constraint violation")
+    void createConsultation_RaceCondition_GenericConstraintViolation() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(consultant));
+        when(consultationRepository.findByConsultantAndTimeRange(
+                eq(2L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Arrays.asList());
+        when(consultationRepository.save(any(Consultation.class)))
+                .thenThrow(new DataIntegrityViolationException("Some other constraint violation"));
+
+        ApiResponse<ConsultationResponse> response = consultationService.createConsultation(consultationRequest, 1L);
+
+        assertFalse(response.isSuccess());
+        assertEquals("Có lỗi xảy ra khi đặt lịch. Vui lòng thử lại.", response.getMessage());
+
+        verify(consultationRepository).save(any(Consultation.class));
+    }
+
+    @Test
+    @DisplayName("Tạo consultation - Race condition: Other database exception")
+    void createConsultation_RaceCondition_OtherDatabaseException() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(consultant));
+        when(consultationRepository.findByConsultantAndTimeRange(
+                eq(2L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Arrays.asList());
+        when(consultationRepository.save(any(Consultation.class)))
+                .thenThrow(new RuntimeException("Database connection error"));
+
+        ApiResponse<ConsultationResponse> response = consultationService.createConsultation(consultationRequest, 1L);
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.getMessage().contains("Không thể đặt lịch tư vấn"));
+
+        verify(consultationRepository).save(any(Consultation.class));
+    }
+
+    @Test
+    @DisplayName("Tạo consultation - Race condition: Concurrent booking simulation")
+    void createConsultation_RaceCondition_ConcurrentBookingSimulation() {
+        // Simulate two concurrent requests for the same time slot
+        ConsultationRequest request1 = new ConsultationRequest();
+        request1.setConsultantId(2L);
+        request1.setDate(LocalDate.now().plusDays(1));
+        request1.setTimeSlot("8-10");
+
+        ConsultationRequest request2 = new ConsultationRequest();
+        request2.setConsultantId(2L);
+        request2.setDate(LocalDate.now().plusDays(1));
+        request2.setTimeSlot("8-10");
+
+        // Create another customer for the second request
+        UserDtls customer2 = new UserDtls();
+        customer2.setId(3L);
+        customer2.setUsername("customer2");
+        customer2.setFullName("Customer 2");
+        customer2.setEmail("customer2@example.com");
+        customer2.setRole(customerRole);
+
+        // First request succeeds
+        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(userRepository.findById(3L)).thenReturn(Optional.of(customer2)); // Mock for second customer
+        when(userRepository.findById(2L)).thenReturn(Optional.of(consultant));
+        when(consultationRepository.findByConsultantAndTimeRange(
+                eq(2L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Arrays.asList()); // Slot appears available
+        when(consultationRepository.save(any(Consultation.class)))
+                .thenReturn(consultation) // First save succeeds
+                .thenThrow(new DataIntegrityViolationException("Duplicate key value violates unique constraint 'idx_consultant_time_unique'")); // Second save fails
+
+        // First booking should succeed
+        ApiResponse<ConsultationResponse> response1 = consultationService.createConsultation(request1, 1L);
+        assertTrue(response1.isSuccess());
+        assertEquals("Đặt lịch tư vấn thành công!", response1.getMessage());
+
+        // Second booking should fail due to race condition
+        ApiResponse<ConsultationResponse> response2 = consultationService.createConsultation(request2, 3L); // Different customer
+        assertFalse(response2.isSuccess());
+        assertEquals("Khung giờ này đã được đặt bởi người khác. Vui lòng chọn khung giờ khác.", response2.getMessage());
+
+        verify(consultationRepository, org.mockito.Mockito.times(2)).save(any(Consultation.class));
+    }
+
+    @Test
+    @DisplayName("Tạo consultation - Race condition: Check time slot availability method")
+    void createConsultation_RaceCondition_CheckTimeSlotAvailability() {
+        // Test the private method indirectly through public method
+        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(consultant));
+        
+        // Mock conflicting consultation
+        Consultation conflictingConsultation = new Consultation();
+        conflictingConsultation.setStartTime(LocalDate.now().plusDays(1).atTime(8, 0));
+        conflictingConsultation.setEndTime(LocalDate.now().plusDays(1).atTime(10, 0));
+        conflictingConsultation.setStatus(ConsultationStatus.PENDING);
+        
+        when(consultationRepository.findByConsultantAndTimeRange(
+                eq(2L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Arrays.asList(conflictingConsultation));
+
+        ApiResponse<ConsultationResponse> response = consultationService.createConsultation(consultationRequest, 1L);
+
+        assertFalse(response.isSuccess());
+        assertEquals("Khung giờ này đã được đặt bởi người khác. Vui lòng chọn khung giờ khác.", response.getMessage());
+
+        verify(consultationRepository, never()).save(any(Consultation.class));
+    }
+
+    @Test
+    @DisplayName("Tạo consultation - Race condition: Cancelled consultation should not block")
+    void createConsultation_RaceCondition_CancelledConsultationDoesNotBlock() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(userRepository.findById(2L)).thenReturn(Optional.of(consultant));
+        
+        // Mock cancelled consultation - should not block new booking
+        Consultation cancelledConsultation = new Consultation();
+        cancelledConsultation.setStartTime(LocalDate.now().plusDays(1).atTime(8, 0));
+        cancelledConsultation.setEndTime(LocalDate.now().plusDays(1).atTime(10, 0));
+        cancelledConsultation.setStatus(ConsultationStatus.CANCELED);
+        
+        when(consultationRepository.findByConsultantAndTimeRange(
+                eq(2L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Arrays.asList(cancelledConsultation));
+        when(consultationRepository.save(any(Consultation.class))).thenReturn(consultation);
+
+        ApiResponse<ConsultationResponse> response = consultationService.createConsultation(consultationRequest, 1L);
+
+        assertTrue(response.isSuccess());
+        assertEquals("Đặt lịch tư vấn thành công!", response.getMessage());
+
+        verify(consultationRepository).save(any(Consultation.class));
     }
 
     // Test updateConsultationStatus method
@@ -558,7 +716,8 @@ class ConsultationServiceTest {
         verifyNoInteractions(consultationRepository);
     }
 
-    // Test getConsultationsForUser method    @Test
+    // Test getConsultationsForUser method
+    @Test
     @DisplayName("Lấy consultations cho user - Thành công")
     void getConsultationsForUser_Success() {
         List<Consultation> consultations = Arrays.asList(consultation);
@@ -607,7 +766,8 @@ class ConsultationServiceTest {
         verify(userRepository).findByRoleNameAndIsActive("CONSULTANT", true);
     }
 
-    // Test getConsultationsForConsultant method    @Test
+    // Test getConsultationsForConsultant method
+    @Test
     @DisplayName("Lấy consultations cho consultant - Thành công")
     void getConsultationsForConsultant_Success() {
         List<Consultation> consultations = Arrays.asList(consultation);
@@ -622,7 +782,9 @@ class ConsultationServiceTest {
         assertEquals(1, response.getData().size());
 
         verify(consultationRepository).findByConsultantId(2L);
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Lấy consultations cho consultant - User không tồn tại")
     void getConsultationsForConsultant_UserNotFound() {
         when(userRepository.findById(999L)).thenReturn(Optional.empty());
@@ -634,7 +796,9 @@ class ConsultationServiceTest {
 
         verify(userRepository).findById(999L);
         verifyNoInteractions(consultationRepository);
-    }    @Test
+    }
+
+    @Test
     @DisplayName("Lấy consultations cho consultant - User không phải consultant")
     void getConsultationsForConsultant_UserNotConsultant() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(customer));
