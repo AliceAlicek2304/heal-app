@@ -140,13 +140,7 @@ const Footer = () => {
                                 </svg>
                                 <span>Mastercard</span>
                             </div>
-                            <div className={styles.paymentMethod}>
-                                <svg width="40" height="25" viewBox="0 0 40 25" fill="none">
-                                    <rect width="40" height="25" rx="4" fill="#1E3A8A"/>
-                                    <path d="M12 8h16v2H12V8zm0 4h14v2H12v-2zm0 4h12v2H12v-2zm0 4h10v2H12v-2z" fill="white"/>
-                                </svg>
-                                <span>VNPay</span>
-                            </div>
+
                         </div>
                         <p className={styles.paymentNote}>
                             Chúng tôi chấp nhận các phương thức thanh toán phổ biến

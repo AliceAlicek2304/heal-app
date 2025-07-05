@@ -13,7 +13,9 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.healapp.dto.ApiResponse;
 import com.healapp.dto.AvailableTimeSlot;
@@ -98,12 +100,17 @@ public class ConsultationService {
             return ApiResponse.success("Available time slots retrieved successfully", availableTimeSlots);
 
         } catch (Exception e) {
+            log.error("Error getting available time slots: {}", e.getMessage(), e);
             return ApiResponse.error("Failed to get available time slots: " + e.getMessage());
         }
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public ApiResponse<ConsultationResponse> createConsultation(ConsultationRequest request, Long customerId) {
         try {
+            log.info("Creating consultation for customer {} with consultant {} at {} {}", 
+                    customerId, request.getConsultantId(), request.getDate(), request.getTimeSlot());
+
             Optional<UserDtls> customerOpt = userRepository.findById(customerId);
             if (customerOpt.isEmpty()) {
                 return ApiResponse.error("Customer not found");
@@ -141,19 +148,12 @@ public class ConsultationService {
                 return ApiResponse.error("Invalid time slot");
             }
 
-            // kiểm tra time slot
-            List<Consultation> existingConsultations = consultationRepository.findByConsultantAndTimeRange(
-                    consultant.getId(),
-                    request.getDate().atStartOfDay(),
-                    request.getDate().atTime(23, 59, 59));
-
-            for (Consultation consultation : existingConsultations) {
-                // lịch != canceled && có time chồng chéo với slot => false
-                if (consultation.getStatus() != ConsultationStatus.CANCELED &&
-                        consultation.getStartTime().isBefore(consultationEndTime) &&
-                        consultation.getEndTime().isAfter(consultationStartTime)) {
-                    return ApiResponse.error("The selected time slot is not available");
-                }
+            // Kiểm tra time slot có available không (atomic check)
+            boolean isSlotAvailable = checkTimeSlotAvailability(consultant.getId(), consultationStartTime, consultationEndTime);
+            if (!isSlotAvailable) {
+                log.warn("Time slot {} {} is not available for consultant {}", 
+                        request.getDate(), request.getTimeSlot(), consultant.getId());
+                return ApiResponse.error("Khung giờ này đã được đặt bởi người khác. Vui lòng chọn khung giờ khác.");
             }
 
             // Tạo lịch tư vấn
@@ -166,13 +166,49 @@ public class ConsultationService {
             consultation.setNote(request.getNote());
 
             Consultation savedConsultation = consultationRepository.save(consultation);
+            
+            log.info("Successfully created consultation ID: {} for customer {} with consultant {} at {} {}", 
+                    savedConsultation.getConsultationId(), customerId, consultant.getId(), 
+                    request.getDate(), request.getTimeSlot());
+
             ConsultationResponse response = convertToResponse(savedConsultation);
-            return ApiResponse.success("Consultation scheduled successfully", response);
+            return ApiResponse.success("Đặt lịch tư vấn thành công!", response);
+
+        } catch (DataIntegrityViolationException e) {
+            log.warn("Database constraint violation for consultation booking: {}", e.getMessage());
+            // Kiểm tra loại constraint violation
+            if (e.getMessage() != null && e.getMessage().contains("idx_consultant_time_unique")) {
+                return ApiResponse.error("Khung giờ này đã được đặt bởi người khác. Vui lòng chọn khung giờ khác.");
+            }
+            return ApiResponse.error("Có lỗi xảy ra khi đặt lịch. Vui lòng thử lại.");
         } catch (Exception e) {
-            return ApiResponse.error("Failed to schedule consultation: " + e.getMessage());
+            log.error("Failed to create consultation for customer {}: {}", customerId, e.getMessage(), e);
+            return ApiResponse.error("Không thể đặt lịch tư vấn: " + e.getMessage());
         }
     }
 
+    /**
+     * Kiểm tra time slot có available không (atomic check)
+     */
+    private boolean checkTimeSlotAvailability(Long consultantId, LocalDateTime startTime, LocalDateTime endTime) {
+        // Kiểm tra xem có consultation nào đã tồn tại trong khoảng thời gian này không
+        List<Consultation> conflictingConsultations = consultationRepository.findByConsultantAndTimeRange(
+                consultantId,
+                startTime.toLocalDate().atStartOfDay(),
+                startTime.toLocalDate().atTime(23, 59, 59));
+
+        for (Consultation consultation : conflictingConsultations) {
+            // Nếu có consultation khác (không phải CANCELED) và có thời gian chồng chéo
+            if (consultation.getStatus() != ConsultationStatus.CANCELED &&
+                    consultation.getStartTime().isBefore(endTime) &&
+                    consultation.getEndTime().isAfter(startTime)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
     public ApiResponse<ConsultationResponse> updateConsultationStatus(Long consultationId,
             ConsultationStatus newStatus, Long userId) {
         try {

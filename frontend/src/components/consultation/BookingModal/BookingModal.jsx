@@ -58,7 +58,9 @@ const BookingModal = ({
 
     const handleAvatarError = (e) => {
         e.target.src = '/img/avatar/default.jpg';
-    };    // Fetch available slots when date changes
+    };
+
+    // Fetch available slots when date changes
     useEffect(() => {
         if (selectedDate && (consultant.userId || consultant.id)) {
             fetchAvailableSlots();
@@ -68,13 +70,14 @@ const BookingModal = ({
     const fetchAvailableSlots = async () => {
         if (!selectedDate) return;
 
-        setLoadingSlots(true); try {
-
+        setLoadingSlots(true);
+        try {
             const response = await consultationService.getAvailableTimeSlots(
                 consultant.userId || consultant.id,
                 selectedDate,
                 onAuthRequired
-            ); if (response.success) {
+            );
+            if (response.success) {
                 const slots = response.data || [];
                 setAvailableSlots(slots);
             } else {
@@ -120,7 +123,9 @@ const BookingModal = ({
             return;
         }
 
-        setLoading(true); try {
+        setLoading(true);
+        
+        try {
             const bookingData = {
                 consultantId: consultant.userId || consultant.id,
                 date: selectedDate,
@@ -138,11 +143,35 @@ const BookingModal = ({
             if (response.success) {
                 onSuccess(response.data);
             } else {
-                onError(new Error(response.message || 'Không thể đặt lịch tư vấn'));
+                // Xử lý các loại lỗi cụ thể
+                if (response.message && response.message.includes('đã được đặt')) {
+                    // Slot đã được đặt bởi người khác - refresh available slots
+                    onError(new Error('Khung giờ này đã được đặt bởi người khác. Vui lòng chọn khung giờ khác.'));
+                    
+                    // Refresh available slots để cập nhật trạng thái
+                    setTimeout(() => {
+                        fetchAvailableSlots();
+                    }, 1000);
+                    
+                    // Quay lại step 1 để user chọn slot khác
+                    setStep(1);
+                } else {
+                    onError(new Error(response.message || 'Không thể đặt lịch tư vấn'));
+                }
             }
         } catch (error) {
             console.error('Error creating consultation:', error);
-            onError(error);
+            
+            // Xử lý network error hoặc lỗi khác
+            if (error.message && error.message.includes('đã được đặt')) {
+                onError(new Error('Khung giờ này đã được đặt bởi người khác. Vui lòng chọn khung giờ khác.'));
+                setTimeout(() => {
+                    fetchAvailableSlots();
+                }, 1000);
+                setStep(1);
+            } else {
+                onError(new Error('Có lỗi xảy ra khi đặt lịch. Vui lòng thử lại.'));
+            }
         } finally {
             setLoading(false);
         }
