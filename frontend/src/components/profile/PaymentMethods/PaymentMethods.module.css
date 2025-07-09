@@ -1,0 +1,483 @@
+.paymentMethods {
+    padding: 24px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.addButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.addButton:hover {
+    background: #2563eb;
+}
+
+.addButton:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+
+.loadingContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    text-align: center;
+}
+
+.loadingContainer p {
+    margin-top: 16px;
+    color: #6b7280;
+}
+
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+}
+
+.emptyIcon {
+    color: #9ca3af;
+    margin-bottom: 16px;
+}
+
+.emptyState h3 {
+    margin: 0 0 8px 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.emptyState p {
+    margin: 0 0 24px 0;
+    color: #6b7280;
+    max-width: 400px;
+}
+
+.addFirstButton {
+    padding: 12px 24px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.addFirstButton:hover {
+    background: #2563eb;
+}
+
+.addFirstButton:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+
+.cardsList {
+    display: grid;
+    gap: 16px;
+}
+
+.cardItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #f9fafb;
+    transition: all 0.2s;
+}
+
+.cardItem:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.defaultCard {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.cardInfo {
+    flex: 1;
+}
+
+.cardHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.cardType {
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.defaultBadge {
+    padding: 4px 8px;
+    background: #3b82f6;
+    color: white;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.cardNumber {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 12px;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 1px;
+}
+
+.cardDetails {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.cardHolder, .expiry, .nickname {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.label {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.expiredWarning {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: #fef2f2;
+    color: #dc2626;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.cardActions {
+    display: flex;
+    gap: 8px;
+}
+
+.setDefaultButton, .editButton, .deleteButton {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.setDefaultButton {
+    background: #10b981;
+    color: white;
+}
+
+.setDefaultButton:hover {
+    background: #059669;
+}
+
+.editButton {
+    background: #f59e0b;
+    color: white;
+}
+
+.editButton:hover {
+    background: #d97706;
+}
+
+.deleteButton {
+    background: #ef4444;
+    color: white;
+}
+
+.deleteButton:hover {
+    background: #dc2626;
+}
+
+.setDefaultButton:disabled, .editButton:disabled, .deleteButton:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+
+/* Modal Styles */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modalContent {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 24px 0 24px;
+    margin-bottom: 24px;
+}
+
+.modalHeader h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.closeButton:hover {
+    background: #f3f4f6;
+}
+
+.form {
+    padding: 0 24px 24px 24px;
+}
+
+.formGroup {
+    margin-bottom: 20px;
+}
+
+.formGroup label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.formGroup input, .formGroup select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.formGroup input:focus, .formGroup select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.formGroup input.error, .formGroup select.error {
+    border-color: #ef4444;
+}
+
+.errorText {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: #ef4444;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+}
+
+.checkboxLabel {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #374151;
+}
+
+.checkboxLabel input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    min-height: 16px;
+    max-width: 16px;
+    max-height: 16px;
+    margin: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+    appearance: checkbox;
+    -webkit-appearance: checkbox;
+    vertical-align: middle;
+}
+
+.checkmark {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #d1d5db;
+    border-radius: 4px;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.checkboxLabel input[type="checkbox"]:checked + .checkmark {
+    background: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.checkboxLabel input[type="checkbox"]:checked + .checkmark::after {
+    content: '✓';
+    position: absolute;
+    top: -2px;
+    left: 2px;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.modalFooter {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.cancelButton {
+    padding: 12px 20px;
+    background: #f3f4f6;
+    color: #374151;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.cancelButton:hover {
+    background: #e5e7eb;
+}
+
+.cancelButton:disabled {
+    background: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.submitButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.submitButton:hover {
+    background: #2563eb;
+}
+
+.submitButton:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .paymentMethods {
+        padding: 16px;
+    }
+
+    .header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: stretch;
+    }
+
+    .cardItem {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+    }
+
+    .cardActions {
+        justify-content: center;
+    }
+
+    .row {
+        grid-template-columns: 1fr;
+    }
+
+    .modalContent {
+        width: 95%;
+        margin: 16px;
+    }
+
+    .modalFooter {
+        flex-direction: column;
+    }
+} 

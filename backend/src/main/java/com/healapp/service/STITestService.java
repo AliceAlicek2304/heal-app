@@ -66,6 +66,9 @@ public class STITestService {
     @Autowired
     private PaymentService paymentService;
 
+    @Autowired
+    private PaymentInfoService paymentInfoService;
+
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<STITestResponse> bookTest(STITestRequest request, Long customerId) {
         log.info("User {} booking STI test", customerId);
@@ -236,18 +239,72 @@ public class STITestService {
     }
 
     private ApiResponse<Payment> processVisaPaymentWithValidation(STITest stiTest, STITestRequest request) {
-        // Validate VISA fields
-        if (request.getCardNumber() == null || request.getCardNumber().trim().length() != 16) {
-            return ApiResponse.error("Invalid card number - must be 16 digits");
+        String cardNumber, expiryMonth, expiryYear, cvc, cardHolderName;
+        
+        // Check if using saved payment info
+        if (request.getPaymentInfoId() != null) {
+            // Get card info from saved payment info
+            cardNumber = paymentInfoService.getDecryptedCardNumber(stiTest.getCustomer().getId(), request.getPaymentInfoId());
+            if (cardNumber == null) {
+                return ApiResponse.error("Saved payment method not found or invalid");
+            }
+            
+            // Get other card details from request (CVC is still required for security)
+            if (request.getCvc() == null || request.getCvc().trim().length() < 3) {
+                return ApiResponse.error("CVC is required for security");
+            }
+            
+            // Get card details from saved payment info
+            ApiResponse<List<com.healapp.dto.PaymentInfoResponse>> paymentInfoResponse = 
+                paymentInfoService.getUserPaymentInfo(stiTest.getCustomer().getId());
+            
+            if (!paymentInfoResponse.isSuccess()) {
+                return ApiResponse.error("Failed to retrieve saved payment method");
+            }
+            
+            com.healapp.dto.PaymentInfoResponse paymentInfo = paymentInfoResponse.getData().stream()
+                .filter(info -> info.getPaymentInfoId().equals(request.getPaymentInfoId()))
+                .findFirst()
+                .orElse(null);
+                
+            if (paymentInfo == null) {
+                return ApiResponse.error("Saved payment method not found");
+            }
+            
+            expiryMonth = paymentInfo.getExpiryMonth();
+            expiryYear = paymentInfo.getExpiryYear();
+            cardHolderName = paymentInfo.getCardHolderName();
+            cvc = request.getCvc().trim();
+            
+        } else {
+            // Use manually entered card info
+            if (request.getCardNumber() == null || request.getCardNumber().trim().length() != 16) {
+                return ApiResponse.error("Invalid card number - must be 16 digits");
+            }
+
+            if (request.getExpiryMonth() == null || request.getExpiryYear() == null) {
+                return ApiResponse.error("Card expiry date is required");
+            }
+
+            if (request.getCvc() == null || request.getCvc().trim().length() < 3) {
+                return ApiResponse.error("Invalid CVC - must be 3 or 4 digits");
+            }
+
+            if (request.getCardHolderName() == null || request.getCardHolderName().trim().isEmpty()) {
+                return ApiResponse.error("Card holder name is required");
+            }
+            
+            cardNumber = request.getCardNumber().trim();
+            expiryMonth = request.getExpiryMonth().trim();
+            expiryYear = request.getExpiryYear().trim();
+            cvc = request.getCvc().trim();
+            cardHolderName = request.getCardHolderName().trim();
         }
 
-        if (request.getExpiryMonth() == null || request.getExpiryYear() == null) {
-            return ApiResponse.error("Card expiry date is required");
-        }
-
+        // Validate expiry date
         try {
-            int month = Integer.parseInt(request.getExpiryMonth());
-            int year = Integer.parseInt(request.getExpiryYear());
+            int month = Integer.parseInt(expiryMonth);
+            int year = Integer.parseInt(expiryYear);
 
             if (month < 1 || month > 12) {
                 return ApiResponse.error("Invalid expiry month");
@@ -260,13 +317,7 @@ public class STITestService {
             return ApiResponse.error("Invalid expiry date format");
         }
 
-        if (request.getCvc() == null || request.getCvc().trim().length() < 3) {
-            return ApiResponse.error("Invalid CVC - must be 3 or 4 digits");
-        }
-
-        if (request.getCardHolderName() == null || request.getCardHolderName().trim().isEmpty()) {
-            return ApiResponse.error("Card holder name is required");
-        } // Process Stripe payment
+        // Process Stripe payment
         String description;
         if (stiTest.getStiService() != null) {
             description = "STI Test: " + stiTest.getStiService().getName();
@@ -282,11 +333,11 @@ public class STITestService {
                 stiTest.getTestId(),
                 stiTest.getTotalPrice(),
                 description,
-                request.getCardNumber().trim(),
-                request.getExpiryMonth().trim(),
-                request.getExpiryYear().trim(),
-                request.getCvc().trim(),
-                request.getCardHolderName().trim());
+                cardNumber,
+                expiryMonth,
+                expiryYear,
+                cvc,
+                cardHolderName);
     }
 
     private ApiResponse<Payment> processQRPaymentWithValidation(STITest stiTest, STITestRequest request,

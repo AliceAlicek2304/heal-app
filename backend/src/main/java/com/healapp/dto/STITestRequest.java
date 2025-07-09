@@ -1,11 +1,15 @@
 package com.healapp.dto;
 
-import jakarta.validation.constraints.*;
+import java.time.LocalDateTime;
+
+import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -48,6 +52,9 @@ public class STITestRequest {
     // QR code
     @Size(max = 50, message = "QR payment reference cannot exceed 50 characters")
     private String qrPaymentReference;
+
+    // Saved payment info (optional - for using saved cards)
+    private Long paymentInfoId;
 
     // Validation methods
     public boolean isValid() {

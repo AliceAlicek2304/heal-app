@@ -147,6 +147,11 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.DELETE, "/ratings/**").authenticated()
                 .requestMatchers(HttpMethod.GET, "/ratings/my-ratings").authenticated()
                 .requestMatchers(HttpMethod.GET, "/ratings/can-rate/**").hasRole("CUSTOMER")
+                // API PaymentInfo (Authenticated user endpoints)
+                .requestMatchers(HttpMethod.GET, "/payment-info").authenticated()
+                .requestMatchers(HttpMethod.POST, "/payment-info").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/payment-info/**").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/payment-info/**").authenticated()
                 // ========= CONSULTANT ENDPOINTS =========
                 // API Consultant Profile Management
                 .requestMatchers(HttpMethod.PUT, "/consultants/profile").hasRole("CONSULTANT")

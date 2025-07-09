@@ -145,6 +145,15 @@ const SidebarNav = ({ activeTab }) => {
                             <span>Lịch sử bài viết</span>
                         </Link>
                     </li>
+                    <li className={activeTab === 'payment-methods' ? styles.active : ''}>
+                        <Link to="/profile/payment-methods" className={styles.menuLink}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                <line x1="1" y1="10" x2="23" y2="10"></line>
+                            </svg>
+                            <span>Phương thức thanh toán</span>
+                        </Link>
+                    </li>
                     <li className={activeTab === 'my-questions' ? styles.active : ''}>
                         <Link to="/profile/my-questions" className={styles.menuLink}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

@@ -335,6 +335,147 @@
     font-weight: 600;
 }
 
+/* Saved Cards Section */
+.savedCardsSection {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.savedCardsHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.savedCardsHeader h5 {
+    margin: 0;
+    font-size: 16px;
+    color: #2d3748;
+    font-weight: 600;
+}
+
+.savedCardToggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #4a5568;
+    cursor: pointer;
+}
+
+.savedCardToggle input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #3b82f6;
+}
+
+.savedCardsList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.savedCardItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.savedCardItem:hover {
+    border-color: #3b82f6;
+    background-color: #f8fafc;
+}
+
+.savedCardItem.selected {
+    border-color: #3b82f6;
+    background-color: #eff6ff;
+}
+
+.cardInfo {
+    flex: 1;
+}
+
+.cardType {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 4px;
+}
+
+.cardNumber {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 4px;
+    font-family: 'Courier New', monospace;
+}
+
+.cardDetails {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.defaultBadge {
+    background-color: #10b981;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 500;
+    margin-top: 4px;
+    display: inline-block;
+}
+
+.cardRadio {
+    margin-left: 16px;
+}
+
+.cardRadio input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #3b82f6;
+}
+
+/* Save Card Option */
+.saveCardOption {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.saveCardToggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #4a5568;
+    cursor: pointer;
+}
+
+.saveCardToggle input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #3b82f6;
+}
+
+/* CVC Note */
+.cvcNote {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: #6b7280;
+    font-style: italic;
+}
+
 /* Form Rows */
 .formRow {
     display: grid;

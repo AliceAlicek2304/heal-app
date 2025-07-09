@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useToast } from '../../../contexts/ToastContext';
 import { stiService } from '../../../services/stiService';
+import { paymentInfoService } from '../../../services/paymentInfoService';
 import LoadingSpinner from '../../common/LoadingSpinner/LoadingSpinner';
 import styles from './STIBookingModal.module.css';
 
 const PAYMENT_METHODS = [
     { value: 'COD', label: 'Thanh toán khi nhận dịch vụ (COD)' },
     { value: 'VISA', label: 'Thanh toán bằng thẻ VISA' },
-    { value: 'QR_CODE', label: 'Thanh toán bằng QR Code (Chuyển khoản)' } // ✅ THÊM QR CODE
+    { value: 'QR_CODE', label: 'Thanh toán bằng QR Code (Chuyển khoản)' }
 ];
 
 const TIME_SLOTS = [
@@ -31,6 +32,12 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
     const [qrPaymentData, setQrPaymentData] = useState(null);
     const [checkingPayment, setCheckingPayment] = useState(false);
 
+    // ✅ THÊM STATE CHO SAVED PAYMENT METHODS
+    const [savedCards, setSavedCards] = useState([]);
+    const [loadingCards, setLoadingCards] = useState(false);
+    const [useSavedCard, setUseSavedCard] = useState(false);
+    const [selectedCardId, setSelectedCardId] = useState(null);
+
     const [formData, setFormData] = useState({
         serviceId: service.serviceId,
         appointmentDate: '',
@@ -45,10 +52,40 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
         expiryMonth: '',
         expiryYear: '',
         cvc: '',
-        cardHolderName: ''
+        cardHolderName: '',
+        // Saved payment info
+        paymentInfoId: null
     });
 
     const [loading, setLoading] = useState(false);
+
+    // Load saved cards when component mounts
+    useEffect(() => {
+        if (user) {
+            loadSavedCards();
+        }
+    }, [user]);
+
+    // Load saved payment methods
+    const loadSavedCards = async () => {
+        setLoadingCards(true);
+        try {
+            const response = await paymentInfoService.getMyCards(() => window.location.hash = '#/login');
+            if (response.success) {
+                setSavedCards(response.data || []);
+                // Auto-select default card if available
+                const defaultCard = response.data?.find(card => card.isDefault);
+                if (defaultCard) {
+                    setSelectedCardId(defaultCard.paymentInfoId);
+                    setUseSavedCard(true);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading saved cards:', error);
+        } finally {
+            setLoadingCards(false);
+        }
+    };
 
     // Set minimum date to tomorrow
     const minDate = new Date();
@@ -227,11 +264,18 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
 
             // Add VISA fields if payment method is VISA
             if (formData.paymentMethod === 'VISA') {
-                testData.cardNumber = formData.cardNumber.replace(/\s/g, '');
-                testData.expiryMonth = formData.expiryMonth;
-                testData.expiryYear = formData.expiryYear;
-                testData.cvc = formData.cvc;
-                testData.cardHolderName = formData.cardHolderName;
+                if (useSavedCard && selectedCardId) {
+                    // Use saved payment method
+                    testData.paymentInfoId = selectedCardId;
+                    testData.cvc = formData.cvc; // CVC is still required for security
+                } else {
+                    // Use manually entered card info
+                    testData.cardNumber = formData.cardNumber.replace(/\s/g, '');
+                    testData.expiryMonth = formData.expiryMonth;
+                    testData.expiryYear = formData.expiryYear;
+                    testData.cvc = formData.cvc;
+                    testData.cardHolderName = formData.cardHolderName;
+                }
             }
 
             const response = await stiService.bookTest(testData, onAuthRequired);
@@ -478,63 +522,180 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
                                 <div className={`${styles.formSection} ${styles.visaFields}`}>
                                     <h4>Thông tin thẻ VISA</h4>
 
-                                    <div className={styles.formGroup}>
-                                        <label htmlFor="cardNumber">Số thẻ *</label>
-                                        <input
-                                            type="text"
-                                            id="cardNumber"
-                                            name="cardNumber"
-                                            value={formData.cardNumber}
-                                            onChange={handleCardNumberChange}
-                                            placeholder="1234 5678 9012 3456"
-                                            maxLength="19"
-                                            required
-                                            disabled={loading}
-                                        />
-                                    </div>
+                                    {/* Saved Cards Selection */}
+                                    {savedCards.length > 0 && (
+                                        <div className={styles.savedCardsSection}>
+                                            <div className={styles.savedCardsHeader}>
+                                                <h5>Thẻ đã lưu</h5>
+                                                <label className={styles.savedCardToggle}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={useSavedCard}
+                                                        onChange={(e) => {
+                                                            setUseSavedCard(e.target.checked);
+                                                            if (!e.target.checked) {
+                                                                setSelectedCardId(null);
+                                                                setFormData(prev => ({ ...prev, paymentInfoId: null }));
+                                                            }
+                                                        }}
+                                                        disabled={loading}
+                                                    />
+                                                    <span>Sử dụng thẻ đã lưu</span>
+                                                </label>
+                                            </div>
 
-                                    <div className={styles.formRow}>
-                                        <div className={styles.formGroup}>
-                                            <label htmlFor="expiryMonth">Tháng hết hạn *</label>
-                                            <select
-                                                id="expiryMonth"
-                                                name="expiryMonth"
-                                                value={formData.expiryMonth}
-                                                onChange={handleInputChange}
-                                                required
-                                                disabled={loading}
-                                            >
-                                                <option value="">Tháng</option>
-                                                {[...Array(12)].map((_, i) => (
-                                                    <option key={i + 1} value={String(i + 1).padStart(2, '0')}>
-                                                        {String(i + 1).padStart(2, '0')}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                            {useSavedCard && (
+                                                <div className={styles.savedCardsList}>
+                                                    {savedCards.map(card => (
+                                                        <div
+                                                            key={card.paymentInfoId}
+                                                            className={`${styles.savedCardItem} ${selectedCardId === card.paymentInfoId ? styles.selected : ''}`}
+                                                            onClick={() => {
+                                                                setSelectedCardId(card.paymentInfoId);
+                                                                setFormData(prev => ({ 
+                                                                    ...prev, 
+                                                                    paymentInfoId: card.paymentInfoId,
+                                                                    cardHolderName: card.cardHolderName
+                                                                }));
+                                                            }}
+                                                        >
+                                                            <div className={styles.cardInfo}>
+                                                                <div className={styles.cardType}>
+                                                                    💳 {card.cardType || 'VISA'}
+                                                                </div>
+                                                                <div className={styles.cardNumber}>
+                                                                    {card.cardNumber}
+                                                                </div>
+                                                                <div className={styles.cardDetails}>
+                                                                    <span>{card.cardHolderName}</span>
+                                                                    <span>Hết hạn: {card.expiryMonth}/{card.expiryYear}</span>
+                                                                </div>
+                                                                {card.isDefault && (
+                                                                    <div className={styles.defaultBadge}>Mặc định</div>
+                                                                )}
+                                                            </div>
+                                                            <div className={styles.cardRadio}>
+                                                                <input
+                                                                    type="radio"
+                                                                    name="selectedCard"
+                                                                    checked={selectedCardId === card.paymentInfoId}
+                                                                    onChange={() => {}}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
+                                    )}
 
-                                        <div className={styles.formGroup}>
-                                            <label htmlFor="expiryYear">Năm hết hạn *</label>
-                                            <select
-                                                id="expiryYear"
-                                                name="expiryYear"
-                                                value={formData.expiryYear}
-                                                onChange={handleInputChange}
-                                                required
-                                                disabled={loading}
-                                            >
-                                                <option value="">Năm</option>
-                                                {[...Array(10)].map((_, i) => {
-                                                    const year = new Date().getFullYear() + i;
-                                                    return (
-                                                        <option key={year} value={year}>
-                                                            {year}
-                                                        </option>
-                                                    );
-                                                })}
-                                            </select>
-                                        </div>
+                                    {/* Manual Card Entry */}
+                                    {(!useSavedCard || savedCards.length === 0) && (
+                                        <>
+                                            <div className={styles.formGroup}>
+                                                <label htmlFor="cardNumber">Số thẻ *</label>
+                                                <input
+                                                    type="text"
+                                                    id="cardNumber"
+                                                    name="cardNumber"
+                                                    value={formData.cardNumber}
+                                                    onChange={handleCardNumberChange}
+                                                    placeholder="1234 5678 9012 3456"
+                                                    maxLength="19"
+                                                    required
+                                                    disabled={loading}
+                                                />
+                                            </div>
 
+                                            <div className={styles.formRow}>
+                                                <div className={styles.formGroup}>
+                                                    <label htmlFor="expiryMonth">Tháng hết hạn *</label>
+                                                    <select
+                                                        id="expiryMonth"
+                                                        name="expiryMonth"
+                                                        value={formData.expiryMonth}
+                                                        onChange={handleInputChange}
+                                                        required
+                                                        disabled={loading}
+                                                    >
+                                                        <option value="">Tháng</option>
+                                                        {[...Array(12)].map((_, i) => (
+                                                            <option key={i + 1} value={String(i + 1).padStart(2, '0')}>
+                                                                {String(i + 1).padStart(2, '0')}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+
+                                                <div className={styles.formGroup}>
+                                                    <label htmlFor="expiryYear">Năm hết hạn *</label>
+                                                    <select
+                                                        id="expiryYear"
+                                                        name="expiryYear"
+                                                        value={formData.expiryYear}
+                                                        onChange={handleInputChange}
+                                                        required
+                                                        disabled={loading}
+                                                    >
+                                                        <option value="">Năm</option>
+                                                        {[...Array(10)].map((_, i) => {
+                                                            const year = new Date().getFullYear() + i;
+                                                            return (
+                                                                <option key={year} value={year}>
+                                                                    {year}
+                                                                </option>
+                                                            );
+                                                        })}
+                                                    </select>
+                                                </div>
+
+                                                <div className={styles.formGroup}>
+                                                    <label htmlFor="cvc">CVC *</label>
+                                                    <input
+                                                        type="text"
+                                                        id="cvc"
+                                                        name="cvc"
+                                                        value={formData.cvc}
+                                                        onChange={handleInputChange}
+                                                        placeholder="123"
+                                                        maxLength="4"
+                                                        required
+                                                        disabled={loading}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className={styles.formGroup}>
+                                                <label htmlFor="cardHolderName">Tên chủ thẻ *</label>
+                                                <input
+                                                    type="text"
+                                                    id="cardHolderName"
+                                                    name="cardHolderName"
+                                                    value={formData.cardHolderName}
+                                                    onChange={handleInputChange}
+                                                    placeholder="Nhập tên như trên thẻ"
+                                                    required
+                                                    disabled={loading}
+                                                />
+                                            </div>
+
+                                            {/* Save Card Option */}
+                                            <div className={styles.saveCardOption}>
+                                                <label className={styles.saveCardToggle}>
+                                                    <input
+                                                        type="checkbox"
+                                                        name="saveCard"
+                                                        onChange={handleInputChange}
+                                                        disabled={loading}
+                                                    />
+                                                    <span>Lưu thẻ này để sử dụng lần sau</span>
+                                                </label>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {/* CVC for Saved Card */}
+                                    {useSavedCard && selectedCardId && (
                                         <div className={styles.formGroup}>
                                             <label htmlFor="cvc">CVC *</label>
                                             <input
@@ -543,27 +704,16 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
                                                 name="cvc"
                                                 value={formData.cvc}
                                                 onChange={handleInputChange}
-                                                placeholder="123"
+                                                placeholder="Nhập CVC để bảo mật"
                                                 maxLength="4"
                                                 required
                                                 disabled={loading}
                                             />
+                                            <small className={styles.cvcNote}>
+                                                CVC là bắt buộc để bảo mật khi sử dụng thẻ đã lưu
+                                            </small>
                                         </div>
-                                    </div>
-
-                                    <div className={styles.formGroup}>
-                                        <label htmlFor="cardHolderName">Tên chủ thẻ *</label>
-                                        <input
-                                            type="text"
-                                            id="cardHolderName"
-                                            name="cardHolderName"
-                                            value={formData.cardHolderName}
-                                            onChange={handleInputChange}
-                                            placeholder="Nhập tên như trên thẻ"
-                                            required
-                                            disabled={loading}
-                                        />
-                                    </div>
+                                    )}
                                 </div>
                             )}
                         </form>

@@ -23,6 +23,7 @@ import Navbar from '../../components/layout/Navbar/Navbar';
 import Footer from '../../components/layout/Footer/Footer';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
 import styles from './ProfilePage.module.css';
+import PaymentMethods from '../../components/profile/PaymentMethods/PaymentMethods';
 
 const ProfilePage = () => {
     const { tab } = useParams();
@@ -149,6 +150,12 @@ const ProfilePage = () => {
                 return (
                     <div className={styles.contentSection}>
                         <CategoryManagement />
+                    </div>
+                );
+            case 'payment-methods':
+                return (
+                    <div className={styles.contentSection}>
+                        <PaymentMethods />
                     </div>
                 );
             default:
