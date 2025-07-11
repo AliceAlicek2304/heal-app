@@ -1018,6 +1018,7 @@ const MenstrualCycleCalculator = () => {
                         <RegisterForm
                             onClose={closeModals}
                             onSwitchToLogin={switchToLogin}
+                            onRegisterSuccess={closeModals}
                         />
                     </div>
                 </div>

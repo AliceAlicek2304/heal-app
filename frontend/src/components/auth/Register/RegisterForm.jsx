@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { authService } from '../../../services/authService';
 import { useToast } from '../../../contexts/ToastContext';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import styles from './RegisterForm.module.css';
 
-const RegisterForm = ({ onClose, onSwitchToLogin }) => {
+const RegisterForm = ({ onClose, onSwitchToLogin, onRegisterSuccess }) => {
     const toast = useToast();
+    const { googleLogin } = useAuth();
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         fullName: '',
         username: '',
@@ -18,6 +22,7 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
     });
 
     const [isLoading, setIsLoading] = useState(false);
+    const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const [isSendingCode, setIsSendingCode] = useState(false);
     const [errors, setErrors] = useState({});
     const [isCodeSent, setIsCodeSent] = useState(false);
@@ -29,6 +34,142 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
         hasNumber: false,
         hasSpecialChar: false
     });
+
+    // Load Google Sign-In script
+    useEffect(() => {
+        const loadGoogleScript = () => {
+            if (window.google) {
+                // If Google script is already loaded, just initialize
+                initializeGoogleSignIn();
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = 'https://accounts.google.com/gsi/client';
+            script.async = true;
+            script.defer = true;
+            script.onload = initializeGoogleSignIn;
+            document.head.appendChild(script);
+        };
+
+        const initializeGoogleSignIn = () => {
+            if (window.google) {
+                window.google.accounts.id.initialize({
+                    client_id: '720346160754-f1vpd97jhm81p15201reechausvnnd7u.apps.googleusercontent.com',
+                    callback: handleGoogleLogin,
+                    auto_select: false,
+                    cancel_on_tap_outside: true,
+                    ux_mode: 'popup'
+                });
+                
+                // Clear any existing button content first
+                const buttonContainer = document.getElementById('google-register-button');
+                if (buttonContainer) {
+                    buttonContainer.innerHTML = '';
+                    
+                    // Render the button
+                    window.google.accounts.id.renderButton(
+                        buttonContainer,
+                        {
+                            theme: 'outline',
+                            size: 'large',
+                            text: 'signup_with',
+                            width: '100%'
+                        }
+                    );
+                }
+            }
+        };
+
+        // Add a small delay to ensure DOM is ready
+        const timer = setTimeout(() => {
+            loadGoogleScript();
+        }, 100);
+
+        return () => clearTimeout(timer);
+    }, []);
+
+    // Re-initialize Google button when component becomes visible
+    useEffect(() => {
+        const reinitializeGoogleButton = () => {
+            if (window.google) {
+                const buttonContainer = document.getElementById('google-register-button');
+                if (buttonContainer && buttonContainer.innerHTML === '') {
+                    window.google.accounts.id.renderButton(
+                        buttonContainer,
+                        {
+                            theme: 'outline',
+                            size: 'large',
+                            text: 'signup_with',
+                            width: '100%'
+                        }
+                    );
+                }
+            }
+        };
+
+        // Check if we need to reinitialize the button
+        const timer = setTimeout(reinitializeGoogleButton, 200);
+        
+        return () => clearTimeout(timer);
+    });
+
+    const handleGoogleLogin = async (response) => {
+        setIsGoogleLoading(true);
+        try {
+            const result = await googleLogin(response.credential);
+            
+            if (result.success) {
+                // Check if user is admin
+                if (result.isAdmin) {
+                    toast.success('Đang chuyển hướng đến trang quản trị...', 1000);
+                    if (onRegisterSuccess) {
+                        onRegisterSuccess();
+                    }
+                    onClose();
+                    navigate('/admin');
+                    return;
+                }
+
+                // Normal user flow
+                toast.success('Đăng ký Google thành công!', 2000);
+                if (onRegisterSuccess) {
+                    onRegisterSuccess();
+                }
+                setTimeout(() => {
+                    onClose();
+                }, 500);
+            } else {
+                // Show user-friendly error messages based on error type
+                const errorMessage = result.message || 'Đăng ký Google thất bại';
+                const errorCode = result.error;
+                
+                if (errorCode === 'EMAIL_ALREADY_EXISTS' || errorMessage.includes('Email này đã được')) {
+                    toast.error(errorMessage + ' Hãy thử đăng nhập thay vì đăng ký.', 5000);
+                } else if (errorCode === 'SERVER_ERROR' || errorMessage.includes('Lỗi hệ thống')) {
+                    toast.error(errorMessage, 4000);
+                } else if (errorCode === 'AUTHENTICATION_ERROR') {
+                    toast.error('Xác thực Google thất bại. Vui lòng thử lại.', 3000);
+                } else {
+                    toast.error(errorMessage, 3000);
+                }
+            }
+        } catch (error) {
+            toast.error('Có lỗi xảy ra trong quá trình đăng ký Google');
+        } finally {
+            setIsGoogleLoading(false);
+        }
+    };
+
+    const handleGoogleButtonClick = () => {
+        if (isGoogleLoading) return;
+        
+        if (window.google) {
+            window.google.accounts.id.prompt();
+        } else {
+            toast.error('Google Sign-In chưa được tải. Vui lòng thử lại sau.');
+        }
+    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -568,6 +709,12 @@ const RegisterForm = ({ onClose, onSwitchToLogin }) => {
                         </>
                     )}
                 </button>
+
+                <div className={styles.divider}>
+                    <span>hoặc</span>
+                </div>
+
+                <div id="google-register-button" className={styles.googleButtonContainer}></div>
 
                 <div className={styles.footer}>
                     <p>

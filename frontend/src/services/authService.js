@@ -18,11 +18,9 @@ const refreshToken = async () => {
     try {
         const refreshTokenValue = localStorage.getItem('refreshToken');
         if (!refreshTokenValue) {
-            console.log('No refresh token available');
             throw new Error('No refresh token');
         }
 
-        console.log('Attempting to refresh token...');
         const response = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -30,7 +28,6 @@ const refreshToken = async () => {
         });
 
         if (!response.ok) {
-            console.log('Refresh token failed with status:', response.status);
             clearTokens();
             return null;
         }
@@ -39,10 +36,8 @@ const refreshToken = async () => {
 
         if (data.success !== false && data.accessToken && data.refreshToken) {
             setTokens(data.accessToken, data.refreshToken);
-            console.log(' Token refreshed successfully');
             return data.accessToken;
         } else {
-            console.log('Refresh response format error:', data);
             clearTokens();
             return null;
         }
@@ -73,13 +68,11 @@ const apiCall = async (url, options = {}) => {
 
             // Handle unauthorized response by trying to refresh the token once
             if (response.status === 401 && retryCount < maxRetries) {
-                console.log('Received 401, attempting token refresh');
                 retryCount++;
 
                 try {
                     const newToken = await refreshToken();
                     if (newToken) {
-                        console.log('Token refreshed successfully, retrying request');
                         // Retry the request with the new token
                         const newHeaders = {
                             ...options.headers,
@@ -88,7 +81,6 @@ const apiCall = async (url, options = {}) => {
                         };
                         return await fetch(url, { ...options, headers: newHeaders });
                     } else {
-                        console.log('Token refresh failed, clearing auth data');
                         clearTokens();
                         return response;
                     }
@@ -405,7 +397,75 @@ export const authService = {
             console.error('Error refreshing user profile:', error);
             return { success: false, message: 'Có lỗi xảy ra khi tải thông tin người dùng' };
         }
-    },    // Expose refresh token method
+    },
+
+    // Google OAuth Login
+    googleLogin: async (idToken) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/auth/oauth/google/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ idToken })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.accessToken) {
+                // Store tokens
+                setTokens(data.accessToken, data.refreshToken);
+                
+                // Store user data
+                if (data.user) {
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                }
+
+                return { 
+                    success: true, 
+                    data: {
+                        user: data.user,
+                        accessToken: data.accessToken,
+                        refreshToken: data.refreshToken
+                    }
+                };
+            } else {
+                // Handle structured error responses
+                let errorMessage = 'Google login failed';
+                
+                if (data.error) {
+                    switch (data.error) {
+                        case 'DUPLICATE_USER':
+                            errorMessage = data.message || 'Email này đã được sử dụng với phương thức đăng nhập khác.';
+                            break;
+                        case 'SERVER_ERROR':
+                            errorMessage = data.message || 'Lỗi hệ thống. Vui lòng thử lại sau.';
+                            break;
+                        case 'AUTHENTICATION_ERROR':
+                            errorMessage = data.message || 'Xác thực Google thất bại.';
+                            break;
+                        default:
+                            errorMessage = data.message || errorMessage;
+                    }
+                } else {
+                    errorMessage = data.message || data || errorMessage;
+                }
+                
+                return { 
+                    success: false, 
+                    message: errorMessage
+                };
+            }
+        } catch (error) {
+            console.error('Error during Google login:', error);
+            return { 
+                success: false, 
+                message: 'Có lỗi xảy ra trong quá trình đăng nhập với Google' 
+            };
+        }
+    },
+
+    // Expose refresh token method
     refreshToken,
 
     apiCall

@@ -59,6 +59,9 @@ public class SecurityConfig {
                 // JWT Authentication endpoints
                 .requestMatchers("/auth/login", "/auth/refresh-token", "/auth/logout")
                 .permitAll()
+                // OAuth Authentication endpoints
+                .requestMatchers("/auth/oauth/google/login", "/auth/oauth/facebook/login")
+                .permitAll()
                 // API Blog (Public GET endpoints)
                 .requestMatchers(HttpMethod.GET, "/blog").permitAll()
                 .requestMatchers(HttpMethod.GET, "/blog/{postId}").permitAll()

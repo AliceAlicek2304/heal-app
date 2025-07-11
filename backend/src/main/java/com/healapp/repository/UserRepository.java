@@ -1,15 +1,17 @@
 package com.healapp.repository;
 
-import com.healapp.model.Role;
-import com.healapp.model.UserDtls;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
-import java.time.LocalDate;
-import java.util.List;
+import com.healapp.model.AuthProvider;
+import com.healapp.model.Role;
+import com.healapp.model.UserDtls;
 
 @Repository
 public interface UserRepository extends JpaRepository<UserDtls, Long> {
@@ -47,4 +49,7 @@ public interface UserRepository extends JpaRepository<UserDtls, Long> {
 
     @Query("SELECT u FROM UserDtls u WHERE u.role.roleName = :roleName ORDER BY u.createdDate DESC")
     List<UserDtls> findByRoleNameOrderByCreatedDateDesc(@Param("roleName") String roleName);
+
+    // OAuth-related methods
+    Optional<UserDtls> findByEmailAndProvider(String email, AuthProvider provider);
 }

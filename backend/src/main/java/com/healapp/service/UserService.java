@@ -885,4 +885,13 @@ public class UserService {
         }
     }
 
+    // OAuth-related methods
+    public UserDtls findByEmailAndProvider(String email, com.healapp.model.AuthProvider provider) {
+        return userRepository.findByEmailAndProvider(email, provider).orElse(null);
+    }
+
+    public UserDtls saveUser(UserDtls user) {
+        return userRepository.save(user);
+    }
+
 }

@@ -135,6 +135,28 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const googleLogin = async (idToken) => {
+        setIsLoading(true);
+        try {
+            const response = await authService.googleLogin(idToken);
+            if (response.success && response.data?.user) {
+                setUser(response.data.user);
+                setIsAuthenticatedState(true);
+
+                // Check if user is admin
+                const isAdmin = isUserAdmin(response.data.user);
+                return { success: true, data: response.data, isAdmin: isAdmin };
+            }
+            setIsAuthenticatedState(false);
+            return { success: false, message: response.message || 'Google login failed' };
+        } catch (error) {
+            setIsAuthenticatedState(false);
+            return { success: false, message: 'Có lỗi xảy ra trong quá trình đăng nhập với Google' };
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const logout = () => {
         authService.logout();
         setUser(null);
@@ -150,6 +172,7 @@ export const AuthProvider = ({ children }) => {
         user,
         isLoading,
         login,
+        googleLogin,
         logout,
         updateUser,
         isAuthenticated: isAuthenticatedState

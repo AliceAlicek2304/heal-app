@@ -316,6 +316,7 @@ const Questions = () => {
                         <RegisterForm
                             onClose={closeModals}
                             onSwitchToLogin={switchToLogin}
+                            onRegisterSuccess={closeModals}
                         />
                     </div>
                 </div>

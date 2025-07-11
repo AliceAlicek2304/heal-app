@@ -173,6 +173,52 @@
     cursor: not-allowed;
 }
 
+.btnGoogle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 14px 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: white;
+    color: #374151;
+    margin-bottom: 8px;
+}
+
+.btnGoogle:hover:not(:disabled) {
+    background: #f9fafb;
+    border-color: #d1d5db;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.btnGoogle:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btnGoogle svg {
+    width: 18px;
+    height: 18px;
+}
+
+.googleButtonContainer {
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.googleButtonContainer > div {
+    width: 100% !important;
+}
+
+.googleButtonContainer iframe {
+    width: 100% !important;
+}
+
 .divider {
     position: relative;
     text-align: center;

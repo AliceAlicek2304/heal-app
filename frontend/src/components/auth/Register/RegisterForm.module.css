@@ -322,6 +322,78 @@
     cursor: not-allowed;
 }
 
+.btnGoogle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 13px 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: white;
+    color: #374151;
+    margin-bottom: 8px;
+}
+
+.btnGoogle:hover:not(:disabled) {
+    background: #f9fafb;
+    border-color: #d1d5db;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.btnGoogle:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f8fafc;
+    color: #94a3b8;
+}
+
+.btnGoogle svg {
+    width: 18px;
+    height: 18px;
+}
+
+.googleButtonContainer {
+    margin-bottom: 8px;
+    width: 100%;
+}
+
+.googleButtonContainer > div {
+    width: 100% !important;
+}
+
+.googleButtonContainer iframe {
+    width: 100% !important;
+}
+
+.divider {
+    position: relative;
+    text-align: center;
+    margin: 16px 0 12px 0;
+}
+
+.divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #e2e8f0;
+}
+
+.divider span {
+    background: white;
+    padding: 0 16px;
+    color: #64748b;
+    font-size: 0.875rem;
+    position: relative;
+}
+
 .footer {
     text-align: center;
     border-top: 1px solid #f1f5f9;

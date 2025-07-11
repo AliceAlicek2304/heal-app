@@ -67,6 +67,13 @@ public class UserDtls {
     @Column(name = "created_date", nullable = false)
     private LocalDateTime createdDate = LocalDateTime.now();
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "provider", length = 20, nullable = false)
+    private AuthProvider provider = AuthProvider.LOCAL;
+
+    @Column(name = "provider_id", length = 100)
+    private String providerId;
+
     public String getRoleName() {
         return role != null ? role.getRoleName() : null;
     }

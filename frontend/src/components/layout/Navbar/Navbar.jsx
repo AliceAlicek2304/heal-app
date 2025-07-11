@@ -409,6 +409,7 @@ const Navbar = () => {
                         <RegisterForm
                             onClose={handleCloseModals}
                             onSwitchToLogin={handleSwitchToLogin}
+                            onRegisterSuccess={handleCloseModals}
                         />
                     </div>
                 </div>
