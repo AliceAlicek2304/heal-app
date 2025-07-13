@@ -10,7 +10,11 @@ import styles from './SecurityForm.module.css';
 const SecurityForm = () => {
     const { user, updateUser, logout } = useAuth();
     const navigate = useNavigate();
-    const toast = useToast(); const [activeTab, setActiveTab] = useState('email');
+    const toast = useToast();
+    const [activeTab, setActiveTab] = useState(() => {
+        // Default to password tab for Google users since they can't change email
+        return user?.provider === 'GOOGLE' ? 'password' : 'email';
+    });
 
     // State cho thay đổi email
     const [emailData, setEmailData] = useState({
@@ -268,6 +272,13 @@ const SecurityForm = () => {
         }
     }, [user]);
 
+    // Update activeTab when user provider changes
+    useEffect(() => {
+        if (user?.provider === 'GOOGLE' && activeTab === 'email') {
+            setActiveTab('password');
+        }
+    }, [user?.provider, activeTab]);
+
     const handlePhoneInputChange = (e) => {
         const { name, value } = e.target;
         setPhoneData({
@@ -423,16 +434,18 @@ const SecurityForm = () => {
             </div>
 
             <div className={styles.tabContainer}>                <div className={styles.tabList}>
-                <button
-                    className={`${styles.tabBtn} ${activeTab === 'email' ? styles.active : ''}`}
-                    onClick={() => setActiveTab('email')}
-                >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                        <polyline points="22,6 12,13 2,6"></polyline>
-                    </svg>
-                    Thay đổi Email
-                </button>
+                {user?.provider === 'LOCAL' && (
+                    <button
+                        className={`${styles.tabBtn} ${activeTab === 'email' ? styles.active : ''}`}
+                        onClick={() => setActiveTab('email')}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        Thay đổi Email
+                    </button>
+                )}
                 <button
                     className={`${styles.tabBtn} ${activeTab === 'phone' ? styles.active : ''}`}
                     onClick={() => setActiveTab('phone')}
@@ -456,7 +469,7 @@ const SecurityForm = () => {
             </div>
 
                 <div className={styles.tabContent}>
-                    {activeTab === 'email' && (
+                    {activeTab === 'email' && user?.provider === 'LOCAL' && (
                         <div className={styles.emailTab}>
                             <div className={styles.tabHeader}>
                                 <h3>Thay đổi Email</h3>

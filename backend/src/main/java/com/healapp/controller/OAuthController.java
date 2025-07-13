@@ -145,6 +145,7 @@ public class OAuthController {
                     "avatar", user.getAvatar() != null ? user.getAvatar() : "",
                     "role", user.getRoleName(),
                     "provider", user.getProvider().toString(),
+                    "providerId", user.getProviderId() != null ? user.getProviderId() : "",
                     "phone", user.getPhone(),
                     "birthDay", user.getBirthDay() != null ? user.getBirthDay().toString() : null,
                     "gender", user.getGender() != null ? user.getGender().toString() : null

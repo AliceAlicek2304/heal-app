@@ -23,4 +23,6 @@ public class UserResponse {
     private Boolean isActive;
     private String role;
     private LocalDateTime createdDate;
+    private String provider;  // Add OAuth provider info
+    private String providerId; // Add OAuth provider ID
 }

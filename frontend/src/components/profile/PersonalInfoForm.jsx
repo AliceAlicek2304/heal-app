@@ -55,6 +55,11 @@ const PersonalInfoForm = () => {
 
     useEffect(() => {
         if (!isLoading && user) {
+            // Check if provider is missing and force refresh
+            if (!user.provider) {
+                handleRefreshUserData();
+            }
+            
             setUserDataToForm(user);
 
             // Check if user data is incomplete (missing fullName, avatar, etc.)

@@ -774,6 +774,11 @@ public class UserService {
         response.setIsActive(user.getIsActive());
         response.setRole(user.getRoleName());
         response.setCreatedDate(user.getCreatedDate());
+        
+        // Set OAuth provider information
+        response.setProvider(user.getProvider() != null ? user.getProvider().toString() : "LOCAL");
+        response.setProviderId(user.getProviderId());
+        
         return response;
     }
 

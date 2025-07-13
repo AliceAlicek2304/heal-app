@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }) => {
             try {
                 const authenticated = authService.isAuthenticated();
                 if (authenticated) {
-                    // Try to get user from localStorage first
+                    // Try to get user from localStorage first for immediate UI update
                     const userStr = localStorage.getItem('user');
                     if (userStr) {
                         const userData = JSON.parse(userStr);
@@ -70,27 +70,28 @@ export const AuthProvider = ({ children }) => {
                         }
                     }
 
-                    // If we don't have user data, try to get it from server
-                    if (!userStr) {
-                        try {
-                            const result = await authService.getCurrentUser();
-                            if (result.success && result.data) {
-                                setUser(result.data);
-                                setIsAuthenticatedState(true);
-                                localStorage.setItem('user', JSON.stringify(result.data));
+                    // Always fetch fresh user data from server to get latest provider info
+                    try {
+                        const result = await authService.getCurrentUser();
+                        if (result.success && result.data) {
+                            setUser(result.data);
+                            setIsAuthenticatedState(true);
+                            localStorage.setItem('user', JSON.stringify(result.data));
 
-                                // Check if user is admin and redirect if needed
-                                if (isUserAdmin(result.data)) {
-                                    redirectAdminToDashboard();
-                                }
-                            } else {
-                                // Server says we're not authenticated
-                                authService.logout();
-                                setUser(null);
-                                setIsAuthenticatedState(false);
+                            // Check if user is admin and redirect if needed
+                            if (isUserAdmin(result.data)) {
+                                redirectAdminToDashboard();
                             }
-                        } catch (serverError) {
-                            console.error('Failed to get user from server:', serverError);
+                        } else {
+                            // Server says we're not authenticated
+                            authService.logout();
+                            setUser(null);
+                            setIsAuthenticatedState(false);
+                        }
+                    } catch (serverError) {
+                        console.error('Failed to get user from server:', serverError);
+                        // If we have cached user data, keep using it, don't logout
+                        if (!userStr) {
                             authService.logout();
                             setUser(null);
                             setIsAuthenticatedState(false);
