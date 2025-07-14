@@ -1582,4 +1582,114 @@ class UserServiceTest {
         verify(passwordEncoder).encode("NewPassword123!");
         verify(userRepository).save(any(UserDtls.class));
     }
+
+    // OAuth Email Update Validation Tests
+    @Test
+    @DisplayName("sendEmailVerificationForUpdate - OAuth user không được phép thay đổi email")
+    void sendEmailVerificationForUpdate_OAuthUser_ShouldFail() throws Exception {
+        // Given
+        sampleUser.setProvider(com.healapp.model.AuthProvider.GOOGLE);
+        sampleUser.setProviderId("google123");
+
+        VerificationCodeRequest request = new VerificationCodeRequest();
+        request.setEmail("newemail@example.com");
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
+
+        // When
+        ApiResponse<String> response = userService.sendEmailVerificationForUpdate(1L, request);
+
+        // Then
+        assertFalse(response.isSuccess());
+        assertEquals("Cannot change email for OAuth accounts. Email is managed by Google.", response.getMessage());
+
+        verify(userRepository).findById(1L);
+        verify(emailVerificationService, never()).generateVerificationCode(anyString());
+        verify(emailService, never()).sendEmailUpdateVerificationAsync(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("updateEmail - OAuth user không được phép thay đổi email")
+    void updateEmail_OAuthUser_ShouldFail() {
+        // Given
+        sampleUser.setProvider(com.healapp.model.AuthProvider.GOOGLE);
+        sampleUser.setProviderId("google123");
+
+        UpdateEmailRequest request = new UpdateEmailRequest();
+        request.setNewEmail("newemail@example.com");
+        request.setVerificationCode("123456");
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
+
+        // When
+        ApiResponse<UserResponse> response = userService.updateEmail(1L, request);
+
+        // Then
+        assertFalse(response.isSuccess());
+        assertEquals("Cannot change email for OAuth accounts. Email is managed by Google.", response.getMessage());
+
+        verify(userRepository).findById(1L);
+        verify(emailVerificationService, never()).verifyCode(anyString(), anyString());
+        verify(userRepository, never()).save(any(UserDtls.class));
+    }
+
+    @Test
+    @DisplayName("sendEmailVerificationForUpdate - LOCAL user được phép thay đổi email")
+    void sendEmailVerificationForUpdate_LocalUser_Success() throws Exception {
+        // Given
+        sampleUser.setProvider(com.healapp.model.AuthProvider.LOCAL);
+        sampleUser.setProviderId(null);
+
+        VerificationCodeRequest request = new VerificationCodeRequest();
+        request.setEmail("newemail@example.com");
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
+        when(userRepository.existsByEmail("newemail@example.com")).thenReturn(false);
+        when(emailVerificationService.generateVerificationCode("newemail@example.com")).thenReturn("123456");
+        doNothing().when(emailService).sendEmailUpdateVerificationAsync("newemail@example.com", "123456", "Nguyen Van A");
+
+        // When
+        ApiResponse<String> response = userService.sendEmailVerificationForUpdate(1L, request);
+
+        // Then
+        assertTrue(response.isSuccess());
+        assertTrue(response.getMessage().contains("Verification code has been sent"));
+
+        verify(userRepository).findById(1L);
+        verify(userRepository).existsByEmail("newemail@example.com");
+        verify(emailVerificationService).generateVerificationCode("newemail@example.com");
+        verify(emailService).sendEmailUpdateVerificationAsync("newemail@example.com", "123456", "Nguyen Van A");
+    }
+
+    @Test
+    @DisplayName("updateEmail - LOCAL user được phép thay đổi email")
+    void updateEmail_LocalUser_Success() {
+        // Given
+        sampleUser.setProvider(com.healapp.model.AuthProvider.LOCAL);
+        sampleUser.setProviderId(null);
+
+        UpdateEmailRequest request = new UpdateEmailRequest();
+        request.setNewEmail("newemail@example.com");
+        request.setVerificationCode("123456");
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(sampleUser));
+        when(userRepository.existsByEmail("newemail@example.com")).thenReturn(false);
+        when(emailVerificationService.verifyCode("newemail@example.com", "123456")).thenReturn(true);
+        when(userRepository.save(any(UserDtls.class))).thenReturn(sampleUser);
+        doNothing().when(emailService).sendEmailChangeNotificationAsync(anyString(), anyString(), anyString());
+        doNothing().when(emailService).sendEmailChangeConfirmationAsync(anyString(), anyString());
+
+        // When
+        ApiResponse<UserResponse> response = userService.updateEmail(1L, request);
+
+        // Then
+        assertTrue(response.isSuccess());
+        assertEquals("Email updated successfully", response.getMessage());
+        assertNotNull(response.getData());
+
+        verify(userRepository).findById(1L);
+        verify(userRepository).existsByEmail("newemail@example.com");
+        verify(emailVerificationService).verifyCode("newemail@example.com", "123456");
+        verify(userRepository).save(any(UserDtls.class));
+    }
 }

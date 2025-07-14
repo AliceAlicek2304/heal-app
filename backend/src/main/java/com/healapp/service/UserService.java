@@ -29,6 +29,7 @@ import com.healapp.dto.UserResponse;
 import com.healapp.dto.UserUpdateRequest;
 import com.healapp.dto.VerificationCodeRequest;
 import com.healapp.dto.VerifyPhoneRequest;
+import com.healapp.model.AuthProvider;
 import com.healapp.model.ConsultantProfile;
 import com.healapp.model.Gender;
 import com.healapp.model.Role;
@@ -460,6 +461,11 @@ public class UserService {
 
             UserDtls user = userOpt.get();
 
+            // Kiểm tra user có phải đăng nhập bằng OAuth không
+            if (user.getProvider() != null && user.getProvider() != AuthProvider.LOCAL) {
+                return ApiResponse.error("Cannot change email for OAuth accounts. Email is managed by " + user.getProvider().getDisplayName() + ".");
+            }
+
             // Kiểm tra email mới có trùng với email hiện tại
             if (user.getEmail().equals(request.getEmail())) {
                 return ApiResponse.error("New email cannot be the same as current email");
@@ -494,6 +500,11 @@ public class UserService {
             }
 
             UserDtls user = userOpt.get();
+
+            // Kiểm tra user có phải đăng nhập bằng OAuth không
+            if (user.getProvider() != null && user.getProvider() != AuthProvider.LOCAL) {
+                return ApiResponse.error("Cannot change email for OAuth accounts. Email is managed by " + user.getProvider().getDisplayName() + ".");
+            }
 
             // Kiểm tra email mới có trùng với email hiện tại không
             if (user.getEmail().equals(request.getNewEmail())) {
