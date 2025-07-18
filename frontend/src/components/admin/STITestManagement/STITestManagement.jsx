@@ -174,7 +174,7 @@ const STITestManagement = () => {
             if (response.success) {
                 addToast(response.message || 'Hủy test thành công', 'success');
                 // Refresh danh sách tests
-                await loadAllTests();
+                await loadTests();
             } else {
                 addToast(response.message || 'Không thể hủy test', 'error');
             }
