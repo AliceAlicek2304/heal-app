@@ -899,8 +899,20 @@ public class STITestService {
 
             STITest stiTest = testOpt.get();
 
-            if (!stiTest.getCustomer().getId().equals(userId)) {
-                return ApiResponse.error("You can only cancel your own tests");
+            // Get user information to check role
+            Optional<UserDtls> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) {
+                return ApiResponse.error("User not found");
+            }
+
+            UserDtls user = userOpt.get();
+            String userRole = user.getRole() != null ? user.getRole().getRoleName() : null;
+
+            // Permission check: Customer can only cancel their own tests, Staff/Admin can cancel any test
+            if (!"STAFF".equals(userRole) && !"ADMIN".equals(userRole)) {
+                if (!stiTest.getCustomer().getId().equals(userId)) {
+                    return ApiResponse.error("You can only cancel your own tests");
+                }
             }
 
             if (!TestStatus.PENDING.equals(stiTest.getStatus())
@@ -908,8 +920,11 @@ public class STITestService {
                 return ApiResponse.error("Cannot cancel test in current status: " + stiTest.getStatus());
             }
 
-            if (stiTest.getAppointmentDate().isBefore(LocalDateTime.now().plusHours(24))) {
-                return ApiResponse.error("Cannot cancel test within 24 hours of appointment");
+            // 24-hour rule only applies to customers, not staff/admin
+            if (!"STAFF".equals(userRole) && !"ADMIN".equals(userRole)) {
+                if (stiTest.getAppointmentDate().isBefore(LocalDateTime.now().plusHours(24))) {
+                    return ApiResponse.error("Cannot cancel test within 24 hours of appointment");
+                }
             }
 
             String refundMessage = "";
@@ -923,8 +938,9 @@ public class STITestService {
                         || payment.getPaymentMethod() == PaymentMethod.QR_CODE)
                         && payment.getPaymentStatus() == PaymentStatus.COMPLETED) {
 
+                    String cancellationBy = ("STAFF".equals(userRole) || "ADMIN".equals(userRole)) ? "Staff cancellation" : "User cancellation";
                     ApiResponse<Payment> refundResult = paymentService.processRefund(
-                            payment.getPaymentId(), "User cancellation");
+                            payment.getPaymentId(), cancellationBy);
 
                     if (!refundResult.isSuccess()) {
                         return ApiResponse.error("Failed to process refund: " + refundResult.getMessage());
@@ -956,7 +972,12 @@ public class STITestService {
 
             STITestResponse response = convertToResponse(canceledTest);
 
-            String successMessage = "STI test canceled successfully" + refundMessage;
+            String successMessage;
+            if ("STAFF".equals(userRole) || "ADMIN".equals(userRole)) {
+                successMessage = "STI test canceled by staff successfully" + refundMessage;
+            } else {
+                successMessage = "STI test canceled successfully" + refundMessage;
+            }
             return ApiResponse.success(successMessage, response);
 
         } catch (Exception e) {
