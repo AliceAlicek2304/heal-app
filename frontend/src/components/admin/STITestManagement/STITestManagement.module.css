@@ -411,6 +411,12 @@
     font-size: 0.875rem;
 }
 
+.actionButtons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
 .viewBtn {
     padding: 6px 12px;
     background: #6366f1;
@@ -427,6 +433,24 @@
 
 .viewBtn:hover {
     background: #5855eb;
+}
+
+.cancelBtn {
+    padding: 6px 12px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.cancelBtn:hover {
+    background: #dc2626;
 }
 
 /* Empty State */

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaEye, FaSearch, FaVial, FaUser, FaCalendarAlt, FaMoneyBillWave, FaCreditCard, FaQrcode, FaFilePdf, FaFileExcel } from 'react-icons/fa';
+import { FaEye, FaSearch, FaVial, FaUser, FaCalendarAlt, FaMoneyBillWave, FaCreditCard, FaQrcode, FaFilePdf, FaFileExcel, FaTimes } from 'react-icons/fa';
 import { useToast } from '../../../contexts/ToastContext';
 import { stiService } from '../../../services/stiService';
 import { formatDateTime } from '../../../utils/dateUtils';
@@ -142,6 +142,47 @@ const STITestManagement = () => {
             }
         } catch (error) {
             addToast('Có lỗi xảy ra khi tải chi tiết STI test', 'error');
+        }
+    };
+
+    const handleCancelTest = async (test) => {
+        if (!test || !test.testId) {
+            addToast('Dữ liệu STI test không hợp lệ', 'error');
+            return;
+        }
+
+        // Kiểm tra trạng thái có thể hủy
+        if (test.status !== 'PENDING' && test.status !== 'CONFIRMED') {
+            addToast('Chỉ có thể hủy test ở trạng thái Chờ xử lý hoặc Đã xác nhận', 'error');
+            return;
+        }
+
+        const confirmCancel = window.confirm(
+            `Bạn có chắc chắn muốn hủy test #${test.testId} của khách hàng ${test.customerName}?\n\n` +
+            `Dịch vụ: ${test.packageName || test.serviceName}\n` +
+            `Ngày hẹn: ${formatDateTime(test.appointmentDate)}\n` +
+            `Giá: ${formatPrice(test.totalPrice)}\n\n` +
+            `Hệ thống sẽ tự động xử lý hoàn tiền nếu cần thiết.`
+        );
+
+        if (!confirmCancel) return;
+
+        try {
+            setLoading(true);
+            const response = await stiService.cancelTest(test.testId);
+            
+            if (response.success) {
+                addToast(response.message || 'Hủy test thành công', 'success');
+                // Refresh danh sách tests
+                await loadAllTests();
+            } else {
+                addToast(response.message || 'Không thể hủy test', 'error');
+            }
+        } catch (error) {
+            console.error('Cancel test error:', error);
+            addToast('Có lỗi xảy ra khi hủy test', 'error');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -330,13 +371,24 @@ const STITestManagement = () => {
                                                 {formatDateTime(test.createdAt)}
                                             </td>
                                             <td>
-                                                <button
-                                                    className={styles.viewBtn}
-                                                    onClick={() => handleViewDetail(test)}
-                                                    title="Xem chi tiết"
-                                                >
-                                                    <FaEye />
-                                                </button>
+                                                <div className={styles.actionButtons}>
+                                                    <button
+                                                        className={styles.viewBtn}
+                                                        onClick={() => handleViewDetail(test)}
+                                                        title="Xem chi tiết"
+                                                    >
+                                                        <FaEye />
+                                                    </button>
+                                                    {(test.status === 'PENDING' || test.status === 'CONFIRMED') && (
+                                                        <button
+                                                            className={styles.cancelBtn}
+                                                            onClick={() => handleCancelTest(test)}
+                                                            title="Hủy test"
+                                                        >
+                                                            <FaTimes />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     );
