@@ -281,6 +281,15 @@
     background: #7c3aed;
 }
 
+.actionBtn.cancelBtn {
+    background: #ef4444;
+    color: white;
+}
+
+.actionBtn.cancelBtn:hover:not(:disabled) {
+    background: #dc2626;
+}
+
 .actionBtn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -992,5 +1001,93 @@
         align-items: flex-start;
     }    .statusBadge {
         align-self: flex-start;
+    }
+}
+
+/* Cancel Confirmation Modal */
+.cancelConfirmation {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+}
+
+.warningIcon {
+    margin-bottom: 20px;
+}
+
+.confirmationText h4 {
+    margin: 0 0 20px 0;
+    color: #374151;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.testDetails {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    text-align: left;
+}
+
+.testDetails p {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: #374151;
+}
+
+.testDetails p:last-child {
+    margin-bottom: 0;
+}
+
+.warningNote {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 14px;
+    color: #92400e;
+}
+
+.confirmDeleteBtn {
+    padding: 10px 20px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.confirmDeleteBtn:hover:not(:disabled) {
+    background: #dc2626;
+}
+
+.confirmDeleteBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
     }
 }

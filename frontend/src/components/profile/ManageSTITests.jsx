@@ -26,6 +26,10 @@ const ManageSTITests = () => {
     const [exportingPDF, setExportingPDF] = useState(false);
     const [exportingExcel, setExportingExcel] = useState(false);
 
+    // Cancel confirmation modal
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [testToCancel, setTestToCancel] = useState(null);
+
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(12); // Items per page (constant)
@@ -616,6 +620,49 @@ const ManageSTITests = () => {
         }
     };
 
+    const handleCancelTest = async (test) => {
+        if (!test || !test.testId) {
+            toast.error('Dữ liệu STI test không hợp lệ');
+            return;
+        }
+
+        // Kiểm tra trạng thái có thể hủy
+        if (test.status !== 'PENDING' && test.status !== 'CONFIRMED') {
+            toast.error('Chỉ có thể hủy test ở trạng thái Chờ xác nhận hoặc Đã xác nhận');
+            return;
+        }
+
+        // Mở modal xác nhận thay vì window.confirm
+        setTestToCancel(test);
+        setShowCancelModal(true);
+    };
+
+    const confirmCancelTest = async () => {
+        if (!testToCancel) return;
+
+        try {
+            setUpdating(true);
+            const response = await stiService.cancelTest(testToCancel.testId, () => {
+                toast.error('Phiên đăng nhập hết hạn');
+            });
+            
+            if (response.success) {
+                toast.success(response.message || 'Hủy test thành công');
+                // Refresh danh sách tests
+                await loadTests();
+            } else {
+                toast.error(response.message || 'Không thể hủy test');
+            }
+        } catch (error) {
+            console.error('Cancel test error:', error);
+            toast.error('Có lỗi xảy ra khi hủy test');
+        } finally {
+            setUpdating(false);
+            setShowCancelModal(false);
+            setTestToCancel(null);
+        }
+    };
+
     const renderActionButtons = (test) => {
         const status = test.status;
         const isQR = test.paymentMethod === 'QR_CODE' || test.paymentMethod === 'QR';
@@ -634,30 +681,56 @@ const ManageSTITests = () => {
                 </button>
 
                 {status === 'PENDING' && (
-                    <button
-                        onClick={() => handleStatusUpdate(test.testId, 'CONFIRMED')}
-                        className={`${styles.actionBtn} ${styles.confirmBtn}`}
-                        disabled={updating}
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <polyline points="20,6 9,17 4,12"></polyline>
-                        </svg>
-                        Xác nhận
-                    </button>
+                    <>
+                        <button
+                            onClick={() => handleStatusUpdate(test.testId, 'CONFIRMED')}
+                            className={`${styles.actionBtn} ${styles.confirmBtn}`}
+                            disabled={updating}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polyline points="20,6 9,17 4,12"></polyline>
+                            </svg>
+                            Xác nhận
+                        </button>
+                        <button
+                            onClick={() => handleCancelTest(test)}
+                            className={`${styles.actionBtn} ${styles.cancelBtn}`}
+                            disabled={updating}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                            Hủy
+                        </button>
+                    </>
                 )}
 
                 {status === 'CONFIRMED' && (
-                    <button
-                        onClick={() => handleStatusUpdate(test.testId, 'SAMPLED')}
-                        className={`${styles.actionBtn} ${styles.sampleBtn}`}
-                        disabled={updating}
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M9 11H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-2"></path>
-                            <rect x="9" y="7" width="6" height="6" rx="1"></rect>
-                        </svg>
-                        Lấy mẫu
-                    </button>
+                    <>
+                        <button
+                            onClick={() => handleStatusUpdate(test.testId, 'SAMPLED')}
+                            className={`${styles.actionBtn} ${styles.sampleBtn}`}
+                            disabled={updating}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M9 11H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-2"></path>
+                                <rect x="9" y="7" width="6" height="6" rx="1"></rect>
+                            </svg>
+                            Lấy mẫu
+                        </button>
+                        <button
+                            onClick={() => handleCancelTest(test)}
+                            className={`${styles.actionBtn} ${styles.cancelBtn}`}
+                            disabled={updating}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                            Hủy
+                        </button>
+                    </>
                 )}
 
                 {status === 'SAMPLED' && (
@@ -1492,6 +1565,83 @@ const ManageSTITests = () => {
                                         </svg>
                                         Xuất Excel
                                     </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Cancel Confirmation Modal */}
+            {showCancelModal && testToCancel && (
+                <div className={styles.modalOverlay} onClick={() => setShowCancelModal(false)}>
+                    <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+                        <div className={styles.modalHeader}>
+                            <h3>Xác nhận hủy test</h3>
+                            <button
+                                onClick={() => setShowCancelModal(false)}
+                                className={styles.closeBtn}
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div className={styles.modalBody}>
+                            <div className={styles.cancelConfirmation}>
+                                <div className={styles.warningIcon}>
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                    </svg>
+                                </div>
+                                
+                                <div className={styles.confirmationText}>
+                                    <h4>Bạn có chắc chắn muốn hủy test này?</h4>
+                                    <div className={styles.testDetails}>
+                                        <p><strong>Test ID:</strong> #{testToCancel.testId}</p>
+                                        <p><strong>Khách hàng:</strong> {testToCancel.customerName}</p>
+                                        <p><strong>Dịch vụ:</strong> {testToCancel.serviceName}</p>
+                                        <p><strong>Ngày hẹn:</strong> {formatDateTime(testToCancel.appointmentDate)}</p>
+                                        <p><strong>Giá:</strong> {testToCancel.totalPrice?.toLocaleString()} VNĐ</p>
+                                    </div>
+                                    <div className={styles.warningNote}>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                        </svg>
+                                        <span>Hệ thống sẽ tự động xử lý hoàn tiền nếu cần thiết.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className={styles.modalFooter}>
+                            <button
+                                onClick={() => setShowCancelModal(false)}
+                                className={styles.cancelBtn}
+                                disabled={updating}
+                            >
+                                Không, giữ lại
+                            </button>
+                            <button
+                                onClick={confirmCancelTest}
+                                className={styles.confirmDeleteBtn}
+                                disabled={updating}
+                            >
+                                {updating ? (
+                                    <>
+                                        <svg className={styles.spinner} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M21 12a9 9 0 11-6.219-8.56" />
+                                        </svg>
+                                        Đang hủy...
+                                    </>
+                                ) : (
+                                    'Có, hủy test'
                                 )}
                             </button>
                         </div>
