@@ -77,8 +77,9 @@ public class STITestRequest {
 
         switch (paymentMethod.toUpperCase()) {
             case "VISA":
-                return cardNumber != null && expiryMonth != null &&
-                        expiryYear != null && cvc != null && cardHolderName != null;
+                // Cho phép dùng paymentInfoId + cvc HOẶC nhập tay đủ thông tin
+                return ((paymentInfoId != null && cvc != null && !cvc.trim().isEmpty())
+                        || (cardNumber != null && expiryMonth != null && expiryYear != null && cvc != null && cardHolderName != null));
             case "QR_CODE":
                 return true;
             case "COD":

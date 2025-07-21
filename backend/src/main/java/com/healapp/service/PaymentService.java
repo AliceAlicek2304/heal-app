@@ -3,6 +3,7 @@ package com.healapp.service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -104,19 +105,21 @@ public class PaymentService {
             STITest tempSTITest = createTempSTITestForPayment(processingPayment, serviceType, serviceId);
 
             // Process with Stripe
-            ApiResponse<String> stripeResponse = stripeService.processPaymentForSTITest(
+            ApiResponse<Map<String, String>> stripeResponse = stripeService.processPaymentForSTITest(
                     tempSTITest, cardNumber, expMonth, expYear, cvc, cardHolderName);
 
             if (stripeResponse.isSuccess()) {
                 // Payment successful
+                Map<String, String> data = stripeResponse.getData();
                 processingPayment.setPaymentStatus(PaymentStatus.COMPLETED);
-                processingPayment.setStripePaymentIntentId(stripeResponse.getData());
-                processingPayment.setTransactionId(stripeResponse.getData());
+                processingPayment.setStripePaymentIntentId(data.get("paymentIntentId"));
+                processingPayment.setTransactionId(data.get("paymentIntentId"));
+                processingPayment.setStripeReceiptUrl(data.get("receiptUrl"));
                 processingPayment.setPaidAt(LocalDateTime.now());
 
                 Payment completedPayment = paymentRepository.save(processingPayment);
                 log.info("Stripe payment completed - Payment ID: {}, Stripe ID: {}",
-                        completedPayment.getPaymentId(), stripeResponse.getData());
+                        completedPayment.getPaymentId(), data.get("paymentIntentId"));
 
                 return ApiResponse.success("Payment processed successfully", completedPayment);
 
@@ -779,14 +782,16 @@ public class PaymentService {
             payment.setTransactionId(null);
             payment.setPaidAt(null);
             paymentRepository.save(payment);
-            // Tạo lại PaymentIntent mới
+            // Tạo lại PaymentIntent mới                                        
             STITest tempSTITest = createTempSTITestForPayment(payment, "STI", testId);
-            ApiResponse<String> stripeResponse = stripeService.processPaymentForSTITest(
+            ApiResponse<Map<String, String>> stripeResponse = stripeService.processPaymentForSTITest(
                 tempSTITest, cardNumber, expMonth, expYear, cvc, cardHolderName);
             if (stripeResponse.isSuccess()) {
+                Map<String, String> data = stripeResponse.getData();
                 payment.setPaymentStatus(PaymentStatus.COMPLETED);
-                payment.setStripePaymentIntentId(stripeResponse.getData());
-                payment.setTransactionId(stripeResponse.getData());
+                payment.setStripePaymentIntentId(data.get("paymentIntentId"));
+                payment.setTransactionId(data.get("paymentIntentId"));
+                payment.setStripeReceiptUrl(data.get("receiptUrl"));
                 payment.setPaidAt(LocalDateTime.now());
                 paymentRepository.save(payment);
                 return ApiResponse.success("Thanh toán lại thành công", payment);

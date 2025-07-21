@@ -1639,6 +1639,23 @@ const STIHistory = () => {
                                     </div>
                                 )}
                             </div>
+                            {/* Thông tin thanh toán Stripe nếu có */}
+                            {selectedTest.paymentMethod === 'VISA' && selectedTest.stripeReceiptUrl && (
+                                <div className={styles.detailItem} style={{marginTop: '1rem'}}>
+                                    <span className={styles.label}>Biên lai Stripe:</span>
+                                    <a href={selectedTest.stripeReceiptUrl} target="_blank" rel="noopener noreferrer" className={styles.value} style={{color: '#0070f3', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s'}}
+                                       onMouseOver={e => e.currentTarget.style.color = '#0051a3'}
+                                       onMouseOut={e => e.currentTarget.style.color = '#0070f3'}>
+                                        Xem biên lai thanh toán
+                                    </a>
+                                </div>
+                            )}
+                            {selectedTest.paymentMethod === 'VISA' && selectedTest.paymentId && (
+                                <div className={styles.detailItem}>
+                                    <span className={styles.label}>Mã thanh toán:</span>
+                                    <span className={styles.value}>{selectedTest.paymentId}</span>
+                                </div>
+                            )}
                         </div>
 
                         <div className={styles.modalFooter}>
@@ -1960,6 +1977,23 @@ const STIHistory = () => {
                                         )}
                                     </div>
                                 )}
+                            {/* Thông tin thanh toán Stripe nếu có */}
+                            {paymentInfo.paymentMethod === 'VISA' && paymentInfo.stripeReceiptUrl && (
+                                <div className={styles.detailItem} style={{marginTop: '1rem'}}>
+                                    <span className={styles.label}>Biên lai Stripe:</span>
+                                    <a href={paymentInfo.stripeReceiptUrl} target="_blank" rel="noopener noreferrer" className={styles.value} style={{color: '#0070f3', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s'}}
+                                       onMouseOver={e => e.currentTarget.style.color = '#0051a3'}
+                                       onMouseOut={e => e.currentTarget.style.color = '#0070f3'}>
+                                        Xem biên lai thanh toán
+                                    </a>
+                                </div>
+                            )}
+                            {paymentInfo.paymentMethod === 'VISA' && paymentInfo.paymentId && (
+                                <div className={styles.detailItem}>
+                                    <span className={styles.label}>Mã thanh toán:</span>
+                                    <span className={styles.value}>{paymentInfo.paymentId}</span>
+                                </div>
+                            )}
                         </div>
 
                         <div className={styles.modalFooter}>

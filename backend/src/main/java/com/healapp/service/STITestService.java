@@ -1107,6 +1107,7 @@ public class STITestService {
                 // Stripe payment specific
                 if (payment.getPaymentMethod() == PaymentMethod.VISA) {
                     response.setStripePaymentIntentId(payment.getStripePaymentIntentId());
+                    response.setStripeReceiptUrl(payment.getStripeReceiptUrl());
                 }
 
                 // QR payment specific

@@ -222,22 +222,29 @@ const STIBookingModal = ({ service, onClose, onSuccess, onError, onAuthRequired 
 
         // Validate VISA fields if selected
         if (formData.paymentMethod === 'VISA') {
-            if (!formData.cardNumber || !formData.expiryMonth || !formData.expiryYear ||
-                !formData.cvc || !formData.cardHolderName) {
-                toast.error('Vui lòng điền đầy đủ thông tin thẻ');
-                return false;
-            }
+            if (useSavedCard && selectedCardId) {
+                if (!formData.cvc) {
+                    toast.error('Vui lòng nhập mã CVC');
+                    return false;
+                }
+            } else {
+                if (!formData.cardNumber || !formData.expiryMonth || !formData.expiryYear ||
+                    !formData.cvc || !formData.cardHolderName) {
+                    toast.error('Vui lòng điền đầy đủ thông tin thẻ');
+                    return false;
+                }
 
-            // Basic card number validation (16 digits)
-            if (!/^\d{16}$/.test(formData.cardNumber.replace(/\s/g, ''))) {
-                toast.error('Số thẻ không hợp lệ');
-                return false;
-            }
+                // Basic card number validation (16 digits)
+                if (!/^\d{16}$/.test(formData.cardNumber.replace(/\s/g, ''))) {
+                    toast.error('Số thẻ không hợp lệ');
+                    return false;
+                }
 
-            // CVC validation (3-4 digits)
-            if (!/^\d{3,4}$/.test(formData.cvc)) {
-                toast.error('Mã CVC không hợp lệ');
-                return false;
+                // CVC validation (3-4 digits)
+                if (!/^\d{3,4}$/.test(formData.cvc)) {
+                    toast.error('Mã CVC không hợp lệ');
+                    return false;
+                }
             }
         }
 
