@@ -915,14 +915,24 @@ public class STITestService {
                 }
             }
 
-            if (!TestStatus.PENDING.equals(stiTest.getStatus())
-                    && !TestStatus.CONFIRMED.equals(stiTest.getStatus())) {
-                return ApiResponse.error("Cannot cancel test in current status: " + stiTest.getStatus());
+            // Check status restrictions based on user role
+            if ("STAFF".equals(userRole) || "ADMIN".equals(userRole)) {
+                // Staff/Admin can cancel at any status except already CANCELED
+                if (TestStatus.CANCELED.equals(stiTest.getStatus())) {
+                    return ApiResponse.error("Test is already canceled");
+                }
+            } else {
+                // Customers can only cancel before confirmation
+                if (!TestStatus.PENDING.equals(stiTest.getStatus())
+                        && !TestStatus.CONFIRMED.equals(stiTest.getStatus())) {
+                    return ApiResponse.error("Cannot cancel test in current status: " + stiTest.getStatus());
+                }
             }
 
-            // 24-hour rule only applies to customers, not staff/admin
+            // 24-hour rule only applies to customers for PENDING tests
             if (!"STAFF".equals(userRole) && !"ADMIN".equals(userRole)) {
-                if (stiTest.getAppointmentDate().isBefore(LocalDateTime.now().plusHours(24))) {
+                if (TestStatus.PENDING.equals(stiTest.getStatus()) 
+                    && stiTest.getAppointmentDate().isBefore(LocalDateTime.now().plusHours(24))) {
                     return ApiResponse.error("Cannot cancel test within 24 hours of appointment");
                 }
             }

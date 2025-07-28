@@ -72,7 +72,13 @@ public class STITestResponse {
     }
 
     public boolean canBeCancelled() {
+       // This method is used for customer interface - customers can only cancel before confirmation
         return "PENDING".equals(this.status) || "CONFIRMED".equals(this.status);
+    }
+
+    public boolean canBeCancelledByStaff() {
+        // Staff can cancel at any status except already CANCELED
+        return !"CANCELED".equals(this.status);
     }
 
     public String getPaymentDisplayText() {
