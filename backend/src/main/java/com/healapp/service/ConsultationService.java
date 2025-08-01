@@ -28,6 +28,7 @@ import com.healapp.model.UserDtls;
 import com.healapp.repository.ConsultantProfileRepository;
 import com.healapp.repository.ConsultationRepository;
 import com.healapp.repository.UserRepository;
+import com.healapp.utils.TimeZoneUtils;
 
 @Service
 public class ConsultationService {
@@ -244,8 +245,10 @@ public class ConsultationService {
                     return ApiResponse.error("Only assigned consultant can mark the consultation as completed");
                 }
 
-                // check time, cant complete before end time
-                if (LocalDateTime.now().isBefore(consultation.getEndTime())) {
+                // check time, cant complete before end time (using Vietnam timezone)
+                LocalDateTime nowLocal = TimeZoneUtils.nowLocalVietnam();
+                
+                if (nowLocal.isBefore(consultation.getEndTime())) {
                     return ApiResponse.error("Consultation cannot be marked as completed before its end time");
                 }
             }

@@ -30,6 +30,9 @@ public class JacksonConfig {
         // Disable writing dates as timestamps
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         
+        // Set timezone to Vietnam for consistent date/time handling
+        objectMapper.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+        
         // Configure JavaTimeModule for LocalDate and LocalDateTime
         JavaTimeModule javaTimeModule = new JavaTimeModule();
         

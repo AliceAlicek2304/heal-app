@@ -35,6 +35,7 @@ import com.healapp.repository.STITestRepository;
 import com.healapp.repository.ServiceTestComponentRepository;
 import com.healapp.repository.TestResultRepository;
 import com.healapp.repository.UserRepository;
+import com.healapp.utils.TimeZoneUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -84,7 +85,10 @@ public class STITestService {
         }
         UserDtls customer = customerOpt.get();
 
-        if (request.getAppointmentDate().isBefore(LocalDateTime.now().plusHours(2))) {
+        // Validate appointment time using Vietnam timezone
+        LocalDateTime nowLocal = TimeZoneUtils.nowLocalVietnam();
+        
+        if (request.getAppointmentDate().isBefore(nowLocal.plusHours(2))) {
             return ApiResponse.error("Appointment must be at least 2 hours from now");
         }
 
@@ -931,9 +935,13 @@ public class STITestService {
 
             // 24-hour rule only applies to customers for PENDING tests
             if (!"STAFF".equals(userRole) && !"ADMIN".equals(userRole)) {
-                if (TestStatus.PENDING.equals(stiTest.getStatus()) 
-                    && stiTest.getAppointmentDate().isBefore(LocalDateTime.now().plusHours(24))) {
-                    return ApiResponse.error("Cannot cancel test within 24 hours of appointment");
+                if (TestStatus.PENDING.equals(stiTest.getStatus())) {
+                    // Use Vietnam timezone for 24-hour validation
+                    LocalDateTime nowLocal = TimeZoneUtils.nowLocalVietnam();
+                    
+                    if (stiTest.getAppointmentDate().isBefore(nowLocal.plusHours(24))) {
+                        return ApiResponse.error("Cannot cancel test within 24 hours of appointment");
+                    }
                 }
             }
 
